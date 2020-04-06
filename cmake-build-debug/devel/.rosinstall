@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/jbs/catkin_ws/src/atypical_driving/cmake-build-debug/devel/setup.sh

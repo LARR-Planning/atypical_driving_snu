@@ -1,0 +1,4 @@
+<map id="Planner::LocalPlanner" name="Planner::LocalPlanner">
+<area shape="rect" id="node2" href="$class_planner_1_1_local_planner_plain.html" title="Planner::LocalPlannerPlain" alt="" coords="5,80,184,107"/>
+<area shape="rect" id="node3" href="$class_planner_1_1_local_planner_stochastic.html" title="Planner::LocalPlannerStochastic" alt="" coords="208,80,419,107"/>
+</map>

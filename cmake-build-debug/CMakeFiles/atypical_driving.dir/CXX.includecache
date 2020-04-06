@@ -1,0 +1,38 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../include/atypical_planner/GlobalPlanner.h
+atypical_planner/PlannerCore.h
+-
+
+../include/atypical_planner/LocalPlanner.h
+atypical_planner/PlannerCore.h
+-
+
+../include/atypical_planner/PlannerCore.h
+octomap/OcTree.h
+-
+vector
+-
+bits/shared_ptr.h
+-
+
+../include/atypical_planner/Wrapper.h
+atypical_planner/LocalPlanner.h
+-
+atypical_planner/GlobalPlanner.h
+-
+
+/home/jbs/catkin_ws/src/atypical_driving/main.cpp
+iostream
+-
+
+/home/jbs/catkin_ws/src/atypical_driving/src/Wrapper.cpp
+atypical_planner/Wrapper.h
+-
+
