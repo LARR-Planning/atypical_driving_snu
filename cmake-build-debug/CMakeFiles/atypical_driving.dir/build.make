@@ -34,19 +34,19 @@ cmake_force:
 SHELL = /bin/sh
 
 # The CMake executable.
-CMAKE_COMMAND = /home/jbs/Downloads/clion-2019.3.4/bin/cmake/linux/bin/cmake
+CMAKE_COMMAND = /home/jbs/clion-2019.3.4/bin/cmake/linux/bin/cmake
 
 # The command to remove a file.
-RM = /home/jbs/Downloads/clion-2019.3.4/bin/cmake/linux/bin/cmake -E remove -f
+RM = /home/jbs/clion-2019.3.4/bin/cmake/linux/bin/cmake -E remove -f
 
 # Escaping for special characters.
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/jbs/catkin_ws/src/atypical_driving
+CMAKE_SOURCE_DIR = /home/jbs/catkin_ws/src/atypical_driving_snu
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/jbs/catkin_ws/src/atypical_driving/cmake-build-debug
+CMAKE_BINARY_DIR = /home/jbs/catkin_ws/src/atypical_driving_snu/cmake-build-debug
 
 # Include any dependencies generated for this target.
 include CMakeFiles/atypical_driving.dir/depend.make
@@ -59,29 +59,29 @@ include CMakeFiles/atypical_driving.dir/flags.make
 
 CMakeFiles/atypical_driving.dir/test/main.cpp.o: CMakeFiles/atypical_driving.dir/flags.make
 CMakeFiles/atypical_driving.dir/test/main.cpp.o: ../test/main.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/jbs/catkin_ws/src/atypical_driving/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/atypical_driving.dir/test/main.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/atypical_driving.dir/test/main.cpp.o -c /home/jbs/catkin_ws/src/atypical_driving/test/main.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/jbs/catkin_ws/src/atypical_driving_snu/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/atypical_driving.dir/test/main.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/atypical_driving.dir/test/main.cpp.o -c /home/jbs/catkin_ws/src/atypical_driving_snu/test/main.cpp
 
 CMakeFiles/atypical_driving.dir/test/main.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/atypical_driving.dir/test/main.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/jbs/catkin_ws/src/atypical_driving/test/main.cpp > CMakeFiles/atypical_driving.dir/test/main.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/jbs/catkin_ws/src/atypical_driving_snu/test/main.cpp > CMakeFiles/atypical_driving.dir/test/main.cpp.i
 
 CMakeFiles/atypical_driving.dir/test/main.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/atypical_driving.dir/test/main.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/jbs/catkin_ws/src/atypical_driving/test/main.cpp -o CMakeFiles/atypical_driving.dir/test/main.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/jbs/catkin_ws/src/atypical_driving_snu/test/main.cpp -o CMakeFiles/atypical_driving.dir/test/main.cpp.s
 
 CMakeFiles/atypical_driving.dir/src/Wrapper.cpp.o: CMakeFiles/atypical_driving.dir/flags.make
 CMakeFiles/atypical_driving.dir/src/Wrapper.cpp.o: ../src/Wrapper.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/jbs/catkin_ws/src/atypical_driving/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/atypical_driving.dir/src/Wrapper.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/atypical_driving.dir/src/Wrapper.cpp.o -c /home/jbs/catkin_ws/src/atypical_driving/src/Wrapper.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/jbs/catkin_ws/src/atypical_driving_snu/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/atypical_driving.dir/src/Wrapper.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/atypical_driving.dir/src/Wrapper.cpp.o -c /home/jbs/catkin_ws/src/atypical_driving_snu/src/Wrapper.cpp
 
 CMakeFiles/atypical_driving.dir/src/Wrapper.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/atypical_driving.dir/src/Wrapper.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/jbs/catkin_ws/src/atypical_driving/src/Wrapper.cpp > CMakeFiles/atypical_driving.dir/src/Wrapper.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/jbs/catkin_ws/src/atypical_driving_snu/src/Wrapper.cpp > CMakeFiles/atypical_driving.dir/src/Wrapper.cpp.i
 
 CMakeFiles/atypical_driving.dir/src/Wrapper.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/atypical_driving.dir/src/Wrapper.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/jbs/catkin_ws/src/atypical_driving/src/Wrapper.cpp -o CMakeFiles/atypical_driving.dir/src/Wrapper.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/jbs/catkin_ws/src/atypical_driving_snu/src/Wrapper.cpp -o CMakeFiles/atypical_driving.dir/src/Wrapper.cpp.s
 
 # Object files for target atypical_driving
 atypical_driving_OBJECTS = \
@@ -94,10 +94,10 @@ atypical_driving_EXTERNAL_OBJECTS =
 atypical_driving: CMakeFiles/atypical_driving.dir/test/main.cpp.o
 atypical_driving: CMakeFiles/atypical_driving.dir/src/Wrapper.cpp.o
 atypical_driving: CMakeFiles/atypical_driving.dir/build.make
-atypical_driving: /usr/local/lib/liboctomap.so
-atypical_driving: /usr/local/lib/liboctomath.so
+atypical_driving: /usr/lib/liboctomap.so
+atypical_driving: /usr/lib/liboctomath.so
 atypical_driving: CMakeFiles/atypical_driving.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/jbs/catkin_ws/src/atypical_driving/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Linking CXX executable atypical_driving"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/jbs/catkin_ws/src/atypical_driving_snu/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Linking CXX executable atypical_driving"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/atypical_driving.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
@@ -110,6 +110,6 @@ CMakeFiles/atypical_driving.dir/clean:
 .PHONY : CMakeFiles/atypical_driving.dir/clean
 
 CMakeFiles/atypical_driving.dir/depend:
-	cd /home/jbs/catkin_ws/src/atypical_driving/cmake-build-debug && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/jbs/catkin_ws/src/atypical_driving /home/jbs/catkin_ws/src/atypical_driving /home/jbs/catkin_ws/src/atypical_driving/cmake-build-debug /home/jbs/catkin_ws/src/atypical_driving/cmake-build-debug /home/jbs/catkin_ws/src/atypical_driving/cmake-build-debug/CMakeFiles/atypical_driving.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/jbs/catkin_ws/src/atypical_driving_snu/cmake-build-debug && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/jbs/catkin_ws/src/atypical_driving_snu /home/jbs/catkin_ws/src/atypical_driving_snu /home/jbs/catkin_ws/src/atypical_driving_snu/cmake-build-debug /home/jbs/catkin_ws/src/atypical_driving_snu/cmake-build-debug /home/jbs/catkin_ws/src/atypical_driving_snu/cmake-build-debug/CMakeFiles/atypical_driving.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/atypical_driving.dir/depend
 

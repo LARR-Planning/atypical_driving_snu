@@ -7,6 +7,15 @@
 using namespace Planner;
 
 /**
+ * @brief Fetching the parameter from ros node handle.
+ * @param param_ The fetched params will be written in param_
+ */
+void RosWrapper::updateParam(Param &param_) {
+    // Do some parsing here from rosparam
+
+}
+
+/**
  * @brief The constructor 1) initiates all the ros communication, 2) feed params to planners
  */
 Wrapper::Wrapper() : p_base_shared(make_shared<PlannerBase>()) {

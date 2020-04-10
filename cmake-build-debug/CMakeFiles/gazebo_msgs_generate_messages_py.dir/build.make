@@ -34,19 +34,19 @@ cmake_force:
 SHELL = /bin/sh
 
 # The CMake executable.
-CMAKE_COMMAND = /home/jbs/Downloads/clion-2019.3.4/bin/cmake/linux/bin/cmake
+CMAKE_COMMAND = /home/jbs/clion-2019.3.4/bin/cmake/linux/bin/cmake
 
 # The command to remove a file.
-RM = /home/jbs/Downloads/clion-2019.3.4/bin/cmake/linux/bin/cmake -E remove -f
+RM = /home/jbs/clion-2019.3.4/bin/cmake/linux/bin/cmake -E remove -f
 
 # Escaping for special characters.
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/jbs/catkin_ws/src/atypical_driving
+CMAKE_SOURCE_DIR = /home/jbs/catkin_ws/src/atypical_driving_snu
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/jbs/catkin_ws/src/atypical_driving/cmake-build-debug
+CMAKE_BINARY_DIR = /home/jbs/catkin_ws/src/atypical_driving_snu/cmake-build-debug
 
 # Utility rule file for gazebo_msgs_generate_messages_py.
 
@@ -67,6 +67,6 @@ CMakeFiles/gazebo_msgs_generate_messages_py.dir/clean:
 .PHONY : CMakeFiles/gazebo_msgs_generate_messages_py.dir/clean
 
 CMakeFiles/gazebo_msgs_generate_messages_py.dir/depend:
-	cd /home/jbs/catkin_ws/src/atypical_driving/cmake-build-debug && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/jbs/catkin_ws/src/atypical_driving /home/jbs/catkin_ws/src/atypical_driving /home/jbs/catkin_ws/src/atypical_driving/cmake-build-debug /home/jbs/catkin_ws/src/atypical_driving/cmake-build-debug /home/jbs/catkin_ws/src/atypical_driving/cmake-build-debug/CMakeFiles/gazebo_msgs_generate_messages_py.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/jbs/catkin_ws/src/atypical_driving_snu/cmake-build-debug && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/jbs/catkin_ws/src/atypical_driving_snu /home/jbs/catkin_ws/src/atypical_driving_snu /home/jbs/catkin_ws/src/atypical_driving_snu/cmake-build-debug /home/jbs/catkin_ws/src/atypical_driving_snu/cmake-build-debug /home/jbs/catkin_ws/src/atypical_driving_snu/cmake-build-debug/CMakeFiles/gazebo_msgs_generate_messages_py.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/gazebo_msgs_generate_messages_py.dir/depend
 

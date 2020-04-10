@@ -34,19 +34,19 @@ cmake_force:
 SHELL = /bin/sh
 
 # The CMake executable.
-CMAKE_COMMAND = /home/jbs/Downloads/clion-2019.3.4/bin/cmake/linux/bin/cmake
+CMAKE_COMMAND = /home/jbs/clion-2019.3.4/bin/cmake/linux/bin/cmake
 
 # The command to remove a file.
-RM = /home/jbs/Downloads/clion-2019.3.4/bin/cmake/linux/bin/cmake -E remove -f
+RM = /home/jbs/clion-2019.3.4/bin/cmake/linux/bin/cmake -E remove -f
 
 # Escaping for special characters.
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/jbs/catkin_ws/src/atypical_driving
+CMAKE_SOURCE_DIR = /home/jbs/catkin_ws/src/atypical_driving_snu
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/jbs/catkin_ws/src/atypical_driving/cmake-build-debug
+CMAKE_BINARY_DIR = /home/jbs/catkin_ws/src/atypical_driving_snu/cmake-build-debug
 
 # Utility rule file for roscpp_generate_messages_nodejs.
 
@@ -67,6 +67,6 @@ CMakeFiles/roscpp_generate_messages_nodejs.dir/clean:
 .PHONY : CMakeFiles/roscpp_generate_messages_nodejs.dir/clean
 
 CMakeFiles/roscpp_generate_messages_nodejs.dir/depend:
-	cd /home/jbs/catkin_ws/src/atypical_driving/cmake-build-debug && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/jbs/catkin_ws/src/atypical_driving /home/jbs/catkin_ws/src/atypical_driving /home/jbs/catkin_ws/src/atypical_driving/cmake-build-debug /home/jbs/catkin_ws/src/atypical_driving/cmake-build-debug /home/jbs/catkin_ws/src/atypical_driving/cmake-build-debug/CMakeFiles/roscpp_generate_messages_nodejs.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/jbs/catkin_ws/src/atypical_driving_snu/cmake-build-debug && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/jbs/catkin_ws/src/atypical_driving_snu /home/jbs/catkin_ws/src/atypical_driving_snu /home/jbs/catkin_ws/src/atypical_driving_snu/cmake-build-debug /home/jbs/catkin_ws/src/atypical_driving_snu/cmake-build-debug /home/jbs/catkin_ws/src/atypical_driving_snu/cmake-build-debug/CMakeFiles/roscpp_generate_messages_nodejs.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/roscpp_generate_messages_nodejs.dir/depend
 
