@@ -99,41 +99,60 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <p><code>#include &lt;<a class="el" href="_global_planner_8h_source.html">GlobalPlanner.h</a>&gt;</code></p>
 <div class="dynheader">
+Inheritance diagram for Planner::GlobalPlanner:</div>
+<div class="dyncontent">
+<div class="center"><img src="class_planner_1_1_global_planner__inherit__graph.png" border="0" usemap="#_planner_1_1_global_planner_inherit__map" alt="Inheritance graph"/></div>
+<map name="_planner_1_1_global_planner_inherit__map" id="_planner_1_1_global_planner_inherit__map">
+<area shape="rect" id="node2" href="class_planner_1_1_abstract_planner.html" title="Abstract class. The shared attributes to be inherited to the derived classes. " alt="" coords="5,5,172,32"/>
+</map>
+<center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
+<div class="dynheader">
 Collaboration diagram for Planner::GlobalPlanner:</div>
 <div class="dyncontent">
 <div class="center"><img src="class_planner_1_1_global_planner__coll__graph.png" border="0" usemap="#_planner_1_1_global_planner_coll__map" alt="Collaboration graph"/></div>
 <map name="_planner_1_1_global_planner_coll__map" id="_planner_1_1_global_planner_coll__map">
-<area shape="rect" id="node2" href="class_planner_1_1_planner_base.html" title="The planning results and ingredients. " alt="" coords="97,95,245,121"/>
-<area shape="rect" id="node3" href="struct_planner_1_1_m_p_c_result_traj.html" title="Final output of MPC : trajectory of inputs. " alt="" coords="5,5,169,32"/>
-<area shape="rect" id="node4" href="struct_planner_1_1_car_state.html" title="State feed for MPC. " alt="" coords="193,5,320,32"/>
-<area shape="rect" id="node5" href="struct_planner_1_1_param_global.html" title="Parameters for global planner. " alt="" coords="270,95,419,121"/>
+<area shape="rect" id="node2" href="class_planner_1_1_abstract_planner.html" title="Abstract class. The shared attributes to be inherited to the derived classes. " alt="" coords="5,5,172,32"/>
+<area shape="rect" id="node3" href="struct_planner_1_1_param_global.html" title="Parameters for global planner. " alt="" coords="197,5,346,32"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a5388fe45bac58a3f5f3474a814ddaf2c"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_planner_1_1_global_planner.html#a5388fe45bac58a3f5f3474a814ddaf2c">GlobalPlanner</a> (const <a class="el" href="struct_planner_1_1_param_global.html">ParamGlobal</a> &amp;g_param, <a class="el" href="class_planner_1_1_planner_base.html">PlannerBase</a> *p_base_)</td></tr>
-<tr class="separator:a5388fe45bac58a3f5f3474a814ddaf2c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa179ca5ca6703ed99f1535815ff14556"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_planner_1_1_global_planner.html#aa179ca5ca6703ed99f1535815ff14556">update_corridor</a> ()</td></tr>
-<tr class="separator:aa179ca5ca6703ed99f1535815ff14556"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af63a2ca30bf5d4e60229b31db89a8dfb"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_planner_1_1_global_planner.html#af63a2ca30bf5d4e60229b31db89a8dfb">GlobalPlanner</a> (const <a class="el" href="struct_planner_1_1_param_global.html">ParamGlobal</a> &amp;g_param, shared_ptr&lt; <a class="el" href="class_planner_1_1_planner_base.html">PlannerBase</a> &gt; p_base_)</td></tr>
+<tr class="separator:af63a2ca30bf5d4e60229b31db89a8dfb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af0017c165516705f7c226fba7c7a3259"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_planner_1_1_global_planner.html#af0017c165516705f7c226fba7c7a3259">plan</a> ()</td></tr>
+<tr class="memdesc:af0017c165516705f7c226fba7c7a3259"><td class="mdescLeft">&#160;</td><td class="mdescRight">Global planning routine.  <a href="#af0017c165516705f7c226fba7c7a3259">More...</a><br /></td></tr>
+<tr class="separator:af0017c165516705f7c226fba7c7a3259"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1654f63e09a9b81af1f1e70f3241f374"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_planner_1_1_global_planner.html#a1654f63e09a9b81af1f1e70f3241f374">updateCorridorToBase</a> ()</td></tr>
+<tr class="memdesc:a1654f63e09a9b81af1f1e70f3241f374"><td class="mdescLeft">&#160;</td><td class="mdescRight">update the global planning result to the shared resource  <a href="#a1654f63e09a9b81af1f1e70f3241f374">More...</a><br /></td></tr>
+<tr class="separator:a1654f63e09a9b81af1f1e70f3241f374"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_class_planner_1_1_abstract_planner"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_class_planner_1_1_abstract_planner')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="class_planner_1_1_abstract_planner.html">Planner::AbstractPlanner</a></td></tr>
+<tr class="memitem:ace5b679f70bfc690b924298cefd997d6 inherit pub_methods_class_planner_1_1_abstract_planner"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_planner_1_1_abstract_planner.html#ace5b679f70bfc690b924298cefd997d6">AbstractPlanner</a> (shared_ptr&lt; <a class="el" href="class_planner_1_1_planner_base.html">PlannerBase</a> &gt; p_base_)</td></tr>
+<tr class="separator:ace5b679f70bfc690b924298cefd997d6 inherit pub_methods_class_planner_1_1_abstract_planner"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-attribs"></a>
 Private Attributes</h2></td></tr>
-<tr class="memitem:a23958bd3a47c6eb8bd7f46106985aaa8"><td class="memItemLeft" align="right" valign="top"><a class="el" href="class_planner_1_1_planner_base.html">PlannerBase</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_planner_1_1_global_planner.html#a23958bd3a47c6eb8bd7f46106985aaa8">p_base</a></td></tr>
-<tr class="separator:a23958bd3a47c6eb8bd7f46106985aaa8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4373c6269fe013a5724a8a1eace585e9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="struct_planner_1_1_param_global.html">ParamGlobal</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_planner_1_1_global_planner.html#a4373c6269fe013a5724a8a1eace585e9">param</a></td></tr>
 <tr class="separator:a4373c6269fe013a5724a8a1eace585e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a51a4f53ed17ae1278f6fefd1b1735f6e"><td class="memItemLeft" align="right" valign="top">vector&lt; <a class="el" href="struct_planner_1_1_corridor.html">Corridor</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_planner_1_1_global_planner.html#a51a4f53ed17ae1278f6fefd1b1735f6e">curCorridorSeq</a></td></tr>
+<tr class="separator:a51a4f53ed17ae1278f6fefd1b1735f6e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
+Additional Inherited Members</h2></td></tr>
+<tr class="inherit_header pro_attribs_class_planner_1_1_abstract_planner"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_class_planner_1_1_abstract_planner')"><img src="closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="class_planner_1_1_abstract_planner.html">Planner::AbstractPlanner</a></td></tr>
+<tr class="memitem:ad72d5b0efe10fadbb63b5c5052f3d16f inherit pro_attribs_class_planner_1_1_abstract_planner"><td class="memItemLeft" align="right" valign="top">shared_ptr&lt; <a class="el" href="class_planner_1_1_planner_base.html">PlannerBase</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_planner_1_1_abstract_planner.html#ad72d5b0efe10fadbb63b5c5052f3d16f">p_base</a></td></tr>
+<tr class="separator:ad72d5b0efe10fadbb63b5c5052f3d16f inherit pro_attribs_class_planner_1_1_abstract_planner"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
 <p>Definition at line <a class="el" href="_global_planner_8h_source.html#l00010">10</a> of file <a class="el" href="_global_planner_8h_source.html">GlobalPlanner.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a class="anchor" id="a5388fe45bac58a3f5f3474a814ddaf2c"></a>
+<a class="anchor" id="af63a2ca30bf5d4e60229b31db89a8dfb"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">Planner::GlobalPlanner::GlobalPlanner </td>
+          <td class="memname">GlobalPlanner::GlobalPlanner </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="struct_planner_1_1_param_global.html">ParamGlobal</a> &amp;&#160;</td>
           <td class="paramname"><em>g_param</em>, </td>
@@ -141,7 +160,7 @@ Private Attributes</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="class_planner_1_1_planner_base.html">PlannerBase</a> *&#160;</td>
+          <td class="paramtype">shared_ptr&lt; <a class="el" href="class_planner_1_1_planner_base.html">PlannerBase</a> &gt;&#160;</td>
           <td class="paramname"><em>p_base_</em>&#160;</td>
         </tr>
         <tr>
@@ -152,38 +171,12 @@ Private Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Definition at line <a class="el" href="_global_planner_8cpp_source.html#l00008">8</a> of file <a class="el" href="_global_planner_8cpp_source.html">GlobalPlanner.cpp</a>.</p>
+
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="aa179ca5ca6703ed99f1535815ff14556"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Planner::GlobalPlanner::update_corridor </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p><div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="class_planner_1_1_global_planner_aa179ca5ca6703ed99f1535815ff14556_icgraph.png" border="0" usemap="#class_planner_1_1_global_planner_aa179ca5ca6703ed99f1535815ff14556_icgraph" alt=""/></div>
-<map name="class_planner_1_1_global_planner_aa179ca5ca6703ed99f1535815ff14556_icgraph" id="class_planner_1_1_global_planner_aa179ca5ca6703ed99f1535815ff14556_icgraph">
-<area shape="rect" id="node2" href="class_planner_1_1_wrapper.html#ae86d37bb851d1b6b7e7c3c6ceb93aa44" title="trigger global planning " alt="" coords="208,13,400,39"/>
-<area shape="rect" id="node3" href="class_planner_1_1_wrapper.html#a2c114d9f0e0f67a7e1f0355b92d973ea" title="update two planners " alt="" coords="448,13,619,39"/>
-<area shape="rect" id="node4" href="class_planner_1_1_wrapper.html#a7de6456aacb65f1289ab74a065af1a6b" title="while loop in the main " alt="" coords="667,13,816,39"/>
-</map>
-</div>
-</p>
-
-</div>
-</div>
-<h2 class="groupheader">Member Data Documentation</h2>
-<a class="anchor" id="a23958bd3a47c6eb8bd7f46106985aaa8"></a>
+<a class="anchor" id="af0017c165516705f7c226fba7c7a3259"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -191,7 +184,83 @@ Here is the caller graph for this function:</div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="class_planner_1_1_planner_base.html">PlannerBase</a>* Planner::GlobalPlanner::p_base</td>
+          <td class="memname">bool GlobalPlanner::plan </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Global planning routine. </p>
+<dl class="section return"><dt>Returns</dt><dd>true if success </dd></dl>
+
+<p>Implements <a class="el" href="class_planner_1_1_abstract_planner.html#ab99d58a97b7cff1b04910feef2f9f322">Planner::AbstractPlanner</a>.</p>
+
+<p>Definition at line <a class="el" href="_global_planner_8cpp_source.html#l00017">17</a> of file <a class="el" href="_global_planner_8cpp_source.html">GlobalPlanner.cpp</a>.</p>
+
+<p><div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="class_planner_1_1_global_planner_af0017c165516705f7c226fba7c7a3259_icgraph.png" border="0" usemap="#class_planner_1_1_global_planner_af0017c165516705f7c226fba7c7a3259_icgraph" alt=""/></div>
+<map name="class_planner_1_1_global_planner_af0017c165516705f7c226fba7c7a3259_icgraph" id="class_planner_1_1_global_planner_af0017c165516705f7c226fba7c7a3259_icgraph">
+<area shape="rect" id="node2" href="class_planner_1_1_wrapper.html#a65fe142e92907d3137c5478a5e8e746c" title="Update the planning result from lp and gp. " alt="" coords="208,13,363,39"/>
+<area shape="rect" id="node3" href="class_planner_1_1_wrapper.html#a50daff5b6103f50ba12bc6e6dc0f3d6d" title="Engage the while loop of planners. " alt="" coords="411,13,609,39"/>
+<area shape="rect" id="node4" href="class_planner_1_1_wrapper.html#a7de6456aacb65f1289ab74a065af1a6b" title="Run the two thread (Planner &amp; ROS) " alt="" coords="657,13,807,39"/>
+<area shape="rect" id="node5" href="main_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627" title="main" alt="" coords="855,13,905,39"/>
+</map>
+</div>
+</p>
+
+</div>
+</div>
+<a class="anchor" id="a1654f63e09a9b81af1f1e70f3241f374"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void GlobalPlanner::updateCorridorToBase </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>update the global planning result to the shared resource </p>
+
+<p>Definition at line <a class="el" href="_global_planner_8cpp_source.html#l00031">31</a> of file <a class="el" href="_global_planner_8cpp_source.html">GlobalPlanner.cpp</a>.</p>
+
+<p><div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="class_planner_1_1_global_planner_a1654f63e09a9b81af1f1e70f3241f374_icgraph.png" border="0" usemap="#class_planner_1_1_global_planner_a1654f63e09a9b81af1f1e70f3241f374_icgraph" alt=""/></div>
+<map name="class_planner_1_1_global_planner_a1654f63e09a9b81af1f1e70f3241f374_icgraph" id="class_planner_1_1_global_planner_a1654f63e09a9b81af1f1e70f3241f374_icgraph">
+<area shape="rect" id="node2" href="class_planner_1_1_wrapper.html#a5ff99ef7e9d54664ae6cc99cc5fee902" title="Modify p_base with the resultant planning output. " alt="" coords="213,5,384,47"/>
+<area shape="rect" id="node3" href="class_planner_1_1_wrapper.html#a50daff5b6103f50ba12bc6e6dc0f3d6d" title="Engage the while loop of planners. " alt="" coords="432,13,631,39"/>
+<area shape="rect" id="node4" href="class_planner_1_1_wrapper.html#a7de6456aacb65f1289ab74a065af1a6b" title="Run the two thread (Planner &amp; ROS) " alt="" coords="679,13,828,39"/>
+<area shape="rect" id="node5" href="main_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627" title="main" alt="" coords="876,13,927,39"/>
+</map>
+</div>
+</p>
+
+</div>
+</div>
+<h2 class="groupheader">Member Data Documentation</h2>
+<a class="anchor" id="a51a4f53ed17ae1278f6fefd1b1735f6e"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">vector&lt;<a class="el" href="struct_planner_1_1_corridor.html">Corridor</a>&gt; Planner::GlobalPlanner::curCorridorSeq</td>
         </tr>
       </table>
   </td>
@@ -201,7 +270,7 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="_global_planner_8h_source.html#l00012">12</a> of file <a class="el" href="_global_planner_8h_source.html">GlobalPlanner.h</a>.</p>
+<p>Definition at line <a class="el" href="_global_planner_8h_source.html#l00015">15</a> of file <a class="el" href="_global_planner_8h_source.html">GlobalPlanner.h</a>.</p>
 
 </div>
 </div>
@@ -223,12 +292,13 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="_global_planner_8h_source.html#l00013">13</a> of file <a class="el" href="_global_planner_8h_source.html">GlobalPlanner.h</a>.</p>
+<p>Definition at line <a class="el" href="_global_planner_8h_source.html#l00012">12</a> of file <a class="el" href="_global_planner_8h_source.html">GlobalPlanner.h</a>.</p>
 
 </div>
 </div>
-<hr/>The documentation for this class was generated from the following file:<ul>
+<hr/>The documentation for this class was generated from the following files:<ul>
 <li>/home/jbs/catkin_ws/src/atypical_driving/include/atypical_planner/<a class="el" href="_global_planner_8h_source.html">GlobalPlanner.h</a></li>
+<li>/home/jbs/catkin_ws/src/atypical_driving/src/<a class="el" href="_global_planner_8cpp_source.html">GlobalPlanner.cpp</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

@@ -1,8 +1,9 @@
 var searchData=
 [
-  ['main',['main',['../_c_make_c_compiler_id_8c.html#a0ddf1224851353fc92bfbff6f499fa97',1,'main(int argc, char *argv[]):&#160;CMakeCCompilerId.c'],['../_c_make_c_x_x_compiler_id_8cpp.html#a0ddf1224851353fc92bfbff6f499fa97',1,'main(int argc, char *argv[]):&#160;CMakeCXXCompilerId.cpp'],['../main_8cpp.html#ae66f6b31b5ad750f1fe042a706a4e3d4',1,'main():&#160;main.cpp']]],
-  ['main_2ecpp',['main.cpp',['../main_8cpp.html',1,'']]],
-  ['mode',['mode',['../namespacegenerate__cached__setup.html#a10081e5abedae9bd46dd91202096e789',1,'generate_cached_setup']]],
-  ['mpc_5fresult',['mpc_result',['../class_planner_1_1_planner_base.html#a32ef6b34d9347f0cbd7f43fd89bfa058',1,'Planner::PlannerBase']]],
-  ['mpcresulttraj',['MPCResultTraj',['../struct_planner_1_1_m_p_c_result_traj.html',1,'Planner']]]
+  ['ros_5fwrapper_5fptr',['ros_wrapper_ptr',['../class_planner_1_1_wrapper.html#a7995604355fb8d30150354e0529e37bd',1,'Planner::Wrapper']]],
+  ['roswrapper',['RosWrapper',['../class_planner_1_1_ros_wrapper.html',1,'Planner']]],
+  ['roswrapper',['RosWrapper',['../class_planner_1_1_ros_wrapper.html#aaf953555796aba83792a50d86bed0ced',1,'Planner::RosWrapper']]],
+  ['run',['run',['../class_planner_1_1_wrapper.html#a7de6456aacb65f1289ab74a065af1a6b',1,'Planner::Wrapper']]],
+  ['runplanning',['runPlanning',['../class_planner_1_1_wrapper.html#a50daff5b6103f50ba12bc6e6dc0f3d6d',1,'Planner::Wrapper']]],
+  ['runros',['runROS',['../class_planner_1_1_ros_wrapper.html#aa4864effd8cb1bc0a32c9539b792c5b7',1,'Planner::RosWrapper']]]
 ];

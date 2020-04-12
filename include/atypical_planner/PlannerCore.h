@@ -9,6 +9,9 @@
 #include <vector>
 #include <memory>
 #include <geometry_msgs/Twist.h>
+#include <mutex>
+#include <thread>
+#include <string>
 
 using namespace std;
 
@@ -75,7 +78,6 @@ namespace Planner {
         vector<double> ts;
         vector<CarInput> us;
         vector<CarState> xs;
-
     };
 
     /**
@@ -93,7 +95,9 @@ namespace Planner {
         vector<Corridor> corridor_seq;
         MPCResultTraj mpc_result;
 
+
     public:
+
         // Get
         CarState getCarState() {return cur_state;};
         CarInput getCurInput() { return CarInput(); }; // do some interpolation
@@ -101,14 +105,31 @@ namespace Planner {
         vector<Corridor> getCorridorSeq() {return corridor_seq;};
         octomap::OcTree* getGlobalOctoPtr() {return octo_global_ptr.get();}
         octomap::OcTree* getLocalOctoPtr() {return octo_local_ptr.get();}
+        MPCResultTraj getMPCResultTraj() {return mpc_result;}
 
-        // Set
+        // Set from subscriber
         void setCarState(const CarState& carState_) { cur_state = carState_;};
 
+
+        // Set from planner
         void setCorridorSeq(const vector<Corridor>& corridor_in_) {corridor_seq = corridor_in_;}
         void setMPCResultTraj(const MPCResultTraj& mpc_result_in_) {mpc_result = mpc_result_in_;}
 
     };
+    /**
+     * @brief Abstract class. The shared attributes to be inherited to the derived classes
+     */
+    class AbstractPlanner{
+
+    protected:
+        // Shared resource
+        shared_ptr<PlannerBase> p_base; /**< This is the shared resource. Multiple thread will use this data. */
+
+    public:
+        AbstractPlanner(shared_ptr<PlannerBase> p_base_):p_base(p_base_) {};
+        virtual bool plan() = 0;
+    };
+
 }
 
 

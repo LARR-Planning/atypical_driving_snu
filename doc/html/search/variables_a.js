@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['mode',['mode',['../namespacegenerate__cached__setup.html#a10081e5abedae9bd46dd91202096e789',1,'generate_cached_setup']]],
-  ['mpc_5fresult',['mpc_result',['../class_planner_1_1_planner_base.html#a32ef6b34d9347f0cbd7f43fd89bfa058',1,'Planner::PlannerBase']]]
+  ['ros_5fwrapper_5fptr',['ros_wrapper_ptr',['../class_planner_1_1_wrapper.html#a7995604355fb8d30150354e0529e37bd',1,'Planner::Wrapper']]]
 ];

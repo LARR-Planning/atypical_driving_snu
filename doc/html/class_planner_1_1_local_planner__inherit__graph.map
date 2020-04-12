@@ -1,4 +1,5 @@
 <map id="Planner::LocalPlanner" name="Planner::LocalPlanner">
-<area shape="rect" id="node2" href="$class_planner_1_1_local_planner_plain.html" title="Planner::LocalPlannerPlain" alt="" coords="5,80,184,107"/>
-<area shape="rect" id="node3" href="$class_planner_1_1_local_planner_stochastic.html" title="Planner::LocalPlannerStochastic" alt="" coords="208,80,419,107"/>
+<area shape="rect" id="node3" href="$class_planner_1_1_local_planner_plain.html" title="Planner::LocalPlannerPlain" alt="" coords="5,155,184,181"/>
+<area shape="rect" id="node4" href="$class_planner_1_1_local_planner_stochastic.html" title="Planner::LocalPlannerStochastic" alt="" coords="208,155,419,181"/>
+<area shape="rect" id="node2" href="$class_planner_1_1_abstract_planner.html" title="Abstract class. The shared attributes to be inherited to the derived classes. " alt="" coords="121,5,287,32"/>
 </map>

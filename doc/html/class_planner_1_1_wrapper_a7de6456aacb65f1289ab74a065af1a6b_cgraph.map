@@ -1,8 +1,13 @@
 <map id="Planner::Wrapper::run" name="Planner::Wrapper::run">
-<area shape="rect" id="node2" href="$class_planner_1_1_ros_wrapper.html#a50a4cf615eb742f7c691d80f6545898c" title="Planner::RosWrapper\l::publish" alt="" coords="215,5,361,47"/>
-<area shape="rect" id="node3" href="$class_planner_1_1_wrapper.html#a2c114d9f0e0f67a7e1f0355b92d973ea" title="update two planners " alt="" coords="203,71,373,98"/>
-<area shape="rect" id="node4" href="$class_planner_1_1_wrapper.html#ae86d37bb851d1b6b7e7c3c6ceb93aa44" title="trigger global planning " alt="" coords="421,43,613,70"/>
-<area shape="rect" id="node6" href="$class_planner_1_1_wrapper.html#a6073e44917df9a206610d622c3b03a68" title="trigger local planning " alt="" coords="424,98,611,125"/>
-<area shape="rect" id="node5" href="$class_planner_1_1_global_planner.html#aa179ca5ca6703ed99f1535815ff14556" title="Planner::GlobalPlanner\l::update_corridor" alt="" coords="661,32,816,73"/>
-<area shape="rect" id="node7" href="$class_planner_1_1_local_planner.html#a5bc2a2d121ea40b66404990b9380566c" title="Planner::LocalPlanner\l::updateTraj" alt="" coords="664,97,813,139"/>
+<area shape="rect" id="node2" href="$class_planner_1_1_wrapper.html#a50daff5b6103f50ba12bc6e6dc0f3d6d" title="Engage the while loop of planners. " alt="" coords="203,113,401,139"/>
+<area shape="rect" id="node10" href="$class_planner_1_1_ros_wrapper.html#aa4864effd8cb1bc0a32c9539b792c5b7" title="While loop of the ros wrapper (publish and spin) " alt="" coords="229,200,375,241"/>
+<area shape="rect" id="node3" href="$class_planner_1_1_ros_wrapper.html#a6d480bf0adbd096855d0967067482851" title="Whether all the necessary inputs are received. " alt="" coords="461,15,608,56"/>
+<area shape="rect" id="node4" href="$class_planner_1_1_wrapper.html#a65fe142e92907d3137c5478a5e8e746c" title="Update the planning result from lp and gp. " alt="" coords="457,81,612,107"/>
+<area shape="rect" id="node7" href="$class_planner_1_1_wrapper.html#a5ff99ef7e9d54664ae6cc99cc5fee902" title="Modify p_base with the resultant planning output. " alt="" coords="449,135,620,176"/>
+<area shape="rect" id="node5" href="$class_planner_1_1_global_planner.html#af0017c165516705f7c226fba7c7a3259" title="Global planning routine. " alt="" coords="674,5,829,47"/>
+<area shape="rect" id="node6" href="$class_planner_1_1_abstract_planner.html#ab99d58a97b7cff1b04910feef2f9f322" title="Planner::AbstractPlanner\l::plan" alt="" coords="668,71,835,112"/>
+<area shape="rect" id="node8" href="$class_planner_1_1_global_planner.html#a1654f63e09a9b81af1f1e70f3241f374" title="update the global planning result to the shared resource " alt="" coords="671,136,831,177"/>
+<area shape="rect" id="node9" href="$class_planner_1_1_local_planner.html#a52925cf61f644b3a73f41c036fcf6924" title="Planner::LocalPlanner\l::updateTrajToBase" alt="" coords="677,201,826,243"/>
+<area shape="rect" id="node11" href="$class_planner_1_1_ros_wrapper.html#aa85bac1b778aa16802185cf4d0430333" title="Planner::RosWrapper\l::prepareROSmsgs" alt="" coords="461,200,608,241"/>
+<area shape="rect" id="node12" href="$class_planner_1_1_ros_wrapper.html#ae5ee5d1bed2986c0b787f3441dbd2b01" title="publish the car input and visualization markers " alt="" coords="461,265,608,307"/>
 </map>

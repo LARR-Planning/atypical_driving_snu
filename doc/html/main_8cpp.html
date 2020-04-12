@@ -92,12 +92,16 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="title">main.cpp File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &lt;iostream&gt;</code><br />
+<div class="textblock"><code>#include &lt;<a class="el" href="_wrapper_8h_source.html">atypical_planner/Wrapper.h</a>&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for main.cpp:</div>
 <div class="dyncontent">
 <div class="center"><img src="main_8cpp__incl.png" border="0" usemap="#_2home_2jbs_2catkin__ws_2src_2atypical__driving_2test_2main_8cpp" alt=""/></div>
 <map name="_2home_2jbs_2catkin__ws_2src_2atypical__driving_2test_2main_8cpp" id="_2home_2jbs_2catkin__ws_2src_2atypical__driving_2test_2main_8cpp">
+<area shape="rect" id="node2" href="_wrapper_8h.html" title="atypical_planner/Wrapper.h" alt="" coords="611,109,791,136"/>
+<area shape="rect" id="node3" href="_local_planner_8h.html" title="atypical_planner/LocalPlanner.h" alt="" coords="198,191,405,218"/>
+<area shape="rect" id="node12" href="_global_planner_8h.html" title="atypical_planner/GlobalPlanner.h" alt="" coords="429,191,641,218"/>
+<area shape="rect" id="node4" href="_planner_core_8h.html" title="atypical_planner/Planner\lCore.h" alt="" coords="335,273,499,315"/>
 </map>
 </div>
 </div>
@@ -105,24 +109,56 @@ Include dependency graph for main.cpp:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:ae66f6b31b5ad750f1fe042a706a4e3d4"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="main_8cpp.html#ae66f6b31b5ad750f1fe042a706a4e3d4">main</a> ()</td></tr>
-<tr class="separator:ae66f6b31b5ad750f1fe042a706a4e3d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3c04138a5bfe5d72780bb7e82a18e627"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="main_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627">main</a> (int argc, char **argv)</td></tr>
+<tr class="separator:a3c04138a5bfe5d72780bb7e82a18e627"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Function Documentation</h2>
-<a class="anchor" id="ae66f6b31b5ad750f1fe042a706a4e3d4"></a>
+<a class="anchor" id="a3c04138a5bfe5d72780bb7e82a18e627"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
           <td class="memname">int main </td>
           <td>(</td>
-          <td class="paramname"></td><td>)</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>argc</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">char **&#160;</td>
+          <td class="paramname"><em>argv</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="main_8cpp_source.html#l00003">3</a> of file <a class="el" href="main_8cpp_source.html">main.cpp</a>.</p>
+<p>Definition at line <a class="el" href="main_8cpp_source.html#l00004">4</a> of file <a class="el" href="main_8cpp_source.html">main.cpp</a>.</p>
+
+<p><div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="main_8cpp_a3c04138a5bfe5d72780bb7e82a18e627_cgraph.png" border="0" usemap="#main_8cpp_a3c04138a5bfe5d72780bb7e82a18e627_cgraph" alt=""/></div>
+<map name="main_8cpp_a3c04138a5bfe5d72780bb7e82a18e627_cgraph" id="main_8cpp_a3c04138a5bfe5d72780bb7e82a18e627_cgraph">
+<area shape="rect" id="node2" href="class_planner_1_1_wrapper.html#a7de6456aacb65f1289ab74a065af1a6b" title="Run the two thread (Planner &amp; ROS) " alt="" coords="104,161,253,187"/>
+<area shape="rect" id="node3" href="class_planner_1_1_wrapper.html#a50daff5b6103f50ba12bc6e6dc0f3d6d" title="Engage the while loop of planners. " alt="" coords="301,113,500,139"/>
+<area shape="rect" id="node11" href="class_planner_1_1_ros_wrapper.html#aa4864effd8cb1bc0a32c9539b792c5b7" title="While loop of the ros wrapper (publish and spin) " alt="" coords="327,200,474,241"/>
+<area shape="rect" id="node4" href="class_planner_1_1_ros_wrapper.html#a6d480bf0adbd096855d0967067482851" title="Whether all the necessary inputs are received. " alt="" coords="560,15,707,56"/>
+<area shape="rect" id="node5" href="class_planner_1_1_wrapper.html#a65fe142e92907d3137c5478a5e8e746c" title="Update the planning result from lp and gp. " alt="" coords="556,81,711,107"/>
+<area shape="rect" id="node8" href="class_planner_1_1_wrapper.html#a5ff99ef7e9d54664ae6cc99cc5fee902" title="Modify p_base with the resultant planning output. " alt="" coords="548,135,719,176"/>
+<area shape="rect" id="node6" href="class_planner_1_1_global_planner.html#af0017c165516705f7c226fba7c7a3259" title="Global planning routine. " alt="" coords="773,5,927,47"/>
+<area shape="rect" id="node7" href="class_planner_1_1_abstract_planner.html#ab99d58a97b7cff1b04910feef2f9f322" title="Planner::AbstractPlanner\l::plan" alt="" coords="767,71,933,112"/>
+<area shape="rect" id="node9" href="class_planner_1_1_global_planner.html#a1654f63e09a9b81af1f1e70f3241f374" title="update the global planning result to the shared resource " alt="" coords="770,136,930,177"/>
+<area shape="rect" id="node10" href="class_planner_1_1_local_planner.html#a52925cf61f644b3a73f41c036fcf6924" title="Planner::LocalPlanner\l::updateTrajToBase" alt="" coords="775,201,925,243"/>
+<area shape="rect" id="node12" href="class_planner_1_1_ros_wrapper.html#aa85bac1b778aa16802185cf4d0430333" title="Planner::RosWrapper\l::prepareROSmsgs" alt="" coords="560,200,707,241"/>
+<area shape="rect" id="node13" href="class_planner_1_1_ros_wrapper.html#ae5ee5d1bed2986c0b787f3441dbd2b01" title="publish the car input and visualization markers " alt="" coords="560,265,707,307"/>
+</map>
+</div>
+</p>
 
 </div>
 </div>

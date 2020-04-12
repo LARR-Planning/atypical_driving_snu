@@ -1,8 +1,7 @@
 var searchData=
 [
-  ['planglobal',['planGlobal',['../class_planner_1_1_wrapper.html#ae86d37bb851d1b6b7e7c3c6ceb93aa44',1,'Planner::Wrapper']]],
-  ['planlocal',['planLocal',['../class_planner_1_1_wrapper.html#a6073e44917df9a206610d622c3b03a68',1,'Planner::Wrapper']]],
-  ['prepend',['prepend',['../namespace__setup__util.html#ae78d86b2c4279f5b8b1acaa146c35802',1,'_setup_util']]],
-  ['prepend_5fenv_5fvariables',['prepend_env_variables',['../namespace__setup__util.html#a832417d18b85bd1d276a87547e86f860',1,'_setup_util']]],
-  ['publish',['publish',['../class_planner_1_1_ros_wrapper.html#a50a4cf615eb742f7c691d80f6545898c',1,'Planner::RosWrapper']]]
+  ['roswrapper',['RosWrapper',['../class_planner_1_1_ros_wrapper.html#aaf953555796aba83792a50d86bed0ced',1,'Planner::RosWrapper']]],
+  ['run',['run',['../class_planner_1_1_wrapper.html#a7de6456aacb65f1289ab74a065af1a6b',1,'Planner::Wrapper']]],
+  ['runplanning',['runPlanning',['../class_planner_1_1_wrapper.html#a50daff5b6103f50ba12bc6e6dc0f3d6d',1,'Planner::Wrapper']]],
+  ['runros',['runROS',['../class_planner_1_1_ros_wrapper.html#aa4864effd8cb1bc0a32c9539b792c5b7',1,'Planner::RosWrapper']]]
 ];

@@ -1,3 +1,3 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$class_planner_1_1_ros_wrapper.html" title="ROS communicator such as topic advertising/subscription and ros&#45;param parsing. " alt="" coords="5,5,152,32"/>
+<area shape="rect" id="node1" href="$class_planner_1_1_wrapper.html" title="Wrapping module for RosWrapper and the two planners. " alt="" coords="5,5,128,32"/>
 </map>

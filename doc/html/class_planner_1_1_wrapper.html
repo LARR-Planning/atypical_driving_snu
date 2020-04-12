@@ -98,21 +98,23 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
+<p>Wrapping module for <a class="el" href="class_planner_1_1_ros_wrapper.html" title="ROS communicator such as topic advertising/subscription and ros-param parsing. ">RosWrapper</a> and the two planners.  
+ <a href="class_planner_1_1_wrapper.html#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="_wrapper_8h_source.html">Wrapper.h</a>&gt;</code></p>
 <div class="dynheader">
 Collaboration diagram for Planner::Wrapper:</div>
 <div class="dyncontent">
 <div class="center"><img src="class_planner_1_1_wrapper__coll__graph.png" border="0" usemap="#_planner_1_1_wrapper_coll__map" alt="Collaboration graph"/></div>
 <map name="_planner_1_1_wrapper_coll__map" id="_planner_1_1_wrapper_coll__map">
-<area shape="rect" id="node2" href="class_planner_1_1_global_planner.html" title="Planner::GlobalPlanner" alt="" coords="349,184,504,211"/>
-<area shape="rect" id="node3" href="class_planner_1_1_planner_base.html" title="The planning results and ingredients. " alt="" coords="130,95,278,121"/>
-<area shape="rect" id="node7" href="class_planner_1_1_ros_wrapper.html" title="ROS communicator such as topic advertising/subscription and ros&#45;param parsing. " alt="" coords="5,184,152,211"/>
-<area shape="rect" id="node10" href="class_planner_1_1_local_planner.html" title="Planner::LocalPlanner" alt="" coords="176,184,325,211"/>
-<area shape="rect" id="node4" href="struct_planner_1_1_m_p_c_result_traj.html" title="Final output of MPC : trajectory of inputs. " alt="" coords="38,5,202,32"/>
-<area shape="rect" id="node5" href="struct_planner_1_1_car_state.html" title="State feed for MPC. " alt="" coords="226,5,353,32"/>
-<area shape="rect" id="node6" href="struct_planner_1_1_param_global.html" title="Parameters for global planner. " alt="" coords="499,95,648,121"/>
-<area shape="rect" id="node8" href="struct_planner_1_1_param.html" title="Parameters for both planner. " alt="" coords="528,184,640,211"/>
-<area shape="rect" id="node9" href="struct_planner_1_1_param_local.html" title="Parameters for local planner. " alt="" coords="322,95,465,121"/>
+<area shape="rect" id="node2" href="class_planner_1_1_global_planner.html" title="Planner::GlobalPlanner" alt="" coords="293,147,448,173"/>
+<area shape="rect" id="node3" href="class_planner_1_1_abstract_planner.html" title="Abstract class. The shared attributes to be inherited to the derived classes. " alt="" coords="5,171,172,197"/>
+<area shape="rect" id="node8" href="class_planner_1_1_local_planner.html" title="Planner::LocalPlanner" alt="" coords="296,197,445,224"/>
+<area shape="rect" id="node4" href="struct_planner_1_1_param_global.html" title="Parameters for global planner. " alt="" coords="14,7,163,33"/>
+<area shape="rect" id="node6" href="struct_planner_1_1_param.html" title="Parameters for both planner. " alt="" coords="315,45,427,72"/>
+<area shape="rect" id="node5" href="class_planner_1_1_ros_wrapper.html" title="ROS communicator such as topic advertising/subscription and ros&#45;param parsing. " alt="" coords="297,96,444,123"/>
+<area shape="rect" id="node7" href="struct_planner_1_1_param_local.html" title="Parameters for local planner. " alt="" coords="17,115,160,141"/>
+<area shape="rect" id="node9" href="struct_planner_1_1_m_p_c_result_traj.html" title="Final output of MPC : trajectory of inputs. " alt="" coords="7,232,171,259"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -122,37 +124,44 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:aa40ce9fcba8ab60bf01bcb0913144b4a"><td class="mdescLeft">&#160;</td><td class="mdescRight">The constructor 1) initiates all the ros communication, 2) feed params to planners.  <a href="#aa40ce9fcba8ab60bf01bcb0913144b4a">More...</a><br /></td></tr>
 <tr class="separator:aa40ce9fcba8ab60bf01bcb0913144b4a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7de6456aacb65f1289ab74a065af1a6b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_planner_1_1_wrapper.html#a7de6456aacb65f1289ab74a065af1a6b">run</a> ()</td></tr>
-<tr class="memdesc:a7de6456aacb65f1289ab74a065af1a6b"><td class="mdescLeft">&#160;</td><td class="mdescRight">while loop in the main  <a href="#a7de6456aacb65f1289ab74a065af1a6b">More...</a><br /></td></tr>
+<tr class="memdesc:a7de6456aacb65f1289ab74a065af1a6b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Run the two thread (<a class="el" href="namespace_planner.html">Planner</a> &amp; ROS)  <a href="#a7de6456aacb65f1289ab74a065af1a6b">More...</a><br /></td></tr>
 <tr class="separator:a7de6456aacb65f1289ab74a065af1a6b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-methods"></a>
 Private Member Functions</h2></td></tr>
-<tr class="memitem:a2c114d9f0e0f67a7e1f0355b92d973ea"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_planner_1_1_wrapper.html#a2c114d9f0e0f67a7e1f0355b92d973ea">update</a> ()</td></tr>
-<tr class="memdesc:a2c114d9f0e0f67a7e1f0355b92d973ea"><td class="mdescLeft">&#160;</td><td class="mdescRight">update two planners  <a href="#a2c114d9f0e0f67a7e1f0355b92d973ea">More...</a><br /></td></tr>
-<tr class="separator:a2c114d9f0e0f67a7e1f0355b92d973ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae86d37bb851d1b6b7e7c3c6ceb93aa44"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_planner_1_1_wrapper.html#ae86d37bb851d1b6b7e7c3c6ceb93aa44">planGlobal</a> ()</td></tr>
-<tr class="memdesc:ae86d37bb851d1b6b7e7c3c6ceb93aa44"><td class="mdescLeft">&#160;</td><td class="mdescRight">trigger global planning  <a href="#ae86d37bb851d1b6b7e7c3c6ceb93aa44">More...</a><br /></td></tr>
-<tr class="separator:ae86d37bb851d1b6b7e7c3c6ceb93aa44"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6073e44917df9a206610d622c3b03a68"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_planner_1_1_wrapper.html#a6073e44917df9a206610d622c3b03a68">planLocal</a> ()</td></tr>
-<tr class="memdesc:a6073e44917df9a206610d622c3b03a68"><td class="mdescLeft">&#160;</td><td class="mdescRight">trigger local planning  <a href="#a6073e44917df9a206610d622c3b03a68">More...</a><br /></td></tr>
-<tr class="separator:a6073e44917df9a206610d622c3b03a68"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a65fe142e92907d3137c5478a5e8e746c"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_planner_1_1_wrapper.html#a65fe142e92907d3137c5478a5e8e746c">plan</a> ()</td></tr>
+<tr class="memdesc:a65fe142e92907d3137c5478a5e8e746c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Update the planning result from lp and gp.  <a href="#a65fe142e92907d3137c5478a5e8e746c">More...</a><br /></td></tr>
+<tr class="separator:a65fe142e92907d3137c5478a5e8e746c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5ff99ef7e9d54664ae6cc99cc5fee902"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_planner_1_1_wrapper.html#a5ff99ef7e9d54664ae6cc99cc5fee902">updateToBase</a> ()</td></tr>
+<tr class="memdesc:a5ff99ef7e9d54664ae6cc99cc5fee902"><td class="mdescLeft">&#160;</td><td class="mdescRight">Modify p_base with the resultant planning output.  <a href="#a5ff99ef7e9d54664ae6cc99cc5fee902">More...</a><br /></td></tr>
+<tr class="separator:a5ff99ef7e9d54664ae6cc99cc5fee902"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a50daff5b6103f50ba12bc6e6dc0f3d6d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_planner_1_1_wrapper.html#a50daff5b6103f50ba12bc6e6dc0f3d6d">runPlanning</a> ()</td></tr>
+<tr class="memdesc:a50daff5b6103f50ba12bc6e6dc0f3d6d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Engage the while loop of planners.  <a href="#a50daff5b6103f50ba12bc6e6dc0f3d6d">More...</a><br /></td></tr>
+<tr class="separator:a50daff5b6103f50ba12bc6e6dc0f3d6d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-attribs"></a>
 Private Attributes</h2></td></tr>
 <tr class="memitem:a37383efdc6eedd0a18e1500067a9eb46"><td class="memItemLeft" align="right" valign="top">shared_ptr&lt; <a class="el" href="class_planner_1_1_planner_base.html">PlannerBase</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_planner_1_1_wrapper.html#a37383efdc6eedd0a18e1500067a9eb46">p_base_shared</a></td></tr>
 <tr class="separator:a37383efdc6eedd0a18e1500067a9eb46"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaa500a24aa72b0a2fbc15c4140160714"><td class="memItemLeft" align="right" valign="top">mutex&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_planner_1_1_wrapper.html#aaa500a24aa72b0a2fbc15c4140160714">mSet</a> [2]</td></tr>
+<tr class="separator:aaa500a24aa72b0a2fbc15c4140160714"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acf5ec264f267181e42467c6c96d676b0"><td class="memItemLeft" align="right" valign="top">thread&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_planner_1_1_wrapper.html#acf5ec264f267181e42467c6c96d676b0">threadPlanner</a></td></tr>
+<tr class="separator:acf5ec264f267181e42467c6c96d676b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a85a9a66d91ac26fee39f7b6e49d7eade"><td class="memItemLeft" align="right" valign="top">thread&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_planner_1_1_wrapper.html#a85a9a66d91ac26fee39f7b6e49d7eade">threadRosWrapper</a></td></tr>
+<tr class="separator:a85a9a66d91ac26fee39f7b6e49d7eade"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acce0052551821654e99ade4f038c14f9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="struct_planner_1_1_param.html">Param</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_planner_1_1_wrapper.html#acce0052551821654e99ade4f038c14f9">param</a></td></tr>
 <tr class="separator:acce0052551821654e99ade4f038c14f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aafa2b1bcfc7bb199553ee8397b87a579"><td class="memItemLeft" align="right" valign="top"><a class="el" href="class_planner_1_1_local_planner.html">LocalPlanner</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_planner_1_1_wrapper.html#aafa2b1bcfc7bb199553ee8397b87a579">lp_ptr</a></td></tr>
 <tr class="separator:aafa2b1bcfc7bb199553ee8397b87a579"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a03ac439ef372dd5259582b1ba507b943"><td class="memItemLeft" align="right" valign="top"><a class="el" href="class_planner_1_1_global_planner.html">GlobalPlanner</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_planner_1_1_wrapper.html#a03ac439ef372dd5259582b1ba507b943">gp_ptr</a></td></tr>
 <tr class="separator:a03ac439ef372dd5259582b1ba507b943"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a390047ab69fc4f90384f0c73e69b1203"><td class="memItemLeft" align="right" valign="top"><a class="el" href="class_planner_1_1_ros_wrapper.html">RosWrapper</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_planner_1_1_wrapper.html#a390047ab69fc4f90384f0c73e69b1203">ros_wrapper</a></td></tr>
-<tr class="separator:a390047ab69fc4f90384f0c73e69b1203"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7995604355fb8d30150354e0529e37bd"><td class="memItemLeft" align="right" valign="top"><a class="el" href="class_planner_1_1_ros_wrapper.html">RosWrapper</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_planner_1_1_wrapper.html#a7995604355fb8d30150354e0529e37bd">ros_wrapper_ptr</a></td></tr>
+<tr class="separator:a7995604355fb8d30150354e0529e37bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock">
-<p>Definition at line <a class="el" href="_wrapper_8h_source.html#l00038">38</a> of file <a class="el" href="_wrapper_8h_source.html">Wrapper.h</a>.</p>
+<div class="textblock"><p>Wrapping module for <a class="el" href="class_planner_1_1_ros_wrapper.html" title="ROS communicator such as topic advertising/subscription and ros-param parsing. ">RosWrapper</a> and the two planners. </p>
+
+<p>Definition at line <a class="el" href="_wrapper_8h_source.html#l00084">84</a> of file <a class="el" href="_wrapper_8h_source.html">Wrapper.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a class="anchor" id="aa40ce9fcba8ab60bf01bcb0913144b4a"></a>
 <div class="memitem">
@@ -169,14 +178,14 @@ Private Attributes</h2></td></tr>
 
 <p>The constructor 1) initiates all the ros communication, 2) feed params to planners. </p>
 
-<p>Definition at line <a class="el" href="_wrapper_8cpp_source.html#l00012">12</a> of file <a class="el" href="_wrapper_8cpp_source.html">Wrapper.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_wrapper_8cpp_source.html#l00134">134</a> of file <a class="el" href="_wrapper_8cpp_source.html">Wrapper.cpp</a>.</p>
 
 <p><div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="class_planner_1_1_wrapper_aa40ce9fcba8ab60bf01bcb0913144b4a_cgraph.png" border="0" usemap="#class_planner_1_1_wrapper_aa40ce9fcba8ab60bf01bcb0913144b4a_cgraph" alt=""/></div>
 <map name="class_planner_1_1_wrapper_aa40ce9fcba8ab60bf01bcb0913144b4a_cgraph" id="class_planner_1_1_wrapper_aa40ce9fcba8ab60bf01bcb0913144b4a_cgraph">
-<area shape="rect" id="node2" href="class_planner_1_1_ros_wrapper.html#add95127498542179418abcdb2b4ff261" title="Planner::RosWrapper\l::updateParam" alt="" coords="233,5,380,47"/>
+<area shape="rect" id="node2" href="class_planner_1_1_ros_wrapper.html#a80dd430445484e4526bbedd4049d6c95" title="Fetching the parameter from ros node handle. " alt="" coords="233,5,380,47"/>
 </map>
 </div>
 </p>
@@ -184,7 +193,7 @@ Here is the call graph for this function:</div>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="ae86d37bb851d1b6b7e7c3c6ceb93aa44"></a>
+<a class="anchor" id="a65fe142e92907d3137c5478a5e8e746c"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -192,7 +201,7 @@ Here is the call graph for this function:</div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void Wrapper::planGlobal </td>
+          <td class="memname">bool Wrapper::plan </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -205,16 +214,18 @@ Here is the call graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p>trigger global planning </p>
+<p>Update the planning result from lp and gp. </p>
+<dl class="section return"><dt>Returns</dt><dd>True if both planner succeeded </dd></dl>
 
-<p>Definition at line <a class="el" href="_wrapper_8cpp_source.html#l00052">52</a> of file <a class="el" href="_wrapper_8cpp_source.html">Wrapper.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_wrapper_8cpp_source.html#l00166">166</a> of file <a class="el" href="_wrapper_8cpp_source.html">Wrapper.cpp</a>.</p>
 
 <p><div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><img src="class_planner_1_1_wrapper_ae86d37bb851d1b6b7e7c3c6ceb93aa44_cgraph.png" border="0" usemap="#class_planner_1_1_wrapper_ae86d37bb851d1b6b7e7c3c6ceb93aa44_cgraph" alt=""/></div>
-<map name="class_planner_1_1_wrapper_ae86d37bb851d1b6b7e7c3c6ceb93aa44_cgraph" id="class_planner_1_1_wrapper_ae86d37bb851d1b6b7e7c3c6ceb93aa44_cgraph">
-<area shape="rect" id="node2" href="class_planner_1_1_global_planner.html#aa179ca5ca6703ed99f1535815ff14556" title="Planner::GlobalPlanner\l::update_corridor" alt="" coords="245,5,400,47"/>
+<div class="center"><img src="class_planner_1_1_wrapper_a65fe142e92907d3137c5478a5e8e746c_cgraph.png" border="0" usemap="#class_planner_1_1_wrapper_a65fe142e92907d3137c5478a5e8e746c_cgraph" alt=""/></div>
+<map name="class_planner_1_1_wrapper_a65fe142e92907d3137c5478a5e8e746c_cgraph" id="class_planner_1_1_wrapper_a65fe142e92907d3137c5478a5e8e746c_cgraph">
+<area shape="rect" id="node2" href="class_planner_1_1_global_planner.html#af0017c165516705f7c226fba7c7a3259" title="Global planning routine. " alt="" coords="214,5,369,47"/>
+<area shape="rect" id="node3" href="class_planner_1_1_abstract_planner.html#ab99d58a97b7cff1b04910feef2f9f322" title="Planner::AbstractPlanner\l::plan" alt="" coords="208,71,375,112"/>
 </map>
 </div>
 </p>
@@ -222,58 +233,11 @@ Here is the call graph for this function:</div>
 <p><div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><img src="class_planner_1_1_wrapper_ae86d37bb851d1b6b7e7c3c6ceb93aa44_icgraph.png" border="0" usemap="#class_planner_1_1_wrapper_ae86d37bb851d1b6b7e7c3c6ceb93aa44_icgraph" alt=""/></div>
-<map name="class_planner_1_1_wrapper_ae86d37bb851d1b6b7e7c3c6ceb93aa44_icgraph" id="class_planner_1_1_wrapper_ae86d37bb851d1b6b7e7c3c6ceb93aa44_icgraph">
-<area shape="rect" id="node2" href="class_planner_1_1_wrapper.html#a2c114d9f0e0f67a7e1f0355b92d973ea" title="update two planners " alt="" coords="245,5,416,32"/>
-<area shape="rect" id="node3" href="class_planner_1_1_wrapper.html#a7de6456aacb65f1289ab74a065af1a6b" title="while loop in the main " alt="" coords="464,5,613,32"/>
-</map>
-</div>
-</p>
-
-</div>
-</div>
-<a class="anchor" id="a6073e44917df9a206610d622c3b03a68"></a>
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Wrapper::planLocal </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">private</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>trigger local planning </p>
-
-<p>Definition at line <a class="el" href="_wrapper_8cpp_source.html#l00059">59</a> of file <a class="el" href="_wrapper_8cpp_source.html">Wrapper.cpp</a>.</p>
-
-<p><div class="dynheader">
-Here is the call graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="class_planner_1_1_wrapper_a6073e44917df9a206610d622c3b03a68_cgraph.png" border="0" usemap="#class_planner_1_1_wrapper_a6073e44917df9a206610d622c3b03a68_cgraph" alt=""/></div>
-<map name="class_planner_1_1_wrapper_a6073e44917df9a206610d622c3b03a68_cgraph" id="class_planner_1_1_wrapper_a6073e44917df9a206610d622c3b03a68_cgraph">
-<area shape="rect" id="node2" href="class_planner_1_1_local_planner.html#a5bc2a2d121ea40b66404990b9380566c" title="Planner::LocalPlanner\l::updateTraj" alt="" coords="240,5,389,47"/>
-</map>
-</div>
-</p>
-
-<p><div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="class_planner_1_1_wrapper_a6073e44917df9a206610d622c3b03a68_icgraph.png" border="0" usemap="#class_planner_1_1_wrapper_a6073e44917df9a206610d622c3b03a68_icgraph" alt=""/></div>
-<map name="class_planner_1_1_wrapper_a6073e44917df9a206610d622c3b03a68_icgraph" id="class_planner_1_1_wrapper_a6073e44917df9a206610d622c3b03a68_icgraph">
-<area shape="rect" id="node2" href="class_planner_1_1_wrapper.html#a2c114d9f0e0f67a7e1f0355b92d973ea" title="update two planners " alt="" coords="240,5,411,32"/>
-<area shape="rect" id="node3" href="class_planner_1_1_wrapper.html#a7de6456aacb65f1289ab74a065af1a6b" title="while loop in the main " alt="" coords="459,5,608,32"/>
+<div class="center"><img src="class_planner_1_1_wrapper_a65fe142e92907d3137c5478a5e8e746c_icgraph.png" border="0" usemap="#class_planner_1_1_wrapper_a65fe142e92907d3137c5478a5e8e746c_icgraph" alt=""/></div>
+<map name="class_planner_1_1_wrapper_a65fe142e92907d3137c5478a5e8e746c_icgraph" id="class_planner_1_1_wrapper_a65fe142e92907d3137c5478a5e8e746c_icgraph">
+<area shape="rect" id="node2" href="class_planner_1_1_wrapper.html#a50daff5b6103f50ba12bc6e6dc0f3d6d" title="Engage the while loop of planners. " alt="" coords="208,5,407,32"/>
+<area shape="rect" id="node3" href="class_planner_1_1_wrapper.html#a7de6456aacb65f1289ab74a065af1a6b" title="Run the two thread (Planner &amp; ROS) " alt="" coords="455,5,604,32"/>
+<area shape="rect" id="node4" href="main_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627" title="main" alt="" coords="652,5,703,32"/>
 </map>
 </div>
 </p>
@@ -293,28 +257,43 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p>while loop in the main </p>
+<p>Run the two thread (<a class="el" href="namespace_planner.html">Planner</a> &amp; ROS) </p>
 
-<p>Definition at line <a class="el" href="_wrapper_8cpp_source.html#l00027">27</a> of file <a class="el" href="_wrapper_8cpp_source.html">Wrapper.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_wrapper_8cpp_source.html#l00150">150</a> of file <a class="el" href="_wrapper_8cpp_source.html">Wrapper.cpp</a>.</p>
 
 <p><div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="class_planner_1_1_wrapper_a7de6456aacb65f1289ab74a065af1a6b_cgraph.png" border="0" usemap="#class_planner_1_1_wrapper_a7de6456aacb65f1289ab74a065af1a6b_cgraph" alt=""/></div>
 <map name="class_planner_1_1_wrapper_a7de6456aacb65f1289ab74a065af1a6b_cgraph" id="class_planner_1_1_wrapper_a7de6456aacb65f1289ab74a065af1a6b_cgraph">
-<area shape="rect" id="node2" href="class_planner_1_1_ros_wrapper.html#a50a4cf615eb742f7c691d80f6545898c" title="Planner::RosWrapper\l::publish" alt="" coords="215,5,361,47"/>
-<area shape="rect" id="node3" href="class_planner_1_1_wrapper.html#a2c114d9f0e0f67a7e1f0355b92d973ea" title="update two planners " alt="" coords="203,71,373,98"/>
-<area shape="rect" id="node4" href="class_planner_1_1_wrapper.html#ae86d37bb851d1b6b7e7c3c6ceb93aa44" title="trigger global planning " alt="" coords="421,43,613,70"/>
-<area shape="rect" id="node6" href="class_planner_1_1_wrapper.html#a6073e44917df9a206610d622c3b03a68" title="trigger local planning " alt="" coords="424,98,611,125"/>
-<area shape="rect" id="node5" href="class_planner_1_1_global_planner.html#aa179ca5ca6703ed99f1535815ff14556" title="Planner::GlobalPlanner\l::update_corridor" alt="" coords="661,32,816,73"/>
-<area shape="rect" id="node7" href="class_planner_1_1_local_planner.html#a5bc2a2d121ea40b66404990b9380566c" title="Planner::LocalPlanner\l::updateTraj" alt="" coords="664,97,813,139"/>
+<area shape="rect" id="node2" href="class_planner_1_1_wrapper.html#a50daff5b6103f50ba12bc6e6dc0f3d6d" title="Engage the while loop of planners. " alt="" coords="203,113,401,139"/>
+<area shape="rect" id="node10" href="class_planner_1_1_ros_wrapper.html#aa4864effd8cb1bc0a32c9539b792c5b7" title="While loop of the ros wrapper (publish and spin) " alt="" coords="229,200,375,241"/>
+<area shape="rect" id="node3" href="class_planner_1_1_ros_wrapper.html#a6d480bf0adbd096855d0967067482851" title="Whether all the necessary inputs are received. " alt="" coords="461,15,608,56"/>
+<area shape="rect" id="node4" href="class_planner_1_1_wrapper.html#a65fe142e92907d3137c5478a5e8e746c" title="Update the planning result from lp and gp. " alt="" coords="457,81,612,107"/>
+<area shape="rect" id="node7" href="class_planner_1_1_wrapper.html#a5ff99ef7e9d54664ae6cc99cc5fee902" title="Modify p_base with the resultant planning output. " alt="" coords="449,135,620,176"/>
+<area shape="rect" id="node5" href="class_planner_1_1_global_planner.html#af0017c165516705f7c226fba7c7a3259" title="Global planning routine. " alt="" coords="674,5,829,47"/>
+<area shape="rect" id="node6" href="class_planner_1_1_abstract_planner.html#ab99d58a97b7cff1b04910feef2f9f322" title="Planner::AbstractPlanner\l::plan" alt="" coords="668,71,835,112"/>
+<area shape="rect" id="node8" href="class_planner_1_1_global_planner.html#a1654f63e09a9b81af1f1e70f3241f374" title="update the global planning result to the shared resource " alt="" coords="671,136,831,177"/>
+<area shape="rect" id="node9" href="class_planner_1_1_local_planner.html#a52925cf61f644b3a73f41c036fcf6924" title="Planner::LocalPlanner\l::updateTrajToBase" alt="" coords="677,201,826,243"/>
+<area shape="rect" id="node11" href="class_planner_1_1_ros_wrapper.html#aa85bac1b778aa16802185cf4d0430333" title="Planner::RosWrapper\l::prepareROSmsgs" alt="" coords="461,200,608,241"/>
+<area shape="rect" id="node12" href="class_planner_1_1_ros_wrapper.html#ae5ee5d1bed2986c0b787f3441dbd2b01" title="publish the car input and visualization markers " alt="" coords="461,265,608,307"/>
+</map>
+</div>
+</p>
+
+<p><div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="class_planner_1_1_wrapper_a7de6456aacb65f1289ab74a065af1a6b_icgraph.png" border="0" usemap="#class_planner_1_1_wrapper_a7de6456aacb65f1289ab74a065af1a6b_icgraph" alt=""/></div>
+<map name="class_planner_1_1_wrapper_a7de6456aacb65f1289ab74a065af1a6b_icgraph" id="class_planner_1_1_wrapper_a7de6456aacb65f1289ab74a065af1a6b_icgraph">
+<area shape="rect" id="node2" href="main_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627" title="main" alt="" coords="203,5,253,32"/>
 </map>
 </div>
 </p>
 
 </div>
 </div>
-<a class="anchor" id="a2c114d9f0e0f67a7e1f0355b92d973ea"></a>
+<a class="anchor" id="a50daff5b6103f50ba12bc6e6dc0f3d6d"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -322,7 +301,7 @@ Here is the call graph for this function:</div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void Wrapper::update </td>
+          <td class="memname">void Wrapper::runPlanning </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -335,19 +314,22 @@ Here is the call graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p>update two planners </p>
+<p>Engage the while loop of planners. </p>
 
-<p>Definition at line <a class="el" href="_wrapper_8cpp_source.html#l00044">44</a> of file <a class="el" href="_wrapper_8cpp_source.html">Wrapper.cpp</a>.</p>
+<p>Definition at line <a class="el" href="_wrapper_8cpp_source.html#l00198">198</a> of file <a class="el" href="_wrapper_8cpp_source.html">Wrapper.cpp</a>.</p>
 
 <p><div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><img src="class_planner_1_1_wrapper_a2c114d9f0e0f67a7e1f0355b92d973ea_cgraph.png" border="0" usemap="#class_planner_1_1_wrapper_a2c114d9f0e0f67a7e1f0355b92d973ea_cgraph" alt=""/></div>
-<map name="class_planner_1_1_wrapper_a2c114d9f0e0f67a7e1f0355b92d973ea_cgraph" id="class_planner_1_1_wrapper_a2c114d9f0e0f67a7e1f0355b92d973ea_cgraph">
-<area shape="rect" id="node2" href="class_planner_1_1_wrapper.html#ae86d37bb851d1b6b7e7c3c6ceb93aa44" title="trigger global planning " alt="" coords="224,17,416,43"/>
-<area shape="rect" id="node4" href="class_planner_1_1_wrapper.html#a6073e44917df9a206610d622c3b03a68" title="trigger local planning " alt="" coords="227,71,413,98"/>
-<area shape="rect" id="node3" href="class_planner_1_1_global_planner.html#aa179ca5ca6703ed99f1535815ff14556" title="Planner::GlobalPlanner\l::update_corridor" alt="" coords="464,5,619,47"/>
-<area shape="rect" id="node5" href="class_planner_1_1_local_planner.html#a5bc2a2d121ea40b66404990b9380566c" title="Planner::LocalPlanner\l::updateTraj" alt="" coords="467,71,616,112"/>
+<div class="center"><img src="class_planner_1_1_wrapper_a50daff5b6103f50ba12bc6e6dc0f3d6d_cgraph.png" border="0" usemap="#class_planner_1_1_wrapper_a50daff5b6103f50ba12bc6e6dc0f3d6d_cgraph" alt=""/></div>
+<map name="class_planner_1_1_wrapper_a50daff5b6103f50ba12bc6e6dc0f3d6d_cgraph" id="class_planner_1_1_wrapper_a50daff5b6103f50ba12bc6e6dc0f3d6d_cgraph">
+<area shape="rect" id="node2" href="class_planner_1_1_ros_wrapper.html#a6d480bf0adbd096855d0967067482851" title="Whether all the necessary inputs are received. " alt="" coords="264,12,411,53"/>
+<area shape="rect" id="node3" href="class_planner_1_1_wrapper.html#a65fe142e92907d3137c5478a5e8e746c" title="Update the planning result from lp and gp. " alt="" coords="260,78,415,105"/>
+<area shape="rect" id="node6" href="class_planner_1_1_wrapper.html#a5ff99ef7e9d54664ae6cc99cc5fee902" title="Modify p_base with the resultant planning output. " alt="" coords="252,136,423,177"/>
+<area shape="rect" id="node4" href="class_planner_1_1_global_planner.html#af0017c165516705f7c226fba7c7a3259" title="Global planning routine. " alt="" coords="477,5,631,47"/>
+<area shape="rect" id="node5" href="class_planner_1_1_abstract_planner.html#ab99d58a97b7cff1b04910feef2f9f322" title="Planner::AbstractPlanner\l::plan" alt="" coords="471,71,637,112"/>
+<area shape="rect" id="node7" href="class_planner_1_1_global_planner.html#a1654f63e09a9b81af1f1e70f3241f374" title="update the global planning result to the shared resource " alt="" coords="474,136,634,177"/>
+<area shape="rect" id="node8" href="class_planner_1_1_local_planner.html#a52925cf61f644b3a73f41c036fcf6924" title="Planner::LocalPlanner\l::updateTrajToBase" alt="" coords="479,201,629,243"/>
 </map>
 </div>
 </p>
@@ -355,9 +337,60 @@ Here is the call graph for this function:</div>
 <p><div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><img src="class_planner_1_1_wrapper_a2c114d9f0e0f67a7e1f0355b92d973ea_icgraph.png" border="0" usemap="#class_planner_1_1_wrapper_a2c114d9f0e0f67a7e1f0355b92d973ea_icgraph" alt=""/></div>
-<map name="class_planner_1_1_wrapper_a2c114d9f0e0f67a7e1f0355b92d973ea_icgraph" id="class_planner_1_1_wrapper_a2c114d9f0e0f67a7e1f0355b92d973ea_icgraph">
-<area shape="rect" id="node2" href="class_planner_1_1_wrapper.html#a7de6456aacb65f1289ab74a065af1a6b" title="while loop in the main " alt="" coords="224,5,373,32"/>
+<div class="center"><img src="class_planner_1_1_wrapper_a50daff5b6103f50ba12bc6e6dc0f3d6d_icgraph.png" border="0" usemap="#class_planner_1_1_wrapper_a50daff5b6103f50ba12bc6e6dc0f3d6d_icgraph" alt=""/></div>
+<map name="class_planner_1_1_wrapper_a50daff5b6103f50ba12bc6e6dc0f3d6d_icgraph" id="class_planner_1_1_wrapper_a50daff5b6103f50ba12bc6e6dc0f3d6d_icgraph">
+<area shape="rect" id="node2" href="class_planner_1_1_wrapper.html#a7de6456aacb65f1289ab74a065af1a6b" title="Run the two thread (Planner &amp; ROS) " alt="" coords="252,5,401,32"/>
+<area shape="rect" id="node3" href="main_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627" title="main" alt="" coords="449,5,500,32"/>
+</map>
+</div>
+</p>
+
+</div>
+</div>
+<a class="anchor" id="a5ff99ef7e9d54664ae6cc99cc5fee902"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Wrapper::updateToBase </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Modify p_base with the resultant planning output. </p>
+
+<p>Definition at line <a class="el" href="_wrapper_8cpp_source.html#l00181">181</a> of file <a class="el" href="_wrapper_8cpp_source.html">Wrapper.cpp</a>.</p>
+
+<p><div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="class_planner_1_1_wrapper_a5ff99ef7e9d54664ae6cc99cc5fee902_cgraph.png" border="0" usemap="#class_planner_1_1_wrapper_a5ff99ef7e9d54664ae6cc99cc5fee902_cgraph" alt=""/></div>
+<map name="class_planner_1_1_wrapper_a5ff99ef7e9d54664ae6cc99cc5fee902_cgraph" id="class_planner_1_1_wrapper_a5ff99ef7e9d54664ae6cc99cc5fee902_cgraph">
+<area shape="rect" id="node2" href="class_planner_1_1_global_planner.html#a1654f63e09a9b81af1f1e70f3241f374" title="update the global planning result to the shared resource " alt="" coords="224,5,384,47"/>
+<area shape="rect" id="node3" href="class_planner_1_1_local_planner.html#a52925cf61f644b3a73f41c036fcf6924" title="Planner::LocalPlanner\l::updateTrajToBase" alt="" coords="229,71,379,112"/>
+</map>
+</div>
+</p>
+
+<p><div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="class_planner_1_1_wrapper_a5ff99ef7e9d54664ae6cc99cc5fee902_icgraph.png" border="0" usemap="#class_planner_1_1_wrapper_a5ff99ef7e9d54664ae6cc99cc5fee902_icgraph" alt=""/></div>
+<map name="class_planner_1_1_wrapper_a5ff99ef7e9d54664ae6cc99cc5fee902_icgraph" id="class_planner_1_1_wrapper_a5ff99ef7e9d54664ae6cc99cc5fee902_icgraph">
+<area shape="rect" id="node2" href="class_planner_1_1_wrapper.html#a50daff5b6103f50ba12bc6e6dc0f3d6d" title="Engage the while loop of planners. " alt="" coords="224,13,423,39"/>
+<area shape="rect" id="node3" href="class_planner_1_1_wrapper.html#a7de6456aacb65f1289ab74a065af1a6b" title="Run the two thread (Planner &amp; ROS) " alt="" coords="471,13,620,39"/>
+<area shape="rect" id="node4" href="main_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627" title="main" alt="" coords="668,13,719,39"/>
 </map>
 </div>
 </p>
@@ -382,8 +415,9 @@ Here is the caller graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
+<p>global planner </p>
 
-<p>Definition at line <a class="el" href="_wrapper_8h_source.html#l00044">44</a> of file <a class="el" href="_wrapper_8h_source.html">Wrapper.h</a>.</p>
+<p>Definition at line <a class="el" href="_wrapper_8h_source.html#l00096">96</a> of file <a class="el" href="_wrapper_8h_source.html">Wrapper.h</a>.</p>
 
 </div>
 </div>
@@ -404,8 +438,32 @@ Here is the caller graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
+<p>local planner </p>
 
-<p>Definition at line <a class="el" href="_wrapper_8h_source.html#l00043">43</a> of file <a class="el" href="_wrapper_8h_source.html">Wrapper.h</a>.</p>
+<p>Definition at line <a class="el" href="_wrapper_8h_source.html#l00095">95</a> of file <a class="el" href="_wrapper_8h_source.html">Wrapper.h</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="aaa500a24aa72b0a2fbc15c4140160714"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">mutex Planner::Wrapper::mSet[2]</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>two mutex. 0 = planning vs subscription &amp; 1 = update vs publishing </p>
+
+<p>Definition at line <a class="el" href="_wrapper_8h_source.html#l00088">88</a> of file <a class="el" href="_wrapper_8h_source.html">Wrapper.h</a>.</p>
 
 </div>
 </div>
@@ -426,8 +484,9 @@ Here is the caller graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
+<p>pointer for shared resource </p>
 
-<p>Definition at line <a class="el" href="_wrapper_8h_source.html#l00041">41</a> of file <a class="el" href="_wrapper_8h_source.html">Wrapper.h</a>.</p>
+<p>Definition at line <a class="el" href="_wrapper_8h_source.html#l00087">87</a> of file <a class="el" href="_wrapper_8h_source.html">Wrapper.h</a>.</p>
 
 </div>
 </div>
@@ -448,12 +507,13 @@ Here is the caller graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
+<p>global and local planner parameters </p>
 
-<p>Definition at line <a class="el" href="_wrapper_8h_source.html#l00042">42</a> of file <a class="el" href="_wrapper_8h_source.html">Wrapper.h</a>.</p>
+<p>Definition at line <a class="el" href="_wrapper_8h_source.html#l00093">93</a> of file <a class="el" href="_wrapper_8h_source.html">Wrapper.h</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="a390047ab69fc4f90384f0c73e69b1203"></a>
+<a class="anchor" id="a7995604355fb8d30150354e0529e37bd"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -461,7 +521,30 @@ Here is the caller graph for this function:</div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="class_planner_1_1_ros_wrapper.html">RosWrapper</a> Planner::Wrapper::ros_wrapper</td>
+          <td class="memname"><a class="el" href="class_planner_1_1_ros_wrapper.html">RosWrapper</a>* Planner::Wrapper::ros_wrapper_ptr</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>ros wrapper </p>
+
+<p>Definition at line <a class="el" href="_wrapper_8h_source.html#l00097">97</a> of file <a class="el" href="_wrapper_8h_source.html">Wrapper.h</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="acf5ec264f267181e42467c6c96d676b0"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">thread Planner::Wrapper::threadPlanner</td>
         </tr>
       </table>
   </td>
@@ -471,7 +554,29 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="_wrapper_8h_source.html#l00045">45</a> of file <a class="el" href="_wrapper_8h_source.html">Wrapper.h</a>.</p>
+<p>Definition at line <a class="el" href="_wrapper_8h_source.html#l00090">90</a> of file <a class="el" href="_wrapper_8h_source.html">Wrapper.h</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="a85a9a66d91ac26fee39f7b6e49d7eade"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">thread Planner::Wrapper::threadRosWrapper</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Definition at line <a class="el" href="_wrapper_8h_source.html#l00091">91</a> of file <a class="el" href="_wrapper_8h_source.html">Wrapper.h</a>.</p>
 
 </div>
 </div>

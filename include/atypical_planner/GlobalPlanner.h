@@ -7,14 +7,16 @@
 
 #include <atypical_planner/PlannerCore.h>
 namespace Planner{
-    class GlobalPlanner{
-        private:
-            PlannerBase* p_base; // planning data
+    class GlobalPlanner: public AbstractPlanner{
+    private:
             ParamGlobal param;
+            // Planning intermediate outputs
 
+            vector<Corridor> curCorridorSeq;
     public:
-            GlobalPlanner(const ParamGlobal& g_param,PlannerBase* p_base_);
-            void update_corridor();
+        GlobalPlanner(const ParamGlobal& g_param,shared_ptr<PlannerBase> p_base_);
+        bool plan();
+        void updateCorridorToBase();
     };
 
 }

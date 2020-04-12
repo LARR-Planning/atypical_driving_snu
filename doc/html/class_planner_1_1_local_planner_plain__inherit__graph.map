@@ -1,3 +1,4 @@
 <map id="Planner::LocalPlannerPlain" name="Planner::LocalPlannerPlain">
-<area shape="rect" id="node2" href="$class_planner_1_1_local_planner.html" title="Planner::LocalPlanner" alt="" coords="20,5,169,32"/>
+<area shape="rect" id="node2" href="$class_planner_1_1_local_planner.html" title="Planner::LocalPlanner" alt="" coords="20,80,169,107"/>
+<area shape="rect" id="node3" href="$class_planner_1_1_abstract_planner.html" title="Abstract class. The shared attributes to be inherited to the derived classes. " alt="" coords="11,5,178,32"/>
 </map>

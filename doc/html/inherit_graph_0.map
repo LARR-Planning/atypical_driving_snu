@@ -1,3 +1,7 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$struct_planner_1_1_car_input.html" title="Input term of MPC. " alt="" coords="5,5,129,32"/>
+<area shape="rect" id="node1" href="$class_planner_1_1_abstract_planner.html" title="Abstract class. The shared attributes to be inherited to the derived classes. " alt="" coords="5,31,172,57"/>
+<area shape="rect" id="node2" href="$class_planner_1_1_global_planner.html" title="Planner::GlobalPlanner" alt="" coords="220,5,375,32"/>
+<area shape="rect" id="node3" href="$class_planner_1_1_local_planner.html" title="Planner::LocalPlanner" alt="" coords="223,56,372,83"/>
+<area shape="rect" id="node4" href="$class_planner_1_1_local_planner_plain.html" title="Planner::LocalPlannerPlain" alt="" coords="439,31,617,57"/>
+<area shape="rect" id="node5" href="$class_planner_1_1_local_planner_stochastic.html" title="Planner::LocalPlannerStochastic" alt="" coords="423,81,633,108"/>
 </map>

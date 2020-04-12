@@ -10,6 +10,8 @@
 #include <atypical_planner/GlobalPlanner.h>
 
 #include <ros/ros.h>
+#include <nav_msgs/Path.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 
 namespace Planner{
 
@@ -19,41 +21,91 @@ namespace Planner{
     class RosWrapper{
 
     private:
-        PlannerBase* p_base; // planning data
+
+        /**
+         * Shared resource with other thread
+         */
+        shared_ptr<PlannerBase> p_base; // planning data
+        mutex* mSet; /**< mSet[0] = locking btw subset of callbacks and plan() of planner  */
 
         // node handle
         ros::NodeHandle nh;
+        bool isGlobalMapReceived = false;
+        bool isLocalMapReceived = false;
+        bool isCarPoseCovReceived = false;
 
-        // publisher
+        /**
+         * Parameters
+         */
 
-        // subscriber
+        string worldFrameId;
+
+        /**
+         * Topic to be published
+         */
+        // topics to be published
+        nav_msgs::Path planningPath; // can be obtained from mpcResultTraj
+
+        /**
+         *  Publisher
+         */
+
+        ros::Publisher pubPath; // publisher for result path
+
+        /**
+         * Subscriber
+         */
+        ros::Subscriber subCarPoseCov; /**< car state from KAIST */
+
+
+        /**
+         * Callback functions
+         */
+
+        void cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr);
+
+        /**
+         * Core routines in while loop of ROS thread
+         */
+        void publish();
+        void prepareROSmsgs();
+
 
     public:
-        RosWrapper();
+        RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_);
         void updateParam(Param& param_);
-        void publish();
+        void runROS();
+        bool isAllInputReceived();
     };
 
-
+    /**
+     * @brief Wrapping module for RosWrapper and the two planners.
+     */
     class Wrapper{
 
     private:
-        shared_ptr<PlannerBase> p_base_shared;
-        Param param;
-        LocalPlanner* lp_ptr;
-        GlobalPlanner* gp_ptr;
-        RosWrapper ros_wrapper;
+        shared_ptr<PlannerBase> p_base_shared;  /**< pointer for shared resource  */
+        mutex mSet[2]; /**< two mutex. 0 = planning vs subscription & 1 = update vs publishing */
 
-        void update();
-        void planGlobal();
-        void planLocal();
+        thread threadPlanner;
+        thread threadRosWrapper;
+
+        Param param; /**< global and local planner parameters  */
+
+        LocalPlanner* lp_ptr; /**< local planner */
+        GlobalPlanner* gp_ptr; /**< global planner */
+        RosWrapper* ros_wrapper_ptr; /**< ros wrapper */
+
+        // Do two-staged planning
+        bool plan(); // this includes the two below routines
+        void updateToBase(); // update the results of the planners to p_base
+
+        void runPlanning(); // planning thread.
 
     public:
         Wrapper();
         void run();
     };
-
-
 
 
 

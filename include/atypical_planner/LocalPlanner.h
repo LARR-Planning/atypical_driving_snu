@@ -12,28 +12,37 @@ namespace Planner {
     /**
      * The abstact class of local planner. This class cannot be instantiated.
      */
-    class LocalPlanner {
-        private:
-            PlannerBase* p_base; // planning data
+    class LocalPlanner: public AbstractPlanner {
+    protected:
             ParamLocal param;
 
-            // do some planning here...
+           // Planning intermediate outputs
+           MPCResultTraj curPlanning;
 
     public:
-            LocalPlanner(const ParamLocal& l_param,PlannerBase* p_base_);
-            virtual void updateTraj(); // to be override
+        LocalPlanner(const ParamLocal& l_param,shared_ptr<PlannerBase> p_base_);
+        void updateTrajToBase();
     };
     /**
      * Plain MPC module
      */
     class LocalPlannerPlain : public LocalPlanner{
-        void updateTraj();
+    private:
+
+
+    public:
+        LocalPlannerPlain(const ParamLocal& l_param,shared_ptr<PlannerBase> p_base_);
+        bool plan() override;
     };
     /**
      * Stochastic MPC module
      */
     class LocalPlannerStochastic : public LocalPlanner{
-        void updateTraj();
+    private:
+
+    public:
+        LocalPlannerStochastic(const ParamLocal& l_param,shared_ptr<PlannerBase> p_base_);
+        bool plan() override;
     };
 }
 #endif //ATYPICAL_DRIVING_LOCALPLANNER_H
