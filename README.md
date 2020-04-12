@@ -1,8 +1,8 @@
 # atypical_driving_snu
 
-
-<img src = "https://github.com/LARR-Planning/atypical_driving_snu/blob/master/img/data_structure.png"> 
-
+<p align="center">
+<img src = "https://github.com/LARR-Planning/atypical_driving_snu/blob/master/img/data_structure.png" width="480"> 
+</p>
 
 ## Instruction
 ### 1. Getting started 
