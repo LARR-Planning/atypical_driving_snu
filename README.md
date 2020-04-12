@@ -36,5 +36,8 @@ In the terminal, you will see ROS_WARNINGS the printed output which says that
 | Jungwon      | Wrapper.h / GlobalPlanner.h      |  Wrapper.cpp / GlobalPlanner.cpp |
 | Yunwoo | LocalPlanner.h      |    LocalPlanner.cpp |
 
+Simple thing. your works are completing all the functions in your header and source files referring the summary [diagram](https://www.lucidchart.com/documents/edit/2f00f5b3-6e62-4ff4-8b19-dc401daf80f8/GdaP.vOKzV1F). 
+All the example implementation can be found in the source files. Please understand the overall flow of the codes. 
 
-###  3. 
+
+
