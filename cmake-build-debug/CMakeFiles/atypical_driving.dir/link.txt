@@ -1,1 +1,0 @@
-/usr/bin/c++  -g   CMakeFiles/atypical_driving.dir/test/main.cpp.o CMakeFiles/atypical_driving.dir/src/Wrapper.cpp.o  -o atypical_driving /usr/lib/liboctomap.so /usr/lib/liboctomath.so 
