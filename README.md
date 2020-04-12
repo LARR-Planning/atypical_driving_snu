@@ -1,5 +1,9 @@
 # atypical_driving_snu
 
+
+<img src = "https://github.com/LARR-Planning/atypical_driving_snu/blob/master/img/data_structure.png"> 
+
+
 ## Instruction
 ### 1. Getting started 
 #### Dependencies until now 
