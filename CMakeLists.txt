@@ -24,3 +24,6 @@ catkin_package(
 
 add_executable(atypical_driving_test test/main.cpp ${SNU_PLANNER_SRC})
 target_link_libraries(atypical_driving_test ${catkin_LIBRARIES})
+
+add_executable(virtual_environment_generator test/virtual_environment_generator.cpp ${SNU_PLANNER_SRC})
+target_link_libraries(virtual_environment_generator ${catkin_LIBRARIES})

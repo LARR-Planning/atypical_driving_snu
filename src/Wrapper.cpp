@@ -21,9 +21,12 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_):p_base(p_ba
 
     // Publisher
     pubPath = nh.advertise<nav_msgs::Path>("planning_path",1);
+    pubCorridorSeq = nh.advertise<visualization_msgs::MarkerArray>("corridor_seq", 1);
 
     // Subscriber
     subCarPoseCov = nh.subscribe("car_pose_cov",1,&RosWrapper::cbCarPoseCov,this);
+    subDesiredCarPose = nh.subscribe("desired_car_pose",1,&RosWrapper::cbDesiredCarPose,this);
+    subGlobalMap = nh.subscribe("global_map",1,&RosWrapper::cbGlobalMap,this);
 }
 
 /**
@@ -39,6 +42,14 @@ void RosWrapper::updateParam(Param &param_) {
 
     // global planner
     nh.param<double>("global_planner/horizon",param_.g_param.horizon,5);
+    nh.param<double>("global_planner/car_width",param_.g_param.car_width,2);
+    nh.param<double>("global_planner/car_height",param_.g_param.car_height,1.5);
+    nh.param<double>("global_planner/world_x_min",param_.g_param.world_x_min,-5);
+    nh.param<double>("global_planner/world_y_min",param_.g_param.world_y_min,-5);
+    nh.param<double>("global_planner/world_x_max",param_.g_param.world_x_max,5);
+    nh.param<double>("global_planner/world_y_max",param_.g_param.world_y_max,5);
+    nh.param<double>("global_planner/grid_resolution",param_.g_param.grid_resolution,0.3);
+    nh.param<double>("global_planner/box_resolution",param_.g_param.box_resolution,0.1);
 
     // local planner
     nh.param<double>("local_planner/horizon",param_.l_param.horizon,5);
@@ -53,6 +64,7 @@ void RosWrapper::prepareROSmsgs() {
     // 1. Topics directly obtained from p_base
     if(mSet[1].try_lock()){
         // Example below
+        // planning path
         planningPath.poses.clear();
         geometry_msgs::PoseStamped poseStamped;
         for (auto pose : p_base->getMPCResultTraj().xs){
@@ -60,6 +72,27 @@ void RosWrapper::prepareROSmsgs() {
             poseStamped.pose.position.y = pose.y;
             planningPath.poses.push_back(poseStamped);
         }
+
+        // corridor_seq jungwon
+        double car_height = 1.5; //TODO: save carheight when updateParam
+        visualization_msgs::Marker marker;
+        marker.header.frame_id = worldFrameId;
+        marker.type = visualization_msgs::Marker::CUBE;
+        marker.action = visualization_msgs::Marker::ADD;
+        marker.color.a = 0.2;
+        marker.color.r = 0;
+        marker.color.g = 1;
+        marker.color.b = 0;
+        for(auto corridor : p_base->getCorridorSeq()){
+            marker.pose.position.x = (corridor.xu + corridor.xl) / 2;
+            marker.pose.position.y = (corridor.yu + corridor.yl) / 2;
+            marker.pose.position.z = (0 + car_height)/2;
+            marker.scale.x = corridor.xl - corridor.xu;
+            marker.scale.y = corridor.yl - corridor.yu;
+            marker.scale.z = car_height - 0;
+            corridorSeq.markers.emplace_back(marker);
+        }
+
         mSet[1].unlock();
     }else{
         ROS_WARN("[RosWrapper] Locking failed for ros data update. The output of p_base is being modified in planner ");
@@ -74,6 +107,7 @@ void RosWrapper::prepareROSmsgs() {
 void RosWrapper::publish() {
     // e.g pub1.publish(topic1)
     pubPath.publish(planningPath);
+    pubCorridorSeq.publish(corridorSeq);
 }
 
 /**
@@ -110,13 +144,54 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
         ROS_WARN("[RosWrapper] callback for CarPoseCov locked by planner. Passing update");
     }
 }
+
+/**
+ * @brief receive the desired car pose and update
+ * @param dataPtr
+ */
+void RosWrapper::cbDesiredCarPose(geometry_msgs::PoseConstPtr dataPtr) {
+    // Just an example
+    // TODO you have to decide whether the update in this callback could interrupt planning thread
+    if(mSet[0].try_lock()){
+        CarState desiredState;
+        desiredState.x = dataPtr->position.x;
+        desiredState.y = dataPtr->position.y;
+        p_base->setDesiredState(desiredState);
+        mSet[0].unlock();
+        isCarPoseCovReceived = true;
+    }else{
+        ROS_WARN("[RosWrapper] callback for CarPoseCov locked by planner. Passing update");
+    }
+}
+
+/**
+ * @brief receive the global map and update
+ * @param octomap_msg
+ */
+void RosWrapper::cbGlobalMap(const octomap_msgs::Octomap& octomap_msg) {
+    // TODO you have to decide whether the update in this callback could interrupt planning thread
+    if(isGlobalMapReceived){
+        return;
+    }
+    if(mSet[0].try_lock()){
+        p_base->setGlobalMap(dynamic_cast<octomap::OcTree*>(octomap_msgs::fullMsgToMap(octomap_msg)));
+        mSet[0].unlock();
+        isGlobalMapReceived = true;
+    }else{
+        ROS_WARN("[RosWrapper] callback for CarPoseCov locked by planner. Passing update");
+    }
+}
+
+
+
+
 /**
  * @brief Whether all the necessary inputs are received
  * @return true if all the necessary inputs are received
  */
 bool RosWrapper::isAllInputReceived() {
     return
-//            isGlobalMapReceived and
+              isGlobalMapReceived and
 //            isLocalMapReceived and
               isCarPoseCovReceived;
 }

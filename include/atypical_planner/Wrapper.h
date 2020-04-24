@@ -12,6 +12,9 @@
 #include <ros/ros.h>
 #include <nav_msgs/Path.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <visualization_msgs/MarkerArray.h>
+#include <octomap_msgs/Octomap.h>
+#include <octomap_msgs/conversions.h>
 
 namespace Planner{
 
@@ -45,24 +48,29 @@ namespace Planner{
          */
         // topics to be published
         nav_msgs::Path planningPath; // can be obtained from mpcResultTraj
+        visualization_msgs::MarkerArray corridorSeq;
 
         /**
          *  Publisher
          */
 
         ros::Publisher pubPath; // publisher for result path
+        ros::Publisher pubCorridorSeq; // publisher for current corridor sequence
 
         /**
          * Subscriber
          */
         ros::Subscriber subCarPoseCov; /**< car state from KAIST */
-
+        ros::Subscriber subDesiredCarPose; // desired pose from user
+        ros::Subscriber subGlobalMap; // global map from ????
 
         /**
          * Callback functions
          */
 
         void cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr);
+        void cbDesiredCarPose(geometry_msgs::PoseConstPtr dataPtr);
+        void cbGlobalMap(const octomap_msgs::Octomap& octomap_msg);
 
         /**
          * Core routines in while loop of ROS thread

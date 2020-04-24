@@ -40,6 +40,15 @@ namespace Planner {
      */
     struct ParamGlobal {
         double horizon;
+        double car_width;
+        double car_length;
+        double car_height;
+        double world_x_min;
+        double world_y_min;
+        double world_x_max;
+        double world_y_max;
+        double grid_resolution;
+        double box_resolution;
     };
 
     /**
@@ -90,6 +99,7 @@ namespace Planner {
         shared_ptr<octomap::OcTree> octo_global_ptr;
         shared_ptr<octomap::OcTree> octo_local_ptr;
         CarState cur_state;
+        CarState desired_state; //jungwon
 
         // to be updated by planners
         vector<Corridor> corridor_seq;
@@ -100,6 +110,7 @@ namespace Planner {
 
         // Get
         CarState getCarState() {return cur_state;};
+        CarState getDesiredState() {return desired_state;}; //jungwon
         CarInput getCurInput() { return CarInput(); }; // do some interpolation
 
         vector<Corridor> getCorridorSeq() {return corridor_seq;};
@@ -109,7 +120,8 @@ namespace Planner {
 
         // Set from subscriber
         void setCarState(const CarState& carState_) { cur_state = carState_;};
-
+        void setDesiredState(const CarState& desiredState_) {desired_state = desiredState_;};
+        void setGlobalMap(octomap::OcTree* octoGlobalPtr_) {octo_global_ptr.reset(octoGlobalPtr_);};
 
         // Set from planner
         void setCorridorSeq(const vector<Corridor>& corridor_in_) {corridor_seq = corridor_in_;}

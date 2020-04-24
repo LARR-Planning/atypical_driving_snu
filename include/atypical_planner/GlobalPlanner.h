@@ -9,10 +9,13 @@
 namespace Planner{
     class GlobalPlanner: public AbstractPlanner{
     private:
-            ParamGlobal param;
-            // Planning intermediate outputs
+        ParamGlobal param;
+        double grid_x_min, grid_y_min, grid_x_max, grid_y_max;
+        int dimx, dimy;
+        std::vector<std::vector<int>> grid;
 
-            vector<Corridor> curCorridorSeq;
+        // Planning intermediate outputs
+        vector<Corridor> curCorridorSeq;
     public:
         GlobalPlanner(const ParamGlobal& g_param,shared_ptr<PlannerBase> p_base_);
         bool plan();
@@ -20,7 +23,6 @@ namespace Planner{
     };
 
 }
-
 
 
 #endif //ATYPICAL_DRIVING_GLOBALPLANNER_H
