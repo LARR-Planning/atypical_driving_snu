@@ -290,17 +290,17 @@ bool GlobalPlanner::plan() {
             for(int i = prev_index; i < current_index; i++){
                 delta_x = abs(curSkeletonPath[i+1].first - curSkeletonPath[i].first);
                 delta_y = abs(curSkeletonPath[i+1].second - curSkeletonPath[i].second);
-                if(delta_x != 0 && delta_y == 0){
+                if(delta_x > SP_EPSILON_FLOAT && delta_y < SP_EPSILON_FLOAT){
                     box_width = min(curCorridorSeq[box_iter].yu - curCorridorSeq[box_iter].yl, param.road_width);
                     time_coefficient = box_width / param.road_width; //TODO: naive time_coefficient formulation
                     timeSegment += time_coefficient * delta_x / param.car_speed;
                 }
-                else if(delta_x == 0 && delta_y != 0){
+                else if(delta_x < SP_EPSILON_FLOAT && delta_y > SP_EPSILON_FLOAT){
                     box_width = min(curCorridorSeq[box_iter].xu - curCorridorSeq[box_iter].xl, param.road_width);
                     time_coefficient = box_width / param.road_width; //TODO: naive time_coefficient formulation
                     timeSegment += time_coefficient * delta_y / param.car_speed;
                 }
-                else if(delta_x == 0 && delta_y == 0){
+                else if(delta_x < SP_EPSILON_FLOAT && delta_y < SP_EPSILON_FLOAT){
                     timeSegment += param.grid_resolution / param.car_speed;
                 }
                 else{

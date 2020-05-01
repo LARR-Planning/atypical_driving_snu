@@ -193,9 +193,6 @@ void RosWrapper::cbDesiredCarPose(geometry_msgs::PoseConstPtr dataPtr) {
  */
 void RosWrapper::cbGlobalMap(const octomap_msgs::Octomap& octomap_msg) {
     // TODO you have to decide whether the update in this callback could interrupt planning thread
-    if(isGlobalMapReceived){
-        return;
-    }
     if(mSet[0].try_lock()){
         p_base->setGlobalMap(dynamic_cast<octomap::OcTree*>(octomap_msgs::fullMsgToMap(octomap_msg)));
         mSet[0].unlock();
