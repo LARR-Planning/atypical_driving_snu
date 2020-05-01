@@ -7,6 +7,7 @@ Panels:
         - /Global Options1
         - /Status1
         - /MarkerArray1
+        - /MarkerArray1/Namespaces1
         - /MarkerArray2
       Splitter Ratio: 0.5
     Tree Height: 775
@@ -57,8 +58,9 @@ Visualization Manager:
       Marker Topic: /atypical_planning_test/corridor_seq
       Name: MarkerArray
       Namespaces:
-        {}
-      Queue Size: 100
+        corridor: true
+        skeleton_path: false
+      Queue Size: 1
       Value: true
     - Class: rviz/MarkerArray
       Enabled: true
@@ -66,7 +68,7 @@ Visualization Manager:
       Name: MarkerArray
       Namespaces:
         {}
-      Queue Size: 100
+      Queue Size: 1
       Value: true
   Enabled: true
   Global Options:
@@ -92,26 +94,21 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Class: rviz/Orbit
-      Distance: 14.2837715
+      Angle: 0
+      Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
-      Focal Point:
-        X: 0
-        Y: 0
-        Z: 0
-      Focal Shape Fixed Size: true
-      Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.775396883
+      Scale: 18.461935
       Target Frame: <Fixed Frame>
-      Value: Orbit (rviz)
-      Yaw: 1.58539724
+      Value: TopDownOrtho (rviz)
+      X: -48.3482513
+      Y: 13.2051497
     Saved: ~
 Window Geometry:
   Displays:

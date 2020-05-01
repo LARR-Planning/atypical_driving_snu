@@ -43,12 +43,15 @@ void RosWrapper::updateParam(Param &param_) {
     // global planner
     nh.param<double>("global_planner/horizon",param_.g_param.horizon,5);
     nh.param<double>("global_planner/car_width",param_.g_param.car_width,2);
-    nh.param<double>("global_planner/car_height",param_.g_param.car_height,1.5);
-    nh.param<double>("global_planner/world_x_min",param_.g_param.world_x_min,-5);
+    nh.param<double>("global_planner/car_height",param_.g_param.car_z_min,-0.5);
+    nh.param<double>("global_planner/car_height",param_.g_param.car_z_max,0.0);
+    nh.param<double>("global_planner/car_speed",param_.g_param.car_speed,1.0);
+    nh.param<double>("global_planner/road_width",param_.g_param.road_width,4.0);
+    nh.param<double>("global_planner/world_x_min",param_.g_param.world_x_min,-100);
     nh.param<double>("global_planner/world_y_min",param_.g_param.world_y_min,-5);
-    nh.param<double>("global_planner/world_x_max",param_.g_param.world_x_max,5);
-    nh.param<double>("global_planner/world_y_max",param_.g_param.world_y_max,5);
-    nh.param<double>("global_planner/grid_resolution",param_.g_param.grid_resolution,0.3);
+    nh.param<double>("global_planner/world_x_max",param_.g_param.world_x_max,0);
+    nh.param<double>("global_planner/world_y_max",param_.g_param.world_y_max,30);
+    nh.param<double>("global_planner/grid_resolution",param_.g_param.grid_resolution,0.5);
     nh.param<double>("global_planner/box_resolution",param_.g_param.box_resolution,0.1);
 
     // local planner
@@ -74,7 +77,11 @@ void RosWrapper::prepareROSmsgs() {
         }
 
         // corridor_seq jungwon
-        double car_height = 1.5; //TODO: save carheight when updateParam
+        corridorSeq.markers.clear();
+        int marker_id = 0;
+        double car_width = 2;
+        double car_z_min = 0.5; //TODO: save car_z when updateParam
+        double car_z_max = 0.7; //TODO: save car_z when updateParam
         visualization_msgs::Marker marker;
         marker.header.frame_id = worldFrameId;
         marker.type = visualization_msgs::Marker::CUBE;
@@ -84,12 +91,29 @@ void RosWrapper::prepareROSmsgs() {
         marker.color.g = 1;
         marker.color.b = 0;
         for(auto corridor : p_base->getCorridorSeq()){
+            marker.ns = "corridor";
+            marker.id = marker_id++;
             marker.pose.position.x = (corridor.xu + corridor.xl) / 2;
             marker.pose.position.y = (corridor.yu + corridor.yl) / 2;
-            marker.pose.position.z = (0 + car_height)/2;
+            marker.pose.position.z = (car_z_min + car_z_max)/2;
             marker.scale.x = corridor.xl - corridor.xu;
             marker.scale.y = corridor.yl - corridor.yu;
-            marker.scale.z = car_height - 0;
+            marker.scale.z = car_z_max - car_z_min;
+            corridorSeq.markers.emplace_back(marker);
+        }
+        for(auto node : p_base->getSkeletonPath()){
+            marker.ns = "skeleton_path";
+            marker.id = marker_id++;
+            marker.color.a = 1;
+            marker.color.r = 1;
+            marker.color.g = 0;
+            marker.color.b = 0;
+            marker.pose.position.x = node.first;
+            marker.pose.position.y = node.second;
+            marker.pose.position.z = (car_z_min + car_z_max)/2;
+            marker.scale.x = car_width;
+            marker.scale.y = car_width;
+            marker.scale.z = car_width;
             corridorSeq.markers.emplace_back(marker);
         }
 
@@ -118,7 +142,6 @@ void RosWrapper::runROS() {
         ros::Time t(ros::Time::now());
 
         while(ros::ok()){
-
             prepareROSmsgs(); // you may trigger this only under some conditions
             publish();
             ros::spinOnce(); // callback functions are executed

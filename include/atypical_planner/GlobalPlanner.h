@@ -15,7 +15,10 @@ namespace Planner{
         std::vector<std::vector<int>> grid;
 
         // Planning intermediate outputs
+//        vector<CarState> navigationPath;
         vector<Corridor> curCorridorSeq;
+        vector<pair<double, double>> curSkeletonPath; //TODO: delete this after debugging
+
     public:
         GlobalPlanner(const ParamGlobal& g_param,shared_ptr<PlannerBase> p_base_);
         bool plan();

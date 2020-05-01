@@ -9,16 +9,18 @@ int main(int argc,char** argv) {
     ros::Publisher pubDesiredCarPose = nh.advertise<geometry_msgs::Pose>("/atypical_planning_test/desired_car_pose",1);
 
     geometry_msgs::PoseWithCovariance curState;
-    curState.pose.position.x = -3;
-    curState.pose.position.y = 0;
+    curState.pose.position.x = -26;
+    curState.pose.position.y = 4.5;
 
     geometry_msgs::Pose desiredState;
-    desiredState.position.x = 3;
-    desiredState.position.y = 0;
+    desiredState.position.x = -68;
+    desiredState.position.y = 20;
 
+    ros::Rate rate(1);
     while(ros::ok()){
         pubCarPoseCov.publish(curState);
         pubDesiredCarPose.publish(desiredState);
+        rate.sleep();
     }
 
     return 0;

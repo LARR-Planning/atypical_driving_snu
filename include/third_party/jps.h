@@ -7,6 +7,7 @@
 
 #include <queue>
 #include <unordered_set>
+#include <algorithm>
 
 class Node{
 // Variables used here are constantly accessed and checked; leaving public for now.
@@ -160,21 +161,23 @@ public:
     void InsertionSort(std::vector<Node>& v);
     bool has_forced_neighbours(Node& new_point, Node& next_point, Node& motion);
     Node jump(Node& new_point, Node& motion, int id);
+    void backtracking(const Node& last_point);
 private:
     std::priority_queue<Node, std::vector<Node>, compare_cost> open_list_;
     std::vector<std::vector<int>> grid;
-    std::vector<Node> closed_list_;
+    std::map<int, Node> closed_list_;
+    std::vector<Node> skeleton_path_;
     std::unordered_set<int> pruned;
     Node start_, goal_;
-    int n;
+    int dimx, dimy;
 };
 
 Node JumpPointSearch::jump(Node& new_point, Node& motion, int id){
     Node next_point  = new_point + motion;
-    next_point.id_ = n*next_point.x_+next_point.y_;
+    next_point.id_ = dimy * next_point.x_ + next_point.y_;
     next_point.pid_ = id;
     next_point.h_cost_ = abs(next_point.x_ - goal_.x_) + abs(next_point.y_ - goal_.y_);
-    if(next_point.x_ < 0 || next_point.y_ < 0 || next_point.x_ >= n || next_point.y_ >= n || grid[next_point.x_][next_point.y_]!=0){
+    if(next_point.x_ < 0 || next_point.y_ < 0 || next_point.x_ >= dimx || next_point.y_ >= dimy || grid[next_point.x_][next_point.y_]!=0){
         return new_point;
         // return Node(-1,-1,-1,-1,-1,-1);
     }
@@ -207,16 +210,26 @@ bool JumpPointSearch::has_forced_neighbours(Node& new_point, Node& next_point, N
     int nn2x = next_point.x_ - motion.y_;
     int nn2y = next_point.y_ - motion.x_;
 
-    bool a = !(cn1x < 0 || cn1y < 0 || cn1x >= n || cn1y >= n || grid[cn1x][cn1y]==1);
-    bool b = !(nn1x < 0 || nn1y < 0 || nn1x >= n || nn1y >= n || grid[nn1x][nn1y]==1);
+    bool a = !(cn1x < 0 || cn1y < 0 || cn1x >= dimx || cn1y >= dimy || grid[cn1x][cn1y]==1);
+    bool b = !(nn1x < 0 || nn1y < 0 || nn1x >= dimx || nn1y >= dimy || grid[nn1x][nn1y]==1);
     if(a!=b) return true;
 
-    a = !(cn2x < 0 || cn2y < 0 || cn2x >= n || cn2y >= n || grid[cn2x][cn2y]==1);
-    b = !(nn2x < 0 || nn2y < 0 || nn2x >= n || nn2y >= n || grid[nn2x][nn2y]==1);
+    a = !(cn2x < 0 || cn2y < 0 || cn2x >= dimx || cn2y >= dimy || grid[cn2x][cn2y]==1);
+    b = !(nn2x < 0 || nn2y < 0 || nn2x >= dimx || nn2y >= dimy || grid[nn2x][nn2y]==1);
     if(a!=b) return true;
 
     return false;
+}
 
+void JumpPointSearch::backtracking(const Node &last_point) {
+    skeleton_path_.clear();
+    Node current = last_point;
+    while(current.id_ != current.pid_){
+        skeleton_path_.emplace_back(current);
+        current = closed_list_.find(current.pid_)->second;
+    }
+    skeleton_path_.emplace_back(current);
+    std::reverse(skeleton_path_.begin(), skeleton_path_.end());
 }
 
 #ifdef CUSTOM_DEBUG_HELPER_FUNCION
@@ -240,7 +253,8 @@ std::vector<Node> JumpPointSearch::jump_point_search(std::vector<std::vector<int
     this->grid = grid;
     start_ = start_in;
     goal_ = goal_in;
-    n = grid.size();
+    dimx = grid.size();
+    dimy = grid[0].size();
     // Get possible motions
     std::vector<Node> motion = GetMotion();
     open_list_.push(start_);
@@ -250,25 +264,26 @@ std::vector<Node> JumpPointSearch::jump_point_search(std::vector<std::vector<int
     while(!open_list_.empty()){
         Node current = open_list_.top();
         open_list_.pop();
-        current.id_ = current.x_ * n + current.y_;
+        current.id_ = current.x_ * dimy + current.y_;
         if(current.x_ == goal_.x_ && current.y_ == goal_.y_){
-            closed_list_.push_back(current);
+            closed_list_.insert(make_pair(current.id_, current));
             grid[current.x_][current.y_] = 2;
-            return closed_list_;
+            backtracking(current);
+            return skeleton_path_;
         }
         grid[current.x_][current.y_] = 2; // Point opened
         int current_cost = current.cost_;
         for(auto it = motion.begin(); it!=motion.end(); ++it){
             Node new_point;
             new_point = current + *it;
-            new_point.id_ = n*new_point.x_+new_point.y_;
+            new_point.id_ = dimy*new_point.x_+new_point.y_;
             new_point.pid_ = current.id_;
             new_point.h_cost_ = abs(new_point.x_ - goal_.x_) + abs(new_point.y_ - goal_.y_);
             if(new_point == goal_){
                 open_list_.push(new_point);
                 break;
             }
-            if(new_point.x_ < 0 || new_point.y_ < 0 || new_point.x_ >= n || new_point.y_ >= n) continue; // Check boundaries
+            if(new_point.x_ < 0 || new_point.y_ < 0 || new_point.x_ >= dimx || new_point.y_ >= dimy) continue; // Check boundaries
             if(grid[new_point.x_][new_point.y_]!=0){
                 continue; //obstacle or visited
             }
@@ -277,20 +292,21 @@ std::vector<Node> JumpPointSearch::jump_point_search(std::vector<std::vector<int
             if(jump_point.id_!=-1){
                 open_list_.push(jump_point);
                 if(jump_point.x_ == goal_.x_ && jump_point.y_ == goal_.y_){
-                    closed_list_.push_back(current);
-                    closed_list_.push_back(jump_point);
+                    closed_list_.insert(make_pair(current.id_, current));
+                    closed_list_.insert(make_pair(jump_point.id_, jump_point));
                     grid[jump_point.x_][jump_point.y_] = 2;
-                    return closed_list_;
+                    backtracking(jump_point);
+                    return skeleton_path_;
                 }
             }
             open_list_.push(new_point);
         }
-        closed_list_.push_back(current);
+        closed_list_.insert(make_pair(current.id_, current));
     }
-    closed_list_.clear();
+    skeleton_path_.clear();
     Node no_path_node(-1,-1,-1,-1,-1,-1);
-    closed_list_.push_back(no_path_node);
-    return closed_list_;
+    skeleton_path_.emplace_back(no_path_node);
+    return skeleton_path_;
 }
 
 #endif //ATYPICAL_DRIVING_JPS_H
