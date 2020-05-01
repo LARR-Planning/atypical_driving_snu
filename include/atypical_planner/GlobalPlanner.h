@@ -15,7 +15,7 @@ namespace Planner{
         std::vector<std::vector<int>> grid;
 
         // Planning intermediate outputs
-        vector<CarState> navigationPath;
+//        vector<CarState> navigationPath;
         vector<Corridor> curCorridorSeq;
         vector<pair<double, double>> curSkeletonPath; //TODO: delete this after debugging
 

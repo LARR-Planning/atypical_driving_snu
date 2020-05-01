@@ -19,16 +19,16 @@ GlobalPlanner::GlobalPlanner(const Planner::ParamGlobal &g_param,
     dimx = (int) round((grid_x_max - grid_x_min) / param.grid_resolution) + 1;
     dimy = (int) round((grid_y_max - grid_y_min) / param.grid_resolution) + 1;
 
-    //TODO: delete below test-purpose code
-    navigationPath.clear();
-    for(int i = -26; i >= -68; i--){
-        CarState fake_navigation_point = {(double)i, 4.5, 0, 0};
-        navigationPath.emplace_back(fake_navigation_point);
-    }
-    for(int i = 5; i <= 20; i++){
-        CarState fake_navigation_point = {-68, (double)i, 0, 0};
-        navigationPath.emplace_back(fake_navigation_point);
-    }
+//    //TODO: delete below test-purpose code
+//    navigationPath.clear();
+//    for(int i = -26; i >= -68; i--){
+//        CarState fake_navigation_point = {(double)i, 4.5, 0, 0};
+//        navigationPath.emplace_back(fake_navigation_point);
+//    }
+//    for(int i = 5; i <= 20; i++){
+//        CarState fake_navigation_point = {-68, (double)i, 0, 0};
+//        navigationPath.emplace_back(fake_navigation_point);
+//    }
 }
 
 /**
@@ -161,8 +161,8 @@ bool GlobalPlanner::plan() {
                 round(std::max(x_curr, x_next) / param.box_resolution) * param.box_resolution + param.box_resolution;
         box_curr[3] =
                 round(std::max(y_curr, y_next) / param.box_resolution) * param.box_resolution + param.box_resolution;
-//            box.emplace_back(round(std::max(x,x_next) / param.box_xy_res) * param.box_xy_res);
-//            box.emplace_back(round(std::max(y,y_next) / param.box_xy_res) * param.box_xy_res); //TODO: consider this
+//        box.emplace_back(round(std::max(x,x_next) / param.box_xy_res) * param.box_xy_res);
+//        box.emplace_back(round(std::max(y,y_next) / param.box_xy_res) * param.box_xy_res); //TODO: consider this
 
         // Check initial box
         for (octomap::OcTree::leaf_bbx_iterator it = p_base->getGlobalOctoPtr()->begin_leafs_bbx(
@@ -266,6 +266,8 @@ bool GlobalPlanner::plan() {
         }
     }
 
+    double timeSegment;
+    int current_index, prev_index = 0;
     int box_iter = 0;
     for (int path_iter = 0; path_iter < path_max; path_iter++) {
         if (box_iter == box_max - 1) {
@@ -281,47 +283,47 @@ bool GlobalPlanner::plan() {
                    && box_log[box_iter + 1][path_iter + count] > 0) {
                 count++;
             }
-            double obs_index = path_iter + count / 2;
+            current_index = path_iter + count / 2;
 
-            //Get corridor size factor
-            double corridor_size_factor;
-            {
-                x = (curCorridorSeq[box_iter].xl + curCorridorSeq[box_iter].xu)/2;
-                y = (curCorridorSeq[box_iter].yl + curCorridorSeq[box_iter].yu)/2;
-                double dist, minDist = SP_INFINITY;
-                int index;
-                for(int i = 0; i < navigationPath.size() - 1; i++){ //TODO: too naive search method
-                    dist = pow((navigationPath[i].x + navigationPath[i+1].x)/2 - x, 2) + pow((navigationPath[i].y + navigationPath[i+1].y)/2 - y, 2);
-                    if(dist < minDist){
-                        index = i;
-                    }
+            timeSegment = 0;
+            double delta_x, delta_y, box_width, time_coefficient;
+            for(int i = prev_index; i < current_index; i++){
+                delta_x = abs(curSkeletonPath[i+1].first - curSkeletonPath[i].first);
+                delta_y = abs(curSkeletonPath[i+1].second - curSkeletonPath[i].second);
+                if(delta_x != 0 && delta_y == 0){
+                    box_width = min(curCorridorSeq[box_iter].yu - curCorridorSeq[box_iter].yl, param.road_width);
+                    time_coefficient = box_width / param.road_width; //TODO: naive time_coefficient formulation
+                    timeSegment += time_coefficient * delta_x / param.car_speed;
                 }
-                x =  navigationPath[index + 1].x - navigationPath[index].x;
-                y =  navigationPath[index + 1].y - navigationPath[index].y;
-                //TODO: it assumes roads are aligned to x,y axis
-                double corridor_width;
-                if(x > y){
-                    corridor_width = curCorridorSeq[box_iter].yu - curCorridorSeq[box_iter].yl;
+                else if(delta_x == 0 && delta_y != 0){
+                    box_width = min(curCorridorSeq[box_iter].xu - curCorridorSeq[box_iter].xl, param.road_width);
+                    time_coefficient = box_width / param.road_width; //TODO: naive time_coefficient formulation
+                    timeSegment += time_coefficient * delta_y / param.car_speed;
                 }
-                else {
-                    corridor_width = curCorridorSeq[box_iter].xu - curCorridorSeq[box_iter].xl;
+                else if(delta_x == 0 && delta_y == 0){
+                    timeSegment += param.grid_resolution / param.car_speed;
                 }
-                corridor_size_factor = corridor_width/param.road_width; //TODO: too naive factor decision
+                else{
+                    printf("[GlobalPlanner] ERROR: Invalid initial trajectory. initial trajectory has diagonal move");
+                }
             }
-            curCorridorSeq[box_iter].t_end = obs_index * param.grid_resolution / (param.car_speed * corridor_size_factor);
+            curCorridorSeq[box_iter].t_end = timeSegment;
 
-            path_iter = path_iter + count / 2;
+            path_iter = current_index;
+            prev_index = current_index;
             box_iter++;
         } else if (box_log[box_iter][path_iter] == 0) {
             box_iter--;
             path_iter--;
         }
     }
+
     curCorridorSeq[0].t_start = 0;
-    curCorridorSeq[box_max - 1].t_end = SP_INFINITY;
     for(int i = 1; i < box_max; i++) {
+        curCorridorSeq[i].t_end = curCorridorSeq[i-1].t_end + curCorridorSeq[i].t_end;
         curCorridorSeq[i].t_start = curCorridorSeq[i-1].t_end;
     }
+    curCorridorSeq[box_max - 1].t_end = SP_INFINITY;
     //// Corridor Generation Finish ////
 
     printf("[GlobalPlanner] Done. \n");
