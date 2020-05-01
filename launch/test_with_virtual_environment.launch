@@ -4,14 +4,14 @@
 
 <launch>
 <!-- Arguments Start -->
-  <arg name="map"            default="empty.bt"/> 
+  <arg name="map"            default="auto_drive.bt"/> 
 <!-- Arguments End -->
 
 <!-- Nodes Start -->
   <node pkg="octomap_server" type="octomap_server_node" name="octomap_server" args="$(find atypical_driving)/worlds/$(arg map)">
     <param name="resolution"                 value="0.1" />
-    <param name="frame_id"                   value="world" type="string"/>
-    <param name="sensor_model/max_range"     value="5.0" />
+    <param name="frame_id"                   value="map" type="string"/>
+    <param name="sensor_model/max_range"     value="-1" />
     <param name="height_map"                 value="false"/>
     <param name="color/r"                    value="0.2" />
     <param name="color/g"                    value="0.2" />
@@ -21,7 +21,7 @@
     <remap from="octomap_full" to="/atypical_planning_test/global_map"/>
   </node>
 
-  <node pkg="atypical_driving" type="atypical_driving_test" name="atypical_driving_test" output="screen">
+  <node pkg="atypical_driving" type="atypical_driving_test" name="atypical_planning_test" output="screen">
 
   </node>
 

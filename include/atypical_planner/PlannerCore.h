@@ -41,8 +41,10 @@ namespace Planner {
     struct ParamGlobal {
         double horizon;
         double car_width;
-        double car_length;
-        double car_height;
+        double car_z_min;
+        double car_z_max;
+        double car_speed;
+        double road_width;
         double world_x_min;
         double world_y_min;
         double world_x_max;
@@ -102,6 +104,8 @@ namespace Planner {
         CarState desired_state; //jungwon
 
         // to be updated by planners
+        vector<CarState> navigation_path; //jungwon navigation planning output from Dabin Kim
+        vector<pair<double, double>> skeleton_path; //jungwon: debug purpose TODO: delete this after debugging
         vector<Corridor> corridor_seq;
         MPCResultTraj mpc_result;
 
@@ -113,6 +117,7 @@ namespace Planner {
         CarState getDesiredState() {return desired_state;}; //jungwon
         CarInput getCurInput() { return CarInput(); }; // do some interpolation
 
+        vector<pair<double, double>> getSkeletonPath() {return skeleton_path;}; //TODO: delete this after debugging
         vector<Corridor> getCorridorSeq() {return corridor_seq;};
         octomap::OcTree* getGlobalOctoPtr() {return octo_global_ptr.get();}
         octomap::OcTree* getLocalOctoPtr() {return octo_local_ptr.get();}
@@ -124,6 +129,7 @@ namespace Planner {
         void setGlobalMap(octomap::OcTree* octoGlobalPtr_) {octo_global_ptr.reset(octoGlobalPtr_);};
 
         // Set from planner
+        void setSkeletonPath(const vector<pair<double, double>>& skeleton_in_) {skeleton_path = skeleton_in_;}//TODO: delete this after debugging
         void setCorridorSeq(const vector<Corridor>& corridor_in_) {corridor_seq = corridor_in_;}
         void setMPCResultTraj(const MPCResultTraj& mpc_result_in_) {mpc_result = mpc_result_in_;}
 
