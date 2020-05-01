@@ -27,6 +27,7 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_):p_base(p_ba
     subCarPoseCov = nh.subscribe("car_pose_cov",1,&RosWrapper::cbCarPoseCov,this);
     subDesiredCarPose = nh.subscribe("desired_car_pose",1,&RosWrapper::cbDesiredCarPose,this);
     subGlobalMap = nh.subscribe("global_map",1,&RosWrapper::cbGlobalMap,this);
+    subLocalMap = nh.subscribe("local_map",1,&RosWrapper::cbLocalMap,this);
 }
 
 /**
@@ -80,8 +81,8 @@ void RosWrapper::prepareROSmsgs() {
         corridorSeq.markers.clear();
         int marker_id = 0;
         double car_width = 2;
-        double car_z_min = 0.5; //TODO: save car_z when updateParam
-        double car_z_max = 0.7; //TODO: save car_z when updateParam
+        double car_z_min = 0; //TODO: save car_z when updateParam
+        double car_z_max = 2; //TODO: save car_z when updateParam
         visualization_msgs::Marker marker;
         marker.header.frame_id = worldFrameId;
         marker.type = visualization_msgs::Marker::CUBE;
@@ -111,9 +112,9 @@ void RosWrapper::prepareROSmsgs() {
             marker.pose.position.x = node.first;
             marker.pose.position.y = node.second;
             marker.pose.position.z = (car_z_min + car_z_max)/2;
-            marker.scale.x = car_width;
-            marker.scale.y = car_width;
-            marker.scale.z = car_width;
+            marker.scale.x = 0.1;
+            marker.scale.y = 0.1;
+            marker.scale.z = 0.1;
             corridorSeq.markers.emplace_back(marker);
         }
 
@@ -193,6 +194,9 @@ void RosWrapper::cbDesiredCarPose(geometry_msgs::PoseConstPtr dataPtr) {
  */
 void RosWrapper::cbGlobalMap(const octomap_msgs::Octomap& octomap_msg) {
     // TODO you have to decide whether the update in this callback could interrupt planning thread
+    if(isGlobalMapReceived){
+        return;
+    }
     if(mSet[0].try_lock()){
         p_base->setGlobalMap(dynamic_cast<octomap::OcTree*>(octomap_msgs::fullMsgToMap(octomap_msg)));
         mSet[0].unlock();
@@ -202,7 +206,20 @@ void RosWrapper::cbGlobalMap(const octomap_msgs::Octomap& octomap_msg) {
     }
 }
 
-
+/**
+ * @brief receive the global map and update
+ * @param octomap_msg
+ */
+void RosWrapper::cbLocalMap(const octomap_msgs::Octomap& octomap_msg) {
+    // TODO you have to decide whether the update in this callback could interrupt planning thread
+    if(mSet[0].try_lock()){
+        p_base->setLocalMap(dynamic_cast<octomap::OcTree*>(octomap_msgs::binaryMsgToMap(octomap_msg)));
+        mSet[0].unlock();
+        isLocalMapReceived = true;
+    }else{
+        ROS_WARN("[RosWrapper] callback for CarPoseCov locked by planner. Passing update");
+    }
+}
 
 
 /**
@@ -211,8 +228,8 @@ void RosWrapper::cbGlobalMap(const octomap_msgs::Octomap& octomap_msg) {
  */
 bool RosWrapper::isAllInputReceived() {
     return
-              isGlobalMapReceived and
-//            isLocalMapReceived and
+//              isGlobalMapReceived and
+              isLocalMapReceived and
               isCarPoseCovReceived;
 }
 
@@ -260,8 +277,8 @@ void Wrapper::run(){
 
 bool Wrapper::plan(){
     mSet[0].lock();
-    ROS_INFO( "[Wrapper] Assume that planning takes 1.0 sec. Locking subscription.\n ");
-    std::this_thread::sleep_for(std::chrono::duration<double>(1.0));
+    ROS_INFO( "[Wrapper] Assume that planning takes 0.5 sec. Locking subscription.\n ");
+    std::this_thread::sleep_for(std::chrono::duration<double>(0.5));
     bool gpPassed = gp_ptr->plan();
     printf("----------------------------------------------------------------\n");
     bool lpPassed = lp_ptr->plan();
@@ -276,8 +293,8 @@ bool Wrapper::plan(){
 void Wrapper::updateToBase() {
     mSet[1].lock();
 
-    ROS_INFO( "[Wrapper] Assume that updating takes 0.5 sec. Locking rosmsg update.\n ");
-    std::this_thread::sleep_for(std::chrono::duration<double>(0.5));
+    ROS_INFO( "[Wrapper] Assume that updating takes 0.2 sec. Locking rosmsg update.\n ");
+    std::this_thread::sleep_for(std::chrono::duration<double>(0.2));
 
     gp_ptr->updateCorridorToBase();
     lp_ptr->updateTrajToBase();
@@ -292,9 +309,9 @@ void Wrapper::updateToBase() {
  */
 void Wrapper::runPlanning() {
 
-    ROS_INFO( "[Wrapper] Assuming planning is updated at every 5 sec.\n"); // TODO
+    ROS_INFO( "[Wrapper] Assuming planning is updated at every 0.5 sec.\n"); // TODO
     // initial stuffs
-    double Tp = 5; // 5 sec
+    double Tp = 0.5; // 0.5 sec
     auto tCkp = chrono::steady_clock::now(); // check point time
     bool doPlan = true; // turn on if we have started the class
     bool isPlanPossible = false;

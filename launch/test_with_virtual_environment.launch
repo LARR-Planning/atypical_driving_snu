@@ -4,11 +4,13 @@
 
 <launch>
 <!-- Arguments Start -->
-  <arg name="map"            default="auto_drive.bt"/> 
+  <arg name="map"            default="auto_drive.bt"/>
+  <arg name="bagfile"        default="realtime_mapping.bag"/>
+  <arg name="playBagFile"    default="true"/>
 <!-- Arguments End -->
 
 <!-- Nodes Start -->
-  <node pkg="octomap_server" type="octomap_server_node" name="octomap_server" args="$(find atypical_driving)/worlds/$(arg map)">
+  <node pkg="octomap_server" type="octomap_server_node" name="octomap_server" output="screen" args="$(find atypical_driving)/worlds/$(arg map)" unless="$(arg playBagFile)">
     <param name="resolution"                 value="0.1" />
     <param name="frame_id"                   value="map" type="string"/>
     <param name="sensor_model/max_range"     value="-1" />
@@ -21,13 +23,31 @@
     <remap from="octomap_full" to="/atypical_planning_test/global_map"/>
   </node>
 
-  <node pkg="atypical_driving" type="atypical_driving_test" name="atypical_planning_test" output="screen">
+  <node pkg="rosbag" type="play" name="rosbag_record_diag" output="screen" args="$(find atypical_driving)/worlds/$(arg bagfile)" if="$(arg playBagFile)">
+    <remap from="octomap_binary" to="/atypical_planning_test/local_map"/>
+  </node> 
 
+  <node pkg="atypical_driving" type="atypical_driving_test" name="atypical_planning_test" output="screen">
+    <param name="global_planner/horizon" value="5" />
+    <param name="global_planner/car_width" value="2" />
+    <param name="global_planner/car_height" value="0.0" />
+    <param name="global_planner/car_height" value="2.0" />
+    <param name="global_planner/car_speed" value="1.0" />
+    <param name="global_planner/road_width" value="4.0" />
+    <param name="global_planner/world_x_min" value="-5" />
+    <param name="global_planner/world_y_min" value="-1" />
+    <param name="global_planner/world_x_max" value="30" />
+    <param name="global_planner/world_y_max" value="100" />
+    <param name="global_planner/grid_resolution" value="0.5" />
+    <param name="global_planner/box_resolution" value="0.1" />
   </node>
 
-  <node pkg="atypical_driving" type="virtual_environment_generator" name="virtual_environment_generator" output="screen"/>
+  <node pkg="atypical_driving" type="virtual_environment_generator" name="virtual_environment_generator" output="screen">
+    <param name="virtual_env/desired_x" value="20" />
+    <param name="virtual_env/desired_y" value="68" />
+  </node>
 
-  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find atypical_driving)/launch/rviz_config/config.rviz"/>
+  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find atypical_driving)/launch/rviz_config/config.rviz" />
   
 <!-- Nodes End -->
 </launch>

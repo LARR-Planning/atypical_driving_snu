@@ -76,11 +76,11 @@ bool GlobalPlanner::plan() {
                 box[3] = y + car_radius;
             }
 
-            for (octomap::OcTree::leaf_bbx_iterator it = p_base->getGlobalOctoPtr()->begin_leafs_bbx(
+            for (octomap::OcTree::leaf_bbx_iterator it = p_base->getLocalOctoPtr()->begin_leafs_bbx(
                     octomap::point3d(box[0], box[1], param.car_z_min),
                     octomap::point3d(box[2], box[3], param.car_z_max)),
-                         end = p_base->getGlobalOctoPtr()->end_leafs_bbx(); it != end; ++it) {
-                if (p_base->getGlobalOctoPtr()->isNodeOccupied(*it)) {
+                         end = p_base->getLocalOctoPtr()->end_leafs_bbx(); it != end; ++it) {
+                if (p_base->getLocalOctoPtr()->isNodeOccupied(*it)) {
                     grid[i][j] = 1;
                 }
             }
@@ -165,11 +165,11 @@ bool GlobalPlanner::plan() {
 //        box.emplace_back(round(std::max(y,y_next) / param.box_xy_res) * param.box_xy_res); //TODO: consider this
 
         // Check initial box
-        for (octomap::OcTree::leaf_bbx_iterator it = p_base->getGlobalOctoPtr()->begin_leafs_bbx(
+        for (octomap::OcTree::leaf_bbx_iterator it = p_base->getLocalOctoPtr()->begin_leafs_bbx(
                 octomap::point3d(box_curr[0], box_curr[1], param.car_z_min),
                 octomap::point3d(box_curr[2], box_curr[3], param.car_z_max)),
-                     end = p_base->getGlobalOctoPtr()->end_leafs_bbx(); it != end; ++it) {
-            if (p_base->getGlobalOctoPtr()->isNodeOccupied(*it)) {
+                     end = p_base->getLocalOctoPtr()->end_leafs_bbx(); it != end; ++it) {
+            if (p_base->getLocalOctoPtr()->isNodeOccupied(*it)) {
                 printf("[GlobalPlanner] ERROR: Invalid initial trajectory. Obstacle invades initial trajectory");
                 return false;
             }
@@ -189,11 +189,11 @@ bool GlobalPlanner::plan() {
                    && box_update[2] < param.world_x_max + SP_EPSILON
                    && box_update[3] < param.world_y_max + SP_EPSILON) {
                 bool isObstacleInBox = false;
-                for (octomap::OcTree::leaf_bbx_iterator it = p_base->getGlobalOctoPtr()->begin_leafs_bbx(
+                for (octomap::OcTree::leaf_bbx_iterator it = p_base->getLocalOctoPtr()->begin_leafs_bbx(
                         octomap::point3d(box_update[0], box_update[1], param.car_z_min),
                         octomap::point3d(box_update[2], box_update[3], param.car_z_max)),
-                             end = p_base->getGlobalOctoPtr()->end_leafs_bbx(); it != end; ++it) {
-                    if (p_base->getGlobalOctoPtr()->isNodeOccupied(*it)) {
+                             end = p_base->getLocalOctoPtr()->end_leafs_bbx(); it != end; ++it) {
+                    if (p_base->getLocalOctoPtr()->isNodeOccupied(*it)) {
                         isObstacleInBox = true;
                         break;
                     }

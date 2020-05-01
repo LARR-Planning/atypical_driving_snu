@@ -127,6 +127,7 @@ namespace Planner {
         void setCarState(const CarState& carState_) { cur_state = carState_;};
         void setDesiredState(const CarState& desiredState_) {desired_state = desiredState_;};
         void setGlobalMap(octomap::OcTree* octoGlobalPtr_) {octo_global_ptr.reset(octoGlobalPtr_);};
+        void setLocalMap(octomap::OcTree* octoLocalPtr_) {octo_local_ptr.reset(octoLocalPtr_);};
 
         // Set from planner
         void setSkeletonPath(const vector<pair<double, double>>& skeleton_in_) {skeleton_path = skeleton_in_;}//TODO: delete this after debugging
