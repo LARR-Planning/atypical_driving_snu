@@ -18,17 +18,6 @@ GlobalPlanner::GlobalPlanner(const Planner::ParamGlobal &g_param,
 
     dimx = (int) round((grid_x_max - grid_x_min) / param.grid_resolution) + 1;
     dimy = (int) round((grid_y_max - grid_y_min) / param.grid_resolution) + 1;
-
-//    //TODO: delete below test-purpose code
-//    navigationPath.clear();
-//    for(int i = -26; i >= -68; i--){
-//        CarState fake_navigation_point = {(double)i, 4.5, 0, 0};
-//        navigationPath.emplace_back(fake_navigation_point);
-//    }
-//    for(int i = 5; i <= 20; i++){
-//        CarState fake_navigation_point = {-68, (double)i, 0, 0};
-//        navigationPath.emplace_back(fake_navigation_point);
-//    }
 }
 
 /**
@@ -36,7 +25,7 @@ GlobalPlanner::GlobalPlanner(const Planner::ParamGlobal &g_param,
  * @return true if success
  */
 bool GlobalPlanner::plan() {
-    printf("[GlobalPlanner] planning... \n");
+//    printf("[GlobalPlanner] planning... \n");
     curSkeletonPath.clear();
     curCorridorSeq.clear();
     grid.clear();
@@ -326,7 +315,7 @@ bool GlobalPlanner::plan() {
     curCorridorSeq[box_max - 1].t_end = SP_INFINITY;
     //// Corridor Generation Finish ////
 
-    printf("[GlobalPlanner] Done. \n");
+//    printf("[GlobalPlanner] Done. \n");
 
     //TODO: print out the outcome of the planning
 

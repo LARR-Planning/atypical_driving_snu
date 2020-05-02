@@ -18,6 +18,7 @@ using namespace Planner;
  */
 RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_):p_base(p_base_),nh("~"),mSet(mSet_){
     // Initiate ros communication (caution: parameters are parsed in udpateParam)
+    max_marker_id = 0;
 
     // Publisher
     pubPath = nh.advertise<nav_msgs::Path>("planning_path",1);
@@ -80,18 +81,25 @@ void RosWrapper::prepareROSmsgs() {
         // corridor_seq jungwon
         corridorSeq.markers.clear();
         int marker_id = 0;
-        double car_width = 2;
         double car_z_min = 0; //TODO: save car_z when updateParam
         double car_z_max = 2; //TODO: save car_z when updateParam
         visualization_msgs::Marker marker;
         marker.header.frame_id = worldFrameId;
+
         marker.type = visualization_msgs::Marker::CUBE;
-        marker.action = visualization_msgs::Marker::ADD;
         marker.color.a = 0.2;
         marker.color.r = 0;
         marker.color.g = 1;
         marker.color.b = 0;
+//        marker.lifetime = ros::Duration(0.1);
         for(auto corridor : p_base->getCorridorSeq()){
+            if(marker_id > max_marker_id){
+                marker.action = visualization_msgs::Marker::ADD;
+                max_marker_id = marker_id;
+            } else{
+                marker.action = visualization_msgs::Marker::MODIFY;
+            }
+
             marker.ns = "corridor";
             marker.id = marker_id++;
             marker.pose.position.x = (corridor.xu + corridor.xl) / 2;
@@ -103,6 +111,13 @@ void RosWrapper::prepareROSmsgs() {
             corridorSeq.markers.emplace_back(marker);
         }
         for(auto node : p_base->getSkeletonPath()){
+            if(marker_id > max_marker_id){
+                marker.action = visualization_msgs::Marker::ADD;
+                max_marker_id = marker_id;
+            } else{
+                marker.action = visualization_msgs::Marker::MODIFY;
+            }
+
             marker.ns = "skeleton_path";
             marker.id = marker_id++;
             marker.color.a = 1;
@@ -118,9 +133,14 @@ void RosWrapper::prepareROSmsgs() {
             corridorSeq.markers.emplace_back(marker);
         }
 
+         for(int i = marker_id; i <= max_marker_id; i++){
+            marker.id = i;
+            marker.action = marker.action = visualization_msgs::Marker::DELETE;
+        }
+
         mSet[1].unlock();
     }else{
-        ROS_WARN("[RosWrapper] Locking failed for ros data update. The output of p_base is being modified in planner ");
+//        ROS_WARN("[RosWrapper] Locking failed for ros data update. The output of p_base is being modified in planner ");
     }
 
 }
@@ -164,8 +184,9 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
         p_base->setCarState(curState);
         mSet[0].unlock();
         isCarPoseCovReceived = true;
+        ROS_INFO("[RosWrapper] car pose update");
     }else{
-        ROS_WARN("[RosWrapper] callback for CarPoseCov locked by planner. Passing update");
+//        ROS_WARN("[RosWrapper] callback for CarPoseCov locked by planner. Passing update");
     }
 }
 
@@ -184,7 +205,7 @@ void RosWrapper::cbDesiredCarPose(geometry_msgs::PoseConstPtr dataPtr) {
         mSet[0].unlock();
         isCarPoseCovReceived = true;
     }else{
-        ROS_WARN("[RosWrapper] callback for CarPoseCov locked by planner. Passing update");
+//        ROS_WARN("[RosWrapper] callback for CarPoseCov locked by planner. Passing update");
     }
 }
 
@@ -202,7 +223,7 @@ void RosWrapper::cbGlobalMap(const octomap_msgs::Octomap& octomap_msg) {
         mSet[0].unlock();
         isGlobalMapReceived = true;
     }else{
-        ROS_WARN("[RosWrapper] callback for CarPoseCov locked by planner. Passing update");
+//        ROS_WARN("[RosWrapper] callback for CarPoseCov locked by planner. Passing update");
     }
 }
 
@@ -216,8 +237,9 @@ void RosWrapper::cbLocalMap(const octomap_msgs::Octomap& octomap_msg) {
         p_base->setLocalMap(dynamic_cast<octomap::OcTree*>(octomap_msgs::binaryMsgToMap(octomap_msg)));
         mSet[0].unlock();
         isLocalMapReceived = true;
+        ROS_INFO("[RosWrapper] local map update");
     }else{
-        ROS_WARN("[RosWrapper] callback for CarPoseCov locked by planner. Passing update");
+//        ROS_WARN("[RosWrapper] callback for CarPoseCov locked by planner. Passing update");
     }
 }
 
@@ -277,10 +299,10 @@ void Wrapper::run(){
 
 bool Wrapper::plan(){
     mSet[0].lock();
-    ROS_INFO( "[Wrapper] Assume that planning takes 0.5 sec. Locking subscription.\n ");
-    std::this_thread::sleep_for(std::chrono::duration<double>(0.5));
+//    ROS_INFO( "[Wrapper] Assume that planning takes 0.5 sec. Locking subscription.\n ");
+//    std::this_thread::sleep_for(std::chrono::duration<double>(0.5));
     bool gpPassed = gp_ptr->plan();
-    printf("----------------------------------------------------------------\n");
+//    printf("----------------------------------------------------------------\n");
     bool lpPassed = lp_ptr->plan();
     mSet[0].unlock();
     return (gpPassed and lpPassed);
@@ -292,15 +314,12 @@ bool Wrapper::plan(){
  */
 void Wrapper::updateToBase() {
     mSet[1].lock();
-
-    ROS_INFO( "[Wrapper] Assume that updating takes 0.2 sec. Locking rosmsg update.\n ");
-    std::this_thread::sleep_for(std::chrono::duration<double>(0.2));
-
+//    ROS_INFO( "[Wrapper] Assume that updating takes 0.2 sec. Locking rosmsg update.\n ");
+//    std::this_thread::sleep_for(std::chrono::duration<double>(0.2));
     gp_ptr->updateCorridorToBase();
     lp_ptr->updateTrajToBase();
     mSet[1].unlock();
-    ROS_INFO( "[Wrapper] p_base updated. Unlocking.\n ");
-
+//    ROS_INFO( "[Wrapper] p_base updated. Unlocking.\n ");
 }
 
 
@@ -309,9 +328,9 @@ void Wrapper::updateToBase() {
  */
 void Wrapper::runPlanning() {
 
-    ROS_INFO( "[Wrapper] Assuming planning is updated at every 0.5 sec.\n"); // TODO
+//    ROS_INFO( "[Wrapper] Assuming planning is updated at every 0.5 sec.\n"); // TODO
     // initial stuffs
-    double Tp = 0.5; // 0.5 sec
+    double Tp = 0; // 0.5 sec
     auto tCkp = chrono::steady_clock::now(); // check point time
     bool doPlan = true; // turn on if we have started the class
     bool isPlanPossible = false;
@@ -324,12 +343,12 @@ void Wrapper::runPlanning() {
             // If planning is triggered
             if (doPlan){
                 tCkp = chrono::steady_clock::now(); // check point time
-                printf("================================================================\n");
-                ROS_INFO( "[Wrapper] Planning started.\n\n"); // TODO
+//                printf("================================================================");
+//                ROS_INFO( "[Wrapper] Planning started."); // TODO
 
                 // Do planning
                 isPlanSuccess = plan();
-                printf("================================================================\n");
+//                printf("================================================================");
 
                 // Only when the planning results are valid, we update p_base
                 // At this step, the prepareROSmsgs() of RosWraper is unavailable

@@ -42,6 +42,7 @@ namespace Planner{
          */
 
         string worldFrameId;
+        int max_marker_id; //count current published markers
 
         /**
          * Topic to be published

@@ -7,7 +7,7 @@ static geometry_msgs::PoseWithCovariance curState;
 
 void cbCarPoseCov(const nav_msgs::Odometry& odom){
     curState.pose.position.x = odom.pose.pose.position.x;
-    curState.pose.position.y = odom.pose.pose.position.y;
+    curState.pose.position.y = -odom.pose.pose.position.y; //TODO: fix /airsim_car_node/PhysXCar/odom_local_ned topic to match axis
     curState.pose.orientation.x = odom.pose.pose.orientation.x;
     curState.pose.orientation.y = odom.pose.pose.orientation.y;
     curState.pose.orientation.z = odom.pose.pose.orientation.z;
