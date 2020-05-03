@@ -51,6 +51,7 @@ namespace Planner {
         double world_y_max;
         double grid_resolution;
         double box_resolution;
+        double box_max_size;
     };
 
     /**

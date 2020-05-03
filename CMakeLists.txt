@@ -4,6 +4,7 @@ project(atypical_driving)
 set(CMAKE_CXX_STANDARD 11)
 
 
+
 find_package(octomap REQUIRED)
 include_directories(${OCTOMAP_INCLUDE_DIRS})
 link_libraries(${OCTOMAP_LIBRARIES})

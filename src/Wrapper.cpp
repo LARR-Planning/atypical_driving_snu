@@ -43,18 +43,19 @@ void RosWrapper::updateParam(Param &param_) {
     planningPath.header.frame_id = worldFrameId;
 
     // global planner
-    nh.param<double>("global_planner/horizon",param_.g_param.horizon,5);
+    nh.param<double>("global_planner/horizon",param_.g_param.horizon,15);
     nh.param<double>("global_planner/car_width",param_.g_param.car_width,2);
-    nh.param<double>("global_planner/car_height",param_.g_param.car_z_min,-0.5);
-    nh.param<double>("global_planner/car_height",param_.g_param.car_z_max,0.0);
+    nh.param<double>("global_planner/car_z_min",param_.g_param.car_z_min,0.0);
+    nh.param<double>("global_planner/car_z_max",param_.g_param.car_z_max,2.0);
     nh.param<double>("global_planner/car_speed",param_.g_param.car_speed,1.0);
     nh.param<double>("global_planner/road_width",param_.g_param.road_width,4.0);
-    nh.param<double>("global_planner/world_x_min",param_.g_param.world_x_min,-100);
-    nh.param<double>("global_planner/world_y_min",param_.g_param.world_y_min,-5);
-    nh.param<double>("global_planner/world_x_max",param_.g_param.world_x_max,0);
-    nh.param<double>("global_planner/world_y_max",param_.g_param.world_y_max,30);
+    nh.param<double>("global_planner/world_x_min",param_.g_param.world_x_min,-10);
+    nh.param<double>("global_planner/world_y_min",param_.g_param.world_y_min,-1);
+    nh.param<double>("global_planner/world_x_max",param_.g_param.world_x_max,35);
+    nh.param<double>("global_planner/world_y_max",param_.g_param.world_y_max,80);
     nh.param<double>("global_planner/grid_resolution",param_.g_param.grid_resolution,0.5);
-    nh.param<double>("global_planner/box_resolution",param_.g_param.box_resolution,0.1);
+    nh.param<double>("global_planner/box_resolution",param_.g_param.box_resolution,0.3);
+    nh.param<double>("global_planner/box_max_size",param_.g_param.box_max_size,10);
 
     // local planner
     nh.param<double>("local_planner/horizon",param_.l_param.horizon,5);
@@ -83,16 +84,15 @@ void RosWrapper::prepareROSmsgs() {
         int marker_id = 0;
         double car_z_min = 0; //TODO: save car_z when updateParam
         double car_z_max = 2; //TODO: save car_z when updateParam
-        visualization_msgs::Marker marker;
-        marker.header.frame_id = worldFrameId;
 
-        marker.type = visualization_msgs::Marker::CUBE;
-        marker.color.a = 0.2;
-        marker.color.r = 0;
-        marker.color.g = 1;
-        marker.color.b = 0;
-//        marker.lifetime = ros::Duration(0.1);
         for(auto corridor : p_base->getCorridorSeq()){
+            visualization_msgs::Marker marker;
+            marker.header.frame_id = worldFrameId;
+            marker.ns = "corridor";
+            marker.type = visualization_msgs::Marker::CUBE;
+            marker.id = marker_id;
+            marker.lifetime - ros::Duration(0.1);
+
             if(marker_id > max_marker_id){
                 marker.action = visualization_msgs::Marker::ADD;
                 max_marker_id = marker_id;
@@ -100,8 +100,10 @@ void RosWrapper::prepareROSmsgs() {
                 marker.action = visualization_msgs::Marker::MODIFY;
             }
 
-            marker.ns = "corridor";
-            marker.id = marker_id++;
+            marker.color.a = 0.2;
+            marker.color.r = 0;
+            marker.color.g = 1;
+            marker.color.b = 0;
             marker.pose.position.x = (corridor.xu + corridor.xl) / 2;
             marker.pose.position.y = (corridor.yu + corridor.yl) / 2;
             marker.pose.position.z = (car_z_min + car_z_max)/2;
@@ -109,8 +111,16 @@ void RosWrapper::prepareROSmsgs() {
             marker.scale.y = corridor.yl - corridor.yu;
             marker.scale.z = car_z_max - car_z_min;
             corridorSeq.markers.emplace_back(marker);
+            marker_id++;
         }
         for(auto node : p_base->getSkeletonPath()){
+            visualization_msgs::Marker marker;
+            marker.header.frame_id = worldFrameId;
+            marker.type = visualization_msgs::Marker::CUBE;
+//            marker.ns = "skeleton_path";
+            marker.ns = "corridor";
+            marker.id = marker_id;
+
             if(marker_id > max_marker_id){
                 marker.action = visualization_msgs::Marker::ADD;
                 max_marker_id = marker_id;
@@ -118,8 +128,6 @@ void RosWrapper::prepareROSmsgs() {
                 marker.action = visualization_msgs::Marker::MODIFY;
             }
 
-            marker.ns = "skeleton_path";
-            marker.id = marker_id++;
             marker.color.a = 1;
             marker.color.r = 1;
             marker.color.g = 0;
@@ -131,11 +139,16 @@ void RosWrapper::prepareROSmsgs() {
             marker.scale.y = 0.1;
             marker.scale.z = 0.1;
             corridorSeq.markers.emplace_back(marker);
+            marker_id++;
         }
 
-         for(int i = marker_id; i <= max_marker_id; i++){
+        for(int i = marker_id; i <= max_marker_id; i++){
+            visualization_msgs::Marker marker;
+            marker.header.frame_id = worldFrameId;
+            marker.ns = "corridor";
             marker.id = i;
-            marker.action = marker.action = visualization_msgs::Marker::DELETE;
+            marker.action = visualization_msgs::Marker::DELETE;
+            corridorSeq.markers.emplace_back(marker);
         }
 
         mSet[1].unlock();
@@ -330,7 +343,7 @@ void Wrapper::runPlanning() {
 
 //    ROS_INFO( "[Wrapper] Assuming planning is updated at every 0.5 sec.\n"); // TODO
     // initial stuffs
-    double Tp = 0; // 0.5 sec
+    double Tp = 1; // 0.5 sec
     auto tCkp = chrono::steady_clock::now(); // check point time
     bool doPlan = true; // turn on if we have started the class
     bool isPlanPossible = false;
@@ -354,6 +367,9 @@ void Wrapper::runPlanning() {
                 // At this step, the prepareROSmsgs() of RosWraper is unavailable
                 if (isPlanSuccess){
                     updateToBase();
+                }
+                else{
+                    ROS_ERROR("[Wrapper] planning failed");
                 }
             }
             // Trigger condition of planning. This can be anything other than the simple periodic triggering

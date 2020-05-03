@@ -128,7 +128,9 @@ bool GlobalPlanner::plan() {
     //// Corridor Generation Start ////
     double x_curr, y_curr, x_next, y_next, dx, dy;
     std::array<double, 4> box_prev = {0,0,0,0};
-    for (int m = 0; m < curSkeletonPath.size() - 1; m++) {
+    int M = min((int)(param.horizon / param.grid_resolution * param.car_speed), (int)curSkeletonPath.size() - 1);
+//    int M = curSkeletonPath.size() - 1;
+    for (int m = 0; m < M; m++) {
         auto state_curr = curSkeletonPath[m];
         x_curr = state_curr.first;
         y_curr = state_curr.second;
@@ -176,7 +178,9 @@ bool GlobalPlanner::plan() {
             while (box_update[0] > param.world_x_min - SP_EPSILON
                    && box_update[1] > param.world_y_min - SP_EPSILON
                    && box_update[2] < param.world_x_max + SP_EPSILON
-                   && box_update[3] < param.world_y_max + SP_EPSILON) {
+                   && box_update[3] < param.world_y_max + SP_EPSILON
+                   && box_cand[2] - box_cand[0] < param.box_max_size
+                   && box_cand[3] - box_cand[1] < param.box_max_size) {
                 bool isObstacleInBox = false;
                 for (octomap::OcTree::leaf_bbx_iterator it = p_base->getLocalOctoPtr()->begin_leafs_bbx(
                         octomap::point3d(box_update[0], box_update[1], param.car_z_min),
@@ -221,8 +225,8 @@ bool GlobalPlanner::plan() {
             }
         }
 
-        for (int j = 0; j < 1; j++) box_curr[j] += car_radius;
-        for (int j = 2; j < 3; j++) box_curr[j] -= car_radius;
+//        for (int j = 0; j < 1; j++) box_curr[j] += car_radius;
+//        for (int j = 2; j < 3; j++) box_curr[j] -= car_radius;
 
         Corridor corridor = {box_curr[0], box_curr[1], box_curr[2], box_curr[3], -1, -1};
         curCorridorSeq.emplace_back(corridor);
@@ -231,7 +235,7 @@ bool GlobalPlanner::plan() {
 
     // Generate box time segment
     int box_max = curCorridorSeq.size();
-    int path_max = curSkeletonPath.size();
+    int path_max = M + 1;
     std::vector<std::vector<int>> box_log(box_max);
     for(int i = 0; i < box_max; i++){
         box_log[i].resize(path_max);
