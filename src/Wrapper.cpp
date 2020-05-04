@@ -197,7 +197,7 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
         p_base->setCarState(curState);
         mSet[0].unlock();
         isCarPoseCovReceived = true;
-        ROS_INFO("[RosWrapper] car pose update");
+//        ROS_INFO("[RosWrapper] car pose update");
     }else{
 //        ROS_WARN("[RosWrapper] callback for CarPoseCov locked by planner. Passing update");
     }
@@ -250,7 +250,7 @@ void RosWrapper::cbLocalMap(const octomap_msgs::Octomap& octomap_msg) {
         p_base->setLocalMap(dynamic_cast<octomap::OcTree*>(octomap_msgs::binaryMsgToMap(octomap_msg)));
         mSet[0].unlock();
         isLocalMapReceived = true;
-        ROS_INFO("[RosWrapper] local map update");
+//        ROS_INFO("[RosWrapper] local map update");
     }else{
 //        ROS_WARN("[RosWrapper] callback for CarPoseCov locked by planner. Passing update");
     }
@@ -343,7 +343,7 @@ void Wrapper::runPlanning() {
 
 //    ROS_INFO( "[Wrapper] Assuming planning is updated at every 0.5 sec.\n"); // TODO
     // initial stuffs
-    double Tp = 1; // 0.5 sec
+    double Tp = 0.1; // sec
     auto tCkp = chrono::steady_clock::now(); // check point time
     bool doPlan = true; // turn on if we have started the class
     bool isPlanPossible = false;
@@ -363,6 +363,7 @@ void Wrapper::runPlanning() {
                 isPlanSuccess = plan();
 //                printf("================================================================");
 
+                ROS_INFO_STREAM("[Wrapper] planning time: " << std::chrono::duration_cast<std::chrono::microseconds>(chrono::steady_clock::now() - tCkp).count()/1000.0 << "ms");
                 // Only when the planning results are valid, we update p_base
                 // At this step, the prepareROSmsgs() of RosWraper is unavailable
                 if (isPlanSuccess){
@@ -374,7 +375,6 @@ void Wrapper::runPlanning() {
             }
             // Trigger condition of planning. This can be anything other than the simple periodic triggering
             doPlan = chrono::steady_clock::now() - tCkp > std::chrono::duration<double>(Tp);
-
         }else{
             ROS_WARN_ONCE("[Wrapper] waiting planning input subscriptions..");
         }

@@ -1,5 +1,6 @@
 #include <atypical_planner/GlobalPlanner.h>
 #include <third_party/jps.h>
+
 #define SP_EPSILON          1e-9
 #define SP_EPSILON_FLOAT    1e-4
 #define SP_INFINITY         1e+9
@@ -26,6 +27,8 @@ GlobalPlanner::GlobalPlanner(const Planner::ParamGlobal &g_param,
  */
 bool GlobalPlanner::plan() {
 //    printf("[GlobalPlanner] planning... \n");
+//    auto tCkp = chrono::steady_clock::now(); // check point time
+
     curSkeletonPath.clear();
     curCorridorSeq.clear();
     grid.clear();
@@ -41,6 +44,10 @@ bool GlobalPlanner::plan() {
     std::array<double, 4> box;
     for (int i = 0; i < dimx; i++) {
         for (int j = 0; j < dimy; j++) {
+//            if(grid[i][j] == 1){
+//                continue; //TODO: too dangerous code do not consider noise
+//            }
+
             x = i * param.grid_resolution + grid_x_min;
             y = j * param.grid_resolution + grid_y_min;
 
@@ -71,10 +78,41 @@ bool GlobalPlanner::plan() {
                          end = p_base->getLocalOctoPtr()->end_leafs_bbx(); it != end; ++it) {
                 if (p_base->getLocalOctoPtr()->isNodeOccupied(*it)) {
                     grid[i][j] = 1;
+                    break;
                 }
             }
         }
     }
+
+//    {
+//        std::shared_ptr<DynamicEDTOctomap> distmap_obj;
+//        float maxDist = 1;
+//        octomap::point3d min_point3d(param.world_x_min, param.world_y_min, 0);
+//        octomap::point3d max_point3d(param.world_x_max, param.world_y_max, 2);
+//        distmap_obj.reset(new DynamicEDTOctomap(maxDist, p_base->getLocalOctoPtr(), min_point3d, max_point3d, false));
+//        distmap_obj.get()->update();
+//
+//        for (int i = 0; i < dimx; i++) {
+//            for (int j = 0; j < dimy; j++) {
+//                x = i * param.grid_resolution + grid_x_min;
+//                y = j * param.grid_resolution + grid_y_min;
+//
+//                octomap::point3d cur_point(x, y, (param.car_z_max + param.car_z_min)/2);
+//                float dist = distmap_obj.get()->getDistance(cur_point);
+//                if (dist < 0) {
+//                    printf("[GlobalPlanner] distmap error");
+//                    return false;
+//                }
+//
+//                if (dist < car_radius) {
+//                    grid[i][j] = 1;
+//                }
+//            }
+//        }
+//    }
+
+//    cout << "[GlobalPlanner] grid generation: " << std::chrono::duration_cast<std::chrono::microseconds>(chrono::steady_clock::now() - tCkp).count()/1000.0 << "ms" << endl;
+
 
     //// JPS start ////
     // Set start, goal points
@@ -122,8 +160,7 @@ bool GlobalPlanner::plan() {
             }
         }
     }
-
-    //// JPS finish ////
+     //// JPS finish ////
 
     //// Corridor Generation Start ////
     double x_curr, y_curr, x_next, y_next, dx, dy;
@@ -247,7 +284,7 @@ bool GlobalPlanner::plan() {
             y = curSkeletonPath[j].second;
             if (x > curCorridorSeq[i].xl - SP_EPSILON
                 && y > curCorridorSeq[i].yl - SP_EPSILON
-                && x < curCorridorSeq[i].xu - SP_EPSILON
+                && x < curCorridorSeq[i].xu + SP_EPSILON
                 && y < curCorridorSeq[i].yu + SP_EPSILON)
             {
                 if (j == 0) {
@@ -285,7 +322,7 @@ bool GlobalPlanner::plan() {
                 delta_y = abs(curSkeletonPath[i+1].second - curSkeletonPath[i].second);
                 if(delta_x > SP_EPSILON_FLOAT && delta_y < SP_EPSILON_FLOAT){
                     box_width = min(curCorridorSeq[box_iter].yu - curCorridorSeq[box_iter].yl, param.road_width);
-                    time_coefficient = box_width / param.road_width; //TODO: naive time_coefficient formulation
+                    time_coefficient = param.road_width / box_width; //TODO: naive time_coefficient formulation
                     timeSegment += time_coefficient * delta_x / param.car_speed;
                 }
                 else if(delta_x < SP_EPSILON_FLOAT && delta_y > SP_EPSILON_FLOAT){
@@ -298,6 +335,7 @@ bool GlobalPlanner::plan() {
                 }
                 else{
                     printf("[GlobalPlanner] ERROR: Invalid initial trajectory. initial trajectory has diagonal move");
+                    return false;
                 }
             }
             curCorridorSeq[box_iter].t_end = timeSegment;

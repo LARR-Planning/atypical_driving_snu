@@ -30,8 +30,8 @@
   <node pkg="atypical_driving" type="atypical_driving_test" name="atypical_planning_test" output="screen">
     <param name="global_planner/horizon" value="15" />
     <param name="global_planner/car_width" value="2" />
-    <param name="global_planner/car_z_min" value="0.0" />
-    <param name="global_planner/car_z_max" value="2.0" />
+    <param name="global_planner/car_z_min" value="0.5" />
+    <param name="global_planner/car_z_max" value="1.0" />
     <param name="global_planner/car_speed" value="1.0" />
     <param name="global_planner/road_width" value="4.0" />
     <param name="global_planner/world_x_min" value="-10" />
