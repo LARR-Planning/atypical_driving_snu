@@ -82,17 +82,15 @@ void RosWrapper::prepareROSmsgs() {
         // corridor_seq jungwon
         corridorSeq.markers.clear();
         int marker_id = 0;
-        double car_z_min = 0; //TODO: save car_z when updateParam
-        double car_z_max = 2; //TODO: save car_z when updateParam
+        double car_z_min = 0.5; //TODO: save car_z when updateParam
+        double car_z_max = 1.5; //TODO: save car_z when updateParam
+
+        visualization_msgs::Marker marker;
+        marker.header.frame_id = worldFrameId;
+        marker.type = visualization_msgs::Marker::CUBE;
 
         for(auto corridor : p_base->getCorridorSeq()){
-            visualization_msgs::Marker marker;
-            marker.header.frame_id = worldFrameId;
-            marker.ns = "corridor";
-            marker.type = visualization_msgs::Marker::CUBE;
             marker.id = marker_id;
-            marker.lifetime - ros::Duration(0.1);
-
             if(marker_id > max_marker_id){
                 marker.action = visualization_msgs::Marker::ADD;
                 max_marker_id = marker_id;
@@ -107,20 +105,14 @@ void RosWrapper::prepareROSmsgs() {
             marker.pose.position.x = (corridor.xu + corridor.xl) / 2;
             marker.pose.position.y = (corridor.yu + corridor.yl) / 2;
             marker.pose.position.z = (car_z_min + car_z_max)/2;
-            marker.scale.x = corridor.xl - corridor.xu;
-            marker.scale.y = corridor.yl - corridor.yu;
+            marker.scale.x = corridor.xu - corridor.xl;
+            marker.scale.y = corridor.yu - corridor.yl;
             marker.scale.z = car_z_max - car_z_min;
             corridorSeq.markers.emplace_back(marker);
             marker_id++;
         }
         for(auto node : p_base->getSkeletonPath()){
-            visualization_msgs::Marker marker;
-            marker.header.frame_id = worldFrameId;
-            marker.type = visualization_msgs::Marker::CUBE;
-//            marker.ns = "skeleton_path";
-            marker.ns = "corridor";
             marker.id = marker_id;
-
             if(marker_id > max_marker_id){
                 marker.action = visualization_msgs::Marker::ADD;
                 max_marker_id = marker_id;
@@ -141,15 +133,81 @@ void RosWrapper::prepareROSmsgs() {
             corridorSeq.markers.emplace_back(marker);
             marker_id++;
         }
+        {
+            Corridor search_range = p_base->getSearchRange();
+
+            marker.id = marker_id;
+            if(marker_id > max_marker_id){
+                marker.action = visualization_msgs::Marker::ADD;
+                max_marker_id = marker_id;
+            } else{
+                marker.action = visualization_msgs::Marker::MODIFY;
+            }
+
+            marker.color.a = 1;
+            marker.color.r = 0;
+            marker.color.g = 1;
+            marker.color.b = 1;
+//            marker.pose.position.x = (search_range.xu + search_range.xl) / 2;
+//            marker.pose.position.y = (search_range.yu + search_range.yl) / 2;
+//            marker.pose.position.z = (car_z_min + car_z_max)/2;
+//            marker.scale.x = search_range.xu - search_range.xl;
+//            marker.scale.y = search_range.yu - search_range.yl;
+//            marker.scale.z = car_z_max - car_z_min;
+
+            marker.type = visualization_msgs::Marker::LINE_LIST;
+
+            marker.pose.position.x = 0;
+            marker.pose.position.y = 0;
+            marker.pose.position.z = 0;
+
+            marker.pose.orientation.x = 0;
+            marker.pose.orientation.y = 0;
+            marker.pose.orientation.z = 0;
+            marker.pose.orientation.w = 1.0;
+
+            marker.scale.x = 0.1;
+            geometry_msgs::Point point;
+            point.z = (car_z_min + car_z_max)/2;
+
+            point.x = search_range.xl;
+            point.y = search_range.yl;
+            marker.points.emplace_back(point);
+            point.x = search_range.xl;
+            point.y = search_range.yu;
+            marker.points.emplace_back(point);
+
+            point.x = search_range.xl;
+            point.y = search_range.yu;
+            marker.points.emplace_back(point);
+            point.x = search_range.xu;
+            point.y = search_range.yu;
+            marker.points.emplace_back(point);
+
+            point.x = search_range.xu;
+            point.y = search_range.yu;
+            marker.points.emplace_back(point);
+            point.x = search_range.xu;
+            point.y = search_range.yl;
+            marker.points.emplace_back(point);
+
+            point.x = search_range.xu;
+            point.y = search_range.yl;
+            marker.points.emplace_back(point);
+            point.x = search_range.xl;
+            point.y = search_range.yl;
+            marker.points.emplace_back(point);
+
+            corridorSeq.markers.emplace_back(marker);
+            marker_id++;
+        }
 
         for(int i = marker_id; i <= max_marker_id; i++){
-            visualization_msgs::Marker marker;
-            marker.header.frame_id = worldFrameId;
-            marker.ns = "corridor";
             marker.id = i;
             marker.action = visualization_msgs::Marker::DELETE;
             corridorSeq.markers.emplace_back(marker);
         }
+        max_marker_id = marker_id - 1;
 
         mSet[1].unlock();
     }else{

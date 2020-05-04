@@ -28,10 +28,25 @@ GlobalPlanner::GlobalPlanner(const Planner::ParamGlobal &g_param,
 bool GlobalPlanner::plan() {
 //    printf("[GlobalPlanner] planning... \n");
 //    auto tCkp = chrono::steady_clock::now(); // check point time
-
     curSkeletonPath.clear();
     curCorridorSeq.clear();
     grid.clear();
+
+    // Set start, goal points
+    int i_start, j_start, i_goal, j_goal;
+    i_start = (int) round((p_base->getCarState().x - grid_x_min) / param.grid_resolution);
+    j_start = (int) round((p_base->getCarState().y - grid_y_min) / param.grid_resolution);
+    i_goal = (int) round((p_base->getDesiredState().x - grid_x_min) / param.grid_resolution);
+    j_goal = (int) round((p_base->getDesiredState().y - grid_y_min) / param.grid_resolution);
+
+    if(i_start < 0 || i_start >= dimx || j_start < 0 || j_start >= dimy){
+        printf("[GlobalPlanner] ERROR: start point is out of bound \n");
+        return false;
+    }
+    if(i_goal < 0 || i_goal >= dimx || j_goal < 0 || j_goal >= dimy){
+        printf("[GlobalPlanner] ERROR: goal point is out of bound \n");
+        return false;
+    }
 
     // Set obstacle
     grid.resize(dimx);
@@ -42,12 +57,20 @@ bool GlobalPlanner::plan() {
     double car_radius = param.car_width / 2;
     double x, y;
     std::array<double, 4> box;
-    for (int i = 0; i < dimx; i++) {
-        for (int j = 0; j < dimy; j++) {
-//            if(grid[i][j] == 1){
-//                continue; //TODO: too dangerous code do not consider noise
-//            }
+    int grid_horizon = static_cast<int>(param.horizon / param.grid_resolution * param.car_speed);
+    int i_min, i_max, j_min, j_max;
+    i_min = max(i_start - grid_horizon, 0);
+    j_min = max(j_start - grid_horizon, 0);
+    i_max = min(i_start + grid_horizon, dimx - 1);
+    j_max = min(j_start + grid_horizon, dimy - 1);
 
+    search_range.xl = i_min * param.grid_resolution + grid_x_min;
+    search_range.yl = j_min * param.grid_resolution + grid_y_min;
+    search_range.xu = i_max * param.grid_resolution + grid_x_min;
+    search_range.yu = j_max * param.grid_resolution + grid_y_min;
+
+    for (int i = i_min; i <= i_max; i++) {
+        for (int j = j_min; j <= j_max; j++) {
             x = i * param.grid_resolution + grid_x_min;
             y = j * param.grid_resolution + grid_y_min;
 
@@ -110,18 +133,9 @@ bool GlobalPlanner::plan() {
 //            }
 //        }
 //    }
-
 //    cout << "[GlobalPlanner] grid generation: " << std::chrono::duration_cast<std::chrono::microseconds>(chrono::steady_clock::now() - tCkp).count()/1000.0 << "ms" << endl;
 
-
     //// JPS start ////
-    // Set start, goal points
-    int i_start, j_start, i_goal, j_goal;
-    i_start = (int) round((p_base->getCarState().x - grid_x_min) / param.grid_resolution);
-    j_start = (int) round((p_base->getCarState().y - grid_y_min) / param.grid_resolution);
-    i_goal = (int) round((p_base->getDesiredState().x - grid_x_min) / param.grid_resolution);
-    j_goal = (int) round((p_base->getDesiredState().y - grid_y_min) / param.grid_resolution);
-
     Node start(i_start,j_start,0,0,0,0);
     Node goal(i_goal,j_goal,0,0,0,0);
 
@@ -263,7 +277,7 @@ bool GlobalPlanner::plan() {
         }
 
 //        for (int j = 0; j < 1; j++) box_curr[j] += car_radius;
-//        for (int j = 2; j < 3; j++) box_curr[j] -= car_radius;
+//        for (int j = 2; j < 3; j++) box_curr[j] -= car_radius; //TODO: uncomment here
 
         Corridor corridor = {box_curr[0], box_curr[1], box_curr[2], box_curr[3], -1, -1};
         curCorridorSeq.emplace_back(corridor);
@@ -372,4 +386,5 @@ void GlobalPlanner::updateCorridorToBase() {
     // update routine here
     p_base->setCorridorSeq(curCorridorSeq); // just an example
     p_base->setSkeletonPath(curSkeletonPath); //TODO: delete this after debugging
+    p_base->setSearchRange(search_range);
 }
