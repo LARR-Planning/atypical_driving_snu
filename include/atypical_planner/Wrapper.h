@@ -42,6 +42,7 @@ namespace Planner{
          */
 
         string worldFrameId;
+        int max_marker_id; //count current published markers
 
         /**
          * Topic to be published
@@ -63,7 +64,7 @@ namespace Planner{
         ros::Subscriber subCarPoseCov; /**< car state from KAIST */
         ros::Subscriber subDesiredCarPose; // desired pose from user
         ros::Subscriber subGlobalMap; // global map from ????
-
+        ros::Subscriber subLocalMap; // local map from LIDAR????
         /**
          * Callback functions
          */
@@ -71,6 +72,7 @@ namespace Planner{
         void cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr);
         void cbDesiredCarPose(geometry_msgs::PoseConstPtr dataPtr);
         void cbGlobalMap(const octomap_msgs::Octomap& octomap_msg);
+        void cbLocalMap(const octomap_msgs::Octomap& octomap_msg);
 
         /**
          * Core routines in while loop of ROS thread

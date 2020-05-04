@@ -1,5 +1,6 @@
 #include <atypical_planner/GlobalPlanner.h>
 #include <third_party/jps.h>
+
 #define SP_EPSILON          1e-9
 #define SP_EPSILON_FLOAT    1e-4
 #define SP_INFINITY         1e+9
@@ -18,17 +19,6 @@ GlobalPlanner::GlobalPlanner(const Planner::ParamGlobal &g_param,
 
     dimx = (int) round((grid_x_max - grid_x_min) / param.grid_resolution) + 1;
     dimy = (int) round((grid_y_max - grid_y_min) / param.grid_resolution) + 1;
-
-//    //TODO: delete below test-purpose code
-//    navigationPath.clear();
-//    for(int i = -26; i >= -68; i--){
-//        CarState fake_navigation_point = {(double)i, 4.5, 0, 0};
-//        navigationPath.emplace_back(fake_navigation_point);
-//    }
-//    for(int i = 5; i <= 20; i++){
-//        CarState fake_navigation_point = {-68, (double)i, 0, 0};
-//        navigationPath.emplace_back(fake_navigation_point);
-//    }
 }
 
 /**
@@ -36,7 +26,9 @@ GlobalPlanner::GlobalPlanner(const Planner::ParamGlobal &g_param,
  * @return true if success
  */
 bool GlobalPlanner::plan() {
-    printf("[GlobalPlanner] planning... \n");
+//    printf("[GlobalPlanner] planning... \n");
+//    auto tCkp = chrono::steady_clock::now(); // check point time
+
     curSkeletonPath.clear();
     curCorridorSeq.clear();
     grid.clear();
@@ -52,6 +44,10 @@ bool GlobalPlanner::plan() {
     std::array<double, 4> box;
     for (int i = 0; i < dimx; i++) {
         for (int j = 0; j < dimy; j++) {
+//            if(grid[i][j] == 1){
+//                continue; //TODO: too dangerous code do not consider noise
+//            }
+
             x = i * param.grid_resolution + grid_x_min;
             y = j * param.grid_resolution + grid_y_min;
 
@@ -76,16 +72,47 @@ bool GlobalPlanner::plan() {
                 box[3] = y + car_radius;
             }
 
-            for (octomap::OcTree::leaf_bbx_iterator it = p_base->getGlobalOctoPtr()->begin_leafs_bbx(
+            for (octomap::OcTree::leaf_bbx_iterator it = p_base->getLocalOctoPtr()->begin_leafs_bbx(
                     octomap::point3d(box[0], box[1], param.car_z_min),
                     octomap::point3d(box[2], box[3], param.car_z_max)),
-                         end = p_base->getGlobalOctoPtr()->end_leafs_bbx(); it != end; ++it) {
-                if (p_base->getGlobalOctoPtr()->isNodeOccupied(*it)) {
+                         end = p_base->getLocalOctoPtr()->end_leafs_bbx(); it != end; ++it) {
+                if (p_base->getLocalOctoPtr()->isNodeOccupied(*it)) {
                     grid[i][j] = 1;
+                    break;
                 }
             }
         }
     }
+
+//    {
+//        std::shared_ptr<DynamicEDTOctomap> distmap_obj;
+//        float maxDist = 1;
+//        octomap::point3d min_point3d(param.world_x_min, param.world_y_min, 0);
+//        octomap::point3d max_point3d(param.world_x_max, param.world_y_max, 2);
+//        distmap_obj.reset(new DynamicEDTOctomap(maxDist, p_base->getLocalOctoPtr(), min_point3d, max_point3d, false));
+//        distmap_obj.get()->update();
+//
+//        for (int i = 0; i < dimx; i++) {
+//            for (int j = 0; j < dimy; j++) {
+//                x = i * param.grid_resolution + grid_x_min;
+//                y = j * param.grid_resolution + grid_y_min;
+//
+//                octomap::point3d cur_point(x, y, (param.car_z_max + param.car_z_min)/2);
+//                float dist = distmap_obj.get()->getDistance(cur_point);
+//                if (dist < 0) {
+//                    printf("[GlobalPlanner] distmap error");
+//                    return false;
+//                }
+//
+//                if (dist < car_radius) {
+//                    grid[i][j] = 1;
+//                }
+//            }
+//        }
+//    }
+
+//    cout << "[GlobalPlanner] grid generation: " << std::chrono::duration_cast<std::chrono::microseconds>(chrono::steady_clock::now() - tCkp).count()/1000.0 << "ms" << endl;
+
 
     //// JPS start ////
     // Set start, goal points
@@ -133,13 +160,14 @@ bool GlobalPlanner::plan() {
             }
         }
     }
-
-    //// JPS finish ////
+     //// JPS finish ////
 
     //// Corridor Generation Start ////
     double x_curr, y_curr, x_next, y_next, dx, dy;
     std::array<double, 4> box_prev = {0,0,0,0};
-    for (int m = 0; m < curSkeletonPath.size() - 1; m++) {
+    int M = min((int)(param.horizon / param.grid_resolution * param.car_speed), (int)curSkeletonPath.size() - 1);
+//    int M = curSkeletonPath.size() - 1;
+    for (int m = 0; m < M; m++) {
         auto state_curr = curSkeletonPath[m];
         x_curr = state_curr.first;
         y_curr = state_curr.second;
@@ -165,11 +193,11 @@ bool GlobalPlanner::plan() {
 //        box.emplace_back(round(std::max(y,y_next) / param.box_xy_res) * param.box_xy_res); //TODO: consider this
 
         // Check initial box
-        for (octomap::OcTree::leaf_bbx_iterator it = p_base->getGlobalOctoPtr()->begin_leafs_bbx(
+        for (octomap::OcTree::leaf_bbx_iterator it = p_base->getLocalOctoPtr()->begin_leafs_bbx(
                 octomap::point3d(box_curr[0], box_curr[1], param.car_z_min),
                 octomap::point3d(box_curr[2], box_curr[3], param.car_z_max)),
-                     end = p_base->getGlobalOctoPtr()->end_leafs_bbx(); it != end; ++it) {
-            if (p_base->getGlobalOctoPtr()->isNodeOccupied(*it)) {
+                     end = p_base->getLocalOctoPtr()->end_leafs_bbx(); it != end; ++it) {
+            if (p_base->getLocalOctoPtr()->isNodeOccupied(*it)) {
                 printf("[GlobalPlanner] ERROR: Invalid initial trajectory. Obstacle invades initial trajectory");
                 return false;
             }
@@ -187,13 +215,15 @@ bool GlobalPlanner::plan() {
             while (box_update[0] > param.world_x_min - SP_EPSILON
                    && box_update[1] > param.world_y_min - SP_EPSILON
                    && box_update[2] < param.world_x_max + SP_EPSILON
-                   && box_update[3] < param.world_y_max + SP_EPSILON) {
+                   && box_update[3] < param.world_y_max + SP_EPSILON
+                   && box_cand[2] - box_cand[0] < param.box_max_size
+                   && box_cand[3] - box_cand[1] < param.box_max_size) {
                 bool isObstacleInBox = false;
-                for (octomap::OcTree::leaf_bbx_iterator it = p_base->getGlobalOctoPtr()->begin_leafs_bbx(
+                for (octomap::OcTree::leaf_bbx_iterator it = p_base->getLocalOctoPtr()->begin_leafs_bbx(
                         octomap::point3d(box_update[0], box_update[1], param.car_z_min),
                         octomap::point3d(box_update[2], box_update[3], param.car_z_max)),
-                             end = p_base->getGlobalOctoPtr()->end_leafs_bbx(); it != end; ++it) {
-                    if (p_base->getGlobalOctoPtr()->isNodeOccupied(*it)) {
+                             end = p_base->getLocalOctoPtr()->end_leafs_bbx(); it != end; ++it) {
+                    if (p_base->getLocalOctoPtr()->isNodeOccupied(*it)) {
                         isObstacleInBox = true;
                         break;
                     }
@@ -232,8 +262,8 @@ bool GlobalPlanner::plan() {
             }
         }
 
-        for (int j = 0; j < 1; j++) box_curr[j] += car_radius;
-        for (int j = 2; j < 3; j++) box_curr[j] -= car_radius;
+//        for (int j = 0; j < 1; j++) box_curr[j] += car_radius;
+//        for (int j = 2; j < 3; j++) box_curr[j] -= car_radius;
 
         Corridor corridor = {box_curr[0], box_curr[1], box_curr[2], box_curr[3], -1, -1};
         curCorridorSeq.emplace_back(corridor);
@@ -242,7 +272,7 @@ bool GlobalPlanner::plan() {
 
     // Generate box time segment
     int box_max = curCorridorSeq.size();
-    int path_max = curSkeletonPath.size();
+    int path_max = M + 1;
     std::vector<std::vector<int>> box_log(box_max);
     for(int i = 0; i < box_max; i++){
         box_log[i].resize(path_max);
@@ -254,7 +284,7 @@ bool GlobalPlanner::plan() {
             y = curSkeletonPath[j].second;
             if (x > curCorridorSeq[i].xl - SP_EPSILON
                 && y > curCorridorSeq[i].yl - SP_EPSILON
-                && x < curCorridorSeq[i].xu - SP_EPSILON
+                && x < curCorridorSeq[i].xu + SP_EPSILON
                 && y < curCorridorSeq[i].yu + SP_EPSILON)
             {
                 if (j == 0) {
@@ -292,7 +322,7 @@ bool GlobalPlanner::plan() {
                 delta_y = abs(curSkeletonPath[i+1].second - curSkeletonPath[i].second);
                 if(delta_x > SP_EPSILON_FLOAT && delta_y < SP_EPSILON_FLOAT){
                     box_width = min(curCorridorSeq[box_iter].yu - curCorridorSeq[box_iter].yl, param.road_width);
-                    time_coefficient = box_width / param.road_width; //TODO: naive time_coefficient formulation
+                    time_coefficient = param.road_width / box_width; //TODO: naive time_coefficient formulation
                     timeSegment += time_coefficient * delta_x / param.car_speed;
                 }
                 else if(delta_x < SP_EPSILON_FLOAT && delta_y > SP_EPSILON_FLOAT){
@@ -305,6 +335,7 @@ bool GlobalPlanner::plan() {
                 }
                 else{
                     printf("[GlobalPlanner] ERROR: Invalid initial trajectory. initial trajectory has diagonal move");
+                    return false;
                 }
             }
             curCorridorSeq[box_iter].t_end = timeSegment;
@@ -326,7 +357,7 @@ bool GlobalPlanner::plan() {
     curCorridorSeq[box_max - 1].t_end = SP_INFINITY;
     //// Corridor Generation Finish ////
 
-    printf("[GlobalPlanner] Done. \n");
+//    printf("[GlobalPlanner] Done. \n");
 
     //TODO: print out the outcome of the planning
 

@@ -51,10 +51,10 @@ LocalPlannerPlain::LocalPlannerPlain(const Planner::ParamLocal &l_param,
  * @return
  */
 bool LocalPlannerPlain::plan() {
-    cout << "[LocalPlanner] planning... " << endl;
-
-
-    cout << "[LocalPlanner] Done. " << endl;
+//    cout << "[LocalPlanner] planning... " << endl;
+//
+//
+//    cout << "[LocalPlanner] Done. " << endl;
 
     //TODO: print out the outcome of the planning
 
@@ -83,10 +83,10 @@ LocalPlannerStochastic::LocalPlannerStochastic(const Planner::ParamLocal &l_para
  */
 bool LocalPlannerStochastic::plan() {
 
-    cout << "[LocalPlanner] planning... " << endl;
+//    cout << "[LocalPlanner] planning... " << endl;
 
 
-    cout << "[LocalPlanner] Done. " << endl;
+//    cout << "[LocalPlanner] Done. " << endl;
 
     //TODO: print out the outcome of the planning
 
