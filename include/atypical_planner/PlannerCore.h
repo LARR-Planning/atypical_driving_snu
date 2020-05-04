@@ -108,6 +108,7 @@ namespace Planner {
         vector<CarState> navigation_path; //jungwon navigation planning output from Dabin Kim
         vector<pair<double, double>> skeleton_path; //jungwon: debug purpose TODO: delete this after debugging
         vector<Corridor> corridor_seq;
+        Corridor search_range;
         MPCResultTraj mpc_result;
 
 
@@ -120,6 +121,7 @@ namespace Planner {
 
         vector<pair<double, double>> getSkeletonPath() {return skeleton_path;}; //TODO: delete this after debugging
         vector<Corridor> getCorridorSeq() {return corridor_seq;};
+        Corridor getSearchRange() {return search_range;};
         octomap::OcTree* getGlobalOctoPtr() {return octo_global_ptr.get();}
         octomap::OcTree* getLocalOctoPtr() {return octo_local_ptr.get();}
         MPCResultTraj getMPCResultTraj() {return mpc_result;}
@@ -133,6 +135,7 @@ namespace Planner {
         // Set from planner
         void setSkeletonPath(const vector<pair<double, double>>& skeleton_in_) {skeleton_path = skeleton_in_;}//TODO: delete this after debugging
         void setCorridorSeq(const vector<Corridor>& corridor_in_) {corridor_seq = corridor_in_;}
+        void setSearchRange(const Corridor& search_range_in_) {search_range = search_range_in_;}
         void setMPCResultTraj(const MPCResultTraj& mpc_result_in_) {mpc_result = mpc_result_in_;}
 
     };

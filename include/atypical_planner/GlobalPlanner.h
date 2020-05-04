@@ -18,6 +18,7 @@ namespace Planner{
 //        vector<CarState> navigationPath;
         vector<Corridor> curCorridorSeq;
         vector<pair<double, double>> curSkeletonPath; //TODO: delete this after debugging
+        Corridor search_range;
 
     public:
         GlobalPlanner(const ParamGlobal& g_param,shared_ptr<PlannerBase> p_base_);

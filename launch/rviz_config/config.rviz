@@ -61,7 +61,7 @@ Visualization Manager:
       Marker Topic: /atypical_planning_test/corridor_seq
       Name: MarkerArray
       Namespaces:
-        corridor: true
+        "": true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -143,11 +143,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: -33.35399627685547
+      Scale: -26.905109405517578
       Target Frame: <Fixed Frame>
       Value: TopDownOrtho (rviz)
-      X: 1.507799506187439
-      Y: 8.745636940002441
+      X: 3.48781681060791
+      Y: 14.554773330688477
     Saved: ~
 Window Geometry:
   Displays:
