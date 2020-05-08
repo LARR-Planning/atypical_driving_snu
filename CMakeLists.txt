@@ -3,6 +3,8 @@ project(atypical_driving)
 
 set(CMAKE_CXX_STANDARD 11)
 
+find_package(Eigen3 REQUIRED)
+include_directories(${EIGEN3_INCLUDE_DIRS})
 
 
 find_package(octomap REQUIRED)
@@ -28,3 +30,6 @@ target_link_libraries(atypical_driving_test ${catkin_LIBRARIES})
 
 add_executable(virtual_environment_generator test/virtual_environment_generator.cpp ${SNU_PLANNER_SRC})
 target_link_libraries(virtual_environment_generator ${catkin_LIBRARIES})
+
+add_executable(lane_tester test/LaneTest/main.cpp ${SNU_PLANNER_SRC})
+target_link_libraries(lane_tester ${catkin_LIBRARIES})
