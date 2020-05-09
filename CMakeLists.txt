@@ -17,7 +17,7 @@ find_package(catkin REQUIRED roscpp sensor_msgs tf
 
 include_directories(include ${catkin_INCLUDE_DIRS})
 
-file(GLOB SNU_PLANNER_SRC src/*.cpp)
+file(GLOB SNU_PLANNER_SRC src/*.cpp src/Prediction/*.cpp)
 
 catkin_package(
         LIBRARIES atypical_driving
@@ -33,3 +33,10 @@ target_link_libraries(virtual_environment_generator ${catkin_LIBRARIES})
 
 add_executable(lane_tester test/LaneTest/main.cpp ${SNU_PLANNER_SRC})
 target_link_libraries(lane_tester ${catkin_LIBRARIES})
+
+add_executable(integration_server test/IntegrationTest/server_main.cpp ${SNU_PLANNER_SRC})
+target_link_libraries(integration_server ${catkin_LIBRARIES})
+
+
+add_executable(integration_client test/IntegrationTest/client_main.cpp ${SNU_PLANNER_SRC})
+target_link_libraries(integration_client ${catkin_LIBRARIES})
