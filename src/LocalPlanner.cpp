@@ -49,7 +49,7 @@ void LocalPlanner::SfcToOptConstraint(){
         t_end_ = s.t_end;
         if(t_end_ >param.horizon)
         {
-            for(int i = 0; i< floor((param.horizon-t_start_)/param.ts);i++)
+            for(int i = 0; i< floor((param.horizon-t_start_)/param.tStep);i++)
             {
                 box_constraint[count2] = s;
                 count2++;
@@ -57,12 +57,12 @@ void LocalPlanner::SfcToOptConstraint(){
         }
         else
         {
-            for(int i = 0 ; i< floor((t_end_-t_start_)/param.ts);i++)
+            for(int i = 0 ; i< floor((t_end_-t_start_)/param.tStep);i++)
             {
                 box_constraint[count2] = s;
                 count2 ++;
             }
-            t_start_ = param.ts * count2;
+            t_start_ = param.tStep * count2;
 
         }
 
