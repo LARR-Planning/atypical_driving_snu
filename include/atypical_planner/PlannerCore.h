@@ -12,6 +12,7 @@
 #include <mutex>
 #include <thread>
 #include <string>
+#include <math.h>
 
 using namespace std;
 
@@ -32,7 +33,9 @@ namespace Planner {
      * @brief Parameters for local planner
      */
     struct ParamLocal {
+        double ts ;
         double horizon;
+        //const int Nstep = 50;
     };
 
     /**
@@ -69,7 +72,7 @@ namespace Planner {
     struct CarState{
         double x;
         double y;
-        double v; // sign?
+        double v; //linear body velocity
         double theta;
     };
 
@@ -78,7 +81,7 @@ namespace Planner {
      * @brief Input term of MPC
      */
     struct CarInput{
-        double v; // linear velocity
+        double alpha; // linear acceleration
         double delta; // steering angle
     };
 
