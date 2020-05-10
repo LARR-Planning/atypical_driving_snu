@@ -68,6 +68,7 @@ void RosWrapper::updateParam(Param &param_) {
 
     // local planner
     nh.param<double>("local_planner/horizon",param_.l_param.horizon,5);
+    nh.param<double>("local_planner/ts",param_.l_param.tStep,0.1);
     nh.param<double>("local_planner/obstacle_radius_nomial",param_.l_param.obstRadiusNominal,0.3);
 
     // predictor
@@ -454,7 +455,6 @@ bool Wrapper::plan(double tTrigger){
         return false;
     }
 //    printf("----------------------------------------------------------------\n");
-    // Load prediction
 
 
 }
@@ -514,7 +514,7 @@ void Wrapper::runPlanning() {
                 isPlanSuccess = plan(ros_wrapper_ptr->curTime());
 //                printf("================================================================");
 
-                ROS_INFO_STREAM("[Wrapper] planning time: " << std::chrono::duration_cast<std::chrono::microseconds>(chrono::steady_clock::now() - tCkp).count()/1000.0 << "ms");
+                ROS_INFO_STREAM("[Wrapper] planning time: " << std::chrono::duration_cast<std::chrono::microseconds>(chrono::steady_clock::now() - tCkp).count()*0.001 << "ms");
                 // Only when the planning results are valid, we update p_base
                 // At this step, the prepareROSmsgs() of RosWraper is unavailable
                 if (isPlanSuccess){

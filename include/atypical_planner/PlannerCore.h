@@ -12,6 +12,7 @@
 #include <mutex>
 #include <thread>
 #include <string>
+#include <math.h>
 #include <Eigen/Core>
 #include <third_party/Prediction/target_manager.hpp>
 
@@ -85,7 +86,7 @@ namespace Planner {
     struct CarState{
         double x;
         double y;
-        double v; // sign?
+        double v; //linear body velocity
         double theta;
     };
 
@@ -107,7 +108,7 @@ namespace Planner {
      * @brief Input term of MPC
      */
     struct CarInput{
-        double v; // linear velocity
+        double alpha; // linear acceleration
         double delta; // steering angle
     };
 

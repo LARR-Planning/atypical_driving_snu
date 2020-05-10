@@ -3,6 +3,7 @@ project(atypical_driving)
 
 set(CMAKE_CXX_STANDARD 11)
 
+
 find_package(Eigen3 REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIRS})
 
@@ -16,8 +17,9 @@ find_package(catkin REQUIRED roscpp sensor_msgs tf
             )
 
 include_directories(include ${catkin_INCLUDE_DIRS})
+include_directories(${EIGEN3_INCLUDE_DIRS})
+file(GLOB SNU_PLANNER_SRC src/optimization_module/*.cpp src/*.cpp src/Prediction/*.cpp )
 
-file(GLOB SNU_PLANNER_SRC src/*.cpp src/Prediction/*.cpp)
 
 catkin_package(
         LIBRARIES atypical_driving
@@ -25,8 +27,9 @@ catkin_package(
         #  DEPENDS system_lib
 )
 
-add_executable(atypical_driving_test test/main.cpp ${SNU_PLANNER_SRC})
-target_link_libraries(atypical_driving_test ${catkin_LIBRARIES})
+add_executable(atypical_driving_test test/main.cpp ${SNU_PLANNER_SRC} src/optimization_module/math.cpp)
+target_link_libraries(atypical_driving_test ${catkin_LIBRARIES} )
+
 
 add_executable(virtual_environment_generator test/virtual_environment_generator.cpp ${SNU_PLANNER_SRC})
 target_link_libraries(virtual_environment_generator ${catkin_LIBRARIES})
