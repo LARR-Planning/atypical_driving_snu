@@ -27,6 +27,7 @@ namespace Predictor{
             TargetManager(int queue_size,float z_value,int poly_order);
             void update_observation(float t , geometry_msgs::Point target_xy); // TODO z 
             void update_predict();
+            float getHeight() {return z_value;};
             geometry_msgs::Pose eval_pose(float t);
             vector<geometry_msgs::Pose> eval_pose_seq(vector<float> ts);            
             vector<geometry_msgs::Pose> eval_pose_seq(VectorXf ts);   

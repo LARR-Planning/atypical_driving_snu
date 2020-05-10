@@ -51,6 +51,7 @@ namespace Planner{
         // topics to be published
         nav_msgs::Path planningPath; // can be obtained from mpcResultTraj
         visualization_msgs::MarkerArray corridorSeq;
+        visualization_msgs::MarkerArray obstaclePrediction;
 
         /**
          *  Publisher
@@ -58,7 +59,10 @@ namespace Planner{
 
         ros::Publisher pubPath; // publisher for result path
         ros::Publisher pubCorridorSeq; // publisher for current corridor sequence
-        ros::Publisher pubObservationMarker; // publisher for observed position
+        ros::Publisher pubObservationMarker; // publisher for observed position for obstacles
+        ros::Publisher pubPredictionArray; // publisher for prediction of the target
+
+
         /**
          * Subscriber
          */

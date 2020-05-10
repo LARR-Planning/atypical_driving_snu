@@ -45,7 +45,7 @@
 
 
     <param name="local_planner/horizon" value="5" />
-    <param name="local_planner/obstacle_nomial_radius" value="0.4" />
+    <param name="local_planner/obstacle_radius_nominal" value="0.8" />
 
     <param name="initial_goal/x" value="20" />
     <param name="initial_goal/y" value="68" />

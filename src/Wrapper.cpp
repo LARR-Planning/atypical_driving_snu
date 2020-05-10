@@ -24,6 +24,7 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_):p_base(p_ba
     pubPath = nh.advertise<nav_msgs::Path>("planning_path",1);
     pubCorridorSeq = nh.advertise<visualization_msgs::MarkerArray>("corridor_seq", 1);
     pubObservationMarker = nh.advertise<visualization_msgs::Marker>("observation_queue",1);
+    pubPredictionArray = nh.advertise<visualization_msgs::MarkerArray>("prediction",1);
 
     // Subscriber
     subCarPoseCov = nh.subscribe("car_pose_cov",1,&RosWrapper::cbCarPoseCov,this);
@@ -34,7 +35,11 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_):p_base(p_ba
     subExampleObstaclePose = nh.subscribe("obstacle_pose",1,&RosWrapper::cbObstacles,this);
 
 }
+/**
+ * @brief update the fitting model only. It does not directly update p_base
+ */
 void RosWrapper::updatePrediction() {
+
     p_base->predictorSet[0].update_predict();
 }
 
@@ -69,7 +74,7 @@ void RosWrapper::updateParam(Param &param_) {
     // local planner
     nh.param<double>("local_planner/horizon",param_.l_param.horizon,5);
     nh.param<double>("local_planner/ts",param_.l_param.tStep,0.1);
-    nh.param<double>("local_planner/obstacle_radius_nomial",param_.l_param.obstRadiusNominal,0.3);
+    nh.param<double>("local_planner/obstacle_radius_nominal",param_.l_param.obstRadiusNominal,0.3);
 
     // predictor
 
@@ -250,6 +255,33 @@ void RosWrapper::prepareROSmsgs() {
     // 2. topics which is not obtained from planning thread
     // TODO multiple obstacles
     pubObservationMarker.publish(p_base->predictorSet[0].get_obsrv_marker(worldFrameId));
+    // prepare the obstacle prediction info
+
+    obstaclePrediction.markers.clear();
+
+    for(auto obstPath : p_base->getCurObstaclePathArray().obstPathArray){
+        // per a obstacle path, make up marker array
+        // TODO shope should be rigorously considered
+        visualization_msgs::Marker m_obstacle_rad;
+        m_obstacle_rad.header.frame_id = worldFrameId;
+        m_obstacle_rad.pose.orientation.w = 1.0;
+        m_obstacle_rad.color.r = 1.0, m_obstacle_rad.color.a = 0.8;
+        m_obstacle_rad.type = 3;
+        int id = 0 ;
+        for (auto pnt : obstPath.obstPath){
+            m_obstacle_rad.id = id++;
+            m_obstacle_rad.pose.position.x = pnt.q(0);
+            m_obstacle_rad.pose.position.y = pnt.q(1);
+            m_obstacle_rad.pose.position.z = p_base->predictorSet[0].getHeight();
+            m_obstacle_rad.scale.x = 2*pow(pnt.Q(0,0),-1/2.0);
+            m_obstacle_rad.scale.y = 2*pow(pnt.Q(1,1),-1/2.0);
+            m_obstacle_rad.scale.z = 0.3;
+            obstaclePrediction.markers.push_back(m_obstacle_rad);
+        }
+    }
+
+    pubPredictionArray.publish(obstaclePrediction);
+
 
 }
 
@@ -430,21 +462,23 @@ bool Wrapper::plan(double tTrigger){
         ROS_INFO_ONCE("[SNU_PLANNER/Wrapper] global planner passed. Start local planning ");
         updateCorrToBase();
 
-        /**
-        // Call prediction
+
+        // Update p_base. the prediction model is being updated in ROS Wrapper
         int nStep  = param.l_param.horizon/param.l_param.tStep; // the division should be integer
         VectorXd tSeq(nStep);
         tSeq.setLinSpaced(nStep,tTrigger,tTrigger+param.l_param.horizon);
         p_base_shared->updatePrediction(tSeq,param.l_param.obstRadiusNominal);
-        **/
+
 
         // Call local planner
-        bool lpPassed = lp_ptr->plan();
+        bool lpPassed = true;
+        /**
+        = lp_ptr->plan();
         if (lpPassed)
             updateMPCToBase();
         else
             ROS_WARN("[SNU_PLANNER/Wrapper] local planning failed");
-
+        **/
         // Unlocking
         mSet[0].unlock();
         return (gpPassed and lpPassed);

@@ -12,7 +12,6 @@ Panels:
         - /Odometry1
         - /Pose1
         - /Marker1
-        - /Marker1/Status1
       Splitter Ratio: 0.2904762029647827
     Tree Height: 755
   - Class: rviz/Selection
@@ -129,7 +128,15 @@ Visualization Manager:
       Marker Topic: /atypical_planning_test/observation_queue
       Name: Marker
       Namespaces:
-        {}
+        "": true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /atypical_planning_test/prediction
+      Name: MarkerArray
+      Namespaces:
+        "": true
       Queue Size: 100
       Value: true
   Enabled: true
@@ -169,7 +176,7 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: -4.2402849197387695
+      Scale: -6.672171115875244
       Target Frame: <Fixed Frame>
       Value: TopDownOrtho (rviz)
       X: 3.48781681060791

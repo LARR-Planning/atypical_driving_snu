@@ -37,7 +37,7 @@ void LocalPlanner::SfcToOptConstraint(){
     int N_corr = 0;
     int count1 = 0;
     int count2 = 0;
-    for(auto s: p_base->getCorridorSeq())
+    for(auto& s: p_base->getCorridorSeq())
     {
         if(count1*count2 == 0)
         {

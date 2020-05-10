@@ -5,7 +5,7 @@ using namespace Predictor;
 TargetManager::TargetManager(int queue_size,float z_value,int poly_order):queue_size(queue_size),z_value(z_value),poly_order(poly_order) {
 
     assert(poly_order > 0 or queue_size >0 && "Invalid initialization of target manager" );
-    obsrv_traj_for_predict_total = TXYZTraj(4,10000);
+    //obsrv_traj_for_predict_total = TXYZTraj(4,100000);
 
 };
 
@@ -14,10 +14,10 @@ void TargetManager::update_observation(float t,geometry_msgs::Point target_xy){
     observations.push_back(std::make_tuple(t,Vector2f(target_xy.x,target_xy.y)));
     if (observations.size() > queue_size)
         observations.pop_front();
-    obsrv_traj_for_predict_total(0,size_history) = t;
-    obsrv_traj_for_predict_total(1,size_history) = target_xy.x;
-    obsrv_traj_for_predict_total(2,size_history) = target_xy.y;
-    obsrv_traj_for_predict_total(3,size_history) = z_value;
+    //obsrv_traj_for_predict_total(0,size_history) = t;
+    //obsrv_traj_for_predict_total(1,size_history) = target_xy.x;
+    //obsrv_traj_for_predict_total(2,size_history) = target_xy.y;
+    //obsrv_traj_for_predict_total(3,size_history) = z_value;
     size_history ++ ;    
 }
 
@@ -109,6 +109,6 @@ TargetManager::~TargetManager(){
     cout << "[TargetManager] Destroyed with log file" << endl;
     std::ofstream file("observation.txt");
     if(file.is_open())
-        file << obsrv_traj_for_predict_total.transpose().block(0,0,size_history,4);
+        // file << obsrv_traj_for_predict_total.transpose().block(0,0,size_history,4);
     file.close();
 }

@@ -92,7 +92,7 @@ namespace Planner {
 
     struct ObstacleEllipse{
         Vector2d q;
-        Matrix2d Q;
+        Matrix2d Q; // diag([1/r1^2 1/r2^2])
     };
 
     struct ObstaclePath{
@@ -151,7 +151,7 @@ namespace Planner {
         CarState getCarState() {return cur_state;};
         CarState getDesiredState() {return desired_state;}; //jungwon
         CarInput getCurInput() { return CarInput(); }; // do some interpolation
-
+        ObstaclePathArray getCurObstaclePathArray() {return obstaclePathArray;};
         vector<pair<double, double>> getSkeletonPath() {return skeleton_path;}; //TODO: delete this after debugging
         vector<Corridor> getCorridorSeq() {return corridor_seq;};
         Corridor getSearchRange() {return search_range;};
@@ -180,7 +180,7 @@ namespace Planner {
             obstaclePathArray.obstPathArray.clear();
 
             for(auto predictor : predictorSet){
-                predictor.update_predict(); // this will do nothing if observation is not enough
+                //predictor.update_predict(); // this will do nothing if observation is not enough
                 if (predictor.is_prediction_available()) {
                     vector<geometry_msgs::Pose> obstFuturePose = predictor.eval_pose_seq(tSeq);
                     ObstaclePath obstPath;
@@ -189,7 +189,7 @@ namespace Planner {
                         ObstacleEllipse obstE;
                         obstE.q = Vector2d(obstPose.position.x, obstPose.position.y);
 
-                        // TODO shape should be consider later
+                        // TODO shape should be consider later and its frame
                         obstE.Q.setZero();
                         obstE.Q(0, 0) = 1 / pow(rNominal, 2);
                         obstE.Q(1, 1) = 1 / pow(rNominal, 2);
