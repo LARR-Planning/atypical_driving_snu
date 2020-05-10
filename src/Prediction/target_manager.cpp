@@ -4,7 +4,9 @@ using namespace Predictor;
 
 TargetManager::TargetManager(int queue_size,float z_value,int poly_order):queue_size(queue_size),z_value(z_value),poly_order(poly_order) {
 
-    obsrv_traj_for_predict_total = TXYZTraj(4,10000);    
+    assert(poly_order > 0 or queue_size >0 && "Invalid initialization of target manager" );
+    obsrv_traj_for_predict_total = TXYZTraj(4,10000);
+
 };
 
 void TargetManager::update_observation(float t,geometry_msgs::Point target_xy){
@@ -32,13 +34,13 @@ void TargetManager::update_predict(){
             y_vals(i) = std::get<1>(*it)(1);        
         }
 
-        cout << "Prediction: " << endl;
-        cout << "t : " <<endl;
-        cout << t_vals.transpose() << endl;
-        cout << "x : "<<endl;
-        cout << x_vals.transpose() << endl;
-        cout << "y : " <<endl;
-        cout << y_vals.transpose() << endl;
+        ROS_DEBUG_STREAM("Prediction: ");
+        ROS_DEBUG_STREAM("t : ");
+        ROS_DEBUG_STREAM(t_vals.transpose());
+        ROS_DEBUG_STREAM("x : ");
+        ROS_DEBUG_STREAM(x_vals.transpose()) ;
+        ROS_DEBUG_STREAM("y : ") ;
+        ROS_DEBUG_STREAM(y_vals.transpose());
 
         fit_coeff_x = polyfit(t_vals,x_vals,poly_order);
         fit_coeff_y = polyfit(t_vals,y_vals,poly_order);   
@@ -92,9 +94,12 @@ visualization_msgs::Marker TargetManager::get_obsrv_marker(string world_frame_id
     visualization_msgs::Marker marker;
     marker.header.frame_id = world_frame_id;
     if(is_predicted){
-        marker = TXYZ_traj_to_pnt_marker(obsrv_traj_for_predict,world_frame_id);
+        marker = TXYZ_traj_to_pnt_marker(obsrv_traj_for_predict,world_frame_id,1.0);
     }else{
-        cout<<"[TargetManager] No prediction performed. empty marker will be returned"<<endl;
+        if (not isNoPredictionWarnEmitted) {
+            cout << "[TargetManager] No prediction performed. empty marker will be returned" << endl;
+            isNoPredictionWarnEmitted = true;
+        }
     }
     return marker;
 }; // observation used for the latest prediction update

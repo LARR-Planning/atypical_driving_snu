@@ -2,12 +2,15 @@
 #include <list>
 #include <tuple>
 #include <fstream>
+#include <ros/ros.h>
+
 using namespace std;
 using namespace Eigen;
 
 namespace Predictor{
     class TargetManager{
         private:
+            bool isNoPredictionWarnEmitted = false;
             std::list<std::tuple<float,Vector2f>> observations; // (t,Point) 
             Eigen::VectorXf fit_coeff_x;
             Eigen::VectorXf fit_coeff_y;            

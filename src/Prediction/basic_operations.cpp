@@ -106,7 +106,6 @@ Eigen::VectorXf DAP::polyfit(Eigen::VectorXf xvals, Eigen::VectorXf yvals,int or
 
   auto Q = (A).householderQr();
   auto result = Q.solve(yvals);
-  cout << "QR Error: " << (A*result - yvals).norm() << endl;
   return result;
 }
 

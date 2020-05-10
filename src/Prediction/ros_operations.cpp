@@ -138,7 +138,7 @@ visualization_msgs::Marker DAP::nav_msgs_to_marker(const nav_msgs::Path prior_pa
 
     obsrv_markers.header.frame_id = prior_path.header.frame_id;
     obsrv_markers.type = visualization_msgs::Marker::SPHERE_LIST;
-    
+    obsrv_markers.pose.orientation.w = 1;
     obsrv_markers.scale.x = scale;
     obsrv_markers.scale.y = scale;
     obsrv_markers.scale.z = scale;
@@ -154,7 +154,7 @@ visualization_msgs::Marker DAP::nav_msgs_to_marker(const nav_msgs::Path prior_pa
 
 visualization_msgs::Marker DAP::TXYZ_traj_to_pnt_marker(const TXYZTraj & traj,string frame_id,float scale){    // extract pnts from path 
     nav_msgs::Path path = TXYZQuat_to_nav_msgs(TXYZ_traj_to_TXYZQuat_traj(traj),frame_id);
-    return nav_msgs_to_marker(path);
+    return nav_msgs_to_marker(path,scale);
 }
 Eigen::Vector3f DAP::point_to_vec3f(const geometry_msgs::Point & point){
     return Eigen::Vector3f(point.x,point.y,point.z);

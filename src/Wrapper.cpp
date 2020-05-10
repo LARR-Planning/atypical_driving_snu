@@ -32,9 +32,12 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_):p_base(p_ba
     subLocalMap = nh.subscribe("local_map",1,&RosWrapper::cbLocalMap,this);
 
     subExampleObstaclePose = nh.subscribe("obstacle_pose",1,&RosWrapper::cbObstacles,this);
-    t0 = ros::Time::now();
 
 }
+void RosWrapper::updatePrediction() {
+    p_base->predictorSet[0].update_predict();
+}
+
 
 /**
  * @brief Fetching the parameter from ros node handle.
@@ -69,7 +72,7 @@ void RosWrapper::updateParam(Param &param_) {
 
     // predictor
 
-    nh.param<double>("predictor/observation_queue",param_.l_param.horizon,6);
+    nh.param<int>("predictor/observation_queue",param_.p_param.queueSize,6);
     nh.param<float>("predictor/ref_height",param_.p_param.zHeight,1.0);
     nh.param<int>("predictor/poly_order",param_.p_param.polyOrder,1); // just fix 1
 
@@ -80,6 +83,8 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<double>("goal_thres",param_.l_param.goalReachingThres,0.4); // just fix 1
 
     ROS_INFO("[SNU_PLANNER/RosWrapper] received goal [%f,%f]",goal_x,goal_y);
+    ROS_INFO("[SNU_PLANNER/RosWrapper] Initialized clock with ROS time %f",ros::Time::now().toSec());
+    t0 = ros::Time::now().toSec();
 
     CarState goalState;
     goalState.x = goal_x;
@@ -262,9 +267,9 @@ void RosWrapper::publish() {
  */
 void RosWrapper::runROS() {
         ros::Rate lr(50);
-        ros::Time t(ros::Time::now());
 
         while(ros::ok()){
+            updatePrediction();
             prepareROSmsgs(); // you may trigger this only under some conditions
             publish();
             ros::spinOnce(); // callback functions are executed
@@ -520,6 +525,7 @@ void Wrapper::runPlanning() {
             }
             // Trigger condition of planning. This can be anything other than the simple periodic triggering
             doPlan = chrono::steady_clock::now() - tCkp > std::chrono::duration<double>(Tp);
+            ros::Rate(30).sleep();
         }else{
             ROS_WARN_ONCE("[Wrapper] waiting planning input subscriptions..");
         }

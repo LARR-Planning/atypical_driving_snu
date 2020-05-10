@@ -5,8 +5,8 @@
 <launch>
 <!-- Arguments Start -->
   <arg name="map"            default="auto_drive.bt"/>
-  <arg name="bagfile"        default="realtime_mapping.bag"/>
-  <arg name="playBagFile"    default="false"/>
+  <arg name="bagfile"        default="autoDriveIntegration.bag"/>
+  <arg name="playBagFile"    default="true"/>
 <!-- Arguments End -->
 
 <!-- Nodes Start -->
@@ -23,9 +23,10 @@
     <remap from="octomap_full" to="/atypical_planning_test/global_map"/>
   </node>
 
-  <node pkg="rosbag" type="play" name="rosbag_record_diag" args="$(find atypical_driving)/worlds/$(arg bagfile)" if="$(arg playBagFile)">
+  <node pkg="rosbag" type="play" name="rosbag_record_diag" args="--clock --loop $(find atypical_driving)/worlds/$(arg bagfile)" if="$(arg playBagFile)">
     <remap from="octomap_binary" to="/atypical_planning_test/local_map"/>
-  </node> 
+    <remap from="/airsim_car_node/object_pose" to="/atypical_planning_test/obstacle_pose"/>
+  </node>
 
   <node pkg="atypical_driving" type="integration_server" name="atypical_planning_test" output="screen">
     <param name="global_planner/horizon" value="15" />

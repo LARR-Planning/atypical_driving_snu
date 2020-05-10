@@ -25,7 +25,7 @@ namespace Planner{
     class RosWrapper{
 
     private:
-        ros::Time t0; // update at the constructor
+        double t0; // update at the constructor
         /**
          * Shared resource with other thread
          */
@@ -90,9 +90,10 @@ namespace Planner{
     public:
         RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_);
         void updateParam(Param& param_);
+        void updatePrediction();
         void runROS();
         bool isAllInputReceived();
-        double curTime() {return (ros::Time::now()-t0).toSec();};
+        double curTime() {return (ros::Time::now().toSec()-t0);};
     };
 
     /**
@@ -117,7 +118,7 @@ namespace Planner{
         bool plan(double tTrigger); // this includes the two below routines
         void updateCorrToBase(); // update the results of the planners to p_base
         void updateMPCToBase(); // update the results of the planners to p_base
-
+        void updatePrediction();
         void runPlanning(); // planning thread.
     public:
         Wrapper();
