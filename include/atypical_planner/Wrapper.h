@@ -16,6 +16,7 @@
 #include <octomap_msgs/Octomap.h>
 #include <octomap_msgs/conversions.h>
 
+
 namespace Planner{
 
     /**
@@ -24,7 +25,7 @@ namespace Planner{
     class RosWrapper{
 
     private:
-
+        double t0; // update at the constructor
         /**
          * Shared resource with other thread
          */
@@ -57,7 +58,7 @@ namespace Planner{
 
         ros::Publisher pubPath; // publisher for result path
         ros::Publisher pubCorridorSeq; // publisher for current corridor sequence
-
+        ros::Publisher pubObservationMarker; // publisher for observed position
         /**
          * Subscriber
          */
@@ -65,6 +66,9 @@ namespace Planner{
         ros::Subscriber subDesiredCarPose; // desired pose from user
         ros::Subscriber subGlobalMap; // global map from ????
         ros::Subscriber subLocalMap; // local map from LIDAR????
+
+        ros::Subscriber subExampleObstaclePose; //
+
         /**
          * Callback functions
          */
@@ -74,18 +78,22 @@ namespace Planner{
         void cbGlobalMap(const octomap_msgs::Octomap& octomap_msg);
         void cbLocalMap(const octomap_msgs::Octomap& octomap_msg);
 
+        // TODO currently we only receive the location of obstacles not with shape
+        void cbObstacles(const geometry_msgs::PoseStamped& obstPose);
+
         /**
          * Core routines in while loop of ROS thread
          */
         void publish();
         void prepareROSmsgs();
 
-
     public:
         RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_);
         void updateParam(Param& param_);
+        void updatePrediction();
         void runROS();
         bool isAllInputReceived();
+        double curTime() {return (ros::Time::now().toSec()-t0);};
     };
 
     /**
@@ -107,11 +115,11 @@ namespace Planner{
         RosWrapper* ros_wrapper_ptr; /**< ros wrapper */
 
         // Do two-staged planning
-        bool plan(); // this includes the two below routines
-        void updateToBase(); // update the results of the planners to p_base
-
+        bool plan(double tTrigger); // this includes the two below routines
+        void updateCorrToBase(); // update the results of the planners to p_base
+        void updateMPCToBase(); // update the results of the planners to p_base
+        void updatePrediction();
         void runPlanning(); // planning thread.
-
     public:
         Wrapper();
         void run();

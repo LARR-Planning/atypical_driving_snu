@@ -23,13 +23,21 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_):p_base(p_ba
     // Publisher
     pubPath = nh.advertise<nav_msgs::Path>("planning_path",1);
     pubCorridorSeq = nh.advertise<visualization_msgs::MarkerArray>("corridor_seq", 1);
+    pubObservationMarker = nh.advertise<visualization_msgs::Marker>("observation_queue",1);
 
     // Subscriber
     subCarPoseCov = nh.subscribe("car_pose_cov",1,&RosWrapper::cbCarPoseCov,this);
     subDesiredCarPose = nh.subscribe("desired_car_pose",1,&RosWrapper::cbDesiredCarPose,this);
     subGlobalMap = nh.subscribe("global_map",1,&RosWrapper::cbGlobalMap,this);
     subLocalMap = nh.subscribe("local_map",1,&RosWrapper::cbLocalMap,this);
+
+    subExampleObstaclePose = nh.subscribe("obstacle_pose",1,&RosWrapper::cbObstacles,this);
+
 }
+void RosWrapper::updatePrediction() {
+    p_base->predictorSet[0].update_predict();
+}
+
 
 /**
  * @brief Fetching the parameter from ros node handle.
@@ -41,6 +49,7 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<string>("world_frame_id",worldFrameId,"/map");
     // Own
     planningPath.header.frame_id = worldFrameId;
+
 
     // global planner
     nh.param<double>("global_planner/horizon",param_.g_param.horizon,15);
@@ -59,7 +68,29 @@ void RosWrapper::updateParam(Param &param_) {
 
     // local planner
     nh.param<double>("local_planner/horizon",param_.l_param.horizon,5);
-    nh.param<double>("local_planner/ts",param_.l_param.ts,0.1);
+    nh.param<double>("local_planner/ts",param_.l_param.tStep,0.1);
+    nh.param<double>("local_planner/obstacle_radius_nomial",param_.l_param.obstRadiusNominal,0.3);
+
+    // predictor
+
+    nh.param<int>("predictor/observation_queue",param_.p_param.queueSize,6);
+    nh.param<float>("predictor/ref_height",param_.p_param.zHeight,1.0);
+    nh.param<int>("predictor/poly_order",param_.p_param.polyOrder,1); // just fix 1
+
+    // Common
+    double goal_x,goal_y;
+    nh.param<double>("initial_goal/x",goal_x,0.0); // just fix 1
+    nh.param<double>("initial_goal/y",goal_y,0.0); // just fix 1
+    nh.param<double>("goal_thres",param_.l_param.goalReachingThres,0.4); // just fix 1
+
+    ROS_INFO("[SNU_PLANNER/RosWrapper] received goal [%f,%f]",goal_x,goal_y);
+    ROS_INFO("[SNU_PLANNER/RosWrapper] Initialized clock with ROS time %f",ros::Time::now().toSec());
+    t0 = ros::Time::now().toSec();
+
+    CarState goalState;
+    goalState.x = goal_x;
+    goalState.y = goal_y;
+    p_base->setDesiredState(goalState);
 
 }
 
@@ -216,6 +247,10 @@ void RosWrapper::prepareROSmsgs() {
 //        ROS_WARN("[RosWrapper] Locking failed for ros data update. The output of p_base is being modified in planner ");
     }
 
+    // 2. topics which is not obtained from planning thread
+    // TODO multiple obstacles
+    pubObservationMarker.publish(p_base->predictorSet[0].get_obsrv_marker(worldFrameId));
+
 }
 
 /**
@@ -233,9 +268,9 @@ void RosWrapper::publish() {
  */
 void RosWrapper::runROS() {
         ros::Rate lr(50);
-        ros::Time t(ros::Time::now());
 
         while(ros::ok()){
+            updatePrediction();
             prepareROSmsgs(); // you may trigger this only under some conditions
             publish();
             ros::spinOnce(); // callback functions are executed
@@ -316,6 +351,18 @@ void RosWrapper::cbLocalMap(const octomap_msgs::Octomap& octomap_msg) {
     }
 }
 
+/**
+ * @brief update the observation for obstacles
+ * @param obstPose
+ * @todo we might have to include the geometry shape in the future...
+ */
+void RosWrapper::cbObstacles(const geometry_msgs::PoseStamped& obstPose) {
+
+    ROS_INFO_ONCE("[SNU_PLANNER/RosWrapper] got first obstacle observation");
+    double t = curTime();
+    p_base->predictorSet[0].update_observation(t,obstPose.pose.position);
+
+}
 
 /**
  * @brief Whether all the necessary inputs are received
@@ -349,6 +396,8 @@ Wrapper::Wrapper() : p_base_shared(make_shared<PlannerBase>()) {
     // cout << p_base_shared.use_count() << endl;
     gp_ptr = new GlobalPlanner(param.g_param,p_base_shared);
     // cout << p_base_shared.use_count() << endl;
+    Predictor::TargetManager predictor(param.p_param.queueSize,param.p_param.zHeight,param.p_param.polyOrder);
+    p_base_shared->predictorSet.push_back(predictor);
 
 }
 /**
@@ -370,32 +419,67 @@ void Wrapper::run(){
  * @return True if both planner succeeded
  */
 
-bool Wrapper::plan(){
+bool Wrapper::plan(double tTrigger){
     mSet[0].lock();
 //    ROS_INFO( "[Wrapper] Assume that planning takes 0.5 sec. Locking subscription.\n ");
 //    std::this_thread::sleep_for(std::chrono::duration<double>(0.5));
+
+    // call global planner
     bool gpPassed = gp_ptr->plan();
+    if (gpPassed) {
+        ROS_INFO_ONCE("[SNU_PLANNER/Wrapper] global planner passed. Start local planning ");
+        updateCorrToBase();
+
+        /**
+        // Call prediction
+        int nStep  = param.l_param.horizon/param.l_param.tStep; // the division should be integer
+        VectorXd tSeq(nStep);
+        tSeq.setLinSpaced(nStep,tTrigger,tTrigger+param.l_param.horizon);
+        p_base_shared->updatePrediction(tSeq,param.l_param.obstRadiusNominal);
+        **/
+
+        // Call local planner
+        bool lpPassed = lp_ptr->plan();
+        if (lpPassed)
+            updateMPCToBase();
+        else
+            ROS_WARN("[SNU_PLANNER/Wrapper] local planning failed");
+
+        // Unlocking
+        mSet[0].unlock();
+        return (gpPassed and lpPassed);
+
+    }else{ //
+        mSet[0].unlock();
+        ROS_WARN("[SNU_PLANNER/Wrapper] global planning failed");
+        return false;
+    }
 //    printf("----------------------------------------------------------------\n");
-    bool lpPassed = lp_ptr->plan();
-//    cout<<"Hi"<<endl;
-    mSet[0].unlock();
-    return (gpPassed and lpPassed);
+
 
 }
 
 /**
  * @brief Modify p_base with the resultant planning output
  */
-void Wrapper::updateToBase() {
+void Wrapper::updateCorrToBase() {
     mSet[1].lock();
 //    ROS_INFO( "[Wrapper] Assume that updating takes 0.2 sec. Locking rosmsg update.\n ");
 //    std::this_thread::sleep_for(std::chrono::duration<double>(0.2));
     gp_ptr->updateCorridorToBase();
-    lp_ptr->updateTrajToBase();
     mSet[1].unlock();
 //    ROS_INFO( "[Wrapper] p_base updated. Unlocking.\n ");
 }
+void Wrapper::updateMPCToBase() {
+    mSet[1].lock();
+//    ROS_INFO( "[Wrapper] Assume that updating takes 0.2 sec. Locking rosmsg update.\n ");
+//    std::this_thread::sleep_for(std::chrono::duration<double>(0.2));
+    lp_ptr->updateTrajToBase();
+    mSet[1].unlock();
+//    ROS_INFO( "[Wrapper] p_base updated. Unlocking.\n ");
 
+
+}
 
 /**
  * @brief Engage the while loop of planners
@@ -421,14 +505,19 @@ void Wrapper::runPlanning() {
 //                ROS_INFO( "[Wrapper] Planning started."); // TODO
 
                 // Do planning
-                isPlanSuccess = plan();
+
+                ROS_DEBUG("[Wrapper] goal : [%f,%f] / cur position : [%f,%f]",
+                          p_base_shared->getDesiredState().x,p_base_shared->getDesiredState().y,
+                        p_base_shared->getCarState().x,p_base_shared->getCarState().y);
+
+                // prepare prediction sequence for  MPC. for time window (tcur,tcur+horizon)
+                isPlanSuccess = plan(ros_wrapper_ptr->curTime());
 //                printf("================================================================");
 
                 ROS_INFO_STREAM("[Wrapper] planning time: " << std::chrono::duration_cast<std::chrono::microseconds>(chrono::steady_clock::now() - tCkp).count()*0.001 << "ms");
                 // Only when the planning results are valid, we update p_base
                 // At this step, the prepareROSmsgs() of RosWraper is unavailable
                 if (isPlanSuccess){
-                    updateToBase();
                 }
                 else{
                     ROS_ERROR("[Wrapper] planning failed");
@@ -436,6 +525,7 @@ void Wrapper::runPlanning() {
             }
             // Trigger condition of planning. This can be anything other than the simple periodic triggering
             doPlan = chrono::steady_clock::now() - tCkp > std::chrono::duration<double>(Tp);
+            ros::Rate(30).sleep();
         }else{
             ROS_WARN_ONCE("[Wrapper] waiting planning input subscriptions..");
         }

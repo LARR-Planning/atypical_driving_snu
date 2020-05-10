@@ -13,8 +13,13 @@
 #include <thread>
 #include <string>
 #include <math.h>
+#include <Eigen/Core>
+#include <third_party/Prediction/target_manager.hpp>
+
 
 using namespace std;
+using namespace Eigen;
+
 
 namespace Planner {
     /**
@@ -33,9 +38,10 @@ namespace Planner {
      * @brief Parameters for local planner
      */
     struct ParamLocal {
-        double ts ;
         double horizon;
-        //const int Nstep = 50;
+        double tStep;
+        double obstRadiusNominal;
+        double goalReachingThres;
     };
 
     /**
@@ -57,6 +63,13 @@ namespace Planner {
         double box_max_size;
     };
 
+    struct ParamPredictor{
+        int queueSize;
+        float  zHeight;
+        int polyOrder;
+
+    };
+
     /**
      * @brief Parameters for both planner.
      * @details This is retrieved from launch-param
@@ -64,6 +77,7 @@ namespace Planner {
     struct Param {
         ParamGlobal g_param;
         ParamLocal l_param;
+        ParamPredictor p_param;
     };
     /**
      * @brief State feed for MPC
@@ -76,6 +90,19 @@ namespace Planner {
         double theta;
     };
 
+    struct ObstacleEllipse{
+        Vector2d q;
+        Matrix2d Q;
+    };
+
+    struct ObstaclePath{
+        int id;
+        vector<ObstacleEllipse> obstPath;
+    };
+
+    struct ObstaclePathArray{
+        vector<ObstaclePath> obstPathArray;
+    };
 
     /**
      * @brief Input term of MPC
@@ -114,9 +141,12 @@ namespace Planner {
         Corridor search_range;
         MPCResultTraj mpc_result;
 
+        ObstaclePathArray obstaclePathArray;
 
     public:
 
+        // prediction module
+        vector<Predictor::TargetManager> predictorSet;
         // Get
         CarState getCarState() {return cur_state;};
         CarState getDesiredState() {return desired_state;}; //jungwon
@@ -141,6 +171,37 @@ namespace Planner {
         void setSearchRange(const Corridor& search_range_in_) {search_range = search_range_in_;}
         void setMPCResultTraj(const MPCResultTraj& mpc_result_in_) {mpc_result = mpc_result_in_;}
 
+        // Set from predictor
+        // update obstaclePathArray so that it is prediction from [tPredictionStart,tPredictionStart+ horizon[
+        // prepare prediction sequence for MPC
+        void updatePrediction(VectorXd tSeq_,double rNominal = 0) {
+            VectorXf tSeq = tSeq_.cast<float>();
+            // TODO predictor should be multiple
+            obstaclePathArray.obstPathArray.clear();
+
+            for(auto predictor : predictorSet){
+                predictor.update_predict(); // this will do nothing if observation is not enough
+                if (predictor.is_prediction_available()) {
+                    vector<geometry_msgs::Pose> obstFuturePose = predictor.eval_pose_seq(tSeq);
+                    ObstaclePath obstPath;
+                    for (auto obstPose : obstFuturePose) {
+                        // construct one obstaclePath
+                        ObstacleEllipse obstE;
+                        obstE.q = Vector2d(obstPose.position.x, obstPose.position.y);
+
+                        // TODO shape should be consider later
+                        obstE.Q.setZero();
+                        obstE.Q(0, 0) = 1 / pow(rNominal, 2);
+                        obstE.Q(1, 1) = 1 / pow(rNominal, 2);
+
+                        obstPath.obstPath.push_back(obstE);
+                    }
+                    obstaclePathArray.obstPathArray.push_back(obstPath);
+                }
+            }
+
+
+        }
     };
     /**
      * @brief Abstract class. The shared attributes to be inherited to the derived classes
