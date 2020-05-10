@@ -60,6 +60,8 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<double>("global_planner/world_x_max",param_.g_param.world_x_max,35);
     nh.param<double>("global_planner/world_y_max",param_.g_param.world_y_max,80);
     nh.param<double>("global_planner/grid_resolution",param_.g_param.grid_resolution,0.5);
+    nh.param<double>("global_planner/box_resolution",param_.g_param.box_resolution,0.3);
+    nh.param<double>("global_planner/box_max_size",param_.g_param.box_max_size,10);
 
     // local planner
     nh.param<double>("local_planner/horizon",param_.l_param.horizon,5);
