@@ -12,8 +12,8 @@ find_package(octomap REQUIRED)
 include_directories(${OCTOMAP_INCLUDE_DIRS})
 link_libraries(${OCTOMAP_LIBRARIES})
 
-find_package(catkin REQUIRED roscpp sensor_msgs tf
-            geometry_msgs octomap_msgs message_generation nav_msgs
+find_package(catkin REQUIRED COMPONENTS roscpp sensor_msgs tf
+            geometry_msgs octomap_msgs message_generation nav_msgs message_generation driving_msgs
             )
 
 include_directories(include ${catkin_INCLUDE_DIRS})

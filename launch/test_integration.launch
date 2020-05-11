@@ -59,6 +59,7 @@
 
 
   <node pkg="rviz" type="rviz" name="rviz" args="-d $(find atypical_driving)/launch/rviz_config/config.rviz" output="log" />
-  
+
+
 <!-- Nodes End -->
 </launch>
