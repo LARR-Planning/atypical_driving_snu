@@ -22,6 +22,15 @@ GlobalPlanner::GlobalPlanner(const Planner::ParamGlobal &g_param,
 }
 
 /**
+ * @brief moniter whether current path is feasible against the octomap
+ * @return
+ */
+bool GlobalPlanner::isCurTrajFeasible() {
+
+    return true;
+}
+
+/**
  * @brief Global planning routine
  * @return true if success
  */

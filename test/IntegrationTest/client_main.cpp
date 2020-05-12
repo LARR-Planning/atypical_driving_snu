@@ -7,6 +7,7 @@
 //
 
 #include "nav_msgs/Odometry.h"
+#include "geometry_msgs/Twist.h"
 #include "std_msgs/Float64.h"
 #include <ros/ros.h>
 
@@ -14,6 +15,7 @@
 
 static geometry_msgs::PoseWithCovariance curState;
 static float speed;
+static float steering_angle = 0; // at the initial, it is zero
 
 void cbCarPoseCov(const nav_msgs::Odometry& odom){
     // update position
@@ -27,7 +29,12 @@ void cbCarPoseCov(const nav_msgs::Odometry& odom){
     // update speed
     float vx = odom.twist.twist.linear.x;
     float vy = -odom.twist.twist.linear.y;
-
+    speed = sqrt(pow(vx,2)+pow(vy,2));
+}
+// This callback gets the current accel cmd
+// with assumption that the steering angle input is the actual value of steering angle of current time
+void cbAccelCmd(const geometry_msgs::Twist& twist){
+    steering_angle = twist.angular.z;
 }
 
 int main(int argc,char** argv) {
@@ -35,13 +42,24 @@ int main(int argc,char** argv) {
     ros::NodeHandle nh("~");
 
     ros::Subscriber subCarPoseCov = nh.subscribe("/airsim_car_node/PhysXCar/odom_local_ned",1,cbCarPoseCov);
+    ros::Subscriber subAccelCmd = nh.subscribe("/accel_cmd",1,cbAccelCmd);
+
     ros::Publisher pubCarPoseCov = nh.advertise<geometry_msgs::PoseWithCovariance>("/atypical_planning_test/car_pose_cov",1);
     ros::Publisher pubCarSpeed = nh.advertise<std_msgs::Float64>("/current_speed",1);
-
+    ros::Publisher pubCurSteering = nh.advertise<std_msgs::Float64>("current_steer_angle",1);
 
     ros::Rate rate(40);
     while(ros::ok()){
+        std_msgs::Float64 curAngle;
+        curAngle.data = steering_angle;
+
+        std_msgs::Float64 curSpeed;
+        curSpeed.data = speed;
+
         pubCarPoseCov.publish(curState);
+        pubCurSteering.publish(curAngle);
+        pubCarSpeed.publish(curSpeed);
+
         rate.sleep();
         ros::spinOnce();
     }

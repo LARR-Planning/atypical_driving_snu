@@ -24,6 +24,7 @@ namespace Planner{
         GlobalPlanner(const ParamGlobal& g_param,shared_ptr<PlannerBase> p_base_);
         bool plan();
         void updateCorridorToBase();
+        bool isCurTrajFeasible(); // TODO
     };
 
 }

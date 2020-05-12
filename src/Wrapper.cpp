@@ -75,6 +75,11 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<double>("local_planner/horizon",param_.l_param.horizon,5);
     nh.param<double>("local_planner/ts",param_.l_param.tStep,0.1);
     nh.param<double>("local_planner/obstacle_radius_nominal",param_.l_param.obstRadiusNominal,0.3);
+    nh.param<double>("local_planner/car_longtitude",param_.l_param.carLongtitude,2.7);
+    nh.param<double>("local_planner/max_steer",param_.l_param.maxSteer,M_PI/30);
+    nh.param<double>("local_planner/max_accel",param_.l_param.maxAccel,3);
+    nh.param<double>("local_planner/min_accel",param_.l_param.minAccel,-1);
+
 
     // predictor
 
@@ -557,6 +562,7 @@ void Wrapper::runPlanning() {
                     ROS_ERROR("[Wrapper] planning failed");
                 }
             }
+            // TODO update the obstaclePathArray to monitor current feasibilty
             // Trigger condition of planning. This can be anything other than the simple periodic triggering
             doPlan = chrono::steady_clock::now() - tCkp > std::chrono::duration<double>(Tp);
             ros::Rate(30).sleep();

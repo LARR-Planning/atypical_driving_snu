@@ -29,6 +29,7 @@ namespace Planner {
         void updateTrajToBase();
         void SfcToOptConstraint();
         Collection<Corridor,51> getOptCorridor();
+        bool isCurTrajFeasible(); // TODO
     };
     /**
      * Plain MPC module

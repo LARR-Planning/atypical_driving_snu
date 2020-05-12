@@ -7,6 +7,23 @@
   <arg name="map"            default="auto_drive.bt"/>
   <arg name="bagfile"        default="autoDriveIntegration.bag"/>
   <arg name="playBagFile"    default="true"/>
+
+  <!--  Arguments for integration with KETI-->
+
+  <arg name="vehicle_model/ly"            default="2.7"/> <!-- for the dynamics -->
+  <arg name="vehicle_model/lx"            default="2"/> <!-- for safe margin -->
+  <arg name="vehicle_model/steer_max"     default="0.52"/>
+  <arg name="vehicle_model/accel_max"     default="1"/>
+  <arg name="vehicle_model/accel_min"     default="-3"/>
+  <arg name="vehicle_model/is_rear_wheel"     default="false"/>
+
+  <arg name="nominal_speed"     default="10"/>
+  <arg name="nominal_period"     default="3"/> <!--preirod = horizon -->
+  <arg name="planning_dt"     default="0.02"/> <!--?-->
+
+  <arg name="initial_goal/x" value="20" />
+  <arg  name="initial_goal/y" value="68" />
+
 <!-- Arguments End -->
 
 <!-- Nodes Start -->
@@ -29,11 +46,11 @@
   </node>
 
   <node pkg="atypical_driving" type="integration_server" name="atypical_planning_test" output="screen">
-    <param name="global_planner/horizon" value="15" />
-    <param name="global_planner/car_width" value="2" />
+    <param name="global_planner/horizon" value="$(arg nominal_period)" />
+    <param name="global_planner/car_width" value="$(arg vehicle_model/lx)" />
     <param name="global_planner/car_z_min" value="0.5" />
     <param name="global_planner/car_z_max" value="1.0" />
-    <param name="global_planner/car_speed" value="1.0" />
+    <param name="global_planner/car_speed" value="$(arg nominal_speed)" />
     <param name="global_planner/road_width" value="4.0" />
     <param name="global_planner/world_x_min" value="-10" />
     <param name="global_planner/world_y_min" value="-1" />
@@ -43,12 +60,16 @@
     <param name="global_planner/box_resolution" value="0.3" />
     <param name="global_planner/box_max_size" value="10" />
 
-
-    <param name="local_planner/horizon" value="5" />
+    <param name="local_planner/horizon" value="$(arg nominal_period)" />
     <param name="local_planner/obstacle_radius_nominal" value="0.8" />
+    <param name="local_planner/ts" value="$(arg planning_dt)" />
+    <param name="local_planner/car_longtitude" value="2.7" />
+    <param name="local_planner/max_steer" value="0.52" />
+    <param name="local_planner/max_accel" value="0.52" />
+    <param name="local_planner/min_accel" value="0.52" />
 
-    <param name="initial_goal/x" value="20" />
-    <param name="initial_goal/y" value="68" />
+    <param name="initial_goal/x" value="$(arg initial_goal/x)" />
+    <param name="initial_goal/y" value="$(arg initial_goal/y)" />
 
     <param name="predictor/observation_queue" value="4" />
     <param name="predictor/ref_height" value="0.4" />

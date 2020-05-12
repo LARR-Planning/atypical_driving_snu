@@ -31,6 +31,15 @@ void LocalPlanner::updateTrajToBase() {
     p_base->setMPCResultTraj(curPlanning); // just an example
 
 }
+/**
+ * @brief moniter whether current path is feasible against the obstaclePathArray
+ * @return
+ */
+bool LocalPlanner::isCurTrajFeasible() {
+
+    return true;
+}
+
 void LocalPlanner::SfcToOptConstraint(){
     double t_end_= 5.0;
     double t_start_  = 0.0;

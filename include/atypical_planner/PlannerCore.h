@@ -42,6 +42,12 @@ namespace Planner {
         double tStep;
         double obstRadiusNominal;
         double goalReachingThres;
+        double carLongtitude; // ly
+
+        double maxSteer; // [-maxSteer,maxSteer]
+        double maxAccel;
+        double minAccel; // [minAccel,maxAccel] can be negative
+        bool isRearWheeled;
     };
 
     /**
@@ -215,6 +221,8 @@ namespace Planner {
     public:
         AbstractPlanner(shared_ptr<PlannerBase> p_base_):p_base(p_base_) {};
         virtual bool plan() = 0;
+        virtual bool isCurTrajFeasible() = 0;
+
     };
 
 }
