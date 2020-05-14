@@ -34,7 +34,7 @@ bool GlobalPlanner::isCurTrajFeasible() {
  * @brief Global planning routine
  * @return true if success
  */
-bool GlobalPlanner::plan() {
+bool GlobalPlanner::plan(double t) {
 //    printf("[GlobalPlanner] planning... \n");
 //    auto tCkp = chrono::steady_clock::now(); // check point time
     curSkeletonPath.clear();

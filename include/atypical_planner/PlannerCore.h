@@ -15,6 +15,8 @@
 #include <math.h>
 #include <Eigen/Core>
 #include <third_party/Prediction/target_manager.hpp>
+#include <third_party/Utils.h>
+#include <driving_msgs/VehicleCmd.h>
 
 
 using namespace std;
@@ -126,6 +128,35 @@ namespace Planner {
         vector<double> ts;
         vector<CarInput> us;
         vector<CarState> xs;
+        CarState evalX(double t){
+            vector<double> xSet(xs.size());
+            vector<double> ySet(xs.size());
+            // TDOO v, theta?
+            for(uint i = 0 ; i < xs.size(); i++){
+                xSet[i] = xs[i].x;
+                ySet[i] = xs[i].y;
+            }
+
+            CarState xy;
+            xy.x = interpolate(ts,xSet,t,true);
+            xy.y = interpolate(ts,ySet,t,true);
+            return xy;
+
+        };
+        CarInput evalU(double t){
+            vector<double> aSet(us.size());
+            vector<double> dSet(us.size());
+            // TDOO v, theta?
+            for(uint i = 0 ; i < us.size(); i++){
+                aSet[i] = us[i].alpha;
+                dSet[i] = us[i].delta;
+            }
+
+            CarInput input;
+            input.alpha = interpolate(ts,aSet,t,true);
+            input.delta = interpolate(ts,dSet,t,true);
+            return input;
+        }
     };
 
     /**
@@ -150,13 +181,19 @@ namespace Planner {
         ObstaclePathArray obstaclePathArray;
 
     public:
-
+        bool isGPsolved = false;
+        bool isLPsolved = false;
         // prediction module
         vector<Predictor::TargetManager> predictorSet;
         // Get
         CarState getCarState() {return cur_state;};
         CarState getDesiredState() {return desired_state;}; //jungwon
-        CarInput getCurInput() { return CarInput(); }; // do some interpolation
+        driving_msgs::VehicleCmd getCurInput(double t) {
+            driving_msgs::VehicleCmd cmd;
+            cmd.steer_angle_cmd =  mpc_result.evalU(t).delta;
+            cmd.accel_decel_cmd = mpc_result.evalU(t).alpha;
+            return cmd;
+        };
         ObstaclePathArray getCurObstaclePathArray() {return obstaclePathArray;};
         vector<pair<double, double>> getSkeletonPath() {return skeleton_path;}; //TODO: delete this after debugging
         vector<Corridor> getCorridorSeq() {return corridor_seq;};
@@ -220,7 +257,7 @@ namespace Planner {
 
     public:
         AbstractPlanner(shared_ptr<PlannerBase> p_base_):p_base(p_base_) {};
-        virtual bool plan() = 0;
+        virtual bool plan(double t ) = 0;
         virtual bool isCurTrajFeasible() = 0;
 
     };
