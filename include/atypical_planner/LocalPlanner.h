@@ -9,8 +9,8 @@
 #include <optimization_module/ilqr.hpp>
 
 ///* YW Added*/
-//template<typename T, const int size>
-//using Collection = std::array<T,size>;
+template<typename T, const int size>
+using Collection = std::array<T,size>;
 
 namespace Planner {
 
@@ -20,14 +20,24 @@ namespace Planner {
     class LocalPlanner: public AbstractPlanner {
     protected:
         ParamLocal param;
-        
+        iLQRParams ilqr_param;
            // Planning intermediate outputs
         MPCResultTraj curPlanning;
+
+        // YW added
         Collection<Corridor,51> box_constraint;
+        Collection<Matrix<double,2,2>,51> bodyArray;
+        vector<Collection<Matrix<double,2,1>,51>> obs_q; // obstacles' path
+        vector<Collection<Matrix<double,2,1>,51>> obs_Q; // obstacles' shape matrices.
+        Matrix<double,2,2> carDefaultShape;
+        // YW added
+        void SfcToOptConstraint(); // translate sfc into box constraints in optimization
+        void ObstToConstraint(); // translate obstacle predictions
+        void QxFromPrediction(Collection<double,51> mpcPredictionHeads);
+
     public:
         LocalPlanner(const ParamLocal& l_param,shared_ptr<PlannerBase> p_base_);
         void updateTrajToBase();
-        void SfcToOptConstraint();
         Collection<Corridor,51> getOptCorridor();
         bool isCurTrajFeasible(); // TODO
     };

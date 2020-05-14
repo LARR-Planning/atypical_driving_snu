@@ -476,7 +476,7 @@ bool Wrapper::plan(double tTrigger){
 
 
         // Call local planner
-        bool lpPassed = true;
+        bool lpPassed = lp_ptr->plan();
         /**
         = lp_ptr->plan();
         if (lpPassed)

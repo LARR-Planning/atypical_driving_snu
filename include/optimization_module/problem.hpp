@@ -27,10 +27,9 @@ class Problem : public ProblemDescription<Nx,Nu>
 	private:
 
 		//SystemBase<Nx,Nu>& sys;
-        Matrix<double,2,1> x_goal_; // Goal : the last point of last corridor
+        Matrix<double,2,1> &x_goal_; // Goal : the last point of last corridor
 
-		Matrix<double,2,2> Qx; // shape matrix, constant in plain_MPC
-
+		Matrix<double,2,2> &Qx; // shape matrix, constant in plain_MPC
 
         VectorX final_weight_ = VectorX::Zero(); //Final Cost Weight Factor
         VectorX state_weight_ = VectorX::Zero(); //Running Cost State Weight Factor
@@ -41,15 +40,18 @@ class Problem : public ProblemDescription<Nx,Nu>
 
         //Collection<Collection<Matrix<double,2,1>,N+1>,N_obs> obs_q_;
 		//Collection<Collection<Matrix<double,2,2>,N+1>,N_obs> obs_Q_;
-		vector<vector<Matrix<double,2,2>>> obs_Q_; //Out: step In: obstacle instances
-		vector<vector<Matrix<double,2,1>>> obs_q_; //Out: step In: obstacle instances
+		vector<Collection<Matrix<double,2,2>,51>>& obs_Q_; // Out: Obstacle, In: prediction array
+        vector<Collection<Matrix<double,2,1>,51>>& obs_q_;
+
+//    vector<vector<Matrix<double,2,2>>> obs_Q_; //Out: step In: obstacle instances
+//		vector<vector<Matrix<double,2,1>>> obs_q_; //Out: step In: obstacle instances
 		Collection<Planner::Corridor,N+1>& sfc_modified;
 
         bool noConstraint_ = true;
 
 	public:
-        Problem (Collection<Planner::Corridor,N+1>&corridor_seq)
-        : sfc_modified(corridor_seq)
+        Problem (Matrix<double,2,2>& car_shape, Matrix<double,2,1>& goal_state, Collection<Planner::Corridor,N+1>&corridor_seq)
+        : sfc_modified(corridor_seq), Qx(car_shape), x_goal_(goal_state)
         { }
 		void set_goal( const Matrix<double,2,1> x_goal)
 		{ x_goal_ = x_goal; }
