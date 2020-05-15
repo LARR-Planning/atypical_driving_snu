@@ -40,6 +40,34 @@ bool LocalPlanner::isCurTrajFeasible() {
     return true;
 }
 
+Point LocalPlanner::getLocalGoal(){
+    double SP_EPSILON = 1e-9;
+    int box_index = -1;
+    for(int i = 0; i < p_base->getCorridorSeq().size(); i++){
+        Corridor corridor = p_base->getCorridorSeq().at(i);
+        if(corridor.t_end >= param.horizon){
+            box_index = i;
+            break;
+        }
+    }
+    Corridor lastBox = p_base->getCorridorSeq().at(box_index);
+    int goal_index = -1;
+    for(int i = 0; i < p_base->getSkeletonPath().size(); i++){
+        Point skeletonPoint = p_base->getSkeletonPath().at(i);
+        if(skeletonPoint.x > lastBox.xl - SP_EPSILON
+           && skeletonPoint.y > lastBox.yl - SP_EPSILON
+           && skeletonPoint.x < lastBox.xu + SP_EPSILON
+           && skeletonPoint.y < lastBox.yu + SP_EPSILON)
+        {
+            goal_index = i;
+        }
+        else if(goal_index >= 0){
+            break;
+        }
+    }
+    return p_base->getSkeletonPath().at(goal_index);
+}
+
 void LocalPlanner::SfcToOptConstraint(){
     double t_end_= 5.0;
     double t_start_  = 0.0;

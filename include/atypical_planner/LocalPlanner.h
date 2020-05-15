@@ -30,6 +30,7 @@ namespace Planner {
         void SfcToOptConstraint();
         Collection<Corridor,51> getOptCorridor();
         bool isCurTrajFeasible(); // TODO
+        Point getLocalGoal();
     };
     /**
      * Plain MPC module
