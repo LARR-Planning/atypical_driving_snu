@@ -15,6 +15,7 @@
 #include <math.h>
 #include <Eigen/Core>
 #include <third_party/Prediction/target_manager.hpp>
+#include <third_party/Vectormap.h>
 
 
 using namespace std;
@@ -141,7 +142,7 @@ namespace Planner {
         CarState desired_state; //jungwon
 
         // to be updated by planners
-        vector<CarState> navigation_path; //jungwon navigation planning output from Dabin Kim
+        LanePath lane_path; //jungwon navigation planning output from Dabin Kim
         vector<pair<double, double>> skeleton_path; //jungwon: debug purpose TODO: delete this after debugging
         vector<Corridor> corridor_seq;
         Corridor search_range;
@@ -154,6 +155,7 @@ namespace Planner {
         // prediction module
         vector<Predictor::TargetManager> predictorSet;
         // Get
+        LanePath getLanePath() {return lane_path;};
         CarState getCarState() {return cur_state;};
         CarState getDesiredState() {return desired_state;}; //jungwon
         CarInput getCurInput() { return CarInput(); }; // do some interpolation
@@ -172,6 +174,7 @@ namespace Planner {
         void setLocalMap(octomap::OcTree* octoLocalPtr_) {octo_local_ptr.reset(octoLocalPtr_);};
 
         // Set from planner
+        void setLanePath(const LanePath& lane_path_in_) {lane_path = lane_path_in_;}
         void setSkeletonPath(const vector<pair<double, double>>& skeleton_in_) {skeleton_path = skeleton_in_;}//TODO: delete this after debugging
         void setCorridorSeq(const vector<Corridor>& corridor_in_) {corridor_seq = corridor_in_;}
         void setSearchRange(const Corridor& search_range_in_) {search_range = search_range_in_;}

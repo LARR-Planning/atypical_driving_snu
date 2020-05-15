@@ -6,6 +6,8 @@
 #define ATYPICAL_DRIVING_GLOBALPLANNER_H
 
 #include <atypical_planner/PlannerCore.h>
+#include <third_party/jps.h>
+
 namespace Planner{
     class GlobalPlanner: public AbstractPlanner{
     private:
@@ -25,6 +27,8 @@ namespace Planner{
         bool plan();
         void updateCorridorToBase();
         bool isCurTrajFeasible(); // TODO
+        bool intersect(Point i0, Point i1, Point j0, Point j1);
+        int ccw(Point a, Point b, Point c);
     };
 
 }
