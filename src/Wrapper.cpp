@@ -25,9 +25,11 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_):p_base(p_ba
     pubCorridorSeq = nh.advertise<visualization_msgs::MarkerArray>("corridor_seq", 1);
     pubObservationMarker = nh.advertise<visualization_msgs::Marker>("observation_queue",1);
     pubPredictionArray = nh.advertise<visualization_msgs::MarkerArray>("prediction",1);
+    pubCurCmd = nh.advertise<driving_msgs::VehicleCmd>("/vehicle_cmd",1);
+
 
     // Subscriber
-    subCarPoseCov = nh.subscribe("car_pose_cov",1,&RosWrapper::cbCarPoseCov,this);
+    subCarPoseCov = nh.subscribe("/current_pose",1,&RosWrapper::cbCarPoseCov,this);
     subDesiredCarPose = nh.subscribe("desired_car_pose",1,&RosWrapper::cbDesiredCarPose,this);
     subGlobalMap = nh.subscribe("global_map",1,&RosWrapper::cbGlobalMap,this);
     subLocalMap = nh.subscribe("local_map",1,&RosWrapper::cbLocalMap,this);
@@ -296,6 +298,8 @@ void RosWrapper::prepareROSmsgs() {
  */
 void RosWrapper::publish() {
     // e.g pub1.publish(topic1)
+    if (p_base->isLPsolved)
+        pubCurCmd.publish(p_base->getCurInput(curTime()));
     pubPath.publish(planningPath);
     pubCorridorSeq.publish(corridorSeq);
 }
@@ -462,11 +466,13 @@ bool Wrapper::plan(double tTrigger){
 //    std::this_thread::sleep_for(std::chrono::duration<double>(0.5));
 
     // call global planner
-    bool gpPassed = gp_ptr->plan();
+    bool gpPassed = gp_ptr->plan(tTrigger);
+    if (not p_base_shared->isGPsolved)
+        p_base_shared->isGPsolved = gpPassed;
+
     if (gpPassed) {
         ROS_INFO_ONCE("[SNU_PLANNER/Wrapper] global planner passed. Start local planning ");
         updateCorrToBase();
-
 
         // Update p_base. the prediction model is being updated in ROS Wrapper
         int nStep  = param.l_param.horizon/param.l_param.tStep; // the division should be integer
@@ -476,14 +482,17 @@ bool Wrapper::plan(double tTrigger){
 
 
         // Call local planner
-        bool lpPassed = true;
-        /**
-        = lp_ptr->plan();
+        bool lpPassed =false ;
+        // lpPassed = lp_ptr->plan(tTrigger); // TODO
+
         if (lpPassed)
             updateMPCToBase();
         else
             ROS_WARN("[SNU_PLANNER/Wrapper] local planning failed");
-        **/
+
+        if (not p_base_shared->isLPsolved)
+            p_base_shared->isLPsolved = lpPassed;
+
         // Unlocking
         mSet[0].unlock();
         return (gpPassed and lpPassed);

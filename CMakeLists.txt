@@ -18,7 +18,7 @@ find_package(catkin REQUIRED COMPONENTS roscpp sensor_msgs tf
 
 include_directories(include ${catkin_INCLUDE_DIRS})
 include_directories(${EIGEN3_INCLUDE_DIRS})
-file(GLOB SNU_PLANNER_SRC src/optimization_module/*.cpp src/*.cpp src/Prediction/*.cpp )
+file(GLOB SNU_PLANNER_SRC src/optimization_module/*.cpp src/*.cpp src/Prediction/*.cpp src/third_party/*.cpp )
 
 
 catkin_package(

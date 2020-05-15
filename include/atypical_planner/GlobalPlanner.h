@@ -27,7 +27,7 @@ namespace Planner{
 
     public:
         GlobalPlanner(const ParamGlobal& g_param,shared_ptr<PlannerBase> p_base_);
-        bool plan();
+        bool plan(double t);
         void updateCorridorToBase();
         bool isCurTrajFeasible(); // TODO
         bool intersect(Point i0, Point i1, Point j0, Point j1);

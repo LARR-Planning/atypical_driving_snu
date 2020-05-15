@@ -41,7 +41,7 @@ namespace Planner {
 
     public:
         LocalPlannerPlain(const ParamLocal& l_param,shared_ptr<PlannerBase> p_base_);
-        bool plan() override;
+        bool plan(double t ) override;
     };
     /**
      * Stochastic MPC module
@@ -51,7 +51,7 @@ namespace Planner {
 
     public:
         LocalPlannerStochastic(const ParamLocal& l_param,shared_ptr<PlannerBase> p_base_);
-        bool plan() override;
+        bool plan(double t) override;
     };
 }
 #endif //ATYPICAL_DRIVING_LOCALPLANNER_H

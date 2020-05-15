@@ -16,7 +16,6 @@
 #include <octomap_msgs/Octomap.h>
 #include <octomap_msgs/conversions.h>
 
-
 namespace Planner{
 
     /**
@@ -61,7 +60,7 @@ namespace Planner{
         ros::Publisher pubCorridorSeq; // publisher for current corridor sequence
         ros::Publisher pubObservationMarker; // publisher for observed position for obstacles
         ros::Publisher pubPredictionArray; // publisher for prediction of the target
-
+        ros::Publisher pubCurCmd; // if MPC has been solved, it emits the command
 
         /**
          * Subscriber

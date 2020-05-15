@@ -90,7 +90,7 @@ void LocalPlanner::SfcToOptConstraint(){
  * @brief Plan with plainMPC. Every elements are deterministic
  * @return
  */
-bool LocalPlannerPlain::plan() {
+bool LocalPlannerPlain::plan(double t) {
 //    Checked that this function is always executed
 //    cout << "[LocalPlanner] planning... " << endl;
 //    cout << "[LocalPlanner] Done. " << endl;
@@ -129,8 +129,7 @@ bool LocalPlannerPlain::plan() {
         }
     }
 
-    Matrix<double,Nx,1> x0_new = (Matrix<double,Nx,1>()<<p_base->getCarState().x,
-            p_base->getCarState().y,p_base->getCarState().v,p_base->getCurInput().alpha,p_base->getCarState().theta).finished();
+    Matrix<double,Nx,1> x0_new; //= (Matrix<double,Nx,1>()<<p_base->getCarState().x, p_base->getCarState().y,p_base->getCarState().v,p_base->getCurInput(t).accel_decel_cmd, p_base->getCarState().theta).finished();
     Collection<Matrix<double,Nu,1>,N> uN_new = u0;
 
     if(loop_num == 0)
@@ -163,7 +162,7 @@ LocalPlannerStochastic::LocalPlannerStochastic(const Planner::ParamLocal &l_para
  * @brief Plan with plainMPC. Every elements are deterministic
  * @return
  */
-bool LocalPlannerStochastic::plan() {
+bool LocalPlannerStochastic::plan(double t ) {
 
 //    cout << "[LocalPlanner] planning... " << endl;
 
