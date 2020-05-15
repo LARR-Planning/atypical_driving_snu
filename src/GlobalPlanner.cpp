@@ -4,6 +4,7 @@
 #define SP_EPSILON          1e-9
 #define SP_EPSILON_FLOAT    1e-4
 #define SP_INFINITY         1e+9
+#define PI                  3.1415
 
 using namespace Planner;
 
@@ -19,6 +20,43 @@ GlobalPlanner::GlobalPlanner(const Planner::ParamGlobal &g_param,
 
     dimx = (int) round((grid_x_max - grid_x_min) / param.grid_resolution) + 1;
     dimy = (int) round((grid_y_max - grid_y_min) / param.grid_resolution) + 1;
+
+    has_wall = false;
+
+    //TODO: navigation planning
+    {
+        LaneNode l1, l2;
+        int N1 = 20, N2 = 10;
+
+        l1.width = 10;
+        l2.width = 13;
+
+        VectorXf l1X(N1);
+        l1X.setZero();
+        VectorXf l1Y(N1);
+        l1Y.setLinSpaced(N1, 0, 73);
+        VectorXf l2X(N2);
+        l2X.setLinSpaced(N2, 0, 49);
+        VectorXf l2Y(N2);
+        l2Y.setConstant(73);
+
+        for (int n = 0; n < N1; n++) {
+            geometry_msgs::Point pnt;
+            pnt.x = l1X(n);
+            pnt.y = l1Y(n);
+            l1.laneCenters.push_back(pnt);
+        }
+
+        for (int n = 0; n < N2; n++) {
+            geometry_msgs::Point pnt;
+            pnt.x = l2X(n);
+            pnt.y = l2Y(n);
+            l2.laneCenters.push_back(pnt);
+        }
+        lanePath.lanes.emplace_back(l1);
+        lanePath.lanes.emplace_back(l2);
+        has_wall = true;
+    }
 }
 
 /**
@@ -26,8 +64,7 @@ GlobalPlanner::GlobalPlanner(const Planner::ParamGlobal &g_param,
  * @return
  */
 bool GlobalPlanner::isCurTrajFeasible() {
-
-    return true;
+    return isFeasible;
 }
 
 /**
@@ -40,6 +77,110 @@ bool GlobalPlanner::plan(double t) {
     curSkeletonPath.clear();
     curCorridorSeq.clear();
     grid.clear();
+    isFeasible = false;
+
+    //set wall from lanePath
+    vector<Point> left, right;
+    Point left_point, right_point;
+    double d, theta, theta_curr, theta_prev;
+    for(auto laneNode: lanePath.lanes){
+        d = laneNode.width / 2;
+        for(int iter = 0; iter < laneNode.laneCenters.size(); iter++){
+            auto lanePoint = laneNode.laneCenters[iter];
+            if(iter < laneNode.laneCenters.size() - 1){
+                auto nextPoint = laneNode.laneCenters[iter+1];
+                theta_prev = theta_curr;
+                theta_curr = atan2(nextPoint.y - lanePoint.y, nextPoint.x - lanePoint.x);
+            }
+            else{
+                theta_curr = theta_prev;
+            }
+            if(iter == 0) {
+                theta = theta_curr;
+            }
+            else{
+                theta = (theta_curr + theta_prev) / 2;
+            }
+
+            left_point.x = lanePoint.x + d * cos(theta + PI / 2);
+            left_point.y = lanePoint.y + d * sin(theta + PI / 2);
+            left.emplace_back(left_point);
+
+            right_point.x = lanePoint.x + d * cos(theta - PI / 2);
+            right_point.y = lanePoint.y + d * sin(theta - PI / 2);
+            right.emplace_back(right_point);
+        }
+    }
+
+    int left_i = 0;
+    while(left_i < left.size() - 1){
+        for(int left_j = left_i + 2; left_j < left.size() - 1; left_j++){
+            if(intersect(left[left_i], left[left_i+1], left[left_j], left[left_j+1])){
+                left.erase(left.begin() + left_i+1, left.begin() + left_j+1);
+                break;
+            }
+        }
+        left_i++;
+    }
+
+    int right_i = 0;
+    while(right_i < right.size() - 1){
+        for(int right_j = right_i + 2; right_j < right.size() - 1; right_j++){
+            if(intersect(right[right_i], right[right_i+1], right[right_j], right[right_j+1])){
+                right.erase(right.begin() + right_i+1, right.begin() + right_j+1);
+                break;
+            }
+        }
+        right_i++;
+    }
+
+    double point_x, point_y, point_dx, point_dy, step;
+    for(int i = 0; i < left.size()-1; i++){
+        point_dx = left[i+1].x - left[i].x;
+        point_dy = left[i+1].y - left[i].y;
+
+        if(abs(point_dx) >= abs(point_dy)){
+            step = abs(point_dx) * 10;
+        }
+        else{
+            step = abs(point_dy) * 10;
+        }
+        point_dx = point_dx / step;
+        point_dy = point_dy / step;
+
+        point_x = left[i].x;
+        point_y = left[i].y;
+
+        for(int iter = 0; iter < step; iter++) {
+            octomap::point3d point(point_x, point_y, (param.car_z_min + param.car_z_max) / 2);
+            p_base->getLocalOctoPtr()->updateNode(point, true);
+            point_x += point_dx;
+            point_y += point_dy;
+        }
+    }
+    for(int i = 0; i < right.size()-1; i++){
+        point_dx = right[i+1].x - right[i].x;
+        point_dy = right[i+1].y - right[i].y;
+
+        if(abs(point_dx) >= abs(point_dy)){
+            step = abs(point_dx) * 10;
+        }
+        else{
+            step = abs(point_dy) * 10;
+        }
+        point_dx = point_dx / step;
+        point_dy = point_dy / step;
+
+        point_x = right[i].x;
+        point_y = right[i].y;
+
+        for(int iter = 0; iter < step; iter++) {
+            octomap::point3d point(point_x, point_y, (param.car_z_min + param.car_z_max) / 2);
+            p_base->getLocalOctoPtr()->updateNode(point, true);
+            point_x += point_dx;
+            point_y += point_dy;
+        }
+    }
 
     // Set start, goal points
     int i_start, j_start, i_goal, j_goal;
@@ -50,10 +191,12 @@ bool GlobalPlanner::plan(double t) {
 
     if(i_start < 0 || i_start >= dimx || j_start < 0 || j_start >= dimy){
         printf("[GlobalPlanner] ERROR: start point is out of bound \n");
+        isFeasible = false;
         return false;
     }
     if(i_goal < 0 || i_goal >= dimx || j_goal < 0 || j_goal >= dimy){
         printf("[GlobalPlanner] ERROR: goal point is out of bound \n");
+        isFeasible = false;
         return false;
     }
 
@@ -145,8 +288,8 @@ bool GlobalPlanner::plan(double t) {
 //    cout << "[GlobalPlanner] grid generation: " << std::chrono::duration_cast<std::chrono::microseconds>(chrono::steady_clock::now() - tCkp).count()/1000.0 << "ms" << endl;
 
     //// JPS start ////
-    Node start(i_start,j_start,0,0,0,0);
-    Node goal(i_goal,j_goal,0,0,0,0);
+    JPS::Node start(i_start,j_start,0,0,0,0);
+    JPS::Node goal(i_goal,j_goal,0,0,0,0);
 
     start.id_ = start.x_ * dimy + start.y_;
     start.pid_ = start.x_ * dimy + start.y_;
@@ -155,31 +298,39 @@ bool GlobalPlanner::plan(double t) {
 
     if(grid[start.x_][start.y_] == 1 ){
         printf("[GlobalPlanner] ERROR: start point is occluded \n");
+        isFeasible = false;
         return false;
     }
     if(grid[goal.x_][goal.y_] == 1){
         printf("[GlobalPlanner] ERROR: start point is occluded \n");
+        isFeasible = false;
         return false;
     }
 
-    JumpPointSearch new_jump_point_search;
-    std::vector<Node> jps_result = new_jump_point_search.jump_point_search(grid, start, goal);
+    JPS::JumpPointSearch new_jump_point_search;
+    std::vector<JPS::Node> jps_result = new_jump_point_search.jump_point_search(grid, start, goal);
+
+    if(jps_result[0] == JPS::Node(-1,-1,-1,-1,-1,-1)){
+        printf("[GlobalPlanner] ERROR: A* failed, there is no path \n");
+        isFeasible = false;
+        return false;
+    }
 
     for(int i = 0; i < jps_result.size(); i++){
-        pair<double, double> pair;
+        Point skeletonPoint;
         if(i == jps_result.size() - 1) {
-            pair.first = jps_result[i].x_ * param.grid_resolution + grid_x_min;
-            pair.second = jps_result[i].y_ * param.grid_resolution + grid_y_min;
-            curSkeletonPath.emplace_back(pair);
+            skeletonPoint.x = jps_result[i].x_ * param.grid_resolution + grid_x_min;
+            skeletonPoint.y = jps_result[i].y_ * param.grid_resolution + grid_y_min;
+            curSkeletonPath.emplace_back(skeletonPoint);
         }
         else {
             double delta = jps_result[i + 1].cost_ - jps_result[i].cost_;
             for (int j = 0; j < delta; j++) {
-                pair.first = ((double) jps_result[i].x_ * (1 - j / delta) + (double) jps_result[i + 1].x_ * j / delta) *
+                skeletonPoint.x = ((double) jps_result[i].x_ * (1 - j / delta) + (double) jps_result[i + 1].x_ * j / delta) *
                              param.grid_resolution + grid_x_min;
-                pair.second = ((double) jps_result[i].y_ * (1 - j / delta) + (double) jps_result[i + 1].y_ * j / delta) *
+                skeletonPoint.y = ((double) jps_result[i].y_ * (1 - j / delta) + (double) jps_result[i + 1].y_ * j / delta) *
                         param.grid_resolution + grid_y_min;
-                curSkeletonPath.emplace_back(pair);
+                curSkeletonPath.emplace_back(skeletonPoint);
             }
         }
     }
@@ -192,13 +343,13 @@ bool GlobalPlanner::plan(double t) {
 //    int M = curSkeletonPath.size() - 1;
     for (int m = 0; m < M; m++) {
         auto state_curr = curSkeletonPath[m];
-        x_curr = state_curr.first;
-        y_curr = state_curr.second;
+        x_curr = state_curr.x;
+        y_curr = state_curr.y;
 
         std::array<double, 4> box_curr;
         auto state_next = curSkeletonPath[m + 1];
-        x_next = state_next.first;
-        y_next = state_next.second;
+        x_next = state_next.x;
+        y_next = state_next.y;
 
         if (x_next > box_prev[0] - SP_EPSILON && y_next > box_prev[1] - SP_EPSILON
             && x_next <= box_prev[2] + SP_EPSILON && y_next < box_prev[3] + SP_EPSILON) {
@@ -303,8 +454,8 @@ bool GlobalPlanner::plan(double t) {
 
     for (int i = 0; i < box_max; i++) {
         for (int j = 0; j < path_max; j++) {
-            x = curSkeletonPath[j].first;
-            y = curSkeletonPath[j].second;
+            x = curSkeletonPath[j].x;
+            y = curSkeletonPath[j].y;
             if (x > curCorridorSeq[i].xl - SP_EPSILON
                 && y > curCorridorSeq[i].yl - SP_EPSILON
                 && x < curCorridorSeq[i].xu + SP_EPSILON
@@ -341,8 +492,8 @@ bool GlobalPlanner::plan(double t) {
             timeSegment = 0;
             double delta_x, delta_y, box_width, time_coefficient;
             for(int i = prev_index; i < current_index; i++){
-                delta_x = abs(curSkeletonPath[i+1].first - curSkeletonPath[i].first);
-                delta_y = abs(curSkeletonPath[i+1].second - curSkeletonPath[i].second);
+                delta_x = abs(curSkeletonPath[i+1].x - curSkeletonPath[i].x);
+                delta_y = abs(curSkeletonPath[i+1].y - curSkeletonPath[i].y);
                 if(delta_x > SP_EPSILON_FLOAT && delta_y < SP_EPSILON_FLOAT){
                     box_width = min(curCorridorSeq[box_iter].yu - curCorridorSeq[box_iter].yl, param.road_width);
                     time_coefficient = param.road_width / box_width; //TODO: naive time_coefficient formulation
@@ -385,6 +536,26 @@ bool GlobalPlanner::plan(double t) {
     //TODO: print out the outcome of the planning
 
     return true; // change this line properly
+}
+
+bool GlobalPlanner::intersect(Point i0, Point i1, Point j0, Point j1){
+    int ab = ccw(i0, i1, j0)*ccw(i0, i1, j1);
+    int cd = ccw(j0, j1, i0)*ccw(j0, j1, i1);
+    if (ab == 0 && cd == 0) {
+//        if (a > b)swap(a, b);
+//        if (c > d)swap(c, d);
+//        return c <= b && a <= d;
+        return false;
+    }
+    return ab <= 0 && cd <= 0;
+}
+
+int GlobalPlanner::ccw(Point a, Point b, Point c) {
+    double op = a.x*b.y + b.x*c.y + c.x*a.y;
+    op -= (a.y*b.x + b.y*c.x + c.y*a.x);
+    if (op > SP_EPSILON) return 1;
+    else if (abs(op) < SP_EPSILON) return 0;
+    else return -1;
 }
 
 /**
