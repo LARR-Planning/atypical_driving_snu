@@ -143,7 +143,7 @@ namespace Planner {
 
         // to be updated by planners
         LanePath lane_path; //jungwon navigation planning output from Dabin Kim
-        vector<pair<double, double>> skeleton_path; //jungwon: debug purpose TODO: delete this after debugging
+        vector<Point> skeleton_path;
         vector<Corridor> corridor_seq;
         Corridor search_range;
         MPCResultTraj mpc_result;
@@ -160,7 +160,7 @@ namespace Planner {
         CarState getDesiredState() {return desired_state;}; //jungwon
         CarInput getCurInput() { return CarInput(); }; // do some interpolation
         ObstaclePathArray getCurObstaclePathArray() {return obstaclePathArray;};
-        vector<pair<double, double>> getSkeletonPath() {return skeleton_path;}; //TODO: delete this after debugging
+        vector<Point> getSkeletonPath() {return skeleton_path;}; //TODO: delete this after debugging
         vector<Corridor> getCorridorSeq() {return corridor_seq;};
         Corridor getSearchRange() {return search_range;};
         octomap::OcTree* getGlobalOctoPtr() {return octo_global_ptr.get();}
@@ -175,7 +175,7 @@ namespace Planner {
 
         // Set from planner
         void setLanePath(const LanePath& lane_path_in_) {lane_path = lane_path_in_;}
-        void setSkeletonPath(const vector<pair<double, double>>& skeleton_in_) {skeleton_path = skeleton_in_;}//TODO: delete this after debugging
+        void setSkeletonPath(const vector<Point>& skeleton_in_) {skeleton_path = skeleton_in_;}
         void setCorridorSeq(const vector<Corridor>& corridor_in_) {corridor_seq = corridor_in_;}
         void setSearchRange(const Corridor& search_range_in_) {search_range = search_range_in_;}
         void setMPCResultTraj(const MPCResultTraj& mpc_result_in_) {mpc_result = mpc_result_in_;}
