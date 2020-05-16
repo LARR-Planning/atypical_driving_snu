@@ -44,9 +44,9 @@ int main(int argc,char** argv) {
     ros::Subscriber subCarPoseCov = nh.subscribe("/airsim_car_node/PhysXCar/odom_local_ned",1,cbCarPoseCov);
     ros::Subscriber subAccelCmd = nh.subscribe("/accel_cmd",1,cbAccelCmd);
 
-    ros::Publisher pubCarPoseCov = nh.advertise<geometry_msgs::PoseWithCovariance>("/atypical_planning_test/car_pose_cov",1);
+    ros::Publisher pubCarPoseCov = nh.advertise<geometry_msgs::PoseWithCovariance>("/current_pose",1);
     ros::Publisher pubCarSpeed = nh.advertise<std_msgs::Float64>("/current_speed",1);
-    ros::Publisher pubCurSteering = nh.advertise<std_msgs::Float64>("current_steer_angle",1);
+    ros::Publisher pubCurSteering = nh.advertise<std_msgs::Float64>("/current_steer_angle",1);
 
     ros::Rate rate(40);
     while(ros::ok()){

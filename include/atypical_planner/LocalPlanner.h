@@ -46,6 +46,7 @@ namespace Planner {
         void updateTrajToBase();
         Collection<Corridor,51> getOptCorridor();
         bool isCurTrajFeasible(); // TODO
+        Point getLocalGoal();
     };
     /**
      * Plain MPC module
@@ -57,7 +58,7 @@ namespace Planner {
 
     public:
         LocalPlannerPlain(const ParamLocal& l_param,shared_ptr<PlannerBase> p_base_);
-        bool plan() override;
+        bool plan(double t ) override;
     };
     /**
      * Stochastic MPC module
@@ -67,7 +68,7 @@ namespace Planner {
 
     public:
         LocalPlannerStochastic(const ParamLocal& l_param,shared_ptr<PlannerBase> p_base_);
-        bool plan() override;
+        bool plan(double t) override;
     };
 }
 #endif //ATYPICAL_DRIVING_LOCALPLANNER_H

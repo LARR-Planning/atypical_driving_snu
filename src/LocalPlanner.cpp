@@ -95,6 +95,34 @@ void LocalPlanner::ObstToConstraint() {
     }
 }
 
+Point LocalPlanner::getLocalGoal(){
+    double SP_EPSILON = 1e-9;
+    int box_index = -1;
+    for(int i = 0; i < p_base->getCorridorSeq().size(); i++){
+        Corridor corridor = p_base->getCorridorSeq().at(i);
+        if(corridor.t_end >= param.horizon){
+            box_index = i;
+            break;
+        }
+    }
+    Corridor lastBox = p_base->getCorridorSeq().at(box_index);
+    int goal_index = -1;
+    for(int i = 0; i < p_base->getSkeletonPath().size(); i++){
+        Point skeletonPoint = p_base->getSkeletonPath().at(i);
+        if(skeletonPoint.x > lastBox.xl - SP_EPSILON
+           && skeletonPoint.y > lastBox.yl - SP_EPSILON
+           && skeletonPoint.x < lastBox.xu + SP_EPSILON
+           && skeletonPoint.y < lastBox.yu + SP_EPSILON)
+        {
+            goal_index = i;
+        }
+        else if(goal_index >= 0){
+            break;
+        }
+    }
+    return p_base->getSkeletonPath().at(goal_index);
+}
+
 void LocalPlanner::SfcToOptConstraint(){
     double t_end_;
     double t_start_  = 0.0;
@@ -143,7 +171,7 @@ void LocalPlanner::SfcToOptConstraint(){
  * @brief Plan with plainMPC. Every elements are deterministic
  * @return
  */
-bool LocalPlannerPlain::plan() {
+bool LocalPlannerPlain::plan(double t) {
 //    Checked that this function is always executed
 //    cout << "[LocalPlanner] planning... " << endl;
 //    cout << "[LocalPlanner] Done. " << endl;
@@ -181,9 +209,8 @@ bool LocalPlannerPlain::plan() {
          }
      }
 
-    Matrix<double,Nx,1> x0_new = (Matrix<double,Nx,1>()<<p_base->getCarState().x,
-            p_base->getCarState().y, p_base->getCarState().v, p_base->getCurInput().alpha, p_base->getCarState().theta).finished();
-    Collection<Matrix<double,Nu,1>,N> uN_new;
+    Matrix<double,Nx,1> x0_new; //= (Matrix<double,Nx,1>()<<p_base->getCarState().x, p_base->getCarState().y,p_base->getCarState().v,p_base->getCurInput(t).a0ccel_decel_cmd, p_base->getCarState().theta).finished();
+    Collection<Matrix<double,Nu,1>,N> uN_new = u0;
 
     if(loop_num == 0)
     {
@@ -232,7 +259,7 @@ LocalPlannerStochastic::LocalPlannerStochastic(const Planner::ParamLocal &l_para
  * @brief Plan with plainMPC. Every elements are deterministic
  * @return
  */
-bool LocalPlannerStochastic::plan() {
+bool LocalPlannerStochastic::plan(double t ) {
 
 //    cout << "[LocalPlanner] planning... " << endl;
 

@@ -106,9 +106,9 @@ visualization_msgs::Marker TargetManager::get_obsrv_marker(string world_frame_id
 
 
 TargetManager::~TargetManager(){
-    cout << "[TargetManager] Destroyed with log file" << endl;
-    std::ofstream file("observation.txt");
-    if(file.is_open())
-        // file << obsrv_traj_for_predict_total.transpose().block(0,0,size_history,4);
-    file.close();
+    // cout << "[TargetManager] Destroyed with log file" << endl;
+    //std::ofstream file("observation.txt");
+    //if(file.is_open())
+    //    // file << obsrv_traj_for_predict_total.transpose().block(0,0,size_history,4);
+    //file.close();
 }
