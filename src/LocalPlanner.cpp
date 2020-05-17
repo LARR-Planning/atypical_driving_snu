@@ -46,7 +46,7 @@ LocalPlanner::LocalPlanner(const Planner::ParamLocal &l_param,
         bodyArray[i]<< 4.0, 0.0, 0.0, 4.0;
     }
     state_weight_<< 0.05, 0.05, 0.05, 0.05, 0.05;
-    final_weight_<< 0.05, 0.05, 0.05, 0.05, 0.05;
+    final_weight_<< 0.5, 0.5, 0.5, 0.5, 0.5;
     input_weight_<< 0.01, 0.01;
 
     cout << "[LocalPlanner] Init." << endl;
@@ -55,7 +55,7 @@ LocalPlanner::LocalPlanner(const Planner::ParamLocal &l_param,
 /**
  * Update the planning result to p_base
  */
-void LocalPlanner::updateTrajToBase() {
+void LocalPlanner::updateTrajToBase(){
     // update routine here
     p_base->setMPCResultTraj(curPlanning); // just an example
 }
@@ -82,20 +82,24 @@ void LocalPlanner::ObstToConstraint() {
     int count_id = 0;
     Collection<Matrix<double,2,1>,51> path_temp;
     Collection<Matrix<double,2,2>,51> shape_temp;
+    obs_q.clear();
+    obs_Q.clear();
     if(p_base->getCurObstaclePathArray().obstPathArray.size()>0) {
         for (auto &s : p_base->getCurObstaclePathArray().obstPathArray) {
             for (int i = 0; i < 51; i++) {
                 path_temp[i].block<2, 1>(0, 0) = s.obstPath[i].q;
                 shape_temp[i].block<2, 2>(0, 0) = s.obstPath[i].Q.inverse();
             }
+
             obs_q.push_back(path_temp);
             obs_Q.push_back(shape_temp);
             count_id++;
         }
     }
+
 }
 
-Point LocalPlanner::getLocalGoal(){
+Matrix<double,2,1> LocalPlanner::getLocalGoal(){
     double SP_EPSILON = 1e-9;
     int box_index = -1;
     for(int i = 0; i < p_base->getCorridorSeq().size(); i++){
@@ -120,7 +124,9 @@ Point LocalPlanner::getLocalGoal(){
             break;
         }
     }
-    return p_base->getSkeletonPath().at(goal_index);
+    Matrix<double,2,1> tempLocalGoal;
+    tempLocalGoal<< p_base->getSkeletonPath().at(goal_index).x, p_base->getSkeletonPath().at(goal_index).y;
+    return tempLocalGoal;
 }
 
 void LocalPlanner::SfcToOptConstraint(){
@@ -183,8 +189,10 @@ bool LocalPlannerPlain::plan(double t) {
     LocalPlanner::ObstToConstraint();
     // cout<< LocalPlanner::box_constraint[1].yl<<endl;
     using namespace Eigen;
-//    //Following codes will be wrapped with another wrapper;
-
+    //Following codes will be wrapped with another wrapper;
+     Matrix<double,2,1> x_goal_;
+     x_goal_ = LocalPlanner::getLocalGoal();
+    cout<< "New Local Goal is"<<x_goal_.coeffRef(0,0)<<"and"<<x_goal_.coeffRef(1,0)<<endl;
     std::shared_ptr<Problem> prob = std::make_shared<Problem>(bodyArray, box_constraint, obs_Q, obs_q);
     // Do not have to be defined every loop
 
@@ -193,49 +201,84 @@ bool LocalPlannerPlain::plan(double t) {
      prob->set_final_weight(final_weight_);
      prob->set_input_weight(input_weight_);
      prob->set_noConstraint(noConstraint_);
-
-////     // A new goal-update function will be defined/added with argument x_goal
-     Matrix<double,2,1> x_goal_;
-     x_goal_<<10.0, 0.0;
      prob->set_goal(x_goal_);
+
      static int loop_num = 0;
 
      std::array<Matrix<double,Nu,1>,N> u0;
+     Matrix<double,Nx,1> x0_new;
      if(loop_num == 0)
      {
          for(auto &s :u0)
          {
              s=(Matrix<double,Nu,1>()<< 0.0,0.0).finished();
          }
+         x0_new = (Matrix<double,Nx,1>()<<p_base->getCarState().x, p_base->getCarState().y,p_base->getCarState().v,
+                 0.0, p_base->getCarState().theta).finished();
      }
+     cout<<"current x: " <<p_base->getCarState().x<<endl;
+     cout<<"current y: " <<p_base->getCarState().y<<endl;
+     cout<<"current v: " <<p_base->getCarState().v<<endl;
+     cout<<"current theta: " <<p_base->getCarState().theta<<endl;
 
-    Matrix<double,Nx,1> x0_new; //= (Matrix<double,Nx,1>()<<p_base->getCarState().x, p_base->getCarState().y,p_base->getCarState().v,p_base->getCurInput(t).a0ccel_decel_cmd, p_base->getCarState().theta).finished();
-    Collection<Matrix<double,Nu,1>,N> uN_new = u0;
-
-    if(loop_num == 0)
+     Collection<Matrix<double,Nu,1>,N> uN_new;
+     Collection<Matrix<double,Nx,1>,N+1> xN_new;
+     if(loop_num == 0)
     {
         uN_new = u0;
         iLQR<Nx,Nu,N> ilqr_init(*prob, x0_new,uN_new,dt,ilqr_param);
         ilqr_init.solve();
-        uN_new = ilqr_init.uN_;
-        for(int j = 0; j<50;j++)
-        {
-            cout<<uN_new[j](0)<<endl;
-        }
-
-        loop_num++;
         cout<< "Wow No error??"<<endl;
+        uN_new = ilqr_init.uN_;
+        xN_new = ilqr_init.xN_;
+//        for(int j = 0; j<50;j++)
+//        {
+//            cout<<uN_new[j].coeff(1,0)<<endl;
+//        }
+//        cout<<"So far, new input, from now on, new states"<<endl;
+//        for(int j = 0; j<51;j++)
+//        {
+//            cout<<xN_new[j].coeff(1,0)<<endl;
+//        }
+         loop_num++;
     }
-    else
-    {
-//        iLQR<Nx,Nu,N>ilqr(*prob,x0_new, uN_new,dt,ilqr_param);
-//        ilqr.solve();
-//        cout<<"No error, Congratulations"<<endl;
-    }
+
+     Matrix<double,50,1> ts_temp = VectorXd::LinSpaced(50,0.5,5);
+     ts_temp = ts_temp.array()+ t;
+     CarState carState_temp;
+     CarInput carInput_temp;
+
+     for(int i = 0 ;i<50; i++)
+     {
+         carState_temp.x = xN_new[i+1].coeffRef(0,0);
+         carState_temp.y = xN_new[i+1].coeffRef(1,0);
+         carState_temp.v = xN_new[i+1].coeffRef(2,0);
+         carState_temp.theta = xN_new[i+1].coeffRef(4,0);
+
+         carInput_temp.alpha = uN_new[i].coeffRef(0,0);
+         carInput_temp.delta = xN_new[i+1].coeffRef(3,0);
+
+         curPlanning.ts.clear();
+         curPlanning.xs.clear();
+         curPlanning.us.clear();
+
+         curPlanning.ts.push_back(ts_temp[i]);
+         curPlanning.xs.push_back(carState_temp);
+         curPlanning.us.push_back(carInput_temp);
+     }
+
+
+
+//////    else
+//////    {
+////////        iLQR<Nx,Nu,N>ilqr(*prob,x0_new, uN_new,dt,ilqr_param);
+////////        ilqr.solve();
+//////        cout<<"No error, Congratulations"<<endl;
+//////    }
+////
 
 
     //TODO: print out the outcome of the planning
-
     return true; // change this line properly
 }
 
