@@ -39,14 +39,12 @@ namespace Planner {
         Matrix<double,2,1> input_weight_;
         Matrix<double,5,1> final_weight_;
 
-
-
     public:
         LocalPlanner(const ParamLocal& l_param,shared_ptr<PlannerBase> p_base_);
         void updateTrajToBase();
         Collection<Corridor,51> getOptCorridor();
         bool isCurTrajFeasible(); // TODO
-        Point getLocalGoal();
+        Matrix<double,2,1> getLocalGoal();
     };
     /**
      * Plain MPC module

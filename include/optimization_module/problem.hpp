@@ -167,83 +167,100 @@ class Problem : public ProblemDescription<Nx,Nu>
         ConstraintDerivatives<Nx,Nu>
             constraint(const VectorX x, const VectorU u, const int idx, const ReturnType type)
             {
-                if(idx >= N)
-                {
-                    idx_const_par = N-1;
-                }
-                else
-                {
-                    idx_const_par = idx;
-                }
 
-                int nieq = Nc;
-                int neq = 0;
                 int N_obs = obs_q_.size();
                 Matrix<double,5,1> x_ = x.block<5,1>(0,0);
                 Matrix<double,2,1> u_ = u.block<2,1>(0,0);
-                
-                ConstraintDerivatives<Nx,Nu> obj(10,0);
 
-
-                // SFC constraints
-                obj.con(0) = x_(0) - sfc_modified[idx].xl;
-                obj.con(1) = sfc_modified[idx].xu - x_(0);
-                obj.con(2) = x_(1) - sfc_modified[idx].yl;
-                obj.con(3) = sfc_modified[idx].yu - x_(1);
-                obj.con(4) = x_(3) - steer_min;
-                obj.con(5) = steer_max - x_(3);
-                obj.con(6) = u_(0) - acc_min;
-                obj.con(7) = acc_max - u_(0);
-                if(N_obs>0)
+                if(N_obs > 0)
                 {
-                    Matrix<double,2,1> q1 = x_.block<2,1>(0,0);
-                    Matrix<double,2,2> Q1 = Qx[idx].block<2,2>(0,0);
-                    double sqrtTrQ1 = sqrt(Q1.trace());
-                    // Matrix<double,2,1> q2 = obs_q_[idx](i);
-                    // Matrix<double,2,2> Q2 = obs_Q_[idx](i);
-                    for(int i = 0;i< N_obs ;i++)
+                    if(idx>0)
                     {
-                        Matrix<double,2,1> q2 = obs_q_[i][idx];
-                        Matrix<double,2,2> Q2 = obs_Q_[i][idx];
+                        // do not consider constraint at initial
+                        ConstraintDerivatives<Nx,Nu> obj(N_obs+8,0);
+                        obj.conx.setZero();
+                        obj.conu.setZero();
+                        Matrix<double,2,1> q1 = x_.block<2,1>(0,0);
+                        Matrix<double,2,2> Q1 = Qx[idx].block<2,2>(0,0);
+                        double sqrtTrQ1 = sqrt(Q1.trace());
 
-                        double sqrtTrQ2 = sqrt(Q2.trace());
-                        Matrix<double,2,2> Qsum = (1.0+sqrtTrQ2/sqrtTrQ1)*Q1
-                                                  + (1.0+sqrtTrQ1/sqrtTrQ2)*Q2;
-                        Matrix<double,2,2> invQsum = Qsum.inverse();
-                        obj.con(i+8) = (q1-q2).dot( invQsum*(q1-q2) ) - 1.0;
+                        for(int i = 0;i< N_obs ;i++)
+                        {
+                            Matrix<double,2,1> q2 = obs_q_[i][idx];
+                            Matrix<double,2,2> Q2 = obs_Q_[i][idx];
 
+                            double sqrtTrQ2 = sqrt(Q2.trace());
+                            Matrix<double,2,2> Qsum = (1.0+sqrtTrQ2/sqrtTrQ1)*Q1
+                                                      + (1.0+sqrtTrQ1/sqrtTrQ2)*Q2;
+                            Matrix<double,2,2> invQsum = Qsum.inverse();
+                            obj.con(i+8) = (q1-q2).dot( invQsum*(q1-q2) ) - 1.0;
+
+                            if(type != WITHOUT_DERIVATIVES)
+                            {
+                                obj.conx.row(i+8).block<1,2>(0,0) = 2.0*(invQsum*(q1-q2)).transpose();
+                            }
+
+                        }
+                        // SFC constraints
+                        obj.con(0) = x_(0) - sfc_modified[idx].xl;
+                        obj.con(1) = sfc_modified[idx].xu - x_(0);
+                        obj.con(2) = x_(1) - sfc_modified[idx].yl;
+                        obj.con(3) = sfc_modified[idx].yu - x_(1);
+                        obj.con(4) = x_(3) - steer_min;
+                        obj.con(5) = steer_max - x_(3);
+                        obj.con(6) = u_(0) - acc_min;
+                        obj.con(7) = acc_max - u_(0);
                         if(type != WITHOUT_DERIVATIVES)
                         {
-                            obj.conx.row(i+8).block<1,2>(0,0) = 2.0*(invQsum*(q1-q2)).transpose();
+                            obj.conx.row(0).coeffRef(0,0) = 1.0;
+                            obj.conx.row(1).coeffRef(0,0) = -1.0;
+                            obj.conx.row(2).coeffRef(0,1) = 1.0;
+                            obj.conx.row(3).coeffRef(0,1) = -1.0;
+                            obj.conx.row(4).coeffRef(0,3) = 1.0;
+                            obj.conx.row(5).coeffRef(0,3) = -1.0;
+
+                            obj.conu.row(6).coeffRef(0,0) = 1.0;
+                            obj.conu.row(7).coeffRef(0,1) = -1.0;
                         }
-
+                        return obj;
                     }
+                    else
+                    {
+                        ConstraintDerivatives<Nx,Nu> obj(0,0);
+                        return obj;
+                    }
+
                 }
-
-
-                if(type != WITHOUT_DERIVATIVES)
+                else
                 {
-                    obj.conx.row(0).coeffRef(0,0) = 1.0;
-                    obj.conx.row(1).coeffRef(0,0) = -1.0;
-                    obj.conx.row(2).coeffRef(0,1) = 1.0;
-                    obj.conx.row(3).coeffRef(0,1) = -1.0;
-                    obj.conx.row(4).coeffRef(0,3) = 1.0;
-                    obj.conx.row(5).coeffRef(0,3) = -1.0;
+                    ConstraintDerivatives<Nx,Nu> obj(8,0);
+                    // SFC constraints
+                    obj.con(0) = x_(0) - sfc_modified[idx].xl;
+                    obj.con(1) = sfc_modified[idx].xu - x_(0);
+                    obj.con(2) = x_(1) - sfc_modified[idx].yl;
+                    obj.con(3) = sfc_modified[idx].yu - x_(1);
+                    obj.con(4) = x_(3) - steer_min;
+                    obj.con(5) = steer_max - x_(3);
+                    obj.con(6) = u_(0) - acc_min;
+                    obj.con(7) = acc_max - u_(0);
+                    if(type != WITHOUT_DERIVATIVES)
+                    {
+                        obj.conx.setZero();
+                        obj.conu.setZero();
+                        obj.conx.row(0).coeffRef(0,0) = 1.0;
+                        obj.conx.row(1).coeffRef(0,0) = -1.0;
+                        obj.conx.row(2).coeffRef(0,1) = 1.0;
+                        obj.conx.row(3).coeffRef(0,1) = -1.0;
+                        obj.conx.row(4).coeffRef(0,3) = 1.0;
+                        obj.conx.row(5).coeffRef(0,3) = -1.0;
 
-                    obj.conu.row(6).coeffRef(0,0) = 1.0;
-                    obj.conu.row(7).coeffRef(0,1) = -1.0;
+                        obj.conu.row(6).coeffRef(0,0) = 1.0;
+                        obj.conu.row(7).coeffRef(0,1) = -1.0;
+                    }
+                    return obj;
+
                 }
 
-
-
-
-
-
-                return obj;
-                    // if(type == WITHOUT_DERIVATIVES)
-                    //     return obj;
-                    // obj.conx.row(i).block<1,2>(0,0) = 2.0*(invQsum*(q1-q2)).transpose();
-                    // return obj;
             }
 };
 #endif
