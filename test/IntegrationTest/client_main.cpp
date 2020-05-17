@@ -14,6 +14,7 @@
 #include <Eigen/Geometry>
 #include <Eigen/Core>
 #include <tf/tf.h>
+#include <driving_msgs/DetectedObjectArray.h>
 
 //virtual environment generator to test Global planner
 
@@ -21,6 +22,10 @@ static geometry_msgs::PoseWithCovariance curState;
 static geometry_msgs::PoseStamped curPose;
 static float speed;
 static float steering_angle = 0; // at the initial, it is zero
+static double obst_rad;
+static driving_msgs::DetectedObjectArray objectsArray; // object should be emitted based on object_pose
+static driving_msgs::DetectedObject object;
+
 
 
 // ned to enu
@@ -98,13 +103,25 @@ void cbCarPoseCov(const nav_msgs::Odometry& pose_ned){
 void cbAccelCmd(const geometry_msgs::Twist& twist){
     steering_angle = twist.angular.z;
 }
+// convert the object pose into DetectedObjectArray
+void cbObject(const geometry_msgs::PoseStamped& object_pose){
+
+
+}
 
 int main(int argc,char** argv) {
     ros::init(argc,argv,"virtual_environment_generator");
     ros::NodeHandle nh("~");
+    nh.param<double>("obstacle_radius",obst_rad,0.8);
+
+    object.dimensions.x = 2*obst_rad;
+    object.dimensions.y = 2*obst_rad;
+    // z value will not be used
+    objectsArray.objects.push_back(object);
 
     ros::Subscriber subCarPoseCov = nh.subscribe("/airsim_car_node/PhysXCar/odom_local_ned",1,cbCarPoseCov);
     ros::Subscriber subAccelCmd = nh.subscribe("/accel_cmd",1,cbAccelCmd);
+    ros::Subscriber subObject = nh.subscribe("/airsim_car_node/object_pose",1,cbAccelCmd);
 
 
 
