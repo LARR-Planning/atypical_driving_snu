@@ -15,6 +15,10 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <octomap_msgs/Octomap.h>
 #include <octomap_msgs/conversions.h>
+#include <std_msgs/Float64.h>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf/tf.h>
+
 
 namespace Planner{
 
@@ -43,6 +47,7 @@ namespace Planner{
 
         string worldFrameId;
         int max_marker_id; //count current published markers
+        double speed; // current speed of car
 
         /**
          * Topic to be published
@@ -69,7 +74,7 @@ namespace Planner{
         ros::Subscriber subDesiredCarPose; // desired pose from user
         ros::Subscriber subGlobalMap; // global map from ????
         ros::Subscriber subLocalMap; // local map from LIDAR????
-
+        ros::Subscriber subCarSpeed; //
         ros::Subscriber subExampleObstaclePose; //
 
         /**
@@ -80,6 +85,7 @@ namespace Planner{
         void cbDesiredCarPose(geometry_msgs::PoseConstPtr dataPtr);
         void cbGlobalMap(const octomap_msgs::Octomap& octomap_msg);
         void cbLocalMap(const octomap_msgs::Octomap& octomap_msg);
+        void cbCarSpeed(const std_msgs::Float64 speed);
 
         // TODO currently we only receive the location of obstacles not with shape
         void cbObstacles(const geometry_msgs::PoseStamped& obstPose);

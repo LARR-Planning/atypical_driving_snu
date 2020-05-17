@@ -33,7 +33,7 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_):p_base(p_ba
     subDesiredCarPose = nh.subscribe("desired_car_pose",1,&RosWrapper::cbDesiredCarPose,this);
     subGlobalMap = nh.subscribe("global_map",1,&RosWrapper::cbGlobalMap,this);
     subLocalMap = nh.subscribe("local_map",1,&RosWrapper::cbLocalMap,this);
-
+    subCarSpeed = nh.subscribe("/current_speed",1,&RosWrapper::cbCarSpeed,this);
     subExampleObstaclePose = nh.subscribe("obstacle_pose",1,&RosWrapper::cbObstacles,this);
 
 }
@@ -169,8 +169,8 @@ void RosWrapper::prepareROSmsgs() {
             marker.color.r = 1;
             marker.color.g = 0;
             marker.color.b = 0;
-            marker.pose.position.x = node.first;
-            marker.pose.position.y = node.second;
+            marker.pose.position.x = node.x;
+            marker.pose.position.y = node.y;
             marker.pose.position.z = (car_z_min + car_z_max)/2;
             marker.scale.x = 0.1;
             marker.scale.y = 0.1;
@@ -328,8 +328,28 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
     // TODO you have to decide whether the update in this callback could interrupt planning thread
     if(mSet[0].try_lock()){
         CarState curState;
+        // make xy
         curState.x = dataPtr->pose.position.x;
         curState.y = dataPtr->pose.position.y;
+
+        // make theta
+        tf::Quaternion q;
+        q.setX(dataPtr->pose.orientation.x);
+        q.setY(dataPtr->pose.orientation.y);
+        q.setZ(dataPtr->pose.orientation.z);
+        q.setW(dataPtr->pose.orientation.w);
+
+        tf::Transform Twc; Twc.setRotation(q);
+        tf::Matrix3x3 Rwc = Twc.getBasis();
+        tf::Vector3 e1 = Rwc.getColumn(0);
+        double theta = atan2(e1.y(),e1.x());
+        curState.theta = theta;
+
+        // make v
+        curState.v = speed; // reverse gear = negative
+
+        ROS_DEBUG("Current car state (x,y,theta(degree),v) : [%f,%f,%f,%f]",curState.x,curState.y,curState.theta*180/M_PI,curState.v);
+
         p_base->setCarState(curState);
         mSet[0].unlock();
         isCarPoseCovReceived = true;
@@ -337,6 +357,10 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
     }else{
 //        ROS_WARN("[RosWrapper] callback for CarPoseCov locked by planner. Passing update");
     }
+}
+
+void RosWrapper::cbCarSpeed(const std_msgs::Float64 speed_) {
+    speed = speed_.data;
 }
 
 /**

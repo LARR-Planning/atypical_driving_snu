@@ -10,26 +10,88 @@
 #include "geometry_msgs/Twist.h"
 #include "std_msgs/Float64.h"
 #include <ros/ros.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <Eigen/Geometry>
+#include <Eigen/Core>
+#include <tf/tf.h>
 
 //virtual environment generator to test Global planner
 
 static geometry_msgs::PoseWithCovariance curState;
+static geometry_msgs::PoseStamped curPose;
 static float speed;
 static float steering_angle = 0; // at the initial, it is zero
 
-void cbCarPoseCov(const nav_msgs::Odometry& odom){
+
+// ned to enu
+void cbCarPoseCov(const nav_msgs::Odometry& pose_ned){
+
+    // curPose.header.frame_id = pose_ned.header.frame_id;
+    curPose.header.frame_id = "/map";
+    // odom_ned_msg.header.frame_id = world_frame_id_;
+    // odom_ned_msg.child_frame_id = "/airsim/odom_local_ned"; // todo make param
+    Eigen::Quaternionf quat;
+    Eigen::Vector3f transl;
+    transl(0) = pose_ned.pose.pose.position.x;
+    transl(1) = pose_ned.pose.pose.position.y;
+    transl(2) = pose_ned.pose.pose.position.z;
+    quat.x() =  pose_ned.pose.pose.orientation.x;
+    quat.y() =  pose_ned.pose.pose.orientation.y;
+    quat.z() =  pose_ned.pose.pose.orientation.z;
+    quat.w() =  pose_ned.pose.pose.orientation.w;
+
+    Eigen::Matrix3f rotm_en;
+    Eigen::Affine3f transform;
+    rotm_en << 1,0,0,
+            0,-1,0,
+            0,0,-1;
+
+    quat.normalize();
+    transform.setIdentity();
+    transform.translate(transl);
+    transform.rotate(quat);
+
+    transform.prerotate(rotm_en);
+    transform.rotate(rotm_en.transpose()); // to enu
+
+    // std::cout << transform.matrix() << std::endl;
+
+    quat = Eigen::Quaternionf(transform.rotation());
+    curPose.pose.position.x = transform.translation()(0);
+    curPose.pose.position.y = transform.translation()(1);
+    curPose.pose.position.z = transform.translation()(2);
+
+    curPose.pose.orientation.w = quat.w();
+    curPose.pose.orientation.x = quat.x();
+    curPose.pose.orientation.y = quat.y();
+    curPose.pose.orientation.z = quat.z();
+
+
+    tf::Quaternion q;
+    q.setX(curPose.pose.orientation.x);
+    q.setY(curPose.pose.orientation.y);
+    q.setZ(curPose.pose.orientation.z);
+    q.setW(curPose.pose.orientation.w);
+
+    tf::Transform Twc; Twc.setRotation(q);
+    tf::Matrix3x3 Rwc = Twc.getBasis();
+    tf::Vector3 e1 = Rwc.getColumn(0);
+
+
+
     // update position
-    curState.pose.position.x = odom.pose.pose.position.x;
-    curState.pose.position.y = -odom.pose.pose.position.y; //TODO: fix /airsim_car_node/PhysXCar/odom_local_ned topic to match axis
-    curState.pose.orientation.x = odom.pose.pose.orientation.x;
-    curState.pose.orientation.y = odom.pose.pose.orientation.y;
-    curState.pose.orientation.z = odom.pose.pose.orientation.z;
-    curState.pose.orientation.w = odom.pose.pose.orientation.w;
+    auto odom = pose_ned;
+    curState.pose = curPose.pose;
 
     // update speed
     float vx = odom.twist.twist.linear.x;
     float vy = -odom.twist.twist.linear.y;
     speed = sqrt(pow(vx,2)+pow(vy,2));
+
+    double innerProd = e1.x()*vx + e1.y()*vy;
+    if (innerProd < 0 )
+        speed *=-1;
+
 }
 // This callback gets the current accel cmd
 // with assumption that the steering angle input is the actual value of steering angle of current time
@@ -44,9 +106,12 @@ int main(int argc,char** argv) {
     ros::Subscriber subCarPoseCov = nh.subscribe("/airsim_car_node/PhysXCar/odom_local_ned",1,cbCarPoseCov);
     ros::Subscriber subAccelCmd = nh.subscribe("/accel_cmd",1,cbAccelCmd);
 
+
+
     ros::Publisher pubCarPoseCov = nh.advertise<geometry_msgs::PoseWithCovariance>("/current_pose",1);
     ros::Publisher pubCarSpeed = nh.advertise<std_msgs::Float64>("/current_speed",1);
     ros::Publisher pubCurSteering = nh.advertise<std_msgs::Float64>("/current_steer_angle",1);
+    ros::Publisher pubCurPoseStamped = nh.advertise<geometry_msgs::PoseStamped>("current_car_posestamped",1);
 
     ros::Rate rate(40);
     while(ros::ok()){
@@ -59,6 +124,7 @@ int main(int argc,char** argv) {
         pubCarPoseCov.publish(curState);
         pubCurSteering.publish(curAngle);
         pubCarSpeed.publish(curSpeed);
+        pubCurPoseStamped.publish(curPose);
 
         rate.sleep();
         ros::spinOnce();
