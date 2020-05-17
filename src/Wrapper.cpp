@@ -169,8 +169,8 @@ void RosWrapper::prepareROSmsgs() {
             marker.color.r = 1;
             marker.color.g = 0;
             marker.color.b = 0;
-            marker.pose.position.x = node.first;
-            marker.pose.position.y = node.second;
+            marker.pose.position.x = node.x;
+            marker.pose.position.y = node.y;
             marker.pose.position.z = (car_z_min + car_z_max)/2;
             marker.scale.x = 0.1;
             marker.scale.y = 0.1;
@@ -483,9 +483,10 @@ bool Wrapper::plan(double tTrigger){
 
         // Call local planner
         bool lpPassed =false ;
-        // lpPassed = lp_ptr->plan(tTrigger); // TODO
+        lpPassed = lp_ptr->plan(tTrigger); // TODO
 
         if (lpPassed)
+            //cout<<"Okay, fine"<<endl;
             updateMPCToBase();
         else
             ROS_WARN("[SNU_PLANNER/Wrapper] local planning failed");
