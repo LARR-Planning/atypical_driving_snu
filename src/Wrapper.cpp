@@ -11,6 +11,12 @@ using namespace Planner;
 // Ros Wrapper //
 /////////////////
 
+bool Planner::comparePredictorId(const Predictor::IndexedPredictor &p1, int id ) {
+
+    return get<0>(p1) == id;
+
+}
+
 /**
  * Constructor for ros wrapper
  * @param p_base_
@@ -34,15 +40,31 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_):p_base(p_ba
     subGlobalMap = nh.subscribe("global_map",1,&RosWrapper::cbGlobalMap,this);
     subLocalMap = nh.subscribe("local_map",1,&RosWrapper::cbLocalMap,this);
     subCarSpeed = nh.subscribe("/current_speed",1,&RosWrapper::cbCarSpeed,this);
-    subExampleObstaclePose = nh.subscribe("obstacle_pose",1,&RosWrapper::cbObstacles,this);
+    //subExampleObstaclePose = nh.subscribe("obstacle_pose",1,&RosWrapper::cbObstacles,this);
+    subDetectedObjects= nh.subscribe("/detected_objects",1,&RosWrapper::cbDetectedObjects,this);
 
 }
 /**
- * @brief update the fitting model only. It does not directly update p_base
+ * @brief update the fitting model only. It does not directly update the obstaclePath in p_base
  */
-void RosWrapper::updatePrediction() {
+void RosWrapper::updatePredictionModel() {
 
-    p_base->predictorSet[0].update_predict();
+    for (auto it = p_base->indexedPredictorSet.begin();
+            it !=  p_base->indexedPredictorSet.end();it++){
+        // First, check whether the observation has expired
+        double tCur = curTime();
+        double tLast = get<1>(*it).getLastObservationTime();
+        double tExpire = get<1>(*it).getExpiration();
+        if( tCur - tLast  > tExpire) {
+            ROS_INFO("[SNU_PLANNER/RosWrapper] predictor of %d has been destroyed.",get<0>(*it));
+            p_base->indexedPredictorSet.erase(it++);
+            continue;
+        }
+        // Next, if the predictor was not detached, we continue to update
+        get<1>(*it).update_predict();
+
+    }
+
 }
 
 
@@ -88,6 +110,7 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<int>("predictor/observation_queue",param_.p_param.queueSize,6);
     nh.param<float>("predictor/ref_height",param_.p_param.zHeight,1.0);
     nh.param<int>("predictor/poly_order",param_.p_param.polyOrder,1); // just fix 1
+    nh.param<double>("predictor/tracking_expiration",param_.p_param.trackingTime,2.0); // just fix 1
 
     // Common
     double goal_x,goal_y;
@@ -261,8 +284,9 @@ void RosWrapper::prepareROSmsgs() {
 
     // 2. topics which is not obtained from planning thread
     // TODO multiple obstacles
-    pubObservationMarker.publish(p_base->predictorSet[0].get_obsrv_marker(worldFrameId));
-    // prepare the obstacle prediction info
+    for(auto idPredictor : p_base->indexedPredictorSet){
+        pubObservationMarker.publish(get<1>(idPredictor).get_obsrv_marker(worldFrameId));
+    }
 
     obstaclePrediction.markers.clear();
 
@@ -311,13 +335,36 @@ void RosWrapper::runROS() {
         ros::Rate lr(50);
 
         while(ros::ok()){
-            updatePrediction();
+            updatePredictionModel();
             prepareROSmsgs(); // you may trigger this only under some conditions
             publish();
             ros::spinOnce(); // callback functions are executed
             lr.sleep();
         }
 }
+
+void RosWrapper::cbDetectedObjects(const driving_msgs::DetectedObjectArray &objectsArray) {
+    for(auto object : objectsArray.objects) {
+        uint id = object.id;
+
+        // Does this id have its predictor?
+        auto predictorOwner = find_if(p_base->indexedPredictorSet.begin(), p_base->indexedPredictorSet.end(),bind(comparePredictorId,placeholders::_1,id)
+                                   );
+        // already a predictor owns the id
+        if (predictorOwner != p_base->indexedPredictorSet.end()) {
+            get<1>(*predictorOwner).update_observation(curTime(), object.odom.pose.pose.position,
+                    Vector3f(object.dimensions.x,object.dimensions.y,object.dimensions.z));
+        } else {
+            // no owner found, we create predictor and attach it
+            auto newPredictor = make_tuple(id, p_base->predictorBase);
+            get<1>(newPredictor).update_observation(curTime(), object.odom.pose.pose.position,
+                    Vector3f(object.dimensions.x,object.dimensions.y,object.dimensions.z));
+            p_base->indexedPredictorSet.push_back(newPredictor);
+            ROS_INFO("[SNU_PLANNER/RosWrapper] Predictor attached for obstacle id = %d", id);
+        }
+    }
+}
+
 
 /**
  * @brief receive the car pose Cov and update
@@ -326,7 +373,9 @@ void RosWrapper::runROS() {
 void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr) {
     // Just an example
     // TODO you have to decide whether the update in this callback could interrupt planning thread
+    if (isCarSpeedReceived)
     if(mSet[0].try_lock()){
+        ROS_INFO_ONCE("[SNU_PLANNER/RosWrapper] First received car state");
         CarState curState;
         // make xy
         curState.x = dataPtr->pose.position.x;
@@ -361,6 +410,8 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
 
 void RosWrapper::cbCarSpeed(const std_msgs::Float64 speed_) {
     speed = speed_.data;
+    isCarSpeedReceived = true;
+
 }
 
 /**
@@ -425,7 +476,7 @@ void RosWrapper::cbObstacles(const geometry_msgs::PoseStamped& obstPose) {
 
     ROS_INFO_ONCE("[SNU_PLANNER/RosWrapper] got first obstacle observation");
     double t = curTime();
-    p_base->predictorSet[0].update_observation(t,obstPose.pose.position);
+    // p_base->predictorSet[0].update_observation(t,obstPose.pose.position); // Deprecated
 
 }
 
@@ -462,7 +513,10 @@ Wrapper::Wrapper() : p_base_shared(make_shared<PlannerBase>()) {
     gp_ptr = new GlobalPlanner(param.g_param,p_base_shared);
     // cout << p_base_shared.use_count() << endl;
     Predictor::TargetManager predictor(param.p_param.queueSize,param.p_param.zHeight,param.p_param.polyOrder);
+    p_base_shared->predictorBase = predictor;
+    p_base_shared->predictorBase.setExpiration(param.p_param.trackingTime);
     p_base_shared->predictorSet.push_back(predictor);
+
 
 }
 /**
@@ -502,12 +556,11 @@ bool Wrapper::plan(double tTrigger){
         int nStep  = param.l_param.horizon/param.l_param.tStep; // the division should be integer
         VectorXd tSeq(nStep);
         tSeq.setLinSpaced(nStep,tTrigger,tTrigger+param.l_param.horizon);
-        p_base_shared->updatePrediction(tSeq,param.l_param.obstRadiusNominal);
-
+        p_base_shared->uploadPrediction(tSeq, param.l_param.obstRadiusNominal);
 
         // Call local planner
         bool lpPassed =false ;
-        lpPassed = lp_ptr->plan(tTrigger); // TODO
+        // lpPassed = lp_ptr->plan(tTrigger); // TODO
 
         if (lpPassed)
             //cout<<"Okay, fine"<<endl;
