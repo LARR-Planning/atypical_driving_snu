@@ -65,7 +65,6 @@ namespace Planner {
         double car_z_min;
         double car_z_max;
         double car_speed;
-        double road_width;
         double world_x_min;
         double world_y_min;
         double world_x_max;
