@@ -27,7 +27,7 @@ GlobalPlanner::GlobalPlanner(const Planner::ParamGlobal &g_param,
     //Parsing
     parser parse_tool;
     parse_tool.get_Coorddata("catkin_ws/src/atypical_driving_snu/keti_pangyo_path3.csv");
-    parse_tool.display_result();
+    parse_tool.display_result();  
     // lanePath = 
     lanePath = parse_tool.get_lanepath();
 
