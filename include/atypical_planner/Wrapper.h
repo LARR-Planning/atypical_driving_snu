@@ -18,6 +18,7 @@
 #include <std_msgs/Float64.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf/tf.h>
+#include <tf/transform_broadcaster.h>
 #include <driving_msgs/DetectedObjectArray.h>
 #include <functional>
 
@@ -36,18 +37,27 @@ namespace Planner{
          */
         shared_ptr<PlannerBase> p_base; // planning data
         mutex* mSet; /**< mSet[0] = locking btw subset of callbacks and plan() of planner  */
-
+        Param param;
         // node handle
         ros::NodeHandle nh;
+        tf::TransformBroadcaster tf_br;
         bool isGlobalMapReceived = false;
         bool isLocalMapReceived = false;
         bool isCarPoseCovReceived = false;
         bool isCarSpeedReceived = false;
+        bool isFrameRefReceived = false;
+
+        /**
+         * Operation mode
+         */
+
+        bool use_nominal_obstacle_radius = false;
+
         /**
          * Parameters
          */
-
-        string worldFrameId;
+        string SNUFrameId; // global frame id (JBS)
+        string worldFrameId; //world frame id
         int max_marker_id; //count current published markers
         double speed; // current speed of car
 

@@ -1,9 +1,5 @@
 //
-// Created by jbs on 20. 5. 9..
-//
-
-//
-// Created by jbs on 20. 5. 9..
+// Created by jbs on 20. 5. 19..
 //
 
 #include "nav_msgs/Odometry.h"
@@ -16,7 +12,7 @@
 #include <tf/tf.h>
 #include <driving_msgs/DetectedObjectArray.h>
 
-//virtual environment generator to test Global planner
+// This code interfaces with KETI raw data
 
 static geometry_msgs::PoseWithCovariance curState;
 static geometry_msgs::PoseStamped curPose;
@@ -25,8 +21,6 @@ static float steering_angle = 0; // at the initial, it is zero
 static double obst_rad;
 static driving_msgs::DetectedObjectArray objectsArray; // object should be emitted based on object_pose
 static driving_msgs::DetectedObject object;
-
-
 
 // ned to enu
 void cbCarPoseCov(const nav_msgs::Odometry& pose_ned){
@@ -105,7 +99,7 @@ void cbAccelCmd(const geometry_msgs::Twist& twist){
 }
 // convert the object pose into DetectedObjectArray
 void cbObject(const geometry_msgs::PoseStamped& object_pose){
-   objectsArray.objects[0].odom.pose.pose = object_pose.pose;
+    objectsArray.objects[0].odom.pose.pose = object_pose.pose;
 }
 
 int main(int argc,char** argv) {

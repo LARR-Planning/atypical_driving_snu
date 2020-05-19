@@ -177,7 +177,6 @@ namespace Planner {
         shared_ptr<octomap::OcTree> octo_local_ptr;
         CarState cur_state;
         CarState desired_state; //jungwon
-
         // to be updated by planners
         LanePath lane_path; //jungwon navigation planning output from Dabin Kim
         vector<Point> skeleton_path;
@@ -190,6 +189,7 @@ namespace Planner {
     public:
         bool isGPsolved = false;
         bool isLPsolved = false;
+        SE3 Tw0; // Referance frame of our node every incoming data should be transformed
         // prediction module
         vector<Predictor::TargetManager> predictorSet; // TODO erase after indexed predictor
         Predictor::TargetManager predictorBase;

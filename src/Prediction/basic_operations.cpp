@@ -130,3 +130,37 @@ float DAP::polyeval_derivative(Eigen::VectorXf coeffs,float x) {
     }
 }
 
+
+TransformMatrix DAP::pose_to_transform_matrix(const geometry_msgs::Pose & pose){
+    Eigen::Quaternionf quat;
+    quat.x() = pose.orientation.x;
+    quat.y() = pose.orientation.y;
+    quat.z() = pose.orientation.z;
+    quat.w() = pose.orientation.w;
+
+    Eigen::Matrix3f rot_mat = quat.toRotationMatrix();
+    Eigen::Vector3f transl_vec(pose.position.x,pose.position.y,pose.position.z);
+    TransformMatrix trans_mat;
+    trans_mat.setIdentity();
+    trans_mat.translate(transl_vec);
+    trans_mat.rotate(rot_mat);
+    return trans_mat;
+}
+
+geometry_msgs::Pose DAP::transform_matrix_to_pose(const TransformMatrix & trans_mat){
+    Eigen::Quaternionf quat(trans_mat.rotation());
+    Eigen::Vector3f vec = trans_mat.translation();
+
+    geometry_msgs::Pose pose;
+    pose.position.x = vec(0);
+    pose.position.y = vec(1);
+    pose.position.z = vec(2);
+    pose.orientation.x = quat.x();
+    pose.orientation.y = quat.y();
+    pose.orientation.z = quat.z();
+    pose.orientation.w = quat.w();
+    return pose;
+}
+
+
+

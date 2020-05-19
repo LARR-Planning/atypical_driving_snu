@@ -45,3 +45,6 @@ target_link_libraries(integration_server ${catkin_LIBRARIES})
 
 add_executable(integration_client test/IntegrationTest/client_main.cpp ${SNU_PLANNER_SRC})
 target_link_libraries(integration_client ${catkin_LIBRARIES})
+
+add_executable(keti_client test/KetiTest/client_main.cpp ${SNU_PLANNER_SRC})
+target_link_libraries(keti_client ${catkin_LIBRARIES})

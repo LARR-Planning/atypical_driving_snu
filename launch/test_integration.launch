@@ -32,6 +32,7 @@
   <node pkg="octomap_server" type="octomap_server_node" name="octomap_server" output="screen" args="$(find atypical_driving)/worlds/$(arg map)" unless="$(arg playBagFile)">
     <param name="resolution"                 value="0.1" />
     <param name="frame_id"                   value="map" type="string"/>
+    <param name="snu_frame_id"                   value="SNU" type="string"/>
     <param name="sensor_model/max_range"     value="-1" />
     <param name="height_map"                 value="false"/>
     <param name="color/r"                    value="0.2" />
@@ -48,6 +49,10 @@
   </node>
 
   <node pkg="atypical_driving" type="integration_server" name="atypical_planning_test" output="screen">
+
+    <param name = "world_frame_id" value="$(arg frame_id)" />
+    <param name = "snu_frame_id" value="$(arg snu_frame_id)" />
+
     <param name="global_planner/horizon" value="$(arg nominal_period)" />
     <param name="global_planner/car_width" value="$(arg vehicle_model/lx)" />
     <param name="global_planner/car_z_min" value="0.5" />
@@ -79,7 +84,6 @@
   <node pkg="atypical_driving" type="integration_client" name="atypical_driving_client" output="screen">
     <param name = "obstacle_radius" value="$(arg obstacle_radius)"/>
   </node>
-
 
   <node pkg="rviz" type="rviz" name="rviz" args="-d $(find atypical_driving)/launch/rviz_config/config.rviz" output="log" />
 

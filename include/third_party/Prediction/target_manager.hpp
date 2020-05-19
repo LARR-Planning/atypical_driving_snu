@@ -13,11 +13,13 @@ namespace Predictor{
             bool isNoPredictionWarnEmitted = false;
             std::list<std::tuple<float,Vector2f>> observations; // (t,Point) 
             Eigen::VectorXf fit_coeff_x;
-            Eigen::VectorXf fit_coeff_y;            
+            Eigen::VectorXf fit_coeff_y;
+
             float z_value;
             int queue_size; 
             int poly_order;
-            bool is_predicted = false; 
+            bool is_predicted = false;
+            DAP::TXYZQuatTraj obsrv_traj_full; // full state having the entire pose information
             DAP::TXYZTraj obsrv_traj_for_predict;
             DAP::TXYZTraj obsrv_traj_for_predict_total;
             int size_history = 0;
@@ -36,7 +38,7 @@ namespace Predictor{
             vector<geometry_msgs::Pose> eval_pose_seq(vector<float> ts);            
             vector<geometry_msgs::Pose> eval_pose_seq(VectorXf ts);   
             bool is_prediction_available() {return is_predicted;};       
-            visualization_msgs::Marker get_obsrv_marker(string world_frame_id); // observation used for the latest prediction update
+            visualization_msgs::Marker get_obsrv_marker(string world_frame_id, int  ns = 0); // observation used for the latest prediction update
             double getLastObservationTime(){return lastObservationTime;};
             void setExpiration(const double & T) {trackingExpirationTime =  T;};
             double getExpiration() const {return trackingExpirationTime;};
