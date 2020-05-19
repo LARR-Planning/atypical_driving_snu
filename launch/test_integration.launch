@@ -18,8 +18,8 @@
   <arg name="vehicle_model/is_rear_wheel"     default="false"/>
 
   <arg name="nominal_speed"     default="10"/>
-  <arg name="nominal_period"     default="3"/> <!--preirod = horizon -->
-  <arg name="planning_dt"     default="0.02"/> <!--?-->
+  <arg name="nominal_period"     default="5"/> <!--preirod = horizon -->
+  <arg name="planning_dt"     default="0.1"/> <!--?-->
 
   <arg name="initial_goal/x" value="20" />
   <arg  name="initial_goal/y" value="68" />
@@ -40,7 +40,7 @@
     <remap from="octomap_full" to="/atypical_planning_test/global_map"/>
   </node>
 
-  <node pkg="rosbag" type="play" name="rosbag_record_diag" args="--clock --loop $(find atypical_driving)/worlds/$(arg bagfile)" if="$(arg playBagFile)">
+  <node pkg="rosbag" type="play" name="rosbag_record_diag" args="--clock --loop  $(find atypical_driving)/worlds/$(arg bagfile)" if="$(arg playBagFile)">
     <remap from="octomap_binary" to="/atypical_planning_test/local_map"/>
     <remap from="/airsim_car_node/object_pose" to="/atypical_planning_test/obstacle_pose"/>
   </node>
@@ -65,8 +65,8 @@
     <param name="local_planner/ts" value="$(arg planning_dt)" />
     <param name="local_planner/car_longtitude" value="2.7" />
     <param name="local_planner/max_steer" value="0.52" />
-    <param name="local_planner/max_accel" value="0.52" />
-    <param name="local_planner/min_accel" value="0.52" />
+    <param name="local_planner/max_accel" value="1.5" />
+    <param name="local_planner/min_accel" value="-1.5" />
 
     <param name="initial_goal/x" value="$(arg initial_goal/x)" />
     <param name="initial_goal/y" value="$(arg initial_goal/y)" />
