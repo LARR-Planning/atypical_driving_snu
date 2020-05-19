@@ -20,6 +20,7 @@ using namespace Planner;
  * @param p_base_ Planning base (input + output)
  * @param m mutex set
  */
+
 LocalPlanner::LocalPlanner(const Planner::ParamLocal &l_param,
                            shared_ptr<PlannerBase> p_base_): AbstractPlanner(p_base_),param(l_param){
     ilqr_param.rho = 1e-5;
@@ -31,7 +32,7 @@ LocalPlanner::LocalPlanner(const Planner::ParamLocal &l_param,
     ilqr_param.tolCosts = power(10.0, VectorXd::LinSpaced(30, -2.0, -6.0));
     ilqr_param.tolConsts = power(10.0, VectorXd::LinSpaced(30, -2.0, -6.0));
     ilqr_param.alphas = power(10.0, VectorXd::LinSpaced(5, 0.0, -3.0));
-    ilqr_param.maxIter = 1000;
+    ilqr_param.maxIter = 10000;
     ilqr_param.mu = 2.0;
     ilqr_param.lambda = 0.0;
     ilqr_param.phi = 1e-4;
@@ -45,9 +46,9 @@ LocalPlanner::LocalPlanner(const Planner::ParamLocal &l_param,
     {
         bodyArray[i]<< 4.0, 0.0, 0.0, 4.0;
     }
-    state_weight_<< 0.05, 0.05, 0.05, 0.05, 0.05;
-    final_weight_<< 0.5, 0.5, 0.5, 0.5, 0.5;
-    input_weight_<< 0.01, 0.01;
+    state_weight_<< 0.005, 0.005, 0.005, 0.005, 0.005;
+    final_weight_<< 0.05, 0.05, 0.05, 0.05, 0.05;
+    input_weight_<< 0.0001, 0.0001;
 
     cout << "[LocalPlanner] Init." << endl;
     
@@ -79,24 +80,46 @@ void LocalPlanner::QxFromPrediction(Collection<double,51> mpcPredictionHeads)
     }
 }
 void LocalPlanner::ObstToConstraint() {
-    int count_id = 0;
-    Collection<Matrix<double,2,1>,51> path_temp;
-    Collection<Matrix<double,2,2>,51> shape_temp;
-    obs_q.clear();
-    obs_Q.clear();
-    if(p_base->getCurObstaclePathArray().obstPathArray.size()>0) {
-        for (auto &s : p_base->getCurObstaclePathArray().obstPathArray) {
-            for (int i = 0; i < 51; i++) {
-                path_temp[i].block<2, 1>(0, 0) = s.obstPath[i].q;
-                shape_temp[i].block<2, 2>(0, 0) = s.obstPath[i].Q.inverse();
-            }
+    //vector<Vector2d,Eigen::aligned_allocator<Vector2d>> path_temp;
+    //vector<Matrix2d,Eigen::aligned_allocator<Matrix2d>> shape_temp;
+    vector<Matrix2d> shape_temp;
+    vector<Vector2d> path_temp;
+    shape_temp.clear();
+    path_temp.clear();
+    //Collection<Matrix<double,2,2>,51> shape_temp;
+//    obs_q.resize(0);
+//    obs_Q.resize(0);
+    if (obs_q.size())
+        obs_q.clear();
+    if (obs_Q.size())
+        obs_Q.clear();
+//    obs_Q.resize(1);
+//    obs_q.resize(1);
+//    cout << "Size of obstacle path array " <<p_base->getCurObstaclePathArray().obstPathArray.size()<< endl;
 
-            obs_q.push_back(path_temp);
+    if(p_base->getCurObstaclePathArray().obstPathArray.size()>0) {
+        int count_id = 0;
+        for (auto s : p_base->getCurObstaclePathArray().obstPathArray) {
+            for (int i = 0; i < 50; i++)
+            {
+                path_temp.push_back(s.obstPath[i].q);
+                shape_temp.push_back(s.obstPath[i].Q.inverse());
+//                obs_Q[count_id][i] = s.obstPath[i].Q.inverse();
+//                obs_q[count_id][i] = s.obstPath[i].q;
+//                if (shape_temp[i].rows() != 2 or shape_temp[i].cols() != 2)
+//                    cout << "shape_temp size invalid" <<endl;
+            }
+            path_temp.push_back(s.obstPath[49].q);
+            shape_temp.push_back(s.obstPath[49].Q.inverse());
             obs_Q.push_back(shape_temp);
+            obs_q.push_back(path_temp);
+//           shape_temp.clear();
+//           path_temp.clear();
             count_id++;
         }
-    }
+        //cout << "loop size " <<count_id<< endl;
 
+    }
 }
 
 Matrix<double,2,1> LocalPlanner::getLocalGoal(){
@@ -135,34 +158,51 @@ void LocalPlanner::SfcToOptConstraint(){
     int N_corr = 0;
     int count1 = 0;
     int count2 = 0;
-
+    int count3 = 1;
     for(auto &s: p_base->getCorridorSeq()) {
-        if (N_corr < 51) {
+        if (N_corr < 52) {
             if (count1 * count2 == 0) {
                 box_constraint[count2] = s;
                 count1++;
                 count2++;
                 N_corr++;
+//                cout<< "error1"<<endl;
+//                cout << "Count sibal: " << N_corr << endl;
             }
-
             t_end_ = s.t_end;
             if (t_end_ > param.horizon) {
-                for (int i = 0; i < floor((param.horizon - t_start_) / param.tStep); i++) {
+//                cout<< "error2"<<endl;
+                for (int i = 0; i < round((param.horizon- t_start_)/param.tStep); i++) {
                     box_constraint[count2] = s;
                     count2++;
                     N_corr++;
+//                    cout << "Count sibal: " << N_corr << endl;
                 }
+//                cout<< "t_start2: " <<t_start_<<endl;
+//                cout<< "t_end_2: "<< t_end_<<endl;
             }
             else {
-                for (int i = 0; i < floor((t_end_ - t_start_) / param.tStep); i++) {
+//                cout<< "error3"<<endl;
+                for (int i = 0; i < round((t_end_ - t_start_) / param.tStep); i++) {
                     box_constraint[count2] = s;
                     count2++;
                     N_corr++;
+//                    cout << "Count sibal: " << N_corr << endl;
                 }
                 t_start_ = param.tStep * (count2 - 1);
+//                cout<< "t_start3: " <<t_start_<<endl;
+//                cout<< "t_end_3: "<< t_end_<<endl;
             }
+//            cout<<param.tStep<<endl;
+//            cout<<param.horizon<<endl;
+
+            cout<<count3<< " th Corridor"<<endl;
+            cout<< "xl: "<< s.xl<< "[m] xu: "<< s.xu<< "[m] yl: "<< s.yl<< "[m] yl: "<< s.yu<<"[m]"<<endl;
+            cout <<"t_start: "<<s.t_start <<"[s] t_end: "<<s.t_end<<"[s]"<<endl;
+            count3++;
         }
     }
+
 }
  Collection<Corridor,51> LocalPlanner::getOptCorridor()
  {
@@ -182,19 +222,22 @@ bool LocalPlannerPlain::plan(double t) {
 //    cout << "[LocalPlanner] planning... " << endl;
 //    cout << "[LocalPlanner] Done. " << endl;
 //    cout<< "I am in the Local Planner plan function"<<endl;
-    LocalPlanner::SfcToOptConstraint(); // convert SFC to box constraints
-//    cout<<p_base->getCurObstaclePathArray().obstPathArray[0].obstPath.size()<<endl;
-//    cout<<p_base->getCurObstaclePathArray().obstPathArray[0].obstPath.size()<<endl;
-    //cout<<p_base->getCurObstaclePathArray().obstPathArray[0].obstPath[0].q(0,0)<<endl;
-    LocalPlanner::ObstToConstraint();
-    // cout<< LocalPlanner::box_constraint[1].yl<<endl;
-    using namespace Eigen;
-    //Following codes will be wrapped with another wrapper;
+     cout<<"---------------------------------"<<endl;
      Matrix<double,2,1> x_goal_;
      x_goal_ = LocalPlanner::getLocalGoal();
-    cout<< "New Local Goal is"<<x_goal_.coeffRef(0,0)<<"and"<<x_goal_.coeffRef(1,0)<<endl;
-    std::shared_ptr<Problem> prob = std::make_shared<Problem>(bodyArray, box_constraint, obs_Q, obs_q);
-    // Do not have to be defined every loop
+     cout<< "New Local Goal is"<<x_goal_.coeffRef(0,0)<<"and"<<x_goal_.coeffRef(1,0)<<endl;
+     cout<<"car Speed: "<<p_base->getCarState().v<<" [m/s]"<<endl;
+     cout<<"y-position: "<<p_base->getCarState().y<< " [m]"<<endl;
+     LocalPlanner::SfcToOptConstraint(); // convert SFC to box constraints
+//    cout<<p_base->getCurObstaclePathArray().obstPathArray[0].obstPath.size()<<endl;
+//    cout<<p_base->getCurObstaclePathArray().obstPathArray[0].obstPath.size()<<endl;
+     //cout<<p_base->getCurObstaclePathArray().obstPathArray[0].obstPath[0].q(0,0)<<endl;
+     LocalPlanner::ObstToConstraint();
+     // cout<< LocalPlanner::box_constraint[1].yl<<endl;
+     using namespace Eigen;
+     //Following codes will be wrapped with another wrapper;
+     std::shared_ptr<Problem> prob = std::make_shared<Problem>(bodyArray, box_constraint, obs_Q, obs_q);
+     // Do not have to be defined every loop
 
      bool noConstraint_ = 0;
      prob->set_state_weight(state_weight_);
@@ -204,70 +247,78 @@ bool LocalPlannerPlain::plan(double t) {
      prob->set_goal(x_goal_);
 
      static int loop_num = 0;
-
      std::array<Matrix<double,Nu,1>,N> u0;
      Matrix<double,Nx,1> x0_new;
-     if(loop_num == 0)
-     {
-         for(auto &s :u0)
-         {
-             s=(Matrix<double,Nu,1>()<< 0.0,0.0).finished();
-         }
-         x0_new = (Matrix<double,Nx,1>()<<p_base->getCarState().x, p_base->getCarState().y,p_base->getCarState().v,
-                 0.0, p_base->getCarState().theta).finished();
-     }
-     cout<<"current x: " <<p_base->getCarState().x<<endl;
-     cout<<"current y: " <<p_base->getCarState().y<<endl;
-     cout<<"current v: " <<p_base->getCarState().v<<endl;
-     cout<<"current theta: " <<p_base->getCarState().theta<<endl;
-
      Collection<Matrix<double,Nu,1>,N> uN_new;
      Collection<Matrix<double,Nx,1>,N+1> xN_new;
-     if(loop_num == 0)
-    {
-        uN_new = u0;
-        iLQR<Nx,Nu,N> ilqr_init(*prob, x0_new,uN_new,dt,ilqr_param);
-        ilqr_init.solve();
-        cout<< "Wow No error??"<<endl;
-        uN_new = ilqr_init.uN_;
-        xN_new = ilqr_init.xN_;
-//        for(int j = 0; j<50;j++)
-//        {
-//            cout<<uN_new[j].coeff(1,0)<<endl;
-//        }
-//        cout<<"So far, new input, from now on, new states"<<endl;
-//        for(int j = 0; j<51;j++)
-//        {
-//            cout<<xN_new[j].coeff(1,0)<<endl;
-//        }
-         loop_num++;
-    }
 
-     Matrix<double,50,1> ts_temp = VectorXd::LinSpaced(50,0.5,5);
+     if(isnan(p_base->getCarState().theta) || isnan(p_base->getCarState().theta)|| (p_base->getCarState().v>1000)) {
+         Collection<Matrix<double, Nu, 1>, N> uN_new;
+         Collection<Matrix<double, Nx, 1>, N + 1> xN_new;
+         for (int i = 0; i < N; i++) {
+             xN_new[i].setZero();
+             uN_new[i].setZero();
+         }
+         xN_new[N].setZero();
+     }
+     else{
+         if(loop_num == 0)
+         {
+             for(auto &s :u0)
+             {
+                 s=(Matrix<double,Nu,1>()<< 1.0,0.0).finished();
+             }
+             x0_new = (Matrix<double,Nx,1>()<<p_base->getCarState().x, p_base->getCarState().y,p_base->getCarState().v,
+                     0.0, p_base->getCarState().theta).finished();
+         }
+         if(loop_num == 0)
+         {
+             cout<<"current x: " <<p_base->getCarState().x<<endl;
+             cout<<"current y: " <<p_base->getCarState().y<<endl;
+             cout<<"current v: " <<p_base->getCarState().v<<endl;
+             cout<<"current theta: " <<p_base->getCarState().theta*180/3.1415926535<<"[deg]"<<endl;
+             uN_new = u0;
+             iLQR<Nx,Nu,N> ilqr_init(*prob, x0_new,uN_new,dt,ilqr_param);
+             ilqr_init.solve();
+//             cout<< "Wow No error??"<<endl;
+             uN_new = ilqr_init.uN_;
+             xN_new = ilqr_init.xN_;
+             for(int j = 0; j<50;j++)
+             {
+                 cout<<uN_new[j].coeff(0,0)<<endl;
+             }
+             cout<<"So far, new input, from now on, new states"<<endl;
+             for(int j = 0; j<51;j++)
+             {
+                 cout<<xN_new[j].coeff(1,0)<<endl;
+             }
+             loop_num++;
+         }
+
+     }
+
+     Matrix<double,50,1> ts_temp = VectorXd::LinSpaced(50,0.0,4.95);
      ts_temp = ts_temp.array()+ t;
      CarState carState_temp;
      CarInput carInput_temp;
 
+     curPlanning.ts.clear();
+     curPlanning.xs.clear();
+     curPlanning.us.clear();
      for(int i = 0 ;i<50; i++)
      {
-         carState_temp.x = xN_new[i+1].coeffRef(0,0);
-         carState_temp.y = xN_new[i+1].coeffRef(1,0);
-         carState_temp.v = xN_new[i+1].coeffRef(2,0);
-         carState_temp.theta = xN_new[i+1].coeffRef(4,0);
+         carState_temp.x = xN_new[i].coeffRef(0,0);
+         carState_temp.y = xN_new[i].coeffRef(1,0);
+         carState_temp.v = xN_new[i].coeffRef(2,0);
+         carState_temp.theta = xN_new[i].coeffRef(4,0);
 
          carInput_temp.alpha = uN_new[i].coeffRef(0,0);
-         carInput_temp.delta = xN_new[i+1].coeffRef(3,0);
+         carInput_temp.delta = xN_new[i].coeffRef(3,0);
 
-         curPlanning.ts.clear();
-         curPlanning.xs.clear();
-         curPlanning.us.clear();
-
-         curPlanning.ts.push_back(ts_temp[i]);
+         curPlanning.ts.push_back(ts_temp.coeffRef(i,0));
          curPlanning.xs.push_back(carState_temp);
          curPlanning.us.push_back(carInput_temp);
      }
-
-
 
 //////    else
 //////    {

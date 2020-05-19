@@ -47,5 +47,4 @@ namespace symbolic_functions
     }
 }
 
-
 #endif
