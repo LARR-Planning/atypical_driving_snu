@@ -1,6 +1,5 @@
 #include <atypical_planner/GlobalPlanner.h>
 #include <third_party/jps.h>
-#include <third_party/parser.h>
 
 #define SP_EPSILON          1e-9
 #define SP_EPSILON_FLOAT    1e-4
@@ -22,49 +21,8 @@ GlobalPlanner::GlobalPlanner(const Planner::ParamGlobal &g_param,
     dimx = (int) round((grid_x_max - grid_x_min) / param.grid_resolution) + 1;
     dimy = (int) round((grid_y_max - grid_y_min) / param.grid_resolution) + 1;
 
-    has_wall = false;
 
-    //Parsing
-    parser parse_tool;
-    parse_tool.get_Coorddata("catkin_ws/src/atypical_driving_snu/keti_pangyo_path3.csv");
-    parse_tool.display_result();  
-    // lanePath = 
-    lanePath = parse_tool.get_lanepath();
 
-    //TODO: navigation planning
-    {
-        // LaneNode l1, l2;
-        // int N1 = 20, N2 = 10;
-
-        // l1.width = 10;
-        // l2.width = 13;
-
-        // VectorXf l1X(N1);
-        // l1X.setZero();
-        // VectorXf l1Y(N1);
-        // l1Y.setLinSpaced(N1, 0, 73);
-        // VectorXf l2X(N2);
-        // l2X.setLinSpaced(N2, 0, 49);
-        // VectorXf l2Y(N2);
-        // l2Y.setConstant(73);
-
-        // for (int n = 0; n < N1; n++) {
-        //     geometry_msgs::Point pnt;
-        //     pnt.x = l1X(n);
-        //     pnt.y = l1Y(n);
-        //     l1.laneCenters.push_back(pnt);
-        // }
-
-        // for (int n = 0; n < N2; n++) {
-        //     geometry_msgs::Point pnt;
-        //     pnt.x = l2X(n);
-        //     pnt.y = l2Y(n);
-        //     l2.laneCenters.push_back(pnt);
-        // }
-        // lanePath.lanes.emplace_back(l1);
-        // lanePath.lanes.emplace_back(l2);
-        has_wall = true;
-    }
 }
 
 /**
@@ -86,7 +44,7 @@ bool GlobalPlanner::plan(double t) {
     curCorridorSeq.clear();
     grid.clear();
     isFeasible = false;
-
+    auto lanePath = p_base->getLanePath(); // JBS
     //set wall from lanePath
     vector<Point> left, right;
     Point left_point, right_point;

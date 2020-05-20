@@ -23,6 +23,54 @@ bool Planner::comparePredictorId(const Predictor::IndexedPredictor &p1, int id )
  * @param mSet_ mutex set of size 2.
  */
 RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_):p_base(p_base_),nh("~"),mSet(mSet_){
+
+    // Load lanemap from parser
+    /**
+    string csv_file;
+    nh.param<string>("/lane_csv_file",csv_file,"catkin_ws/src/atypical_driving_snu/keti_pangyo_path3.csv");
+    p_base->parse_tool.get_Coorddata(csv_file);
+    p_base->parse_tool.display_result();
+    // TODO is valid csv?
+    p_base->setLanePath(p_base->parse_tool.get_lanepath());
+    **/
+
+    // Or just directly define here for easy test
+     LanePath lanePath;
+     LaneNode l1, l2;
+     int N1 = 20, N2 = 10;
+
+     l1.width = 10;
+     l2.width = 13;
+
+     VectorXf l1X(N1);
+     l1X.setZero();
+     VectorXf l1Y(N1);
+     l1Y.setLinSpaced(N1, 0, 73);
+     VectorXf l2X(N2);
+     l2X.setLinSpaced(N2, 0, 49);
+     VectorXf l2Y(N2);
+     l2Y.setConstant(73);
+
+     for (int n = 0; n < N1; n++) {
+         geometry_msgs::Point pnt;
+         pnt.x = l1X(n);
+         pnt.y = l1Y(n);
+         l1.laneCenters.push_back(pnt);
+     }
+
+     for (int n = 0; n < N2; n++) {
+         geometry_msgs::Point pnt;
+         pnt.x = l2X(n);
+         pnt.y = l2Y(n);
+         l2.laneCenters.push_back(pnt);
+     }
+     lanePath.lanes.emplace_back(l1);
+     lanePath.lanes.emplace_back(l2);
+     p_base->setLanePath(lanePath);
+     isLaneReceived =false; // Still false. After applying Tw0, it is true
+     isLaneRawReceived = true;
+
+
     // Initiate ros communication (caution: parameters are parsed in udpateParam)
     max_marker_id = 0;
     // Publisher
@@ -31,7 +79,7 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_):p_base(p_ba
     pubObservationMarker = nh.advertise<visualization_msgs::MarkerArray>("observation_queue",1);
     pubPredictionArray = nh.advertise<visualization_msgs::MarkerArray>("prediction",1);
     pubCurCmd = nh.advertise<driving_msgs::VehicleCmd>("/vehicle_cmd",1);
-
+    pubLaneNode = nh.advertise<nav_msgs::Path>("lane_path",1);
 
     // Subscriber
     subCarPoseCov = nh.subscribe("/current_pose",1,&RosWrapper::cbCarPoseCov,this);
@@ -41,9 +89,6 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_):p_base(p_ba
     subCarSpeed = nh.subscribe("/current_speed",1,&RosWrapper::cbCarSpeed,this);
     //subExampleObstaclePose = nh.subscribe("obstacle_pose",1,&RosWrapper::cbObstacles,this);
     subDetectedObjects= nh.subscribe("/detected_objects",1,&RosWrapper::cbDetectedObjects,this);
-
-    // Load lanemap
-
 }
 /**
  * @brief update the fitting model only. It does not directly update the obstaclePath in p_base
@@ -89,7 +134,7 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<string>("world_frame_id",worldFrameId,"/map");
     nh.param<string>("snu_frame_id",SNUFrameId,"/SNU");
     // Own
-    planningPath.header.frame_id = worldFrameId;
+    planningPath.header.frame_id = SNUFrameId;
 
 
     // global planner
@@ -135,7 +180,6 @@ void RosWrapper::updateParam(Param &param_) {
     if(use_nominal_obstacle_radius)
         ROS_INFO("[SNU_PLANNER/RosWrapper] We assume fixed-size obstacle.");
 
-    ROS_INFO("[SNU_PLANNER/RosWrapper] received global goal [%f,%f]",goal_x,goal_y);
 
 
 
@@ -149,7 +193,9 @@ void RosWrapper::updateParam(Param &param_) {
     CarState goalState;
     goalState.x = goal_x;
     goalState.y = goal_y;
-    p_base->setDesiredState(goalState);
+    p_base->setDesiredState(goalState); // TODO, convert it into our frame
+    ROS_INFO("[SNU_PLANNER/RosWrapper] received global goal [%f,%f] (in global frame)",goal_x,goal_y);
+
 
     param = param_;
 }
@@ -179,7 +225,7 @@ void RosWrapper::prepareROSmsgs() {
         double car_z_max = 1.5; //TODO: save car_z when updateParam
 
         visualization_msgs::Marker marker;
-        marker.header.frame_id = worldFrameId;
+        marker.header.frame_id = SNUFrameId;
         marker.type = visualization_msgs::Marker::CUBE;
 
         for(auto corridor : p_base->getCorridorSeq()){
@@ -302,6 +348,8 @@ void RosWrapper::prepareROSmsgs() {
         }
         max_marker_id = marker_id - 1;
 
+
+
         mSet[1].unlock();
     }else{
 //        ROS_WARN("[RosWrapper] Locking failed for ros data update. The output of p_base is being modified in planner ");
@@ -388,6 +436,10 @@ void RosWrapper::publish() {
         q.setW(qd.w());
         transform.setRotation(q);
         tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(),worldFrameId,SNUFrameId));
+    }
+
+    if (isLaneReceived){
+        pubLaneNode.publish(p_base->getLanePath().getPath(SNUFrameId));
     }
 }
 
@@ -476,6 +528,28 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
                 transl(0),transl(1),transl(2),quat.x(),quat.y(),quat.z(),quat.w());
 
         isFrameRefReceived = true;
+
+        // If ref frame was set, then transform the laneNode
+        if (isLaneRawReceived){
+            auto lane_w = p_base->getLanePath(); // w.r.t world frame
+            lane_w.applyTransform(p_base->Tw0.inverse());
+            p_base->setLanePath(lane_w); // w.r.t SNU frame
+            ROS_INFO("[SNU_PLANNER/RosWrapper] Lane-path transform completed!");
+            isLaneReceived = true;
+        }else{
+            ROS_ERROR("Tried transforming Lane raw in the pose callback. But no lane exsiting");
+        }
+
+        // Convert the global goal to local goal
+        CarState global_goal = p_base->getDesiredState();
+        Vector4d xb(global_goal.x,global_goal.y,0,1);
+        Vector4d xa = p_base->Tw0.inverse()*xb;
+        global_goal.x = xa(0);
+        global_goal.y = xa(1);
+        p_base->setDesiredState(global_goal);
+
+        ROS_INFO("[SNU_PLANNER/RosWrapper] received global goal [%f,%f] (in SNU frame)",global_goal.x,global_goal.y);
+        isGoalReceived = true;
     }
 
     if (isCarSpeedReceived)
@@ -489,7 +563,7 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
             auto poseTransformed = DAP::transform_matrix_to_pose(T01.cast<float>());
             // Update the pose information w.r.t Tw1
             geometry_msgs::PoseStamped poseStamped;
-            poseStamped.header.frame_id = worldFrameId;
+            poseStamped.header.frame_id = SNUFrameId;
             poseStamped.pose = poseTransformed;
             p_base->setCurPose(poseStamped);
             p_base->setCurTf(T01);
@@ -611,7 +685,9 @@ bool RosWrapper::isAllInputReceived() {
               isLocalMapReceived and
               isCarSpeedReceived and
               isFrameRefReceived and
-              isCarPoseCovReceived;
+              isCarPoseCovReceived and
+              isGoalReceived and
+              isLaneReceived;
 }
 
 

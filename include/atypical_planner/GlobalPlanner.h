@@ -15,7 +15,6 @@ namespace Planner{
         double grid_x_min, grid_y_min, grid_x_max, grid_y_max;
         int dimx, dimy;
         std::vector<std::vector<int>> grid;
-        LanePath lanePath; //TODO: delete this after debugging
         bool has_wall;
         bool isFeasible;
 
