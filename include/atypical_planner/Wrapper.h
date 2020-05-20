@@ -18,10 +18,12 @@
 #include <std_msgs/Float64.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf/tf.h>
-
+#include <driving_msgs/DetectedObjectArray.h>
+#include <functional>
 
 namespace Planner{
 
+    bool comparePredictorId(const Predictor::IndexedPredictor& p1,int id);
     /**
      * @brief ROS communicator such as topic advertising/subscription and ros-param parsing.
      */
@@ -40,7 +42,7 @@ namespace Planner{
         bool isGlobalMapReceived = false;
         bool isLocalMapReceived = false;
         bool isCarPoseCovReceived = false;
-
+        bool isCarSpeedReceived = false;
         /**
          * Parameters
          */
@@ -56,6 +58,7 @@ namespace Planner{
         nav_msgs::Path planningPath; // can be obtained from mpcResultTraj
         visualization_msgs::MarkerArray corridorSeq;
         visualization_msgs::MarkerArray obstaclePrediction;
+        nav_msgs::Path MPCTraj; // msg from mpcResultTraj
 
         /**
          *  Publisher
@@ -66,6 +69,7 @@ namespace Planner{
         ros::Publisher pubObservationMarker; // publisher for observed position for obstacles
         ros::Publisher pubPredictionArray; // publisher for prediction of the target
         ros::Publisher pubCurCmd; // if MPC has been solved, it emits the command
+        ros::Publisher pubMPCTraj; // if MPC has been solved, it pulish mpc traj for local planner horizon
 
         /**
          * Subscriber
@@ -76,6 +80,7 @@ namespace Planner{
         ros::Subscriber subLocalMap; // local map from LIDAR????
         ros::Subscriber subCarSpeed; //
         ros::Subscriber subExampleObstaclePose; //
+        ros::Subscriber subDetectedObjects;
 
         /**
          * Callback functions
@@ -89,6 +94,8 @@ namespace Planner{
 
         // TODO currently we only receive the location of obstacles not with shape
         void cbObstacles(const geometry_msgs::PoseStamped& obstPose);
+        void cbDetectedObjects(const driving_msgs::DetectedObjectArray& objectsArray);
+
 
         /**
          * Core routines in while loop of ROS thread
@@ -99,7 +106,7 @@ namespace Planner{
     public:
         RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_);
         void updateParam(Param& param_);
-        void updatePrediction();
+        void updatePredictionModel();
         void runROS();
         bool isAllInputReceived();
         double curTime() {return (ros::Time::now().toSec()-t0);};

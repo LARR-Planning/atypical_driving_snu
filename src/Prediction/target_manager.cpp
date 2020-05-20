@@ -9,9 +9,10 @@ TargetManager::TargetManager(int queue_size,float z_value,int poly_order):queue_
 
 };
 
-void TargetManager::update_observation(float t,geometry_msgs::Point target_xy){
-
+void TargetManager::update_observation(float t,geometry_msgs::Point target_xy,Vector3f dimensions_){
+    dimensions = dimensions_;
     observations.push_back(std::make_tuple(t,Vector2f(target_xy.x,target_xy.y)));
+    lastObservationTime = t;
     if (observations.size() > queue_size)
         observations.pop_front();
     //obsrv_traj_for_predict_total(0,size_history) = t;

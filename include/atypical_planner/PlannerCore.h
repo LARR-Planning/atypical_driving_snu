@@ -13,6 +13,8 @@
 #include <thread>
 #include <string>
 #include <math.h>
+#include <list>
+#include <tuple>
 #include <Eigen/Core>
 #include <third_party/Prediction/target_manager.hpp>
 
@@ -20,7 +22,6 @@
 
 #include <third_party/Utils.h>
 #include <driving_msgs/VehicleCmd.h>
-
 
 
 using namespace std;
@@ -78,6 +79,7 @@ namespace Planner {
         int queueSize;
         float  zHeight;
         int polyOrder;
+        double trackingTime; // it observation expires with this value, we detach predictor
 
     };
 
@@ -104,6 +106,7 @@ namespace Planner {
     struct ObstacleEllipse{
         Matrix<double,2,1> q;
         Matrix2d Q; // diag([1/r1^2 1/r2^2])
+        double theta; // x-axis angle w.r.t x-axis of map
     };
 
     struct ObstaclePath{
@@ -186,7 +189,10 @@ namespace Planner {
         bool isGPsolved = false;
         bool isLPsolved = false;
         // prediction module
-        vector<Predictor::TargetManager> predictorSet;
+        vector<Predictor::TargetManager> predictorSet; // TODO erase after indexed predictor
+        Predictor::TargetManager predictorBase;
+        list<Predictor::IndexedPredictor> indexedPredictorSet;
+
         // Get
         LanePath getLanePath() {return lane_path;};
         CarState getCarState() {return cur_state;};
@@ -221,11 +227,13 @@ namespace Planner {
         // Set from predictor
         // update obstaclePathArray so that it is prediction from [tPredictionStart,tPredictionStart+ horizon[
         // prepare prediction sequence for MPC
-        void updatePrediction(VectorXd tSeq_,double rNominal = 0) {
+        void uploadPrediction(VectorXd tSeq_, double rNominal = 0) {
             VectorXf tSeq = tSeq_.cast<float>();
             // TODO predictor should be multiple
             obstaclePathArray.obstPathArray.clear();
 
+            // ver0
+            /**
             for(auto predictor : predictorSet){
                 //predictor.update_predict(); // this will do nothing if observation is not enough
                 if (predictor.is_prediction_available()) {
@@ -240,6 +248,31 @@ namespace Planner {
                         obstE.Q.setZero();
                         obstE.Q(0, 0) = 1 / pow(rNominal, 2);
                         obstE.Q(1, 1) = 1 / pow(rNominal, 2);
+
+
+                        obstPath.obstPath.push_back(obstE);
+                    }
+                    obstaclePathArray.obstPathArray.push_back(obstPath);
+                }
+            }
+            **/
+            // ver 1
+            for(auto idPredictor : indexedPredictorSet){
+
+                auto predictor = get<1>(idPredictor);
+                //predictor.update_predict(); // this will do nothing if observation is not enough
+                if (predictor.is_prediction_available()) {
+                    vector<geometry_msgs::Pose> obstFuturePose = predictor.eval_pose_seq(tSeq);
+                    ObstaclePath obstPath;
+                    for (auto obstPose : obstFuturePose) {
+                        // construct one obstaclePath
+                        ObstacleEllipse obstE;
+                        obstE.q = Vector2d(obstPose.position.x, obstPose.position.y);
+
+                        // TODO exact tf should be handled / box to elliposid
+                        obstE.Q.setZero();
+                        obstE.Q(0, 0) = 1 / pow(predictor.getLastDimensions()(0)/sqrt(2), 2);
+                        obstE.Q(1, 1) = 1 / pow(predictor.getLastDimensions()(1)/sqrt(2), 2);
 
                         obstPath.obstPath.push_back(obstE);
                     }
