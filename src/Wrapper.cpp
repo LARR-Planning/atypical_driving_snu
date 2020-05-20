@@ -27,13 +27,12 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_):p_base(p_ba
     // Load lanemap from parser
     /**
     string csv_file;
-    nh.param<string>("/lane_csv_file",csv_file,"catkin_ws/src/atypical_driving_snu/keti_pangyo_path3.csv");
+    nh.param<string>("lane_csv_file",csv_file,"catkin_ws/src/atypical_driving_snu/keti_pangyo_path3.csv");
     p_base->parse_tool.get_Coorddata(csv_file);
-    p_base->parse_tool.display_result();
+    // p_base->parse_tool.display_result();
     // TODO is valid csv?
     p_base->setLanePath(p_base->parse_tool.get_lanepath());
     **/
-
     // Or just directly define here for easy test
      LanePath lanePath;
      LaneNode l1, l2;
@@ -67,6 +66,9 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_):p_base(p_ba
      lanePath.lanes.emplace_back(l1);
      lanePath.lanes.emplace_back(l2);
      p_base->setLanePath(lanePath);
+
+
+
      isLaneReceived =false; // Still false. After applying Tw0, it is true
      isLaneRawReceived = true;
 
@@ -359,7 +361,7 @@ void RosWrapper::prepareROSmsgs() {
     visualization_msgs::MarkerArray observations;
     int nsId = 0;
     for(auto idPredictor : p_base->indexedPredictorSet){
-        observations.markers.push_back(get<1>(idPredictor).get_obsrv_marker(worldFrameId,nsId++));
+        observations.markers.push_back(get<1>(idPredictor).get_obsrv_marker(SNUFrameId,nsId++));
     }
 
     ROS_DEBUG("Number of predictor = %d",p_base->indexedPredictorSet.size());
@@ -373,7 +375,7 @@ void RosWrapper::prepareROSmsgs() {
         // per a obstacle path, make up marker array
         // TODO shape should be rigorously considered
         visualization_msgs::Marker m_obstacle_rad;
-        m_obstacle_rad.header.frame_id = worldFrameId;
+        m_obstacle_rad.header.frame_id = SNUFrameId;
         m_obstacle_rad.pose.orientation.w = 1.0;
         m_obstacle_rad.color.r = 1.0, m_obstacle_rad.color.a = 0.8;
         m_obstacle_rad.type = 3;
@@ -434,7 +436,7 @@ void RosWrapper::publish() {
         q.setY(qd.y());
         q.setZ(qd.z());
         q.setW(qd.w());
-        transform.setRotation(q);
+        transform.setRotation(q);//
         tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(),worldFrameId,SNUFrameId));
     }
 
@@ -459,42 +461,68 @@ void RosWrapper::runROS() {
 }
 
 void RosWrapper::cbDetectedObjects(const driving_msgs::DetectedObjectArray &objectsArray) {
-    for(auto object : objectsArray.objects) {
-        geometry_msgs::Point position = object.odom.pose.pose.position;
-        bool valueCheck = true;
-        valueCheck = not(position.x == 0 and position.y == 0 and position.z == 0 );
-        if (not valueCheck)
-            continue;
+    if (isCarPoseCovReceived)
+        for(auto object : objectsArray.objects) {
 
-        uint id = object.id;
 
-        // Does this id have its predictor?
-        auto predictorOwner = find_if(p_base->indexedPredictorSet.begin(),
-                p_base->indexedPredictorSet.end(),bind(comparePredictorId,placeholders::_1,id));
-        // already a predictor owns the id
-        Vector3f updateDimension;
-        if (use_nominal_obstacle_radius){
-            updateDimension.x() = param.l_param.obstRadiusNominal;
-            updateDimension.y() = param.l_param.obstRadiusNominal;
-            updateDimension.z() = param.l_param.obstRadiusNominal;
-        }else{
-            updateDimension.x() = object.dimensions.x;
-            updateDimension.y() = object.dimensions.y;
-            updateDimension.z() = object.dimensions.z;
+            bool valueCheck = true;
+            valueCheck = not(object.odom.pose.pose.position.x == 0 and object.odom.pose.pose.position.y == 0  );
+            if (not valueCheck)
+                continue;
+
+
+            // Convert it into SNU frame
+
+            string obstacleRefFrame = object.header.frame_id;
+            tf::StampedTransform Tsr;// SNU frame to the referance frame of obstacle
+
+            try {
+                tf_ls.lookupTransform(SNUFrameId, obstacleRefFrame, ros::Time(0), Tsr);
+            }
+            catch(tf::TransformException ex){
+                ROS_ERROR("[SNU_PLANNER/RosWrapper] cannot register the object pose. "
+                          "No tf connecting SNU frame with header of object");
+            }
+
+            tf::Vector3 pr(object.odom.pose.pose.position.x,object.odom.pose.pose.position.y,0); // translation w.r.t its ref frame
+            tf::Vector3 ps = Tsr*pr; // w.r.t to SNU
+
+            // TODO full pose to be implemented
+            geometry_msgs::Point position;
+            position.x = ps.x();
+            position.y = ps.y();
+
+            uint id = object.id;
+
+            // Does this id have its predictor?
+            auto predictorOwner = find_if(p_base->indexedPredictorSet.begin(),
+                    p_base->indexedPredictorSet.end(),bind(comparePredictorId,placeholders::_1,id));
+            // already a predictor owns the id
+            Vector3f updateDimension;
+            if (use_nominal_obstacle_radius){
+                updateDimension.x() = param.l_param.obstRadiusNominal;
+                updateDimension.y() = param.l_param.obstRadiusNominal;
+                updateDimension.z() = param.l_param.obstRadiusNominal;
+            }else{
+                updateDimension.x() = object.dimensions.x;
+                updateDimension.y() = object.dimensions.y;
+                updateDimension.z() = object.dimensions.z;
+            }
+
+            if (predictorOwner != p_base->indexedPredictorSet.end()) {
+                get<1>(*predictorOwner).update_observation(curTime(), position,
+                        updateDimension);
+            } else {
+                // no owner found, we create predictor and attach it
+                auto newPredictor = make_tuple(id, p_base->predictorBase);
+                get<1>(newPredictor).update_observation(curTime(), position,
+                        updateDimension);
+                p_base->indexedPredictorSet.push_back(newPredictor);
+                ROS_INFO("[SNU_PLANNER/RosWrapper] Predictor attached for obstacle id = %d", id);
+            }
         }
-
-        if (predictorOwner != p_base->indexedPredictorSet.end()) {
-            get<1>(*predictorOwner).update_observation(curTime(), object.odom.pose.pose.position,
-                    updateDimension);
-        } else {
-            // no owner found, we create predictor and attach it
-            auto newPredictor = make_tuple(id, p_base->predictorBase);
-            get<1>(newPredictor).update_observation(curTime(), object.odom.pose.pose.position,
-                    updateDimension);
-            p_base->indexedPredictorSet.push_back(newPredictor);
-            ROS_INFO("[SNU_PLANNER/RosWrapper] Predictor attached for obstacle id = %d", id);
-        }
-    }
+    else
+        ROS_INFO("[SNU_PLANNER/RosWrapper] Received object information. But the state of the car is not received");
 }
 
 

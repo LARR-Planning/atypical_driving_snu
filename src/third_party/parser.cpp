@@ -12,8 +12,8 @@ parser::parser()
 
 void parser::get_Coorddata(string Xfilename)
 {   
-    string cur_path = experimental::filesystem::current_path();
-    Xfilename = cur_path+"/../"+Xfilename;
+    //string cur_path = experimental::filesystem::current_path();
+//    Xfilename = cur_path+"/../"+Xfilename;
     // Yfilename = cur_path+"/../src/"+Yfilename;
     //X coordinate
     cout << Xfilename << endl;

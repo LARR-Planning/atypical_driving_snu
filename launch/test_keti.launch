@@ -3,6 +3,8 @@
 -->
 
 <launch>
+
+    <param name="use_sim_time" value="false"/>
     <!-- Arguments Start -->
     <arg name="bagfile"        default="keti_dataset1.bag"/>
     <arg name="playBagFile"    default="true"/>
@@ -62,6 +64,11 @@
 
     <node pkg="atypical_driving" type="integration_server" name="atypical_planning_test" output="screen">
         <param name="snu_frame_id" value="$(arg snu_frame_id)"/>
+
+
+        <param name = "lane_csv_file" value="$(find atypical_driving)/keti_pangyo_path3.csv" />
+
+
         <param name="global_planner/horizon" value="$(arg nominal_period)" />
         <param name="global_planner/car_width" value="$(arg vehicle_model/lx)" />
         <param name="global_planner/car_z_min" value="0.5" />

@@ -68,7 +68,7 @@ Visualization Manager:
       Marker Topic: /atypical_planning_test/corridor_seq
       Name: MarkerArray
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -76,7 +76,7 @@ Visualization Manager:
       Marker Topic: /occupied_cells_vis_array
       Name: MarkerArray
       Namespaces:
-        {}
+        map: true
       Queue Size: 100
       Value: true
     - Angle Tolerance: 0.10000000149011612
@@ -141,7 +141,7 @@ Visualization Manager:
       Marker Topic: /atypical_planning_test/prediction
       Name: MarkerArray
       Namespaces:
-        {}
+        0: true
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -188,8 +188,15 @@ Visualization Manager:
       Show Axes: true
       Show Names: true
       Tree:
-        SNU:
-          {}
+        map:
+          SNU:
+            car_base_link:
+              {}
+          world_ent:
+            PhysXCar:
+              PhysXCar/odom_local_ned:
+                LidarSensor1:
+                  {}
       Update Interval: 0
       Value: true
     - Class: rviz/MarkerArray
@@ -197,7 +204,7 @@ Visualization Manager:
       Marker Topic: /atypical_planning_test/observation_queue
       Name: MarkerArray
       Namespaces:
-        {}
+        0: true
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -251,7 +258,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 30.032316207885742
+      Distance: 230.94744873046875
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -266,10 +273,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.07479735463857651
+      Pitch: 0.9747970104217529
       Target Frame: car_base_link
       Value: Orbit (rviz)
-      Yaw: 4.763175964355469
+      Yaw: 3.14817476272583
     Saved: ~
 Window Geometry:
   Displays:
