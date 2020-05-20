@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /Grid1
         - /MarkerArray1
         - /MarkerArray1/Namespaces1
         - /MarkerArray2
@@ -15,6 +16,7 @@ Panels:
         - /Pose2
         - /TF1
         - /TF1/Frames1
+        - /Path1
       Splitter Ratio: 0.5792452692985535
     Tree Height: 728
   - Class: rviz/Selection
@@ -44,7 +46,7 @@ Visualization Manager:
   Class: ""
   Displays:
     - Alpha: 0.5
-      Cell Size: 1
+      Cell Size: 5
       Class: rviz/Grid
       Color: 160; 160; 164
       Enabled: true
@@ -58,7 +60,7 @@ Visualization Manager:
         Y: 0
         Z: 0
       Plane: XY
-      Plane Cell Count: 10
+      Plane Cell Count: 100
       Reference Frame: <Fixed Frame>
       Value: true
     - Class: rviz/MarkerArray
@@ -66,7 +68,7 @@ Visualization Manager:
       Marker Topic: /atypical_planning_test/corridor_seq
       Name: MarkerArray
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -74,7 +76,7 @@ Visualization Manager:
       Marker Topic: /occupied_cells_vis_array
       Name: MarkerArray
       Namespaces:
-        map: true
+        {}
       Queue Size: 100
       Value: true
     - Angle Tolerance: 0.10000000149011612
@@ -139,7 +141,7 @@ Visualization Manager:
       Marker Topic: /atypical_planning_test/prediction
       Name: MarkerArray
       Namespaces:
-        0: true
+        {}
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -186,15 +188,8 @@ Visualization Manager:
       Show Axes: true
       Show Names: true
       Tree:
-        map:
-          SNU:
-            car_base_link:
-              {}
-          world_ent:
-            PhysXCar:
-              PhysXCar/odom_local_ned:
-                LidarSensor1:
-                  {}
+        SNU:
+          {}
       Update Interval: 0
       Value: true
     - Class: rviz/MarkerArray
@@ -202,8 +197,31 @@ Visualization Manager:
       Marker Topic: /atypical_planning_test/observation_queue
       Name: MarkerArray
       Namespaces:
-        0: true
+        {}
       Queue Size: 100
+      Value: true
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 238; 238; 236
+      Enabled: true
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
+      Line Style: Billboards
+      Line Width: 0.30000001192092896
+      Name: Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
+      Topic: /atypical_planning_test/lane_path
+      Unreliable: false
       Value: true
   Enabled: true
   Global Options:
@@ -232,21 +250,26 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: -1.5999995470046997
-      Class: rviz/TopDownOrtho
+      Class: rviz/Orbit
+      Distance: 30.032316207885742
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
+      Focal Point:
+        X: 0
+        Y: 0
+        Z: 0
+      Focal Shape Fixed Size: true
+      Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 23.323192596435547
+      Pitch: 0.07479735463857651
       Target Frame: car_base_link
-      Value: TopDownOrtho (rviz)
-      X: 0
-      Y: 0
+      Value: Orbit (rviz)
+      Yaw: 4.763175964355469
     Saved: ~
 Window Geometry:
   Displays:

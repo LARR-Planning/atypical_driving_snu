@@ -23,6 +23,7 @@
 #include <third_party/Utils.h>
 #include <driving_msgs/VehicleCmd.h>
 
+#include <third_party/parser.h>
 
 using namespace std;
 using namespace Eigen;
@@ -74,6 +75,7 @@ namespace Planner {
         double grid_resolution;
         double box_resolution;
         double box_max_size;
+        bool has_wall;
     };
 
     struct ParamPredictor{
@@ -192,6 +194,7 @@ namespace Planner {
         bool isGPsolved = false;
         bool isLPsolved = false;
         SE3 Tw0; // Referance frame of our node every incoming data should be transformed
+        parser parse_tool;
         // prediction module
         vector<Predictor::TargetManager> predictorSet; // TODO erase after indexed predictor
         Predictor::TargetManager predictorBase;

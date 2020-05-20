@@ -21,6 +21,7 @@
 #include <tf/transform_broadcaster.h>
 #include <driving_msgs/DetectedObjectArray.h>
 #include <functional>
+#include <nav_msgs/Path.h>
 
 namespace Planner{
 
@@ -47,8 +48,8 @@ namespace Planner{
         bool isCarSpeedReceived = false;
         bool isFrameRefReceived = false;
         bool isLaneReceived = false;
-
-
+        bool isLaneRawReceived = false; // beform transform
+        bool isGoalReceived = false;
         /**
          * Operation mode
          */
@@ -68,6 +69,8 @@ namespace Planner{
          */
         // topics to be published
         nav_msgs::Path planningPath; // can be obtained from mpcResultTraj
+        nav_msgs::Path lanePathVis;
+
         visualization_msgs::MarkerArray corridorSeq;
         visualization_msgs::MarkerArray obstaclePrediction;
 
@@ -80,7 +83,7 @@ namespace Planner{
         ros::Publisher pubObservationMarker; // publisher for observed position for obstacles
         ros::Publisher pubPredictionArray; // publisher for prediction of the target
         ros::Publisher pubCurCmd; // if MPC has been solved, it emits the command
-
+        ros::Publisher pubLaneNode; // lane node
         /**
          * Subscriber
          */
@@ -105,6 +108,7 @@ namespace Planner{
         // TODO currently we only receive the location of obstacles not with shape
         void cbObstacles(const geometry_msgs::PoseStamped& obstPose);
         void cbDetectedObjects(const driving_msgs::DetectedObjectArray& objectsArray);
+
 
 
         /**
