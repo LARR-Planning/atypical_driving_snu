@@ -532,7 +532,7 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
         // If ref frame was set, then transform the laneNode
         if (isLaneRawReceived){
             auto lane_w = p_base->getLanePath(); // w.r.t world frame
-            lane_w.applyTransform(p_base->Tw0.inverse().matrix());
+            lane_w.applyTransform(p_base->Tw0.inverse());
             p_base->setLanePath(lane_w); // w.r.t SNU frame
             ROS_INFO("[SNU_PLANNER/RosWrapper] Lane-path transform completed!");
             isLaneReceived = true;

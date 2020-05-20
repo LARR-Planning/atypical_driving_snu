@@ -29,5 +29,7 @@ double interpolate( vector<double> &xData, vector<double> &yData, double x, bool
     return yL + dydx * ( x - xL );                                              // linear interpolation
 }
 
-
-
+Vector3d applyTransform(const SE3& Tab, const Vector3d & vb){
+    Vector3d va = Tab*vb;
+    return va;
+}

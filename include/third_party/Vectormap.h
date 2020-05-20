@@ -9,6 +9,7 @@
 #include <geometry_msgs/Point.h>
 #include <Eigen/Core>
 #include <nav_msgs/Path.h>
+#include <third_party/Utils.h>
 
 using namespace std;
 using namespace geometry_msgs;
@@ -25,10 +26,22 @@ namespace Planner{
         void applyTransform(const Matrix4d& Tab){
             for (auto & lane :lanes){
                 for(auto it = lane.laneCenters.begin() ; it!= lane.laneCenters.end(); it++){
+
                        Vector4d xb(it->x,it->y,0,1);
                        Vector4d xa = Tab*xb;
                        it->x = xa(0);
                        it->y = xa(1);
+                }
+            }
+        }
+
+        void applyTransform(const SE3& Tab){
+            for (auto & lane :lanes){
+                for(auto it = lane.laneCenters.begin() ; it!= lane.laneCenters.end(); it++){
+                    Vector3d xb(it->x,it->y,0);
+                    Vector3d xa = Tab*xb;
+                    it->x = xa(0);
+                    it->y = xa(1);
                 }
             }
         }
