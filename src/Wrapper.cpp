@@ -25,15 +25,15 @@ bool Planner::comparePredictorId(const Predictor::IndexedPredictor &p1, int id )
 RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_):p_base(p_base_),nh("~"),mSet(mSet_){
 
     // Load lanemap from parser
-    /**
     string csv_file;
     nh.param<string>("lane_csv_file",csv_file,"catkin_ws/src/atypical_driving_snu/keti_pangyo_path3.csv");
     p_base->parse_tool.get_Coorddata(csv_file);
-    // p_base->parse_tool.display_result();
+     p_base->parse_tool.display_result();
     // TODO is valid csv?
     p_base->setLanePath(p_base->parse_tool.get_lanepath());
-    **/
+
     // Or just directly define here for easy test
+    /**
      LanePath lanePath;
      LaneNode l1, l2;
      int N1 = 20, N2 = 10;
@@ -68,7 +68,7 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_):p_base(p_ba
      p_base->setLanePath(lanePath);
 
 
-
+**/
      isLaneReceived =false; // Still false. After applying Tw0, it is true
      isLaneRawReceived = true;
 
