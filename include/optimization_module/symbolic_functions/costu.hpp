@@ -26,7 +26,6 @@ namespace symbolic_functions
         // float Q2 = Q(1);
         float R1 = R(0);
         float R2 = R(1);
-
         Matrix<double,Nu,1> A0;
         A0(0,0) = R1*a;
         A0(1,0) = R2*deldot;

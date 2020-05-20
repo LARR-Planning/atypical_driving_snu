@@ -27,24 +27,9 @@ namespace symbolic_functions
         float R1 = R(0);
         float R2 = R(1);
 
-        float dist = std::sqrt((x-obs(0))*(x-obs(0))+(y-obs(1))*(y-obs(1)));
-        double dist_cost;
-        if(dist>=dist_safe)
-        {   
-            double dist_cost = 0;
-        }
-        else if(dist<dist_safe and dist>=0)
-        {
-            double dist_cost = 0.5/dist_safe*(dist-dist_safe)*(dist-dist_safe);
-        }
-        else
-        {
-            double dist_cost = -dist + 0.5*dist_safe;
-        }
-
-        double cost_value = 0.5*Q1*(x-g(0))*(x-g(0))+0.5*Q2*(y-g(1))*(y-g(1))+0.5*R1*a*a + 0.5 * R2 * deldot*deldot + dist_cost;
+        //float dist = std::sqrt((x-obs(0))*(x-obs(0))+(y-obs(1))*(y-obs(1)));
+        double cost_value = 0.5*Q1*(x-g(0))*(x-g(0))+0.5*Q2*(y-g(1))*(y-g(1))+0.5*R1*a*a + 0.5 * R2 * deldot*deldot;
         return cost_value;
     }
 }
-
 #endif

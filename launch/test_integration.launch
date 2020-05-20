@@ -17,7 +17,7 @@
   <arg name="vehicle_model/accel_min"     default="-3"/>
   <arg name="vehicle_model/is_rear_wheel"     default="false"/>
 
-  <arg name="nominal_speed"     default="10"/>
+  <arg name="nominal_speed"     default="1"/>
   <arg name="nominal_period"     default="5"/> <!--preirod = horizon -->
   <arg name="planning_dt"     default="0.1"/> <!--?-->
 

@@ -32,12 +32,12 @@ LocalPlanner::LocalPlanner(const Planner::ParamLocal &l_param,
     ilqr_param.tolCosts = power(10.0, VectorXd::LinSpaced(30, -2.0, -6.0));
     ilqr_param.tolConsts = power(10.0, VectorXd::LinSpaced(30, -2.0, -6.0));
     ilqr_param.alphas = power(10.0, VectorXd::LinSpaced(5, 0.0, -3.0));
-    ilqr_param.maxIter = 10000;
+    ilqr_param.maxIter = 1000;
     ilqr_param.mu = 2.0;
     ilqr_param.lambda = 0.0;
-    ilqr_param.phi = 1e-4;
+    ilqr_param.phi = 0.1;
     ilqr_param.verbosity = 1;
-    ilqr_param.dmu = 2.0;
+    ilqr_param.dmu = 1.2;
     ilqr_param.dphi = 0.8;
 
     carDefaultShape << 4.0, 0.0,
@@ -46,9 +46,9 @@ LocalPlanner::LocalPlanner(const Planner::ParamLocal &l_param,
     {
         bodyArray[i]<< 4.0, 0.0, 0.0, 4.0;
     }
-    state_weight_<< 0.005, 0.005, 0.005, 0.005, 0.005;
+    state_weight_<< 0.05, 0.05, 0.05, 0.05, 0.05;
     final_weight_<< 0.05, 0.05, 0.05, 0.05, 0.05;
-    input_weight_<< 0.0001, 0.0001;
+    input_weight_<< 0.1, 0.01;
 
     cout << "[LocalPlanner] Init." << endl;
     
@@ -97,7 +97,8 @@ void LocalPlanner::ObstToConstraint() {
 //    obs_q.resize(1);
 //    cout << "Size of obstacle path array " <<p_base->getCurObstaclePathArray().obstPathArray.size()<< endl;
 
-    if(p_base->getCurObstaclePathArray().obstPathArray.size()>0) {
+    if(p_base->getCurObstaclePathArray().obstPathArray.size()>0)
+    {
         int count_id = 0;
         for (auto s : p_base->getCurObstaclePathArray().obstPathArray) {
             for (int i = 0; i < 50; i++)
@@ -118,7 +119,6 @@ void LocalPlanner::ObstToConstraint() {
             count_id++;
         }
         //cout << "loop size " <<count_id<< endl;
-
     }
 }
 
@@ -160,49 +160,36 @@ void LocalPlanner::SfcToOptConstraint(){
     int count2 = 0;
     int count3 = 1;
     for(auto &s: p_base->getCorridorSeq()) {
-        if (N_corr < 52) {
+        if (N_corr < 51) {
             if (count1 * count2 == 0) {
                 box_constraint[count2] = s;
                 count1++;
                 count2++;
                 N_corr++;
-//                cout<< "error1"<<endl;
-//                cout << "Count sibal: " << N_corr << endl;
             }
             t_end_ = s.t_end;
             if (t_end_ > param.horizon) {
-//                cout<< "error2"<<endl;
                 for (int i = 0; i < round((param.horizon- t_start_)/param.tStep); i++) {
                     box_constraint[count2] = s;
                     count2++;
                     N_corr++;
-//                    cout << "Count sibal: " << N_corr << endl;
                 }
-//                cout<< "t_start2: " <<t_start_<<endl;
-//                cout<< "t_end_2: "<< t_end_<<endl;
             }
             else {
-//                cout<< "error3"<<endl;
+
                 for (int i = 0; i < round((t_end_ - t_start_) / param.tStep); i++) {
                     box_constraint[count2] = s;
                     count2++;
                     N_corr++;
-//                    cout << "Count sibal: " << N_corr << endl;
                 }
                 t_start_ = param.tStep * (count2 - 1);
-//                cout<< "t_start3: " <<t_start_<<endl;
-//                cout<< "t_end_3: "<< t_end_<<endl;
             }
-//            cout<<param.tStep<<endl;
-//            cout<<param.horizon<<endl;
-
-            cout<<count3<< " th Corridor"<<endl;
-            cout<< "xl: "<< s.xl<< "[m] xu: "<< s.xu<< "[m] yl: "<< s.yl<< "[m] yl: "<< s.yu<<"[m]"<<endl;
-            cout <<"t_start: "<<s.t_start <<"[s] t_end: "<<s.t_end<<"[s]"<<endl;
-            count3++;
+//            cout<<count3<< " th Corridor"<<endl;
+//            cout<< "xl: "<< s.xl<< "[m] xu: "<< s.xu<< "[m] yl: "<< s.yl<< "[m] yl: "<< s.yu<<"[m]"<<endl;
+//            cout <<"t_start: "<<s.t_start <<"[s] t_end: "<<s.t_end<<"[s]"<<endl;
+//            count3++;
         }
     }
-
 }
  Collection<Corridor,51> LocalPlanner::getOptCorridor()
  {
@@ -219,22 +206,20 @@ void LocalPlanner::SfcToOptConstraint(){
  */
 bool LocalPlannerPlain::plan(double t) {
 //    Checked that this function is always executed
-//    cout << "[LocalPlanner] planning... " << endl;
+    cout << "[LocalPlanner] Initialized.. " << endl;
 //    cout << "[LocalPlanner] Done. " << endl;
 //    cout<< "I am in the Local Planner plan function"<<endl;
      cout<<"---------------------------------"<<endl;
      Matrix<double,2,1> x_goal_;
      x_goal_ = LocalPlanner::getLocalGoal();
      cout<< "New Local Goal is"<<x_goal_.coeffRef(0,0)<<"and"<<x_goal_.coeffRef(1,0)<<endl;
-     cout<<"car Speed: "<<p_base->getCarState().v<<" [m/s]"<<endl;
-     cout<<"y-position: "<<p_base->getCarState().y<< " [m]"<<endl;
+     cout<<"Current car Speed: "<<p_base->getCarState().v<<" [m/s]"<<endl;
+     cout<<"Current y-position: "<<p_base->getCarState().y<< " [m]"<<endl;
      LocalPlanner::SfcToOptConstraint(); // convert SFC to box constraints
-//    cout<<p_base->getCurObstaclePathArray().obstPathArray[0].obstPath.size()<<endl;
-//    cout<<p_base->getCurObstaclePathArray().obstPathArray[0].obstPath.size()<<endl;
-     //cout<<p_base->getCurObstaclePathArray().obstPathArray[0].obstPath[0].q(0,0)<<endl;
+
      LocalPlanner::ObstToConstraint();
-     // cout<< LocalPlanner::box_constraint[1].yl<<endl;
      using namespace Eigen;
+
      //Following codes will be wrapped with another wrapper;
      std::shared_ptr<Problem> prob = std::make_shared<Problem>(bodyArray, box_constraint, obs_Q, obs_q);
      // Do not have to be defined every loop
@@ -251,10 +236,8 @@ bool LocalPlannerPlain::plan(double t) {
      Matrix<double,Nx,1> x0_new;
      Collection<Matrix<double,Nu,1>,N> uN_new;
      Collection<Matrix<double,Nx,1>,N+1> xN_new;
-
+     // if car state contains strange value;
      if(isnan(p_base->getCarState().theta) || isnan(p_base->getCarState().theta)|| (p_base->getCarState().v>1000)) {
-         Collection<Matrix<double, Nu, 1>, N> uN_new;
-         Collection<Matrix<double, Nx, 1>, N + 1> xN_new;
          for (int i = 0; i < N; i++) {
              xN_new[i].setZero();
              uN_new[i].setZero();
@@ -266,13 +249,10 @@ bool LocalPlannerPlain::plan(double t) {
          {
              for(auto &s :u0)
              {
-                 s=(Matrix<double,Nu,1>()<< 1.0,0.0).finished();
+                 s=(Matrix<double,Nu,1>()<< 0.01,0.0).finished();
              }
              x0_new = (Matrix<double,Nx,1>()<<p_base->getCarState().x, p_base->getCarState().y,p_base->getCarState().v,
                      0.0, p_base->getCarState().theta).finished();
-         }
-         if(loop_num == 0)
-         {
              cout<<"current x: " <<p_base->getCarState().x<<endl;
              cout<<"current y: " <<p_base->getCarState().y<<endl;
              cout<<"current v: " <<p_base->getCarState().v<<endl;
@@ -280,23 +260,50 @@ bool LocalPlannerPlain::plan(double t) {
              uN_new = u0;
              iLQR<Nx,Nu,N> ilqr_init(*prob, x0_new,uN_new,dt,ilqr_param);
              ilqr_init.solve();
-//             cout<< "Wow No error??"<<endl;
+
+
+             uN_NextInit = ilqr_init.uN_;
              uN_new = ilqr_init.uN_;
              xN_new = ilqr_init.xN_;
-             for(int j = 0; j<50;j++)
+
+             for(int j = 0;j<49;j++)
              {
-                 cout<<uN_new[j].coeff(0,0)<<endl;
+                 uN_NextInit[j] = uN_new[j+1];
              }
-             cout<<"So far, new input, from now on, new states"<<endl;
-             for(int j = 0; j<51;j++)
-             {
-                 cout<<xN_new[j].coeff(1,0)<<endl;
-             }
+             uN_NextInit[49]= uN_new[49];
+
+//             cout<<"-------"<<endl;
+//             for(int j = 0; j<50;j++)
+//             {
+//
+//                 cout<<uN_new[j].coeff(0,0)<<endl;
+//             }
+//             cout<<"So far, new input, from now on, new states"<<endl;
+//             for(int j = 0; j<51;j++)
+//             {
+//                 cout<<xN_new[j].coeff(1,0)<<endl;
+//             }
              loop_num++;
          }
+         else
+         {
+             //  Be executed after initial Loop (loop_num>0)
+             x0_new = (Matrix<double,Nx,1>()<<p_base->getCarState().x, p_base->getCarState().y,p_base->getCarState().v,
+                     p_base->getCurInput(t).steer_angle_cmd, p_base->getCarState().theta).finished();
 
+             iLQR<Nx,Nu,N> ilqr(*prob, x0_new,uN_NextInit,dt,ilqr_param);
+             ilqr.solve();
+             uN_new = ilqr.uN_;
+             xN_new = ilqr.xN_;
+             for(int j = 0;j<49;j++)
+             {
+                 uN_NextInit[j] = uN_new[j+1];
+             }
+             uN_NextInit[49]= uN_new[49];
+         }
      }
 
+     // Update CarState and CarInput into the form designed in PlannerCore header file
      Matrix<double,50,1> ts_temp = VectorXd::LinSpaced(50,0.0,4.95);
      ts_temp = ts_temp.array()+ t;
      CarState carState_temp;
@@ -319,16 +326,7 @@ bool LocalPlannerPlain::plan(double t) {
          curPlanning.xs.push_back(carState_temp);
          curPlanning.us.push_back(carInput_temp);
      }
-
-//////    else
-//////    {
-////////        iLQR<Nx,Nu,N>ilqr(*prob,x0_new, uN_new,dt,ilqr_param);
-////////        ilqr.solve();
-//////        cout<<"No error, Congratulations"<<endl;
-//////    }
-////
-
-
+    //loop_num++;
     //TODO: print out the outcome of the planning
     return true; // change this line properly
 }

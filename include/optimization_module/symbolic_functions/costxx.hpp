@@ -31,17 +31,12 @@ namespace symbolic_functions
         // float R1 = R(0);
         // float R2 = R(1);
 
-        float dist = std::sqrt((x-obs(0))*(x-obs(0))+(y-obs(1))*(y-obs(1)));
+        //float dist = std::sqrt((x-obs(0))*(x-obs(0))+(y-obs(1))*(y-obs(1)));
         Matrix<double,Nx,Nx> A0;
-
-
         A0.setZero();
-        A0(0,0) = Q1+1-dist_safe*(y-obs(1))/(dist*dist*dist);
-        A0(1,1) = Q2+1-dist_safe*(x-obs(0))/(dist*dist*dist);
-        A0(0,1) = (x-obs(0))*(y-obs(1))/(dist*dist*dist);
-        A0(1,0) = (x-obs(0))*(y-obs(1))/(dist*dist*dist);
+        A0(0,0) = Q1;
+        A0(1,1) = Q2;
+        return A0;
     }
 }
-
-
 #endif

@@ -34,7 +34,7 @@ namespace Planner {
         iLQRParams ilqr_param;
            // Planning intermediate outputs
         MPCResultTraj curPlanning;
-
+        Collection<Matrix<double,2,1>,50> uN_NextInit;
         // YW added
         Collection<Corridor,51> box_constraint;
         Collection<Matrix<double,2,2>,51> bodyArray;
