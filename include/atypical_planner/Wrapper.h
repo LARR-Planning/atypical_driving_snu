@@ -18,6 +18,7 @@
 #include <std_msgs/Float64.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf/tf.h>
+#include <tf/transform_broadcaster.h>
 #include <driving_msgs/DetectedObjectArray.h>
 #include <functional>
 
@@ -36,18 +37,29 @@ namespace Planner{
          */
         shared_ptr<PlannerBase> p_base; // planning data
         mutex* mSet; /**< mSet[0] = locking btw subset of callbacks and plan() of planner  */
-
+        Param param;
         // node handle
         ros::NodeHandle nh;
+        tf::TransformBroadcaster tf_br;
         bool isGlobalMapReceived = false;
         bool isLocalMapReceived = false;
         bool isCarPoseCovReceived = false;
         bool isCarSpeedReceived = false;
+        bool isFrameRefReceived = false;
+        bool isLaneReceived = false;
+
+
+        /**
+         * Operation mode
+         */
+
+        bool use_nominal_obstacle_radius = false;
+
         /**
          * Parameters
          */
-
-        string worldFrameId;
+        string SNUFrameId; // global frame id (JBS)
+        string worldFrameId; //world frame id
         int max_marker_id; //count current published markers
         double speed; // current speed of car
 
@@ -74,7 +86,7 @@ namespace Planner{
          */
         ros::Subscriber subCarPoseCov; /**< car state from KAIST */
         ros::Subscriber subDesiredCarPose; // desired pose from user
-        ros::Subscriber subGlobalMap; // global map from ????
+        ros::Subscriber subGlobalMap; // global msap from ????
         ros::Subscriber subLocalMap; // local map from LIDAR????
         ros::Subscriber subCarSpeed; //
         ros::Subscriber subExampleObstaclePose; //
@@ -100,7 +112,7 @@ namespace Planner{
          */
         void publish();
         void prepareROSmsgs();
-
+        void predictionUpdate();
     public:
         RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_);
         void updateParam(Param& param_);

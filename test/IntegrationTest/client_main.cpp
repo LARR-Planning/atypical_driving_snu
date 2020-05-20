@@ -74,7 +74,7 @@ void cbCarPoseCov(const nav_msgs::Odometry& pose_ned){
 
     tf::Quaternion q;
     q.setX(curPose.pose.orientation.x);
-    q.setY(curPose.pose.orientation.y);
+    q.setY(curPose.pose.orientation.y);ros::Time::now().toSec();
     q.setZ(curPose.pose.orientation.z);
     q.setW(curPose.pose.orientation.w);
 
@@ -105,8 +105,7 @@ void cbAccelCmd(const geometry_msgs::Twist& twist){
 }
 // convert the object pose into DetectedObjectArray
 void cbObject(const geometry_msgs::PoseStamped& object_pose){
-
-
+   objectsArray.objects[0].odom.pose.pose = object_pose.pose;
 }
 
 int main(int argc,char** argv) {
@@ -121,14 +120,13 @@ int main(int argc,char** argv) {
 
     ros::Subscriber subCarPoseCov = nh.subscribe("/airsim_car_node/PhysXCar/odom_local_ned",1,cbCarPoseCov);
     ros::Subscriber subAccelCmd = nh.subscribe("/accel_cmd",1,cbAccelCmd);
-    ros::Subscriber subObject = nh.subscribe("/airsim_car_node/object_pose",1,cbAccelCmd);
-
-
+    ros::Subscriber subObject = nh.subscribe("/atypical_planning_test/obstacle_pose",1,cbObject);
 
     ros::Publisher pubCarPoseCov = nh.advertise<geometry_msgs::PoseWithCovariance>("/current_pose",1);
     ros::Publisher pubCarSpeed = nh.advertise<std_msgs::Float64>("/current_speed",1);
     ros::Publisher pubCurSteering = nh.advertise<std_msgs::Float64>("/current_steer_angle",1);
     ros::Publisher pubCurPoseStamped = nh.advertise<geometry_msgs::PoseStamped>("current_car_posestamped",1);
+    ros::Publisher pubDetectedObjects =  nh.advertise<driving_msgs::DetectedObjectArray>("/detected_objects",1);
 
     ros::Rate rate(40);
     while(ros::ok()){
@@ -142,6 +140,7 @@ int main(int argc,char** argv) {
         pubCurSteering.publish(curAngle);
         pubCarSpeed.publish(curSpeed);
         pubCurPoseStamped.publish(curPose);
+        pubDetectedObjects.publish(objectsArray);
 
         rate.sleep();
         ros::spinOnce();

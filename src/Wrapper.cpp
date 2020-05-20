@@ -25,11 +25,10 @@ bool Planner::comparePredictorId(const Predictor::IndexedPredictor &p1, int id )
 RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_):p_base(p_base_),nh("~"),mSet(mSet_){
     // Initiate ros communication (caution: parameters are parsed in udpateParam)
     max_marker_id = 0;
-
     // Publisher
     pubPath = nh.advertise<nav_msgs::Path>("planning_path",1);
     pubCorridorSeq = nh.advertise<visualization_msgs::MarkerArray>("corridor_seq", 1);
-    pubObservationMarker = nh.advertise<visualization_msgs::Marker>("observation_queue",1);
+    pubObservationMarker = nh.advertise<visualization_msgs::MarkerArray>("observation_queue",1);
     pubPredictionArray = nh.advertise<visualization_msgs::MarkerArray>("prediction",1);
     pubCurCmd = nh.advertise<driving_msgs::VehicleCmd>("/vehicle_cmd",1);
 
@@ -43,12 +42,15 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_):p_base(p_ba
     //subExampleObstaclePose = nh.subscribe("obstacle_pose",1,&RosWrapper::cbObstacles,this);
     subDetectedObjects= nh.subscribe("/detected_objects",1,&RosWrapper::cbDetectedObjects,this);
 
+    // Load lanemap
+
 }
 /**
  * @brief update the fitting model only. It does not directly update the obstaclePath in p_base
  */
 void RosWrapper::updatePredictionModel() {
 
+    // 1. Update the fitting model
     for (auto it = p_base->indexedPredictorSet.begin();
             it !=  p_base->indexedPredictorSet.end();it++){
         // First, check whether the observation has expired
@@ -65,6 +67,15 @@ void RosWrapper::updatePredictionModel() {
 
     }
 
+    // 2. Upload the obstacle prediction over horizon
+
+    // Update p_base. the prediction model is being updated in ROS Wrapper
+    int nStep  = param.l_param.horizon/param.l_param.tStep; // the division should be integer
+    VectorXd tSeq(nStep);
+    tSeq.setLinSpaced(nStep,curTime(),curTime()+param.l_param.horizon);
+    p_base->uploadPrediction(tSeq, param.l_param.obstRadiusNominal);
+
+
 }
 
 
@@ -76,6 +87,7 @@ void RosWrapper::updateParam(Param &param_) {
     // Do some parsing here from reading from ros launch
     ROS_INFO("Reading the parameters from launch..");
     nh.param<string>("world_frame_id",worldFrameId,"/map");
+    nh.param<string>("snu_frame_id",SNUFrameId,"/SNU");
     // Own
     planningPath.header.frame_id = worldFrameId;
 
@@ -103,6 +115,7 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<double>("local_planner/max_steer",param_.l_param.maxSteer,M_PI/30);
     nh.param<double>("local_planner/max_accel",param_.l_param.maxAccel,3);
     nh.param<double>("local_planner/min_accel",param_.l_param.minAccel,-1);
+    bool isUseSimTimeMode = false;
 
 
     // predictor
@@ -118,7 +131,18 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<double>("initial_goal/y",goal_y,0.0); // just fix 1
     nh.param<double>("goal_thres",param_.l_param.goalReachingThres,0.4); // just fix 1
 
-    ROS_INFO("[SNU_PLANNER/RosWrapper] received goal [%f,%f]",goal_x,goal_y);
+    nh.param<bool>("use_nominal_obstacle_rad",use_nominal_obstacle_radius,false); // just fix 1
+    if(use_nominal_obstacle_radius)
+        ROS_INFO("[SNU_PLANNER/RosWrapper] We assume fixed-size obstacle.");
+
+    ROS_INFO("[SNU_PLANNER/RosWrapper] received global goal [%f,%f]",goal_x,goal_y);
+
+
+
+    while (ros::Time::now().toSec()== 0 ){
+        ROS_WARN("[SNU_PLANNER/RosWrapper] current ros time is zero. is running in sim time mode? Idling until valid ros clock");
+        ros::Rate(20).sleep();
+    }
     ROS_INFO("[SNU_PLANNER/RosWrapper] Initialized clock with ROS time %f",ros::Time::now().toSec());
     t0 = ros::Time::now().toSec();
 
@@ -127,6 +151,7 @@ void RosWrapper::updateParam(Param &param_) {
     goalState.y = goal_y;
     p_base->setDesiredState(goalState);
 
+    param = param_;
 }
 
 /**
@@ -283,21 +308,28 @@ void RosWrapper::prepareROSmsgs() {
     }
 
     // 2. topics which is not obtained from planning thread
-    // TODO multiple obstacles
+    visualization_msgs::MarkerArray observations;
+    int nsId = 0;
     for(auto idPredictor : p_base->indexedPredictorSet){
-        pubObservationMarker.publish(get<1>(idPredictor).get_obsrv_marker(worldFrameId));
+        observations.markers.push_back(get<1>(idPredictor).get_obsrv_marker(worldFrameId,nsId++));
     }
 
-    obstaclePrediction.markers.clear();
+    ROS_DEBUG("Number of predictor = %d",p_base->indexedPredictorSet.size());
+    ROS_DEBUG("last id  = %d",nsId);
 
+    pubObservationMarker.publish(observations);
+
+    obstaclePrediction.markers.clear();
+    nsId = 0;
     for(auto obstPath : p_base->getCurObstaclePathArray().obstPathArray){
         // per a obstacle path, make up marker array
-        // TODO shope should be rigorously considered
+        // TODO shape should be rigorously considered
         visualization_msgs::Marker m_obstacle_rad;
         m_obstacle_rad.header.frame_id = worldFrameId;
         m_obstacle_rad.pose.orientation.w = 1.0;
         m_obstacle_rad.color.r = 1.0, m_obstacle_rad.color.a = 0.8;
         m_obstacle_rad.type = 3;
+        m_obstacle_rad.ns = to_string(nsId);
         int id = 0 ;
         for (auto pnt : obstPath.obstPath){
             m_obstacle_rad.id = id++;
@@ -309,6 +341,7 @@ void RosWrapper::prepareROSmsgs() {
             m_obstacle_rad.scale.z = 0.3;
             obstaclePrediction.markers.push_back(m_obstacle_rad);
         }
+        nsId++;
     }
 
     pubPredictionArray.publish(obstaclePrediction);
@@ -326,6 +359,36 @@ void RosWrapper::publish() {
         pubCurCmd.publish(p_base->getCurInput(curTime()));
     pubPath.publish(planningPath);
     pubCorridorSeq.publish(corridorSeq);
+
+    // Tranform broadcasting the tf of the current car w.r.t the first received tf
+
+    if (isFrameRefReceived) {
+        // send T01
+        auto pose = p_base->getCurPose();
+
+        tf::Transform transform;
+        transform.setOrigin( tf::Vector3(pose.pose.position.x, pose.pose.position.y, pose.pose.position.z) );
+        tf::Quaternion q;
+        q.setX(pose.pose.orientation.x);
+        q.setY(pose.pose.orientation.y);
+        q.setZ(pose.pose.orientation.z);
+        q.setW(pose.pose.orientation.w);
+        transform.setRotation(q);
+
+        tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(),SNUFrameId, "car_base_link"));
+
+        // send Tw0
+        transform.setOrigin( tf::Vector3(p_base->Tw0.translation()(0),
+                p_base->Tw0.translation()(1),
+                p_base->Tw0.translation()(2)));
+        auto qd = Eigen::Quaterniond(p_base->Tw0.rotation());
+        q.setX(qd.x());
+        q.setY(qd.y());
+        q.setZ(qd.z());
+        q.setW(qd.w());
+        transform.setRotation(q);
+        tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(),worldFrameId,SNUFrameId));
+    }
 }
 
 /**
@@ -345,20 +408,37 @@ void RosWrapper::runROS() {
 
 void RosWrapper::cbDetectedObjects(const driving_msgs::DetectedObjectArray &objectsArray) {
     for(auto object : objectsArray.objects) {
+        geometry_msgs::Point position = object.odom.pose.pose.position;
+        bool valueCheck = true;
+        valueCheck = not(position.x == 0 and position.y == 0 and position.z == 0 );
+        if (not valueCheck)
+            continue;
+
         uint id = object.id;
 
         // Does this id have its predictor?
-        auto predictorOwner = find_if(p_base->indexedPredictorSet.begin(), p_base->indexedPredictorSet.end(),bind(comparePredictorId,placeholders::_1,id)
-                                   );
+        auto predictorOwner = find_if(p_base->indexedPredictorSet.begin(),
+                p_base->indexedPredictorSet.end(),bind(comparePredictorId,placeholders::_1,id));
         // already a predictor owns the id
+        Vector3f updateDimension;
+        if (use_nominal_obstacle_radius){
+            updateDimension.x() = param.l_param.obstRadiusNominal;
+            updateDimension.y() = param.l_param.obstRadiusNominal;
+            updateDimension.z() = param.l_param.obstRadiusNominal;
+        }else{
+            updateDimension.x() = object.dimensions.x;
+            updateDimension.y() = object.dimensions.y;
+            updateDimension.z() = object.dimensions.z;
+        }
+
         if (predictorOwner != p_base->indexedPredictorSet.end()) {
             get<1>(*predictorOwner).update_observation(curTime(), object.odom.pose.pose.position,
-                    Vector3f(object.dimensions.x,object.dimensions.y,object.dimensions.z));
+                    updateDimension);
         } else {
             // no owner found, we create predictor and attach it
             auto newPredictor = make_tuple(id, p_base->predictorBase);
             get<1>(newPredictor).update_observation(curTime(), object.odom.pose.pose.position,
-                    Vector3f(object.dimensions.x,object.dimensions.y,object.dimensions.z));
+                    updateDimension);
             p_base->indexedPredictorSet.push_back(newPredictor);
             ROS_INFO("[SNU_PLANNER/RosWrapper] Predictor attached for obstacle id = %d", id);
         }
@@ -371,40 +451,81 @@ void RosWrapper::cbDetectedObjects(const driving_msgs::DetectedObjectArray &obje
  * @param dataPtr
  */
 void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr) {
-    // Just an example
-    // TODO you have to decide whether the update in this callback could interrupt planning thread
+    // First, generate the ref frame based on the first-received pose
+    if (not isFrameRefReceived){
+        if (dataPtr->pose.position.x == 0 and dataPtr->pose.position.y == 0 ){
+            ROS_ERROR("[SNU_PLANNER/RosWrapper] The first received pose is just zero. It is ignored as the ref tf");
+            return;
+        }
+        p_base->Tw0.setIdentity();
+        Eigen::Quaterniond quat;
+        Eigen::Vector3d transl;
+
+        transl(0) = dataPtr->pose.position.x;
+        transl(1) = dataPtr->pose.position.y;
+        transl(2) = dataPtr->pose.position.z;
+        quat.x() =  dataPtr->pose.orientation.x;
+        quat.y() =  dataPtr->pose.orientation.y;
+        quat.z() =  dataPtr->pose.orientation.z;
+        quat.w() =  dataPtr->pose.orientation.w;
+
+        p_base->Tw0.translate(transl);
+        p_base->Tw0.rotate(quat);
+
+        ROS_INFO("[SNU_PLANNER/RosWrapper] Reference tf has been initialized with [%f,%f,%f,%f,%f,%f,%f]",
+                transl(0),transl(1),transl(2),quat.x(),quat.y(),quat.z(),quat.w());
+
+        isFrameRefReceived = true;
+    }
+
     if (isCarSpeedReceived)
-    if(mSet[0].try_lock()){
-        ROS_INFO_ONCE("[SNU_PLANNER/RosWrapper] First received car state");
-        CarState curState;
-        // make xy
-        curState.x = dataPtr->pose.position.x;
-        curState.y = dataPtr->pose.position.y;
+        if(mSet[0].try_lock()){
+            ROS_INFO_ONCE("[SNU_PLANNER/RosWrapper] First received car state");
 
-        // make theta
-        tf::Quaternion q;
-        q.setX(dataPtr->pose.orientation.x);
-        q.setY(dataPtr->pose.orientation.y);
-        q.setZ(dataPtr->pose.orientation.z);
-        q.setW(dataPtr->pose.orientation.w);
+            // Converting car pose w.r.t Tw0
+            auto poseOrig = dataPtr->pose;
+            SE3 Tw1  = DAP::pose_to_transform_matrix(poseOrig).cast<double>();
+            SE3 T01 = p_base->Tw0.inverse()*Tw1;
+            auto poseTransformed = DAP::transform_matrix_to_pose(T01.cast<float>());
+            // Update the pose information w.r.t Tw1
+            geometry_msgs::PoseStamped poseStamped;
+            poseStamped.header.frame_id = worldFrameId;
+            poseStamped.pose = poseTransformed;
+            p_base->setCurPose(poseStamped);
+            p_base->setCurTf(T01);
+            CarState curState;
+            // make xy
+            curState.x = poseTransformed.position.x;
+            curState.y = poseTransformed.position.y;
 
-        tf::Transform Twc; Twc.setRotation(q);
-        tf::Matrix3x3 Rwc = Twc.getBasis();
-        tf::Vector3 e1 = Rwc.getColumn(0);
-        double theta = atan2(e1.y(),e1.x());
-        curState.theta = theta;
+            // make theta
+            tf::Quaternion q;
+            q.setX(poseTransformed.orientation.x);
+            q.setY(poseTransformed.orientation.y);
+            q.setZ(poseTransformed.orientation.z);
+            q.setW(poseTransformed.orientation.w);
 
-        // make v
-        curState.v = speed; // reverse gear = negative
+            tf::Transform Twc; Twc.setRotation(q);
 
-        ROS_DEBUG("Current car state (x,y,theta(degree),v) : [%f,%f,%f,%f]",curState.x,curState.y,curState.theta*180/M_PI,curState.v);
+            tf::Matrix3x3 Rwc = Twc.getBasis();
+            tf::Vector3 e1 = Rwc.getColumn(0);
+            double theta = atan2(e1.y(),e1.x());
+            curState.theta = theta;
 
-        p_base->setCarState(curState);
-        mSet[0].unlock();
-        isCarPoseCovReceived = true;
-//        ROS_INFO("[RosWrapper] car pose update");
-    }else{
+            // make v
+            curState.v = speed; // reverse gear = negative
+
+            ROS_DEBUG("Current car state (x,y,theta(degree),v) : [%f,%f,%f,%f]",curState.x,curState.y,curState.theta*180/M_PI,curState.v);
+
+            p_base->setCarState(curState);
+            mSet[0].unlock();
+            isCarPoseCovReceived = true;
+    //        ROS_INFO("[RosWrapper] car pose update");
+        }else{
 //        ROS_WARN("[RosWrapper] callback for CarPoseCov locked by planner. Passing update");
+        }
+    else{
+        ROS_WARN("[SNU_PLANNER/RosWrapper] Car speed is not being received. CarState will not be updated");
     }
 }
 
@@ -488,6 +609,8 @@ bool RosWrapper::isAllInputReceived() {
     return
 //              isGlobalMapReceived and
               isLocalMapReceived and
+              isCarSpeedReceived and
+              isFrameRefReceived and
               isCarPoseCovReceived;
 }
 
@@ -551,14 +674,7 @@ bool Wrapper::plan(double tTrigger){
     if (gpPassed) {
         ROS_INFO_ONCE("[SNU_PLANNER/Wrapper] global planner passed. Start local planning ");
         updateCorrToBase();
-
-        // Update p_base. the prediction model is being updated in ROS Wrapper
-        int nStep  = param.l_param.horizon/param.l_param.tStep; // the division should be integer
-        VectorXd tSeq(nStep);
-        tSeq.setLinSpaced(nStep,tTrigger,tTrigger+param.l_param.horizon);
-        p_base_shared->uploadPrediction(tSeq, param.l_param.obstRadiusNominal);
-
-        // Call local planner
+       // Call local planner
         bool lpPassed =false ;
         // lpPassed = lp_ptr->plan(tTrigger); // TODO
 
@@ -620,6 +736,9 @@ void Wrapper::runPlanning() {
     bool isPlanPossible = false;
     bool isPlanSuccess = false;
     while (ros::ok()){
+
+
+
         // First, we have to check all the inputs are received for planning
         isPlanPossible = ros_wrapper_ptr->isAllInputReceived();
         if (isPlanPossible){
