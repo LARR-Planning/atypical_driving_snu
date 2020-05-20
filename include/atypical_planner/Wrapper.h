@@ -46,6 +46,8 @@ namespace Planner{
         bool isCarPoseCovReceived = false;
         bool isCarSpeedReceived = false;
         bool isFrameRefReceived = false;
+        bool isLaneReceived = false;
+
 
         /**
          * Operation mode
@@ -84,7 +86,7 @@ namespace Planner{
          */
         ros::Subscriber subCarPoseCov; /**< car state from KAIST */
         ros::Subscriber subDesiredCarPose; // desired pose from user
-        ros::Subscriber subGlobalMap; // global map from ????
+        ros::Subscriber subGlobalMap; // global msap from ????
         ros::Subscriber subLocalMap; // local map from LIDAR????
         ros::Subscriber subCarSpeed; //
         ros::Subscriber subExampleObstaclePose; //

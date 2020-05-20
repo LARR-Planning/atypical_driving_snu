@@ -11,7 +11,8 @@ namespace Predictor{
     class TargetManager{
         private:
             bool isNoPredictionWarnEmitted = false;
-            std::list<std::tuple<float,Vector2f>> observations; // (t,Point) 
+            std::list<std::tuple<float,Vector2f>> observations; // (t,Point)
+
             Eigen::VectorXf fit_coeff_x;
             Eigen::VectorXf fit_coeff_y;
 

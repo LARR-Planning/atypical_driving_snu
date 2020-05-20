@@ -74,7 +74,7 @@ void cbCarPoseCov(const nav_msgs::Odometry& pose_ned){
 
     tf::Quaternion q;
     q.setX(curPose.pose.orientation.x);
-    q.setY(curPose.pose.orientation.y);
+    q.setY(curPose.pose.orientation.y);ros::Time::now().toSec();
     q.setZ(curPose.pose.orientation.z);
     q.setW(curPose.pose.orientation.w);
 

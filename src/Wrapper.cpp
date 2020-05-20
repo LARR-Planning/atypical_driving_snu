@@ -42,6 +42,8 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_):p_base(p_ba
     //subExampleObstaclePose = nh.subscribe("obstacle_pose",1,&RosWrapper::cbObstacles,this);
     subDetectedObjects= nh.subscribe("/detected_objects",1,&RosWrapper::cbDetectedObjects,this);
 
+    // Load lanemap
+
 }
 /**
  * @brief update the fitting model only. It does not directly update the obstaclePath in p_base
@@ -113,6 +115,7 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<double>("local_planner/max_steer",param_.l_param.maxSteer,M_PI/30);
     nh.param<double>("local_planner/max_accel",param_.l_param.maxAccel,3);
     nh.param<double>("local_planner/min_accel",param_.l_param.minAccel,-1);
+    bool isUseSimTimeMode = false;
 
 
     // predictor
@@ -133,6 +136,13 @@ void RosWrapper::updateParam(Param &param_) {
         ROS_INFO("[SNU_PLANNER/RosWrapper] We assume fixed-size obstacle.");
 
     ROS_INFO("[SNU_PLANNER/RosWrapper] received global goal [%f,%f]",goal_x,goal_y);
+
+
+
+    while (ros::Time::now().toSec()== 0 ){
+        ROS_WARN("[SNU_PLANNER/RosWrapper] current ros time is zero. is running in sim time mode? Idling until valid ros clock");
+        ros::Rate(20).sleep();
+    }
     ROS_INFO("[SNU_PLANNER/RosWrapper] Initialized clock with ROS time %f",ros::Time::now().toSec());
     t0 = ros::Time::now().toSec();
 
@@ -353,7 +363,7 @@ void RosWrapper::publish() {
     // Tranform broadcasting the tf of the current car w.r.t the first received tf
 
     if (isFrameRefReceived) {
-
+        // send T01
         auto pose = p_base->getCurPose();
 
         tf::Transform transform;
@@ -365,7 +375,19 @@ void RosWrapper::publish() {
         q.setW(pose.pose.orientation.w);
         transform.setRotation(q);
 
-        tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), worldFrameId, "car_base_link"));
+        tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(),SNUFrameId, "car_base_link"));
+
+        // send Tw0
+        transform.setOrigin( tf::Vector3(p_base->Tw0.translation()(0),
+                p_base->Tw0.translation()(1),
+                p_base->Tw0.translation()(2)));
+        auto qd = Eigen::Quaterniond(p_base->Tw0.rotation());
+        q.setX(qd.x());
+        q.setY(qd.y());
+        q.setZ(qd.z());
+        q.setW(qd.w());
+        transform.setRotation(q);
+        tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(),worldFrameId,SNUFrameId));
     }
 }
 
@@ -395,8 +417,8 @@ void RosWrapper::cbDetectedObjects(const driving_msgs::DetectedObjectArray &obje
         uint id = object.id;
 
         // Does this id have its predictor?
-        auto predictorOwner = find_if(p_base->indexedPredictorSet.begin(), p_base->indexedPredictorSet.end(),bind(comparePredictorId,placeholders::_1,id)
-                                   );
+        auto predictorOwner = find_if(p_base->indexedPredictorSet.begin(),
+                p_base->indexedPredictorSet.end(),bind(comparePredictorId,placeholders::_1,id));
         // already a predictor owns the id
         Vector3f updateDimension;
         if (use_nominal_obstacle_radius){
