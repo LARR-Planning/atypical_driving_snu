@@ -30,21 +30,21 @@ catkin_package(
 )
 
 add_executable(atypical_driving_test test/main.cpp ${SNU_PLANNER_SRC} src/optimization_module/math.cpp)
-target_link_libraries(atypical_driving_test ${catkin_LIBRARIES} )
+target_link_libraries(atypical_driving_test ${catkin_LIBRARIES} -lstdc++fs )
 
 
 add_executable(virtual_environment_generator test/virtual_environment_generator.cpp ${SNU_PLANNER_SRC})
-target_link_libraries(virtual_environment_generator ${catkin_LIBRARIES})
+target_link_libraries(virtual_environment_generator ${catkin_LIBRARIES} -lstdc++fs)
 
 add_executable(lane_tester test/LaneTest/main.cpp ${SNU_PLANNER_SRC})
-target_link_libraries(lane_tester ${catkin_LIBRARIES})
+target_link_libraries(lane_tester ${catkin_LIBRARIES} -lstdc++fs)
 
 add_executable(integration_server test/IntegrationTest/server_main.cpp ${SNU_PLANNER_SRC})
-target_link_libraries(integration_server ${catkin_LIBRARIES})
-
+target_link_libraries(integration_server ${catkin_LIBRARIES} -lstdc++fs)
 
 add_executable(integration_client test/IntegrationTest/client_main.cpp ${SNU_PLANNER_SRC})
-target_link_libraries(integration_client ${catkin_LIBRARIES})
+target_link_libraries(integration_client ${catkin_LIBRARIES} -lstdc++fs)
+
 
 add_executable(keti_client test/KetiTest/client_main.cpp ${SNU_PLANNER_SRC})
 target_link_libraries(keti_client ${catkin_LIBRARIES})
