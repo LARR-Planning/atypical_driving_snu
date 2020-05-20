@@ -176,6 +176,8 @@ namespace Planner {
         shared_ptr<octomap::OcTree> octo_global_ptr;
         shared_ptr<octomap::OcTree> octo_local_ptr;
         CarState cur_state;
+        SE3 cur_transform; // current tf of the car w.r.t the Tw0
+        geometry_msgs::PoseStamped cur_pose; // current pose of the car w.r.t the Tw0
         CarState desired_state; //jungwon
         // to be updated by planners
         LanePath lane_path; //jungwon navigation planning output from Dabin Kim
@@ -212,13 +214,16 @@ namespace Planner {
         octomap::OcTree* getGlobalOctoPtr() {return octo_global_ptr.get();}
         octomap::OcTree* getLocalOctoPtr() {return octo_local_ptr.get();}
         MPCResultTraj getMPCResultTraj() {return mpc_result;}
+        geometry_msgs::PoseStamped getCurPose() {return cur_pose;};
+
 
         // Set from subscriber
         void setCarState(const CarState& carState_) { cur_state = carState_;};
         void setDesiredState(const CarState& desiredState_) {desired_state = desiredState_;};
         void setGlobalMap(octomap::OcTree* octoGlobalPtr_) {octo_global_ptr.reset(octoGlobalPtr_);};
         void setLocalMap(octomap::OcTree* octoLocalPtr_) {octo_local_ptr.reset(octoLocalPtr_);};
-
+        void setCurPose(const geometry_msgs::PoseStamped poseStamped) {cur_pose = poseStamped;};
+        void setCurTf(const SE3& T01) {cur_transform = T01;};
         // Set from planner
         void setLanePath(const LanePath& lane_path_in_) {lane_path = lane_path_in_;}
         void setSkeletonPath(const vector<Point>& skeleton_in_) {skeleton_path = skeleton_in_;}
@@ -259,6 +264,7 @@ namespace Planner {
             }
             **/
             // ver 1
+            // TODO check the shape
             for(auto idPredictor : indexedPredictorSet){
 
                 auto predictor = get<1>(idPredictor);

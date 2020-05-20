@@ -110,7 +110,7 @@ namespace Planner{
          */
         void publish();
         void prepareROSmsgs();
-
+        void predictionUpdate();
     public:
         RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_);
         void updateParam(Param& param_);

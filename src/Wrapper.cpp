@@ -350,14 +350,23 @@ void RosWrapper::publish() {
     pubPath.publish(planningPath);
     pubCorridorSeq.publish(corridorSeq);
 
-    // Tranform broadcasting
+    // Tranform broadcasting the tf of the current car w.r.t the first received tf
 
     if (isFrameRefReceived) {
 
-        tf_br.sendTransform()
+        auto pose = p_base->getCurPose();
+
+        tf::Transform transform;
+        transform.setOrigin( tf::Vector3(pose.pose.position.x, pose.pose.position.y, pose.pose.position.z) );
+        tf::Quaternion q;
+        q.setX(pose.pose.orientation.x);
+        q.setY(pose.pose.orientation.y);
+        q.setZ(pose.pose.orientation.z);
+        q.setW(pose.pose.orientation.w);
+        transform.setRotation(q);
+
+        tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), worldFrameId, "car_base_link"));
     }
-
-
 }
 
 /**
@@ -422,9 +431,13 @@ void RosWrapper::cbDetectedObjects(const driving_msgs::DetectedObjectArray &obje
 void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr) {
     // First, generate the ref frame based on the first-received pose
     if (not isFrameRefReceived){
+        if (dataPtr->pose.position.x == 0 and dataPtr->pose.position.y == 0 ){
+            ROS_ERROR("[SNU_PLANNER/RosWrapper] The first received pose is just zero. It is ignored as the ref tf");
+            return;
+        }
         p_base->Tw0.setIdentity();
-        Eigen::Quaternionf quat;
-        Eigen::Vector3f transl;
+        Eigen::Quaterniond quat;
+        Eigen::Vector3d transl;
 
         transl(0) = dataPtr->pose.position.x;
         transl(1) = dataPtr->pose.position.y;
@@ -437,7 +450,7 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
         p_base->Tw0.translate(transl);
         p_base->Tw0.rotate(quat);
 
-        ROS_INFO("[SNU_PLANNER/RosWrapper] Reference tf has benn initialized with [%f,%f,%f,%f,%f,%f,%f]",
+        ROS_INFO("[SNU_PLANNER/RosWrapper] Reference tf has been initialized with [%f,%f,%f,%f,%f,%f,%f]",
                 transl(0),transl(1),transl(2),quat.x(),quat.y(),quat.z(),quat.w());
 
         isFrameRefReceived = true;
@@ -449,10 +462,15 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
 
             // Converting car pose w.r.t Tw0
             auto poseOrig = dataPtr->pose;
-            SE3 Tw1  = DAP::pose_to_transform_matrix(poseOrig);
+            SE3 Tw1  = DAP::pose_to_transform_matrix(poseOrig).cast<double>();
             SE3 T01 = p_base->Tw0.inverse()*Tw1;
-            auto poseTransformed = DAP::transform_matrix_to_pose(T01);
-
+            auto poseTransformed = DAP::transform_matrix_to_pose(T01.cast<float>());
+            // Update the pose information w.r.t Tw1
+            geometry_msgs::PoseStamped poseStamped;
+            poseStamped.header.frame_id = worldFrameId;
+            poseStamped.pose = poseTransformed;
+            p_base->setCurPose(poseStamped);
+            p_base->setCurTf(T01);
             CarState curState;
             // make xy
             curState.x = poseTransformed.position.x;
