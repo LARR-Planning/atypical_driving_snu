@@ -31,6 +31,7 @@ namespace Planner{
         bool isCurTrajFeasible(); // TODO
         bool intersect(Point i0, Point i1, Point j0, Point j1);
         int ccw(Point a, Point b, Point c);
+        static std::array<double, 4> boxTransform(const SE3& Tab, const std::array<double, 4>& box);
     };
 
 }

@@ -20,9 +20,6 @@ GlobalPlanner::GlobalPlanner(const Planner::ParamGlobal &g_param,
 
     dimx = (int) round((grid_x_max - grid_x_min) / param.grid_resolution) + 1;
     dimy = (int) round((grid_y_max - grid_y_min) / param.grid_resolution) + 1;
-
-
-
 }
 
 /**
@@ -118,7 +115,8 @@ bool GlobalPlanner::plan(double t) {
         point_y = left[i].y;
 
         for(int iter = 0; iter < step; iter++) {
-            octomap::point3d point(point_x, point_y, (param.car_z_min + param.car_z_max) / 2);
+            Vector3d transformed_vector = applyTransform(p_base->Tw0, Vector3d(point_x, point_y, 0)); //SNU to world transform
+            octomap::point3d point(transformed_vector(0), transformed_vector(1), (param.car_z_min + param.car_z_max) / 2);
             p_base->getLocalOctoPtr()->updateNode(point, true);
             point_x += point_dx;
             point_y += point_dy;
@@ -141,7 +139,8 @@ bool GlobalPlanner::plan(double t) {
         point_y = right[i].y;
 
         for(int iter = 0; iter < step; iter++) {
-            octomap::point3d point(point_x, point_y, (param.car_z_min + param.car_z_max) / 2);
+            Vector3d transformed_vector = applyTransform(p_base->Tw0, Vector3d(point_x, point_y, 0)); //SNU to world transform
+            octomap::point3d point(transformed_vector(0), transformed_vector(1), (param.car_z_min + param.car_z_max) / 2);
             p_base->getLocalOctoPtr()->updateNode(point, true);
             point_x += point_dx;
             point_y += point_dy;
@@ -191,6 +190,10 @@ bool GlobalPlanner::plan(double t) {
         for (int j = j_min; j <= j_max; j++) {
             x = i * param.grid_resolution + grid_x_min;
             y = j * param.grid_resolution + grid_y_min;
+
+            Vector3d transformed_vector = applyTransform(p_base->Tw0, Vector3d(x, y, 0)); //transform SNU to world
+            x = transformed_vector(0);
+            y = transformed_vector(1);
 
             if (x - car_radius < param.world_x_min) {
                 box[0] = param.world_x_min;
@@ -312,7 +315,7 @@ bool GlobalPlanner::plan(double t) {
         x_curr = state_curr.x;
         y_curr = state_curr.y;
 
-        std::array<double, 4> box_curr;
+        std::array<double, 4> box_curr, box_transformed;
         auto state_next = curSkeletonPath[m + 1];
         x_next = state_next.x;
         y_next = state_next.y;
@@ -333,9 +336,10 @@ bool GlobalPlanner::plan(double t) {
 //        box.emplace_back(round(std::max(y,y_next) / param.box_xy_res) * param.box_xy_res); //TODO: consider this
 
         // Check initial box
+        box_transformed = boxTransform(p_base->Tw0, box_curr); // transform SNU to world
         for (octomap::OcTree::leaf_bbx_iterator it = p_base->getLocalOctoPtr()->begin_leafs_bbx(
-                octomap::point3d(box_curr[0], box_curr[1], param.car_z_min),
-                octomap::point3d(box_curr[2], box_curr[3], param.car_z_max)),
+                octomap::point3d(box_transformed[0], box_transformed[1], param.car_z_min),
+                octomap::point3d(box_transformed[2], box_transformed[3], param.car_z_max)),
                      end = p_base->getLocalOctoPtr()->end_leafs_bbx(); it != end; ++it) {
             if (p_base->getLocalOctoPtr()->isNodeOccupied(*it)) {
                 printf("[GlobalPlanner] ERROR: Invalid initial trajectory. Obstacle invades initial trajectory");
@@ -359,9 +363,10 @@ bool GlobalPlanner::plan(double t) {
                    && box_cand[2] - box_cand[0] < param.box_max_size
                    && box_cand[3] - box_cand[1] < param.box_max_size) {
                 bool isObstacleInBox = false;
+                box_transformed = boxTransform(p_base->Tw0, box_update); // transform SNU to world
                 for (octomap::OcTree::leaf_bbx_iterator it = p_base->getLocalOctoPtr()->begin_leafs_bbx(
-                        octomap::point3d(box_update[0], box_update[1], param.car_z_min),
-                        octomap::point3d(box_update[2], box_update[3], param.car_z_max)),
+                        octomap::point3d(box_transformed[0], box_transformed[1], param.car_z_min),
+                        octomap::point3d(box_transformed[2], box_transformed[3], param.car_z_max)),
                              end = p_base->getLocalOctoPtr()->end_leafs_bbx(); it != end; ++it) {
                     if (p_base->getLocalOctoPtr()->isNodeOccupied(*it)) {
                         isObstacleInBox = true;
@@ -455,6 +460,8 @@ bool GlobalPlanner::plan(double t) {
             }
             current_index = path_iter + count / 2;
 
+
+            //TODO: Do not use this code! update with Yunwoo's branch
             timeSegment = 0;
             double delta_x, delta_y, box_width, time_coefficient;
             for(int i = prev_index; i < current_index; i++){
@@ -533,4 +540,17 @@ void GlobalPlanner::updateCorridorToBase() {
     p_base->setCorridorSeq(curCorridorSeq); // just an example
     p_base->setSkeletonPath(curSkeletonPath); //TODO: delete this after debugging
     p_base->setSearchRange(search_range);
+}
+
+std::array<double, 4> GlobalPlanner::boxTransform(const SE3& Tab, const std::array<double, 4>& box){
+    std::array<double, 4> box_transformed;
+    Vector3d transformed_vector1 = applyTransform(Tab, Vector3d(box[0], box[1], 0)); //transform SNU to world
+    Vector3d transformed_vector2 = applyTransform(Tab, Vector3d(box[2], box[3], 0)); //transform SNU to world
+
+    box_transformed[0] = transformed_vector1(0);
+    box_transformed[1] = transformed_vector1(1);
+    box_transformed[2] = transformed_vector2(0);
+    box_transformed[3] = transformed_vector2(1);
+
+    return box_transformed;
 }
