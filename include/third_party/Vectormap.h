@@ -60,6 +60,13 @@ namespace Planner{
             return nodeNavPath;
         }
 
+        void setWidth(double width){
+            for (auto & lane :lanes){
+                    lane.width = width;
+                }
+            }
+
+
 
     };
 }

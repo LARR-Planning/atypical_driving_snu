@@ -23,12 +23,21 @@
     <arg name="nominal_period"     default="3"/> <!--preirod = horizon -->
     <arg name="planning_dt"     default="0.02"/> <!--?-->
 
-    <arg name="initial_goal/x" value="20" />
-    <arg name="initial_goal/y" value="68" />
+    <arg name="initial_goal/x" value="332260" />
+    <arg name="initial_goal/y" value="4138435" />
 
 
     <arg name ="use_nominal_obstacle_rad" value="true"/> <!-- If this is true, we don't believe the dimension info of message-->
     <arg  name="obstacle_radius" value="0.8" />
+
+    <arg name = "lane_width" value = "2.5"/>
+
+    <arg name="is_world_snu_frame" value="true"/> <!-- If this is true, the world bound -->
+    <arg name="world_x_min" value="-100" />
+    <arg name="world_y_min" value="-100" />
+    <arg name="world_x_max" value="100" />
+    <arg name="world_y_max" value="100" />
+
     <!-- Arguments End -->
 
     <node pkg="rosbag" type="play" name="rosbag_record_diag" args="--loop $(find atypical_driving)/worlds/$(arg bagfile)" if="$(arg playBagFile)">
@@ -39,6 +48,19 @@
     </node>
 
 
+    <node pkg="nodelet" type="nodelet" name="pcl_manager" args="manager" output="screen" />
+
+<!--    &lt;!&ndash; Run a passthrough filter to clean NaNs &ndash;&gt;-->
+<!--    <node pkg="nodelet" type="nodelet" name="passthrough" args="load pcl/PassThrough pcl_manager" output="screen">-->
+<!--        <remap from="~input" to="/velodyne_points_keti" />-->
+<!--        <rosparam>-->
+<!--            filter_field_name: x-->
+<!--            filter_limit_min: -1.2-->
+<!--            filter_limit_max: 1.2-->
+<!--            filter_limit_negative: True-->
+<!--        </rosparam>-->
+<!--    </node>-->
+
     <node pkg="tf" type="static_transform_publisher" name="link2lidar"
           args="0 0 0.2 0 0 0   car_base_link velodyne 100"/>
 
@@ -46,10 +68,12 @@
     <node pkg="octomap_server" type="octomap_server_node" name="octomap_server" output="screen" >
         <param name="resolution"                 value="0.3" />
         <param name="frame_id"                   value="$(arg snu_frame_id)" />
+
+
         <param name="height_map"                 value="true"/>
         <param name="track_changes" value="true"/>
         <param name="sensor_model/max_range" value="20.0" />
-        <param name="sensor_model/min_range" value="2.0" />
+        <param name="sensor_model/min_range" value="3.0" />
 
         <!--Should be carefully chosen -->
 <!--        <param name="pointcloud_min_z" value="-0.7" />-->
@@ -67,12 +91,16 @@
         <param name="sensor_model/min" value="0.4" />
         <param name="sensor_model/max" value="0.7" />
         <remap from="cloud_in" to="/velodyne_points"/>
+
+        <remap from="octomap_binary" to="/atypical_planning_test/local_map"/>
+
     </node>
 
 
     <node pkg="atypical_driving" type="integration_server" name="atypical_planning_test" output="screen">
         <param name="snu_frame_id" value="$(arg snu_frame_id)"/>
 
+        <param name = "octomap_gen_frame_id" value="SNU" /> <!-- The frame id of octomap map or SNU-->
 
         <param name = "lane_csv_file" value="$(find atypical_driving)/waypoint.csv" />
 
@@ -83,13 +111,15 @@
         <param name="global_planner/car_z_max" value="1.0" />
         <param name="global_planner/car_speed" value="$(arg nominal_speed)" />
         <param name="global_planner/road_width" value="4.0" />
-        <param name="global_planner/world_x_min" value="-10" />
-        <param name="global_planner/world_y_min" value="-1" />
-        <param name="global_planner/world_x_max" value="35" />
-        <param name="global_planner/world_y_max" value="80" />
+        <param name="global_planner/world_x_min" value="$(arg world_x_min)" />
+        <param name="global_planner/world_y_min" value="$(arg world_y_min)" />
+        <param name="global_planner/world_x_max" value="$(arg world_x_max)" />
+        <param name="global_planner/world_y_max" value="$(arg world_y_max)" />
         <param name="global_planner/grid_resolution" value="0.5" />
         <param name="global_planner/box_resolution" value="0.3" />
         <param name="global_planner/box_max_size" value="10" />
+        <param name="global_planner/is_world_snu_frame" value="$(arg is_world_snu_frame)" />
+
         <param name="local_planner/horizon" value="$(arg nominal_period)" />
         <param name="local_planner/obstacle_radius_nominal" value="$(arg obstacle_radius)" />
         <param name="local_planner/ts" value="$(arg planning_dt)" />
@@ -107,7 +137,7 @@
     </node>
 
     <node pkg="atypical_driving" type="keti_client" name="atypical_driving_client" output="screen">
-
+        <param name="rejection_radius" value="1.6"/>
     </node>
 
 

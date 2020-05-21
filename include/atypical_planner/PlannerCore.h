@@ -76,6 +76,7 @@ namespace Planner {
         double box_resolution;
         double box_max_size;
         bool has_wall;
+        bool is_world_box_snu_frame;
     };
 
     struct ParamPredictor{
@@ -194,6 +195,8 @@ namespace Planner {
         bool isGPsolved = false;
         bool isLPsolved = false;
         SE3 Tw0; // Referance frame of our node every incoming data should be transformed
+        SE3 To0; // Transformation from  octomap ref frame to SNU
+        SE3 T0s; // SNU to rotation of the first pose
         parser parse_tool;
         // prediction module
         vector<Predictor::TargetManager> predictorSet; // TODO erase after indexed predictor
@@ -220,7 +223,14 @@ namespace Planner {
         geometry_msgs::PoseStamped getCurPose() {return cur_pose;};
         SE3 getCurTf() {return cur_transform;};
 
+
+
         // Set from subscriber
+
+        void setLaneWidth(double width) {
+            lane_path.setWidth(width);
+        }
+
         void setCarState(const CarState& carState_) { cur_state = carState_;};
         void setDesiredState(const CarState& desiredState_) {desired_state = desiredState_;};
         void setGlobalMap(octomap::OcTree* octoGlobalPtr_) {octo_global_ptr.reset(octoGlobalPtr_);};

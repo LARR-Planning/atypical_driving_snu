@@ -10,12 +10,19 @@ find_package(Eigen3 REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIRS})
 
 
+find_package(PCL 1.3 REQUIRED)
+include_directories(${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+
+
+
 find_package(octomap REQUIRED)
 include_directories(${OCTOMAP_INCLUDE_DIRS})
 link_libraries(${OCTOMAP_LIBRARIES})
 
 find_package(catkin REQUIRED COMPONENTS roscpp sensor_msgs tf tf2
-            geometry_msgs octomap_msgs message_generation nav_msgs message_generation driving_msgs
+            geometry_msgs octomap_msgs message_generation nav_msgs message_generation driving_msgs pcl_ros
             )
 
 include_directories(include ${catkin_INCLUDE_DIRS})
@@ -45,6 +52,5 @@ target_link_libraries(integration_server ${catkin_LIBRARIES} -lstdc++fs)
 add_executable(integration_client test/IntegrationTest/client_main.cpp ${SNU_PLANNER_SRC})
 target_link_libraries(integration_client ${catkin_LIBRARIES} -lstdc++fs)
 
-
 add_executable(keti_client test/KetiTest/client_main.cpp ${SNU_PLANNER_SRC})
-target_link_libraries(keti_client ${catkin_LIBRARIES})
+target_link_libraries(keti_client ${catkin_LIBRARIES} ${PCL_LIBRARIES})

@@ -25,16 +25,19 @@ bool Planner::comparePredictorId(const Predictor::IndexedPredictor &p1, int id )
 RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_):p_base(p_base_),nh("~"),mSet(mSet_){
 
     // Load lanemap from parser
-    string csv_file;
+    string csv_file; double laneWidth;
     nh.param<string>("lane_csv_file",csv_file,"catkin_ws/src/atypical_driving_snu/keti_pangyo_path3.csv");
-    p_base->parse_tool.get_Coorddata(csv_file);
-     p_base->parse_tool.display_result();
+    nh.param<double>("lane_width",laneWidth,2.5);
+    p_base->parse_tool.get_Coorddata(csv_file); // This parse only the center information
+//     p_base->parse_tool.display_result();
     // TODO is valid csv?
     p_base->setLanePath(p_base->parse_tool.get_lanepath());
+    p_base->setLaneWidth(laneWidth);
+    ROS_INFO("Setting %f as lane width ",laneWidth);
 
-    // Or just directly define here for easy test
     /**
-     LanePath lanePath;
+    // Or just directly define here for easy test
+    LanePath lanePath;
      LaneNode l1, l2;
      int N1 = 20, N2 = 10;
 
@@ -66,9 +69,8 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_):p_base(p_ba
      lanePath.lanes.emplace_back(l1);
      lanePath.lanes.emplace_back(l2);
      p_base->setLanePath(lanePath);
+    **/
 
-
-**/
      isLaneReceived =false; // Still false. After applying Tw0, it is true
      isLaneRawReceived = true;
 
@@ -82,6 +84,7 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_):p_base(p_ba
     pubPredictionArray = nh.advertise<visualization_msgs::MarkerArray>("prediction",1);
     pubCurCmd = nh.advertise<driving_msgs::VehicleCmd>("/vehicle_cmd",1);
     pubLaneNode = nh.advertise<nav_msgs::Path>("lane_path",1);
+    pubCurGoal = nh.advertise<geometry_msgs::PointStamped>("global_goal",1);
 
     // Subscriber
     subCarPoseCov = nh.subscribe("/current_pose",1,&RosWrapper::cbCarPoseCov,this);
@@ -135,9 +138,15 @@ void RosWrapper::updateParam(Param &param_) {
     ROS_INFO("Reading the parameters from launch..");
     nh.param<string>("world_frame_id",worldFrameId,"/map");
     nh.param<string>("snu_frame_id",SNUFrameId,"/SNU");
+    nh.param<string>("octomap_gen_frame_id",octomapGenFrameId,"/SNU");
+
     // Own
     planningPath.header.frame_id = SNUFrameId;
-
+    if (octomapGenFrameId == (SNUFrameId)){
+        ROS_INFO("[SNU_PLANNER/RosWrapper] SNU frame is identical with octomap frame.");
+        p_base->To0.setIdentity();
+        isOctomapFrameResolved = true;
+    }
 
     // global planner
     nh.param<double>("global_planner/horizon",param_.g_param.horizon,15);
@@ -153,6 +162,7 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<double>("global_planner/grid_resolution",param_.g_param.grid_resolution,0.5);
     nh.param<double>("global_planner/box_resolution",param_.g_param.box_resolution,0.3);
     nh.param<double>("global_planner/box_max_size",param_.g_param.box_max_size,10);
+    nh.param<bool>("global_planner/is_world_snu_frame",param_.g_param.is_world_box_snu_frame,false);
 
     // local planner
     nh.param<double>("local_planner/horizon",param_.l_param.horizon,5);
@@ -350,6 +360,14 @@ void RosWrapper::prepareROSmsgs() {
         }
         max_marker_id = marker_id - 1;
 
+        // Current goal
+
+        geometry_msgs::PointStamped curGoal;
+        curGoal.header.frame_id = SNUFrameId;
+        curGoal.point.x = p_base->getDesiredState().x;
+        curGoal.point.y = p_base->getDesiredState().y;
+        pubCurGoal.publish(curGoal);
+
 
 
         mSet[1].unlock();
@@ -544,18 +562,28 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
         transl(0) = dataPtr->pose.position.x;
         transl(1) = dataPtr->pose.position.y;
         transl(2) = dataPtr->pose.position.z;
+        // due to jungwon
         quat.x() =  dataPtr->pose.orientation.x;
         quat.y() =  dataPtr->pose.orientation.y;
         quat.z() =  dataPtr->pose.orientation.z;
         quat.w() =  dataPtr->pose.orientation.w;
 
+
         p_base->Tw0.translate(transl);
         p_base->Tw0.rotate(quat);
+        p_base->T0s.setIdentity();
+        p_base->T0s.rotate(quat);
 
+//        ROS_INFO("[SNU_PLANNER/RosWrapper] Reference tf has been initialized with [%f,%f,%f,%f,%f,%f,%f]",
+//                transl(0),transl(1),transl(2),quat.x(),quat.y(),quat.z(),quat.w());
         ROS_INFO("[SNU_PLANNER/RosWrapper] Reference tf has been initialized with [%f,%f,%f,%f,%f,%f,%f]",
-                transl(0),transl(1),transl(2),quat.x(),quat.y(),quat.z(),quat.w());
-
+                 transl(0),transl(1),transl(2),0.0,0.0,0.0,1.0);
         isFrameRefReceived = true;
+        if(not isOctomapFrameResolved){
+            ROS_INFO("[SNU_PLANNER/RosWrapper] seems that frame of octomap = map frame.");
+            p_base->To0 = p_base->Tw0;
+            isOctomapFrameResolved = true;
+        }
 
         // If ref frame was set, then transform the laneNode
         if (isLaneRawReceived){
@@ -586,7 +614,7 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
 
             // Converting car pose w.r.t Tw0
             auto poseOrig = dataPtr->pose;
-            SE3 Tw1  = DAP::pose_to_transform_matrix(poseOrig).cast<double>();
+            SE3 Tw1  = DAP::pose_to_transform_matrix(poseOrig).cast<double>(); // Tw1
             SE3 T01 = p_base->Tw0.inverse()*Tw1;
             auto poseTransformed = DAP::transform_matrix_to_pose(T01.cast<float>());
             // Update the pose information w.r.t Tw1
@@ -708,14 +736,34 @@ void RosWrapper::cbObstacles(const geometry_msgs::PoseStamped& obstPose) {
  * @return true if all the necessary inputs are received
  */
 bool RosWrapper::isAllInputReceived() {
-    return
-//              isGlobalMapReceived and
-              isLocalMapReceived and
-              isCarSpeedReceived and
-              isFrameRefReceived and
-              isCarPoseCovReceived and
-              isGoalReceived and
-              isLaneReceived;
+
+    bool isOKKK = true;
+    if (not isLocalMapReceived) {
+        ROS_ERROR_THROTTLE(2,"[SNU_PLANNER/RosWrapper] Still no octomap received.");
+        return false;
+    }
+    if (not isCarPoseCovReceived) {
+        ROS_ERROR_THROTTLE(2,"[SNU_PLANNER/RosWrapper] Still no car pose received.");
+        return false;
+    }
+    if (not isCarSpeedReceived) {
+        ROS_ERROR_THROTTLE(2,"[SNU_PLANNER/RosWrapper] Still no car speed received ");
+        return false;
+    }
+    if (not isFrameRefReceived) {
+        ROS_ERROR_THROTTLE(2,"[SNU_PLANNER/RosWrapper] Still no referance frame (SNU) fixed.");
+        return false;
+    }
+    if (not isOctomapFrameResolved) {
+        ROS_ERROR_THROTTLE(2,"[SNU_PLANNER/RosWrapper] Still we could not find the frame_id of octomap");
+        return false;
+    }
+
+    if (not isLaneReceived) {
+        ROS_ERROR_THROTTLE(2,"[SNU_PLANNER/RosWrapper] No lane information loaded");
+        return false;
+    }
+    return true;
 }
 
 

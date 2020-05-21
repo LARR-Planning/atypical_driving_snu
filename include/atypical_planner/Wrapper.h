@@ -53,6 +53,7 @@ namespace Planner{
         bool isLaneReceived = false;
         bool isLaneRawReceived = false; // beform transform
         bool isGoalReceived = false;
+        bool isOctomapFrameResolved = false; // octomap frame
         /**
          * Operation mode
          */
@@ -64,6 +65,7 @@ namespace Planner{
          */
         string SNUFrameId; // global frame id (JBS)
         string worldFrameId; //world frame id
+        string octomapGenFrameId; // the referance frame of octomap
         int max_marker_id; //count current published markers
         double speed; // current speed of car
 
@@ -87,6 +89,9 @@ namespace Planner{
         ros::Publisher pubPredictionArray; // publisher for prediction of the target
         ros::Publisher pubCurCmd; // if MPC has been solved, it emits the command
         ros::Publisher pubLaneNode; // lane node
+        ros::Publisher pubCurGoal; // Publish current goal point (global goal)
+
+
         /**
          * Subscriber
          */

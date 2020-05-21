@@ -21,10 +21,11 @@
   <arg name="nominal_speed"     default="10"/>
   <arg name="nominal_period"     default="3"/> <!--preirod = horizon -->
   <arg name="planning_dt"     default="0.02"/> <!--?-->
-
-  <arg name="initial_goal/x" value="20" />
+  <!--w.r.t global frame -->
+  <arg name="initial_goal/x" value="0" />
   <arg  name="initial_goal/y" value="68" />
 
+  <!--Nominal radius-->
   <arg  name="obstacle_radius" value="0.8" />
 
 <!-- Arguments End -->
@@ -52,7 +53,7 @@
 
     <param name = "world_frame_id" value="map" />
     <param name = "snu_frame_id" value="$(arg snu_frame_id)" />
-
+    <param name = "octomap_gen_frame_id" value="SNU" /> <!-- The frame id of octomap map or SNU-->
 
     <param name="global_planner/horizon" value="$(arg nominal_period)" />
     <param name="global_planner/car_width" value="$(arg vehicle_model/lx)" />

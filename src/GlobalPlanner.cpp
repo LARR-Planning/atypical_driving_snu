@@ -106,7 +106,8 @@ bool GlobalPlanner::plan(double t) {
         point_y = left[i].y;
 
         for(int iter = 0; iter < step; iter++) {
-            Vector3d transformed_vector = applyTransform(p_base->Tw0, Vector3d(point_x, point_y, 0)); //SNU to world transform
+            //Vector3d transformed_vector = applyTransform(p_base->Tw0, Vector3d(point_x, point_y, 0)); //SNU to world transform
+            Vector3d transformed_vector = applyTransform(p_base->To0, Vector3d(point_x, point_y, 0)); //SNU to world transform
             octomap::point3d point(transformed_vector(0), transformed_vector(1), (param.car_z_min + param.car_z_max) / 2);
             p_base->getLocalOctoPtr()->updateNode(point, true);
             point_x += point_dx;
@@ -130,7 +131,7 @@ bool GlobalPlanner::plan(double t) {
         point_y = right[i].y;
 
         for(int iter = 0; iter < step; iter++) {
-            Vector3d transformed_vector = applyTransform(p_base->Tw0, Vector3d(point_x, point_y, 0)); //SNU to world transform
+            Vector3d transformed_vector = applyTransform(p_base->To0, Vector3d(point_x, point_y, 0)); //SNU to world transform
             octomap::point3d point(transformed_vector(0), transformed_vector(1), (param.car_z_min + param.car_z_max) / 2);
             p_base->getLocalOctoPtr()->updateNode(point, true);
             point_x += point_dx;
@@ -140,7 +141,11 @@ bool GlobalPlanner::plan(double t) {
 
     // initialize grid
     std::array<double, 4> world_box = {param.world_x_min, param.world_y_min, param.world_x_max, param.world_y_max};
-    world_box_transformed = boxTransform(p_base->Tw0.inverse(), world_box); //world to SNU transform
+    if (param.is_world_box_snu_frame)
+        world_box_transformed =  world_box; //world to SNU transform
+    else
+        world_box_transformed = boxTransform(p_base->Tw0.inverse(), world_box); //world to SNU transform
+
     grid_x_min = ceil((world_box_transformed[0] + SP_EPSILON) / param.grid_resolution) * param.grid_resolution;
     grid_y_min = ceil((world_box_transformed[1] + SP_EPSILON) / param.grid_resolution) * param.grid_resolution;
     grid_x_max = floor((world_box_transformed[2] - SP_EPSILON) / param.grid_resolution) * param.grid_resolution;
@@ -193,7 +198,7 @@ bool GlobalPlanner::plan(double t) {
             x = i * param.grid_resolution + grid_x_min;
             y = j * param.grid_resolution + grid_y_min;
 
-            Vector3d transformed_vector = applyTransform(p_base->Tw0, Vector3d(x, y, 0)); //transform SNU to world
+            Vector3d transformed_vector = applyTransform(p_base->To0, Vector3d(x, y, 0)); //transform SNU to world
             x = transformed_vector(0);
             y = transformed_vector(1);
 
@@ -273,7 +278,7 @@ bool GlobalPlanner::plan(double t) {
         return false;
     }
     if(grid[goal.x_][goal.y_] == 1){
-        printf("[GlobalPlanner] ERROR: start point is occluded \n");
+        printf("[GlobalPlanner] ERROR: goal point is occluded \n");
         isFeasible = false;
         return false;
     }
@@ -338,7 +343,7 @@ bool GlobalPlanner::plan(double t) {
 //        box.emplace_back(round(std::max(y,y_next) / param.box_xy_res) * param.box_xy_res); //TODO: consider this
 
         // Check initial box
-        box_transformed = boxTransform(p_base->Tw0, box_curr); // transform SNU to world
+        box_transformed = boxTransform(p_base->To0, box_curr); // transform SNU to world
         for (octomap::OcTree::leaf_bbx_iterator it = p_base->getLocalOctoPtr()->begin_leafs_bbx(
                 octomap::point3d(box_transformed[0], box_transformed[1], param.car_z_min),
                 octomap::point3d(box_transformed[2], box_transformed[3], param.car_z_max)),
@@ -365,7 +370,7 @@ bool GlobalPlanner::plan(double t) {
                    && box_cand[2] - box_cand[0] < param.box_max_size
                    && box_cand[3] - box_cand[1] < param.box_max_size) {
                 bool isObstacleInBox = false;
-                box_transformed = boxTransform(p_base->Tw0, box_update); // transform SNU to world
+                box_transformed = boxTransform(p_base->To0, box_update); // transform SNU to world
                 for (octomap::OcTree::leaf_bbx_iterator it = p_base->getLocalOctoPtr()->begin_leafs_bbx(
                         octomap::point3d(box_transformed[0], box_transformed[1], param.car_z_min),
                         octomap::point3d(box_transformed[2], box_transformed[3], param.car_z_max)),
