@@ -17,6 +17,7 @@ Panels:
         - /TF1
         - /TF1/Frames1
         - /Path1
+
         - /PointStamped1
       Splitter Ratio: 0.5792452692985535
     Tree Height: 728
@@ -28,7 +29,7 @@ Panels:
       - /2D Nav Goal1
       - /Publish Point1
     Name: Tool Properties
-    Splitter Ratio: 0.5886790156364441
+    Splitter Ratio: 0.588679016
   - Class: rviz/Views
     Expanded:
       - /Current View1
@@ -39,8 +40,6 @@ Panels:
     Name: Time
     SyncMode: 0
     SyncSource: ""
-Preferences:
-  PromptSaveOnExit: true
 Toolbars:
   toolButtonStyle: 2
 Visualization Manager:
@@ -52,7 +51,7 @@ Visualization Manager:
       Color: 160; 160; 164
       Enabled: true
       Line Style:
-        Line Width: 0.029999999329447746
+        Line Width: 0.0299999993
         Value: Lines
       Name: Grid
       Normal Cell Count: 0
@@ -80,7 +79,7 @@ Visualization Manager:
         map: true
       Queue Size: 100
       Value: true
-    - Angle Tolerance: 0.10000000149011612
+    - Angle Tolerance: 0.100000001
       Class: rviz/Odometry
       Covariance:
         Orientation:
@@ -92,7 +91,7 @@ Visualization Manager:
           Scale: 1
           Value: true
         Position:
-          Alpha: 0.30000001192092896
+          Alpha: 0.300000012
           Color: 204; 51; 204
           Scale: 1
           Value: true
@@ -100,16 +99,16 @@ Visualization Manager:
       Enabled: true
       Keep: 1
       Name: Odometry
-      Position Tolerance: 0.10000000149011612
+      Position Tolerance: 0.100000001
       Shape:
         Alpha: 1
         Axes Length: 1
-        Axes Radius: 0.10000000149011612
+        Axes Radius: 0.100000001
         Color: 255; 25; 0
-        Head Length: 0.30000001192092896
-        Head Radius: 0.10000000149011612
+        Head Length: 0.300000012
+        Head Radius: 0.100000001
         Shaft Length: 1
-        Shaft Radius: 0.05000000074505806
+        Shaft Radius: 0.0500000007
         Value: Arrow
       Topic: /airsim_car_node/PhysXCar/odom_local_ned
       Unreliable: false
@@ -120,11 +119,11 @@ Visualization Manager:
       Class: rviz/Pose
       Color: 255; 25; 0
       Enabled: true
-      Head Length: 0.30000001192092896
-      Head Radius: 0.10000000149011612
+      Head Length: 0.300000012
+      Head Radius: 0.100000001
       Name: Pose
       Shaft Length: 1
-      Shaft Radius: 0.05000000074505806
+      Shaft Radius: 0.0500000007
       Shape: Axes
       Topic: /atypical_planning_test/obstacle_pose
       Unreliable: false
@@ -147,15 +146,15 @@ Visualization Manager:
       Value: true
     - Alpha: 1
       Axes Length: 3
-      Axes Radius: 0.20000000298023224
+      Axes Radius: 0.200000003
       Class: rviz/Pose
       Color: 255; 25; 0
       Enabled: true
-      Head Length: 0.30000001192092896
-      Head Radius: 0.10000000149011612
+      Head Length: 0.300000012
+      Head Radius: 0.100000001
       Name: Pose
       Shaft Length: 1
-      Shaft Radius: 0.05000000074505806
+      Shaft Radius: 0.0500000007
       Shape: Axes
       Topic: /atypical_driving_client/current_car_posestamped
       Unreliable: false
@@ -186,6 +185,7 @@ Visualization Manager:
                 {}
       Update Interval: 0
       Value: true
+
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /atypical_planning_test/observation_queue
@@ -211,6 +211,7 @@ Visualization Manager:
         Z: 0
       Pose Color: 255; 85; 255
       Pose Style: None
+
       Radius: 0.029999999329447746
       Shaft Diameter: 0.10000000149011612
       Shaft Length: 0.10000000149011612
@@ -242,10 +243,7 @@ Visualization Manager:
     - Class: rviz/FocusCamera
     - Class: rviz/Measure
     - Class: rviz/SetInitialPose
-      Theta std deviation: 0.2617993950843811
       Topic: /initialpose
-      X std deviation: 0.5
-      Y std deviation: 0.5
     - Class: rviz/SetGoal
       Topic: /move_base_simple/goal
     - Class: rviz/PublishPoint
@@ -254,10 +252,11 @@ Visualization Manager:
   Value: true
   Views:
     Current:
+
       Class: rviz/Orbit
       Distance: 41.17532730102539
       Enable Stereo Rendering:
-        Stereo Eye Separation: 0.05999999865889549
+        Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
@@ -269,6 +268,7 @@ Visualization Manager:
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
+
       Near Clip Distance: 0.009999999776482582
       Pitch: 1.09539794921875
       Target Frame: <Fixed Frame>
@@ -278,6 +278,7 @@ Visualization Manager:
 Window Geometry:
   Displays:
     collapsed: false
+
   Height: 1025
   Hide Left Dock: false
   Hide Right Dock: false
@@ -290,6 +291,7 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: false
+
   Width: 1853
   X: 67
   Y: 27

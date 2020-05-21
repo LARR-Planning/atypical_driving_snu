@@ -78,6 +78,7 @@ namespace Planner{
 
         visualization_msgs::MarkerArray corridorSeq;
         visualization_msgs::MarkerArray obstaclePrediction;
+        nav_msgs::Path MPCTraj; // msg from mpcResultTraj
 
         /**
          *  Publisher
@@ -88,6 +89,7 @@ namespace Planner{
         ros::Publisher pubObservationMarker; // publisher for observed position for obstacles
         ros::Publisher pubPredictionArray; // publisher for prediction of the target
         ros::Publisher pubCurCmd; // if MPC has been solved, it emits the command
+        ros::Publisher pubMPCTraj; // if MPC has been solved, it pulish mpc traj for local planner horizon
         ros::Publisher pubLaneNode; // lane node
         ros::Publisher pubCurGoal; // Publish current goal point (global goal)
 

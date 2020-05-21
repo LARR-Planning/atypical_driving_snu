@@ -79,10 +79,12 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_):p_base(p_ba
     max_marker_id = 0;
     // Publisher
     pubPath = nh.advertise<nav_msgs::Path>("planning_path",1);
-    pubCorridorSeq = nh.advertise<visualization_msgs::MarkerArray>("corridor_seq", 1);
-    pubObservationMarker = nh.advertise<visualization_msgs::MarkerArray>("observation_queue",1);
+    pubCorridorSeq = nh.advertise<visualization_msgs::MarkerArray>("corridor_seq",1);
+    pubObservationMarker = nh.advertise<visualization_msgs::Marker>("observation_queue",1);
     pubPredictionArray = nh.advertise<visualization_msgs::MarkerArray>("prediction",1);
     pubCurCmd = nh.advertise<driving_msgs::VehicleCmd>("/vehicle_cmd",1);
+    pubMPCTraj = nh.advertise<nav_msgs::Path>("mpc_traj",1);
+
     pubLaneNode = nh.advertise<nav_msgs::Path>("lane_path",1);
     pubCurGoal = nh.advertise<geometry_msgs::PointStamped>("global_goal",1);
 
@@ -154,7 +156,6 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<double>("global_planner/car_z_min",param_.g_param.car_z_min,0.0);
     nh.param<double>("global_planner/car_z_max",param_.g_param.car_z_max,2.0);
     nh.param<double>("global_planner/car_speed",param_.g_param.car_speed,1.0);
-    nh.param<double>("global_planner/road_width",param_.g_param.road_width,4.0);
     nh.param<double>("global_planner/world_x_min",param_.g_param.world_x_min,-10);
     nh.param<double>("global_planner/world_y_min",param_.g_param.world_y_min,-1);
     nh.param<double>("global_planner/world_x_max",param_.g_param.world_x_max,35);
@@ -220,7 +221,6 @@ void RosWrapper::prepareROSmsgs() {
 
     // 1. Topics directly obtained from p_base
     if(mSet[1].try_lock()){
-        // Example below
         // planning path
         planningPath.poses.clear();
         geometry_msgs::PoseStamped poseStamped;
@@ -230,7 +230,7 @@ void RosWrapper::prepareROSmsgs() {
             planningPath.poses.push_back(poseStamped);
         }
 
-        // corridor_seq jungwon
+        // corridor_seq - jungwon
         corridorSeq.markers.clear();
         int marker_id = 0;
         double car_z_min = 0.5; //TODO: save car_z when updateParam
@@ -262,6 +262,7 @@ void RosWrapper::prepareROSmsgs() {
             corridorSeq.markers.emplace_back(marker);
             marker_id++;
         }
+        // skeleton path - jungwon
         for(auto node : p_base->getSkeletonPath()){
             marker.id = marker_id;
             if(marker_id > max_marker_id){
@@ -284,6 +285,7 @@ void RosWrapper::prepareROSmsgs() {
             corridorSeq.markers.emplace_back(marker);
             marker_id++;
         }
+        // search range - jungwon
         {
             Corridor search_range = p_base->getSearchRange();
 
@@ -299,12 +301,6 @@ void RosWrapper::prepareROSmsgs() {
             marker.color.r = 0;
             marker.color.g = 1;
             marker.color.b = 1;
-//            marker.pose.position.x = (search_range.xu + search_range.xl) / 2;
-//            marker.pose.position.y = (search_range.yu + search_range.yl) / 2;
-//            marker.pose.position.z = (car_z_min + car_z_max)/2;
-//            marker.scale.x = search_range.xu - search_range.xl;
-//            marker.scale.y = search_range.yu - search_range.yl;
-//            marker.scale.z = car_z_max - car_z_min;
 
             marker.type = visualization_msgs::Marker::LINE_LIST;
 
@@ -352,7 +348,6 @@ void RosWrapper::prepareROSmsgs() {
             corridorSeq.markers.emplace_back(marker);
             marker_id++;
         }
-
         for(int i = marker_id; i <= max_marker_id; i++){
             marker.id = i;
             marker.action = visualization_msgs::Marker::DELETE;
@@ -360,6 +355,22 @@ void RosWrapper::prepareROSmsgs() {
         }
         max_marker_id = marker_id - 1;
 
+        // MPC path
+        if (p_base->isLPsolved) {
+            MPCTraj.header.frame_id = worldFrameId;
+            MPCTraj.poses.clear();
+            PoseStamped MPCPose;
+            MPCResultTraj mpcResultTraj = p_base->getMPCResultTraj();
+            double t = mpcResultTraj.ts[0];
+            double dt = 0.1;
+            while(t < mpcResultTraj.ts[mpcResultTraj.ts.size()-1]){
+                CarState state = mpcResultTraj.evalX(t);
+                MPCPose.pose.position.x = state.x;
+                MPCPose.pose.position.y = state.y;
+                MPCTraj.poses.emplace_back(MPCPose);
+                t += dt;
+            }
+        }
         // Current goal
 
         geometry_msgs::PointStamped curGoal;
@@ -411,22 +422,21 @@ void RosWrapper::prepareROSmsgs() {
         }
         nsId++;
     }
-
-    pubPredictionArray.publish(obstaclePrediction);
-
-
+    pubPredictionArray.publish(obstaclePrediction); // <- why this is in here? It should go to publish() (jungwon)
 }
-
 /**
  * @brief publish the car input and visualization markers
  * @details Do not use p_base here !!
  */
 void RosWrapper::publish() {
     // e.g pub1.publish(topic1)
-    if (p_base->isLPsolved)
+    if (p_base->isLPsolved) {
         pubCurCmd.publish(p_base->getCurInput(curTime()));
+        pubMPCTraj.publish(MPCTraj);
+    }
     pubPath.publish(planningPath);
     pubCorridorSeq.publish(corridorSeq);
+
 
     // Tranform broadcasting the tf of the current car w.r.t the first received tf
 
@@ -828,7 +838,7 @@ bool Wrapper::plan(double tTrigger){
         updateCorrToBase();
        // Call local planner
         bool lpPassed =false ;
-        // lpPassed = lp_ptr->plan(tTrigger); // TODO
+        lpPassed = lp_ptr->plan(tTrigger); // TODO
 
         if (lpPassed)
             //cout<<"Okay, fine"<<endl;

@@ -11,6 +11,7 @@ using namespace Planner;
 GlobalPlanner::GlobalPlanner(const Planner::ParamGlobal &g_param,
                              shared_ptr<PlannerBase> p_base_) : AbstractPlanner(p_base_),param(g_param) {
     printf("[GlobalPlanner] Init.\n");
+
 }
 
 /**
@@ -472,16 +473,29 @@ bool GlobalPlanner::plan(double t) {
             timeSegment = 0;
             double delta_x, delta_y, box_width, time_coefficient;
             for(int i = prev_index; i < current_index; i++){
+                //find closest LaneNode and get road width
+                double min_dist = SP_INFINITY;
+                double road_width;
+                for(const auto& laneNode: lanePath.lanes){
+                    for(auto lanePoint: laneNode.laneCenters){
+                        double dist = sqrt(pow(lanePoint.x-curSkeletonPath[i].x, 2) + pow(lanePoint.y-curSkeletonPath[i].y, 2));
+                        if(dist < min_dist){
+                            road_width = laneNode.width;
+                        }
+                    }
+                }
+
+
                 delta_x = abs(curSkeletonPath[i+1].x - curSkeletonPath[i].x);
                 delta_y = abs(curSkeletonPath[i+1].y - curSkeletonPath[i].y);
                 if(delta_x > SP_EPSILON_FLOAT && delta_y < SP_EPSILON_FLOAT){
-                    box_width = min(curCorridorSeq[box_iter].yu - curCorridorSeq[box_iter].yl, param.road_width);
-                    time_coefficient = param.road_width / box_width; //TODO: naive time_coefficient formulation
+                    box_width = min(curCorridorSeq[box_iter].yu - curCorridorSeq[box_iter].yl, road_width);
+                    time_coefficient = road_width / box_width; //TODO: naive time_coefficient formulation
                     timeSegment += time_coefficient * delta_x / param.car_speed;
                 }
                 else if(delta_x < SP_EPSILON_FLOAT && delta_y > SP_EPSILON_FLOAT){
-                    box_width = min(curCorridorSeq[box_iter].xu - curCorridorSeq[box_iter].xl, param.road_width);
-                    time_coefficient = box_width / param.road_width; //TODO: naive time_coefficient formulation
+                    box_width = min(curCorridorSeq[box_iter].xu - curCorridorSeq[box_iter].xl, road_width);
+                    time_coefficient = road_width / box_width; //TODO: naive time_coefficient formulation
                     timeSegment += time_coefficient * delta_y / param.car_speed;
                 }
                 else if(delta_x < SP_EPSILON_FLOAT && delta_y < SP_EPSILON_FLOAT){
