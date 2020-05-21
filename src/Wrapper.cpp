@@ -320,13 +320,8 @@ void RosWrapper::prepareROSmsgs() {
             obstaclePrediction.markers.push_back(m_obstacle_rad);
         }
     }
-
     pubPredictionArray.publish(obstaclePrediction); // <- why this is in here? It should go to publish() (jungwon)
-
-
-
 }
-
 /**
  * @brief publish the car input and visualization markers
  * @details Do not use p_base here !!
@@ -339,6 +334,7 @@ void RosWrapper::publish() {
     }
     pubPath.publish(planningPath);
     pubCorridorSeq.publish(corridorSeq);
+
 }
 
 /**

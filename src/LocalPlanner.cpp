@@ -48,8 +48,8 @@ LocalPlanner::LocalPlanner(const Planner::ParamLocal &l_param,
     }
     state_weight_<< 0, 0, 0.5, 0.2, 0.05;
     final_weight_<< 5.0, 5.0, 1.0, 0.05, 0.05;
-    input_weight_<< 0.001, 0.2;
-
+    input_weight_<< 0.5, 0.2;
+    
     cout << "[LocalPlanner] Init." << endl;
     
 }
@@ -305,11 +305,11 @@ bool LocalPlannerPlain::plan(double t) {
              xN_new = ilqr.xN_;
              next_state = xN_new[1];
              cout<<"-------"<<endl;
-//             for(int j = 0; j<50;j++)
-//             {
-//
-//                 cout<<uN_new[j].coeff(1,0)<<endl;
-//             }
+             for(int j = 0; j<50;j++)
+             {
+
+                 cout<<"Accleration of Car"<<uN_new[j].coeff(0,0)<<endl;
+             }
 //             for(int j = 0; j<51;j++)
 //             {
 //                 cout<<"updated new future x-position: "<<xN_new[j].coeff(0,0)<<" [m]"<<endl;
