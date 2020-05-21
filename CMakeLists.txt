@@ -11,12 +11,19 @@ find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 include_directories(${EIGEN3_INCLUDE_DIRS})
 
 
+find_package(PCL 1.3 REQUIRED)
+include_directories(${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+
+
+
 find_package(octomap REQUIRED)
 include_directories(${OCTOMAP_INCLUDE_DIRS})
 link_libraries(${OCTOMAP_LIBRARIES})
 
 find_package(catkin REQUIRED COMPONENTS roscpp sensor_msgs tf tf2
-            geometry_msgs octomap_msgs message_generation nav_msgs message_generation driving_msgs
+            geometry_msgs octomap_msgs message_generation nav_msgs message_generation driving_msgs pcl_ros
             )
 
 include_directories(include ${catkin_INCLUDE_DIRS})
@@ -31,18 +38,20 @@ catkin_package(
 )
 
 add_executable(atypical_driving_test test/main.cpp ${SNU_PLANNER_SRC} src/optimization_module/math.cpp)
-target_link_libraries(atypical_driving_test ${catkin_LIBRARIES} )
+target_link_libraries(atypical_driving_test ${catkin_LIBRARIES} -lstdc++fs )
 
 
 add_executable(virtual_environment_generator test/virtual_environment_generator.cpp ${SNU_PLANNER_SRC})
-target_link_libraries(virtual_environment_generator ${catkin_LIBRARIES})
+target_link_libraries(virtual_environment_generator ${catkin_LIBRARIES} -lstdc++fs)
 
 add_executable(lane_tester test/LaneTest/main.cpp ${SNU_PLANNER_SRC})
-target_link_libraries(lane_tester ${catkin_LIBRARIES})
+target_link_libraries(lane_tester ${catkin_LIBRARIES} -lstdc++fs)
 
 add_executable(integration_server test/IntegrationTest/server_main.cpp ${SNU_PLANNER_SRC})
-target_link_libraries(integration_server ${catkin_LIBRARIES})
-
+target_link_libraries(integration_server ${catkin_LIBRARIES} -lstdc++fs)
 
 add_executable(integration_client test/IntegrationTest/client_main.cpp ${SNU_PLANNER_SRC})
-target_link_libraries(integration_client ${catkin_LIBRARIES})
+target_link_libraries(integration_client ${catkin_LIBRARIES} -lstdc++fs)
+
+add_executable(keti_client test/KetiTest/client_main.cpp ${SNU_PLANNER_SRC})
+target_link_libraries(keti_client ${catkin_LIBRARIES} ${PCL_LIBRARIES})
