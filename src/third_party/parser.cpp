@@ -12,64 +12,64 @@ parser::parser()
 
 void parser::get_Coorddata(string Xfilename)
 {   
-//    string cur_path = experimental::filesystem::current_path();
+    //string cur_path = experimental::filesystem::current_path();
 //    Xfilename = cur_path+"/../"+Xfilename;
-//    // Yfilename = cur_path+"/../src/"+Yfilename;
-//    //X coordinate
-//    cout << Xfilename << endl;
-//    // ROS_INFO("%s", Xfilename);
-//    try
-//    {
-//        ifstream infile(Xfilename);
-//        // infile >> setprecision(10);
-//        std::string linex;
-//        int iter = 0;
-//        if(infile.fail())
-//        {
-//            ROS_ERROR("%s", "No csv map file! Please check your csv file path");
-//            return;
-//        }
-//
-//        vector< vector<double>> xdata;
-//
-//        while(std::getline(infile, linex))
-//        {
-//            std::istringstream iss(linex);
-//            vector<double> vecX = parser::parser::split_double(linex, ',');
-//            xdata.push_back(vecX);
-//        }
-//
-//        infile.close();
-//        vector<geometry_msgs::Point> coord_vec;
-//        for(int i=0; i<xdata.size(); i++)
-//        {
-//            shared_ptr<LaneNode> node (new LaneNode);
-//            //Update
-//            if((i+1)%number ==0)
-//            {
-//                node->laneCenters = coord_vec;
-//                LanePath_.lanes.push_back(*node);
-//                coord_vec.clear();
-//            }
-//
-//            //Make i-th Node's coordinate
-//            double X = xdata.at(i).at(0);
-//            double Y = xdata.at(i).at(1);
-//            geometry_msgs::Point coord1;
-//            coord1.x = X;
-//            coord1.y = Y;
-//            coord1.z = 0.0;
-//            coord_vec.push_back(coord1);
-//
-//            // node = LanePath_.at(i);
-//        }
-//    }
-//
-//    catch(const std::exception& e)
-//    {
-//        cout << "File is not open" << endl;
-//        std::cerr << e.what() << '\n';
-//    }
+    // Yfilename = cur_path+"/../src/"+Yfilename;
+    //X coordinate
+    cout << Xfilename << endl;
+    // ROS_INFO("%s", Xfilename);
+    try
+    {
+        ifstream infile(Xfilename);      
+        // infile >> setprecision(10);
+        std::string linex;
+        int iter = 0;
+        if(infile.fail())
+        {
+            ROS_ERROR("%s", "No csv map file! Please check your csv file path");
+            return;
+        }
+
+        vector< vector<double>> xdata; 
+
+        while(std::getline(infile, linex))
+        {   
+            std::istringstream iss(linex);
+            vector<double> vecX = parser::parser::split_double(linex, ',');
+            xdata.push_back(vecX);
+        }
+
+        infile.close();
+        vector<geometry_msgs::Point> coord_vec;
+        for(int i=0; i<xdata.size(); i++)
+        {   
+            shared_ptr<LaneNode> node (new LaneNode);
+            //Update
+            if((i+1)%number ==0)
+            {   
+                node->laneCenters = coord_vec;
+                LanePath_.lanes.push_back(*node);
+                coord_vec.clear();
+            }
+            
+            //Make i-th Node's coordinate
+            double X = xdata.at(i).at(0);
+            double Y = xdata.at(i).at(1);
+            geometry_msgs::Point coord1;
+            coord1.x = X;
+            coord1.y = Y;
+            coord1.z = 0.0;
+            coord_vec.push_back(coord1);
+            
+            // node = LanePath_.at(i);
+        }
+    }
+
+    catch(const std::exception& e)
+    {   
+        cout << "File is not open" << endl;        
+        std::cerr << e.what() << '\n';
+    }
 }
 
 void parser::display_result()

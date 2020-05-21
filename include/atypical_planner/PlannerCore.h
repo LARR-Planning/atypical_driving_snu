@@ -218,7 +218,7 @@ namespace Planner {
         octomap::OcTree* getLocalOctoPtr() {return octo_local_ptr.get();}
         MPCResultTraj getMPCResultTraj() {return mpc_result;}
         geometry_msgs::PoseStamped getCurPose() {return cur_pose;};
-
+        SE3 getCurTf() {return cur_transform;};
 
         // Set from subscriber
         void setCarState(const CarState& carState_) { cur_state = carState_;};

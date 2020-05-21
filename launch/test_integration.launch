@@ -53,6 +53,7 @@
     <param name = "world_frame_id" value="map" />
     <param name = "snu_frame_id" value="$(arg snu_frame_id)" />
 
+
     <param name="global_planner/horizon" value="$(arg nominal_period)" />
     <param name="global_planner/car_width" value="$(arg vehicle_model/lx)" />
     <param name="global_planner/car_z_min" value="0.5" />

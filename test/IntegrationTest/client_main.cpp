@@ -105,6 +105,7 @@ void cbAccelCmd(const geometry_msgs::Twist& twist){
 }
 // convert the object pose into DetectedObjectArray
 void cbObject(const geometry_msgs::PoseStamped& object_pose){
+   objectsArray.objects[0].header.frame_id = "/map";
    objectsArray.objects[0].odom.pose.pose = object_pose.pose;
 }
 

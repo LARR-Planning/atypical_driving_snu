@@ -6,7 +6,7 @@
 
     <param name="use_sim_time" value="false"/>
     <!-- Arguments Start -->
-    <arg name="bagfile"        default="keti_dataset1.bag"/>
+    <arg name="bagfile"        default="200518-SNU-1_result.bag"/>
     <arg name="playBagFile"    default="true"/>
 
     <arg name="snu_frame_id" default="SNU"/>
@@ -32,8 +32,10 @@
     <!-- Arguments End -->
 
     <node pkg="rosbag" type="play" name="rosbag_record_diag" args="--loop $(find atypical_driving)/worlds/$(arg bagfile)" if="$(arg playBagFile)">
-        <remap from="/current_pose" to="/current_pose_keti"/>
+        <remap from="/current_pose_cov" to="/current_pose"/>
         <remap from="/velodyne_points" to="/velodyne_points_keti"/>
+        <remap from="/tf" to="/tf_keti"/>
+
     </node>
 
 
@@ -42,22 +44,28 @@
 
     <!-- Nodes Start -->
     <node pkg="octomap_server" type="octomap_server_node" name="octomap_server" output="screen" >
-        <param name="resolution"                 value="0.2" />
+        <param name="resolution"                 value="0.3" />
         <param name="frame_id"                   value="$(arg snu_frame_id)" />
-        <param name="height_map"                 value="false"/>
+        <param name="height_map"                 value="true"/>
         <param name="track_changes" value="true"/>
         <param name="sensor_model/max_range" value="20.0" />
         <param name="sensor_model/min_range" value="2.0" />
 
         <!--Should be carefully chosen -->
-        <param name="pointcloud_min_z" value="-0.7" />
-        <param name="pointcloud_max_z" value="-0.2" />
+<!--        <param name="pointcloud_min_z" value="-0.7" />-->
+<!--        <param name="pointcloud_max_z" value="-0.0" />-->
+        <param name="occupancy_min_z" value="-0.4" />
 
         <param name="color/r"                    value="0.2" />
-        <param name="color/g"                    value="0.7" />
+        <param name="color/g"                    value="0.2" />
         <param name="color/b"                    value="0.2" />
         <param name="color/a"                    value="0.2" />
 
+        <param name="sensor_model/miss" value="0.1" />
+        <param name="sensor_model/hit" value="0.97" />
+
+        <param name="sensor_model/min" value="0.4" />
+        <param name="sensor_model/max" value="0.7" />
         <remap from="cloud_in" to="/velodyne_points"/>
     </node>
 
@@ -66,7 +74,7 @@
         <param name="snu_frame_id" value="$(arg snu_frame_id)"/>
 
 
-        <param name = "lane_csv_file" value="$(find atypical_driving)/keti_pangyo_path3.csv" />
+        <param name = "lane_csv_file" value="$(find atypical_driving)/waypoint.csv" />
 
 
         <param name="global_planner/horizon" value="$(arg nominal_period)" />
