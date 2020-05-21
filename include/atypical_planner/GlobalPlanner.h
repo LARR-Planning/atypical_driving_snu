@@ -15,7 +15,7 @@ namespace Planner{
         double grid_x_min, grid_y_min, grid_x_max, grid_y_max;
         int dimx, dimy;
         std::vector<std::vector<int>> grid;
-        bool has_wall;
+        std::array<double, 4> world_box_transformed;
         bool isFeasible;
 
         // Planning intermediate outputs

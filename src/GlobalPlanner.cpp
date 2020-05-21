@@ -11,15 +11,6 @@ using namespace Planner;
 GlobalPlanner::GlobalPlanner(const Planner::ParamGlobal &g_param,
                              shared_ptr<PlannerBase> p_base_) : AbstractPlanner(p_base_),param(g_param) {
     printf("[GlobalPlanner] Init.\n");
-
-    // initialize grid
-    grid_x_min = ceil((param.world_x_min + SP_EPSILON) / param.grid_resolution) * param.grid_resolution;
-    grid_y_min = ceil((param.world_y_min + SP_EPSILON) / param.grid_resolution) * param.grid_resolution;
-    grid_x_max = floor((param.world_x_max - SP_EPSILON) / param.grid_resolution) * param.grid_resolution;
-    grid_y_max = floor((param.world_y_max - SP_EPSILON) / param.grid_resolution) * param.grid_resolution;
-
-    dimx = (int) round((grid_x_max - grid_x_min) / param.grid_resolution) + 1;
-    dimy = (int) round((grid_y_max - grid_y_min) / param.grid_resolution) + 1;
 }
 
 /**
@@ -146,6 +137,17 @@ bool GlobalPlanner::plan(double t) {
             point_y += point_dy;
         }
     }
+
+    // initialize grid
+    std::array<double, 4> world_box = {param.world_x_min, param.world_y_min, param.world_x_max, param.world_y_max};
+    world_box_transformed = boxTransform(p_base->Tw0.inverse(), world_box); //world to SNU transform
+    grid_x_min = ceil((world_box_transformed[0] + SP_EPSILON) / param.grid_resolution) * param.grid_resolution;
+    grid_y_min = ceil((world_box_transformed[1] + SP_EPSILON) / param.grid_resolution) * param.grid_resolution;
+    grid_x_max = floor((world_box_transformed[2] - SP_EPSILON) / param.grid_resolution) * param.grid_resolution;
+    grid_y_max = floor((world_box_transformed[3] - SP_EPSILON) / param.grid_resolution) * param.grid_resolution;
+
+    dimx = (int) round((grid_x_max - grid_x_min) / param.grid_resolution) + 1;
+    dimy = (int) round((grid_y_max - grid_y_min) / param.grid_resolution) + 1;
 
     // Set start, goal points
     int i_start, j_start, i_goal, j_goal;
@@ -356,10 +358,10 @@ bool GlobalPlanner::plan(double t) {
             box_cand = box_curr;
             box_update = box_curr;
             //check update_box only! update_box + current_box = cand_box
-            while (box_update[0] > param.world_x_min - SP_EPSILON
-                   && box_update[1] > param.world_y_min - SP_EPSILON
-                   && box_update[2] < param.world_x_max + SP_EPSILON
-                   && box_update[3] < param.world_y_max + SP_EPSILON
+            while (box_update[0] > world_box_transformed[0] - SP_EPSILON
+                   && box_update[1] > world_box_transformed[1] - SP_EPSILON
+                   && box_update[2] < world_box_transformed[2] + SP_EPSILON
+                   && box_update[3] < world_box_transformed[3] + SP_EPSILON
                    && box_cand[2] - box_cand[0] < param.box_max_size
                    && box_cand[3] - box_cand[1] < param.box_max_size) {
                 bool isObstacleInBox = false;
@@ -547,10 +549,10 @@ std::array<double, 4> GlobalPlanner::boxTransform(const SE3& Tab, const std::arr
     Vector3d transformed_vector1 = applyTransform(Tab, Vector3d(box[0], box[1], 0)); //transform SNU to world
     Vector3d transformed_vector2 = applyTransform(Tab, Vector3d(box[2], box[3], 0)); //transform SNU to world
 
-    box_transformed[0] = transformed_vector1(0);
-    box_transformed[1] = transformed_vector1(1);
-    box_transformed[2] = transformed_vector2(0);
-    box_transformed[3] = transformed_vector2(1);
+    box_transformed[0] = min(transformed_vector1(0), transformed_vector2(0));
+    box_transformed[1] = min(transformed_vector1(1), transformed_vector2(1));
+    box_transformed[2] = max(transformed_vector1(0), transformed_vector2(0));
+    box_transformed[3] = max(transformed_vector1(1), transformed_vector2(1));
 
     return box_transformed;
 }
