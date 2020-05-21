@@ -29,16 +29,16 @@ GlobalPlanner::GlobalPlanner(const Planner::ParamGlobal &g_param,
         int N1 = 20, N2 = 10;
 
         l1.width = 10;
-        l2.width = 13;
+        l2.width = 16;
 
         VectorXf l1X(N1);
         l1X.setZero();
         VectorXf l1Y(N1);
-        l1Y.setLinSpaced(N1, 0, 73);
+        l1Y.setLinSpaced(N1, 0, 72);
         VectorXf l2X(N2);
         l2X.setLinSpaced(N2, 0, 49);
         VectorXf l2Y(N2);
-        l2Y.setConstant(73);
+        l2Y.setConstant(72);
 
         for (int n = 0; n < N1; n++) {
             geometry_msgs::Point pnt;

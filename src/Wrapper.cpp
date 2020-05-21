@@ -573,7 +573,7 @@ bool Wrapper::plan(double tTrigger){
 
         // Call local planner
         bool lpPassed =false ;
-        // lpPassed = lp_ptr->plan(tTrigger); // TODO
+        lpPassed = lp_ptr->plan(tTrigger); // TODO
 
         if (lpPassed)
             //cout<<"Okay, fine"<<endl;

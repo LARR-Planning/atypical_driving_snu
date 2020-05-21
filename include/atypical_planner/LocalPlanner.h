@@ -35,6 +35,7 @@ namespace Planner {
            // Planning intermediate outputs
         MPCResultTraj curPlanning;
         Collection<Matrix<double,2,1>,50> uN_NextInit;
+        Matrix<double,5,1> next_state;
         // YW added
         Collection<Corridor,51> box_constraint;
         Collection<Matrix<double,2,2>,51> bodyArray;

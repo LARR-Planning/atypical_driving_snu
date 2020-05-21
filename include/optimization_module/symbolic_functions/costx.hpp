@@ -26,6 +26,7 @@ namespace symbolic_functions
         // float deldot = u_(1,0);
         float Q1 = Q(0);
         float Q2 = Q(1);
+        float Q3 = Q(3);
         // float R1 = R(0);
         // float R2 = R(1);
         //float dist = std::sqrt((x-obs(0))*(x-obs(0))+(y-obs(1))*(y-obs(1)));
@@ -34,7 +35,7 @@ namespace symbolic_functions
         A0.setZero();
         A0(0,0) = Q1*(x-g(0));
         A0(1,0) = Q2*(y-g(1));
-
+        A0(3,0) =Q3*del;
         return A0;
  
     }
