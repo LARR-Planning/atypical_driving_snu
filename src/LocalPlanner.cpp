@@ -28,9 +28,9 @@ LocalPlanner::LocalPlanner(const Planner::ParamLocal &l_param,
     ilqr_param.rhoFactor = 1.6;
     ilqr_param.rhoMax = 1e10;
     ilqr_param.rhoMin = 1e-6;
-    ilqr_param.tolGrads = power(10.0, VectorXd::LinSpaced(5, -4.0, -6.0));
-    ilqr_param.tolCosts = power(10.0, VectorXd::LinSpaced(5, -2.0, -6.0));
-    ilqr_param.tolConsts = power(10.0, VectorXd::LinSpaced(5, -2.0, -6.0));
+    ilqr_param.tolGrads = power(10.0, VectorXd::LinSpaced(4, -4.0, -6.0));
+    ilqr_param.tolCosts = power(10.0, VectorXd::LinSpaced(4, -2.0, -6.0));
+    ilqr_param.tolConsts = power(10.0, VectorXd::LinSpaced(4, -2.0, -6.0));
     ilqr_param.alphas = power(10.0, VectorXd::LinSpaced(5, 0.0, -3.0));
     ilqr_param.maxIter = 1000;
     ilqr_param.mu = 3.0;
@@ -48,7 +48,7 @@ LocalPlanner::LocalPlanner(const Planner::ParamLocal &l_param,
     }
     state_weight_<< 0, 0, 0.5, 0.2, 0.05;
     final_weight_<< 5.0, 5.0, 1.0, 0.05, 0.05;
-    input_weight_<< 0.001, 0.5;
+    input_weight_<< 0.001, 0.2;
 
     cout << "[LocalPlanner] Init." << endl;
     
