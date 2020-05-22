@@ -55,7 +55,12 @@ bool GlobalPlanner::plan(double t) {
                 theta = theta_curr;
             }
             else{
-                theta = (theta_curr + theta_prev) / 2;
+                if(abs(theta_curr-theta_prev) <= PI){
+                    theta = (theta_curr+theta_prev)/2;
+                }
+                else{
+                    theta = (theta_curr + theta_prev) / 2 + PI;
+                }
             }
 
             left_point.x = lanePoint.x + d * cos(theta + PI / 2);
@@ -116,7 +121,7 @@ bool GlobalPlanner::plan(double t) {
             point_y += point_dy;
         }
 
-        octomap_msgs::binaryMapToMsg(*p_base->getLocalOctoPtr(),p_base->octomap_snu_msgs);
+        // octomap_msgs::binaryMapToMsg(*p_base->getLocalOctoPtr(),p_base->octomap_snu_msgs);
 
 
 

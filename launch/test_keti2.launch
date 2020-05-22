@@ -30,7 +30,7 @@
     <arg name ="use_nominal_obstacle_rad" value="true"/> <!-- If this is true, we don't believe the dimension info of message-->
     <arg  name="obstacle_radius" value="0.8" />
 
-    <arg name = "lane_width" value = "2.5"/>
+    <arg name = "lane_width" value = "8.5"/>
 
     <arg name="is_world_snu_frame" value="true"/> <!-- If this is true, the world bound -->
     <arg name="world_x_min" value="-100" />
@@ -103,6 +103,7 @@
         <param name = "octomap_gen_frame_id" value="SNU" /> <!-- The frame id of octomap map or SNU-->
 
         <param name = "lane_csv_file" value="$(find atypical_driving)/waypoint.csv" />
+        <param name = "lane_width" value="$(arg lane_width)" />
 
 
         <param name="global_planner/horizon" value="$(arg nominal_period)" />

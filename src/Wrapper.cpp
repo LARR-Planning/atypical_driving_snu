@@ -234,8 +234,8 @@ void RosWrapper::prepareROSmsgs() {
         // corridor_seq - jungwon
         corridorSeq.markers.clear();
         int marker_id = 0;
-        double car_z_min = 0.5; //TODO: save car_z when updateParam
-        double car_z_max = 1.5; //TODO: save car_z when updateParam
+        double car_z_min = param.g_param.car_z_min;
+        double car_z_max = param.g_param.car_z_max;
 
         visualization_msgs::Marker marker;
         marker.header.frame_id = SNUFrameId;
