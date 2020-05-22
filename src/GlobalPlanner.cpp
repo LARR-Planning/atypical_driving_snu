@@ -29,16 +29,16 @@ GlobalPlanner::GlobalPlanner(const Planner::ParamGlobal &g_param,
         int N1 = 20, N2 = 10;
 
         l1.width = 10;
-        l2.width = 13;
+        l2.width = 16;
 
         VectorXf l1X(N1);
         l1X.setZero();
         VectorXf l1Y(N1);
-        l1Y.setLinSpaced(N1, 0, 73);
+        l1Y.setLinSpaced(N1, 0, 72);
         VectorXf l2X(N2);
         l2X.setLinSpaced(N2, 0, 49);
         VectorXf l2Y(N2);
-        l2Y.setConstant(73);
+        l2Y.setConstant(72);
 
         for (int n = 0; n < N1; n++) {
             geometry_msgs::Point pnt;
@@ -492,16 +492,29 @@ bool GlobalPlanner::plan(double t) {
             timeSegment = 0;
             double delta_x, delta_y, box_width, time_coefficient;
             for(int i = prev_index; i < current_index; i++){
+                //find closest LaneNode and get road width
+                double min_dist = SP_INFINITY;
+                double road_width;
+                for(const auto& laneNode: lanePath.lanes){
+                    for(auto lanePoint: laneNode.laneCenters){
+                        double dist = sqrt(pow(lanePoint.x-curSkeletonPath[i].x, 2) + pow(lanePoint.y-curSkeletonPath[i].y, 2));
+                        if(dist < min_dist){
+                            road_width = laneNode.width;
+                        }
+                    }
+                }
+
+
                 delta_x = abs(curSkeletonPath[i+1].x - curSkeletonPath[i].x);
                 delta_y = abs(curSkeletonPath[i+1].y - curSkeletonPath[i].y);
                 if(delta_x > SP_EPSILON_FLOAT && delta_y < SP_EPSILON_FLOAT){
-                    box_width = min(curCorridorSeq[box_iter].yu - curCorridorSeq[box_iter].yl, param.road_width);
-                    time_coefficient = param.road_width / box_width; //TODO: naive time_coefficient formulation
+                    box_width = min(curCorridorSeq[box_iter].yu - curCorridorSeq[box_iter].yl, road_width);
+                    time_coefficient = road_width / box_width; //TODO: naive time_coefficient formulation
                     timeSegment += time_coefficient * delta_x / param.car_speed;
                 }
                 else if(delta_x < SP_EPSILON_FLOAT && delta_y > SP_EPSILON_FLOAT){
-                    box_width = min(curCorridorSeq[box_iter].xu - curCorridorSeq[box_iter].xl, param.road_width);
-                    time_coefficient = box_width / param.road_width; //TODO: naive time_coefficient formulation
+                    box_width = min(curCorridorSeq[box_iter].xu - curCorridorSeq[box_iter].xl, road_width);
+                    time_coefficient = road_width / box_width; //TODO: naive time_coefficient formulation
                     timeSegment += time_coefficient * delta_y / param.car_speed;
                 }
                 else if(delta_x < SP_EPSILON_FLOAT && delta_y < SP_EPSILON_FLOAT){

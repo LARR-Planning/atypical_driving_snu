@@ -23,7 +23,8 @@ namespace symbolic_functions
         A0.setZero();
 
         A0(0,0) = R1;
-        A0(1,1) = R2;          
+        A0(1,1) = R2;
+        return A0;
     }
 }
 

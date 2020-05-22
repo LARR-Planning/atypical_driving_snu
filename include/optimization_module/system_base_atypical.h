@@ -28,13 +28,12 @@ class SystemBase
                           VectorU u_nominal = VectorU::Zero())
         {   return VectorX::Zero();}
         
-        virtual MatrixXX dfdx(VectorX x_nominal = VectorX::Zero(), 
+        virtual MatrixXX dfdx(VectorX x_nominal = VectorX::Zero(),
 						   VectorU u_nominal = VectorU::Zero()) 
 		{	return MatrixXX::Identity(); }
 		
-		virtual MatrixXU dfdu(VectorX x_nominal = VectorX::Zero(), 
+		virtual MatrixXU dfdu(VectorX x_nominal = VectorX::Zero(),
 						   VectorU u_nominal = VectorU::Zero())
 		{	return MatrixXU::Zero(); }
-
 };
 #endif

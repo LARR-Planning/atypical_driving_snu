@@ -66,7 +66,6 @@ namespace Planner {
         double car_z_min;
         double car_z_max;
         double car_speed;
-        double road_width;
         double world_x_min;
         double world_y_min;
         double world_x_max;
@@ -105,13 +104,12 @@ namespace Planner {
     };
 
     struct ObstacleEllipse{
-        Vector2d q;
+        Matrix<double,2,1> q;
         Matrix2d Q; // diag([1/r1^2 1/r2^2])
         double theta; // x-axis angle w.r.t x-axis of map
     };
 
     struct ObstaclePath{
-        int id;
         vector<ObstacleEllipse> obstPath;
     };
 
@@ -241,7 +239,7 @@ namespace Planner {
                 if (predictor.is_prediction_available()) {
                     vector<geometry_msgs::Pose> obstFuturePose = predictor.eval_pose_seq(tSeq);
                     ObstaclePath obstPath;
-                    for (auto obstPose : obstFuturePose) {
+                    for (auto &obstPose : obstFuturePose) {
                         // construct one obstaclePath
                         ObstacleEllipse obstE;
                         obstE.q = Vector2d(obstPose.position.x, obstPose.position.y);
