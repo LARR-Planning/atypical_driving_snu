@@ -6,7 +6,8 @@ using namespace Eigen;
 
 
 
-
+const double car_width = 2.32;
+const double car_length = 2.32;
 const double invL = 0.37037037037;
 const double dist_safe = 10;
 const double inv_dist_safe = 0.1;

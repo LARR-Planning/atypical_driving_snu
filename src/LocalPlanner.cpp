@@ -46,10 +46,9 @@ LocalPlanner::LocalPlanner(const Planner::ParamLocal &l_param,
     {
         bodyArray[i]<< 4.0, 0.0, 0.0, 4.0;
     }
-    state_weight_<< 0, 0, 0.5, 0.2, 0.05;
-    final_weight_<< 5.0, 5.0, 1.0, 0.05, 0.05;
+    state_weight_<< 0.5, 0.5, 0.5, 0.2, 0.05;
     input_weight_<< 0.5, 0.2;
-    
+    isRefUsed = 0;
     cout << "[LocalPlanner] Init." << endl;
     
 }
@@ -196,6 +195,75 @@ void LocalPlanner::SfcToOptConstraint(){
     return box_constraint;
  }
 
+ void LocalPlanner::SetLocalWpts()
+ {
+    Matrix<double,2,1> wpts_temp;
+    Matrix<double,2,1> wpts_temp1;
+    Matrix<double,2,1> velNormalized_temp;
+    vector<Matrix<double,2,1>> wpts_list;
+    vector<Matrix<double,2,1>> node_list;
+    vector<int> wptsNumber_list;
+    vector<double> t_list;
+    for (auto& ss : p_base->getLanePath().lanes)
+    {
+        for(auto &tt: ss.laneCenters)
+        {
+            wpts_temp<<tt.x, tt.y;
+            node_list.push_back(wpts_temp);
+        }
+    }
+    double node_distance = 0.0;
+    int number_temp = 0;
+    double t_temp = 0;
+    double t_start_ = 0;
+    wpts_temp = node_list[0];
+    int count = 0;
+    for(int i = 1; i<node_list.size();i++)
+    {
+        node_distance = (node_list[i]-node_list[i-1]).norm();
+       t_temp +=node_distance * 0.5; // divided by 2m/s --> wpts list generation at Global Planner.cpp is opimal;
+       t_list.push_back(t_temp);
+    }
+    for (int i = 1; i< t_list.size();i++)
+    {
+        for (int j = 0; j < round((t_list[i] - t_start_) / param.tStep); i++) {
+            velNormalized_temp = (node_list[i]-node_list[i-1]).normalized();
+            wpts_temp1 = node_list[i-1] + (t_start_+(j+1)*dt - t_list[i-1])*velNormalized_temp*2; //multiplied by 2m/s
+            wpts_list.push_back(wpts_temp1);
+            count++;
+        }
+        t_start_ = param.tStep * (count- 1);
+    }
+    Matrix<double,2,1> curr_pos;
+    curr_pos<< p_base->getCarState().x, p_base->getCarState().y;
+    int start_idx = 0;
+    double min_gap = 10000;
+    for(int i = 0; i<wpts_list.size();i++)
+    {
+        if(min_gap>(curr_pos-wpts_list[i]).norm())
+        {
+            min_gap = (curr_pos-wpts_list[i]).norm();
+            start_idx = i;
+        }
+
+    }
+
+    for(int i = 0; i<50; i++)
+    {
+        if(start_idx+i>wpts_list.size())
+        {
+            local_wpts[i] = wpts_list[wpts_list.size()];
+        }
+        else
+        {
+            local_wpts[i] = wpts_list[start_idx+i];
+        }
+    }
+
+//
+//    p_base->getLanePath().lanes[0].laneCenters[0].x;
+ }
+
  LocalPlannerPlain::LocalPlannerPlain(const Planner::ParamLocal &l_param,
                                       shared_ptr<PlannerBase> p_base_) :LocalPlanner(l_param,p_base_) {
      cout << "[LocalPlanner] Plain MPC mode engaged." << endl;
@@ -221,6 +289,25 @@ bool LocalPlannerPlain::plan(double t) {
      LocalPlanner::SfcToOptConstraint(); // convert SFC to box constraints
 
      LocalPlanner::ObstToConstraint();
+     if(p_base->getLanePath().lanes.size()>0)
+     {
+         LocalPlanner::SetLocalWpts();
+         state_weight_.coeffRef(0,0) = 0.5;
+         state_weight_.coeffRef(1,0) = 0.5;
+         state_weight_.coeffRef(2,0) = 0.5;
+         state_weight_.coeffRef(3,0) = 0.2;
+         state_weight_.coeffRef(4,0) = 0.05;
+         final_weight_.coeffRef(0,0) = 0.5;
+         final_weight_.coeffRef(1,0) = 0.5;
+         final_weight_.coeffRef(2,0) = 0.5;
+         final_weight_.coeffRef(3,0) = 0.2;
+         final_weight_.coeffRef(4,0) = 0.05;
+         input_weight_.coeffRef(0,0) = 0.5;
+         input_weight_.coeffRef(1,0) = 0.2;
+         isRefUsed = 1;
+     }
+
+    // LocalPlanner::SetLocalWpts();
      using namespace Eigen;
 
      //Following codes will be wrapped with another wrapper;
@@ -232,7 +319,10 @@ bool LocalPlannerPlain::plan(double t) {
      prob->set_final_weight(final_weight_);
      prob->set_input_weight(input_weight_);
      prob->set_noConstraint(noConstraint_);
+     prob->set_refUsed(isRefUsed);
      prob->set_goal(x_goal_);
+     prob->set_ref(local_wpts);
+
 
      static int loop_num = 0;
      std::array<Matrix<double,Nu,1>,N> u0;
