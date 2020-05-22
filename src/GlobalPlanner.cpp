@@ -137,13 +137,13 @@ bool GlobalPlanner::plan(double t) {
         point_x = right[i].x;
         point_y = right[i].y;
 
-//        for(int iter = 0; iter < step; iter++) {
-//            Vector3d transformed_vector = applyTransform(p_base->To0, Vector3d(point_x, point_y, 0)); //SNU to world transform
-//            octomap::point3d point(transformed_vector(0), transformed_vector(1), (param.car_z_min + param.car_z_max) / 2);
-//            p_base->getLocalOctoPtr()->updateNode(point, true);
-//            point_x += point_dx;
-//            point_y += point_dy;
-//        }
+        for(int iter = 0; iter < step; iter++) {
+            Vector3d transformed_vector = applyTransform(p_base->To0, Vector3d(point_x, point_y, 0)); //SNU to world transform
+            octomap::point3d point(transformed_vector(0), transformed_vector(1), (param.car_z_min + param.car_z_max) / 2);
+            p_base->getLocalOctoPtr()->updateNode(point, true);
+            point_x += point_dx;
+            point_y += point_dy;
+        }
     }
 
     // initialize grid
