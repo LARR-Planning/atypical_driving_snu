@@ -9,6 +9,9 @@
   <arg name="bagfile"        default="autoDriveIntegration.bag"/>
   <arg name="playBagFile"    default="true"/>
   <arg name="snu_frame_id" default="SNU"/>
+  <arg name="octomap_frame_id" default="map"/>
+  <arg name="lane_width" default="6"/>
+
   <!--  Arguments for integration with KETI-->
 
   <arg name="vehicle_model/ly"            default="2.7"/> <!-- for the dynamics -->
@@ -54,7 +57,11 @@
 
     <param name = "world_frame_id" value="map" />
     <param name = "snu_frame_id" value="$(arg snu_frame_id)" />
-    <param name = "octomap_gen_frame_id" value="SNU" /> <!-- The frame id of octomap map or SNU-->
+    <param name = "octomap_gen_frame_id" value="$(arg octomap_frame_id)" /> <!-- The frame id of octomap map or SNU-->
+
+    <param name = "lane_csv_file" value = "$(find atypical_driving)/waypoint_airsim.csv"/>
+    <param name = "lane_width" value="8"/>
+
 
     <param name="global_planner/horizon" value="$(arg nominal_period)" />
     <param name="global_planner/car_width" value="$(arg vehicle_model/lx)" />

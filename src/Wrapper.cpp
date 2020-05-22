@@ -80,7 +80,7 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_):p_base(p_ba
     // Publisher
     pubPath = nh.advertise<nav_msgs::Path>("planning_path",1);
     pubCorridorSeq = nh.advertise<visualization_msgs::MarkerArray>("corridor_seq",1);
-    pubObservationMarker = nh.advertise<visualization_msgs::Marker>("observation_queue",1);
+    pubObservationMarker = nh.advertise<visualization_msgs::MarkerArray>("observation_queue",1);
     pubPredictionArray = nh.advertise<visualization_msgs::MarkerArray>("prediction",1);
     pubCurCmd = nh.advertise<driving_msgs::VehicleCmd>("/vehicle_cmd",1);
     pubMPCTraj = nh.advertise<nav_msgs::Path>("mpc_traj",1);
@@ -357,7 +357,7 @@ void RosWrapper::prepareROSmsgs() {
 
         // MPC path
         if (p_base->isLPsolved) {
-            MPCTraj.header.frame_id = worldFrameId;
+            MPCTraj.header.frame_id = SNUFrameId;
             MPCTraj.poses.clear();
             PoseStamped MPCPose;
             MPCResultTraj mpcResultTraj = p_base->getMPCResultTraj();
@@ -584,10 +584,10 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
         p_base->T0s.setIdentity();
         p_base->T0s.rotate(quat);
 
-//        ROS_INFO("[SNU_PLANNER/RosWrapper] Reference tf has been initialized with [%f,%f,%f,%f,%f,%f,%f]",
-//                transl(0),transl(1),transl(2),quat.x(),quat.y(),quat.z(),quat.w());
         ROS_INFO("[SNU_PLANNER/RosWrapper] Reference tf has been initialized with [%f,%f,%f,%f,%f,%f,%f]",
-                 transl(0),transl(1),transl(2),0.0,0.0,0.0,1.0);
+                transl(0),transl(1),transl(2),quat.x(),quat.y(),quat.z(),quat.w());
+//        ROS_INFO("[SNU_PLANNER/RosWrapper] Reference tf has been initialized with [%f,%f,%f,%f,%f,%f,%f]",
+//                 transl(0),transl(1),transl(2),0.0,0.0,0.0,1.0);
         isFrameRefReceived = true;
         if(not isOctomapFrameResolved){
             ROS_INFO("[SNU_PLANNER/RosWrapper] seems that frame of octomap = map frame.");
@@ -621,7 +621,7 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
     if (isCarSpeedReceived)
         if(mSet[0].try_lock()){
             ROS_INFO_ONCE("[SNU_PLANNER/RosWrapper] First received car state");
-
+//            cout << "call back back" << endl;
             // Converting car pose w.r.t Tw0
             auto poseOrig = dataPtr->pose;
             SE3 Tw1  = DAP::pose_to_transform_matrix(poseOrig).cast<double>(); // Tw1
