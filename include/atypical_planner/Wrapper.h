@@ -92,7 +92,7 @@ namespace Planner{
         ros::Publisher pubMPCTraj; // if MPC has been solved, it pulish mpc traj for local planner horizon
         ros::Publisher pubLaneNode; // lane node
         ros::Publisher pubCurGoal; // Publish current goal point (global goal)
-
+        ros::Publisher pubOctomapSNU; // regenerated octomap
 
         /**
          * Subscriber

@@ -87,6 +87,7 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_):p_base(p_ba
 
     pubLaneNode = nh.advertise<nav_msgs::Path>("lane_path",1);
     pubCurGoal = nh.advertise<geometry_msgs::PointStamped>("global_goal",1);
+    pubOctomapSNU = nh.advertise<octomap_msgs::Octomap>("octomap_snu",1);
 
     // Subscriber
     subCarPoseCov = nh.subscribe("/current_pose",1,&RosWrapper::cbCarPoseCov,this);
@@ -466,6 +467,11 @@ void RosWrapper::publish() {
         q.setW(qd.w());
         transform.setRotation(q);//
         tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(),worldFrameId,SNUFrameId));
+
+        // Send octomap snu
+        p_base->octomap_snu_msgs.header.frame_id = octomapGenFrameId;
+        p_base->octomap_snu_msgs.header.stamp = ros::Time::now();
+        pubOctomapSNU.publish(p_base->octomap_snu_msgs);
     }
 
     if (isLaneReceived){
@@ -824,7 +830,7 @@ void Wrapper::run(){
  */
 
 bool Wrapper::plan(double tTrigger){
-    mSet[0].lock();
+//    mSet[0].lock();
 //    ROS_INFO( "[Wrapper] Assume that planning takes 0.5 sec. Locking subscription.\n ");
 //    std::this_thread::sleep_for(std::chrono::duration<double>(0.5));
 
@@ -850,11 +856,11 @@ bool Wrapper::plan(double tTrigger){
             p_base_shared->isLPsolved = lpPassed;
 
         // Unlocking
-        mSet[0].unlock();
+//        mSet[0].unlock();
         return (gpPassed and lpPassed);
 
     }else{ //
-        mSet[0].unlock();
+//        mSet[0].unlock();
         ROS_WARN("[SNU_PLANNER/Wrapper] global planning failed");
         return false;
     }

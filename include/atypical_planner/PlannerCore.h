@@ -6,6 +6,7 @@
 #define ATYPICAL_DRIVING_PLANNERBASE_H
 
 #include <octomap/OcTree.h>
+#include <octomap_msgs/Octomap.h>
 #include <vector>
 #include <memory>
 #include <geometry_msgs/Twist.h>
@@ -176,6 +177,7 @@ namespace Planner {
         // to be updated from callback
         shared_ptr<octomap::OcTree> octo_global_ptr;
         shared_ptr<octomap::OcTree> octo_local_ptr;
+
         CarState cur_state;
         SE3 cur_transform; // current tf of the car w.r.t the Tw0
         geometry_msgs::PoseStamped cur_pose; // current pose of the car w.r.t the Tw0
@@ -196,6 +198,8 @@ namespace Planner {
         SE3 To0; // Transformation from  octomap ref frame to SNU
         SE3 T0s; // SNU to rotation of the first pose
         parser parse_tool;
+        octomap_msgs::Octomap octomap_snu_msgs;
+
         // prediction module
         vector<Predictor::TargetManager> predictorSet; // TODO erase after indexed predictor
         Predictor::TargetManager predictorBase;

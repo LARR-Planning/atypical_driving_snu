@@ -20,8 +20,8 @@
     <arg name="vehicle_model/is_rear_wheel"     default="false"/>
 
     <arg name="nominal_speed"     default="10"/>
-    <arg name="nominal_period"     default="3"/> <!--preirod = horizon -->
-    <arg name="planning_dt"     default="0.02"/> <!--?-->
+    <arg name="nominal_period"     default="5"/> <!--preirod = horizon -->
+    <arg name="planning_dt"     default="0.1"/> <!--?-->
 
     <arg name="initial_goal/x" value="332260" />
     <arg name="initial_goal/y" value="4138435" />

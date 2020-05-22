@@ -1,5 +1,6 @@
 #include <atypical_planner/GlobalPlanner.h>
 #include <third_party/jps.h>
+#include <octomap_msgs/conversions.h>
 
 #define SP_EPSILON          1e-9
 #define SP_EPSILON_FLOAT    1e-4
@@ -114,6 +115,11 @@ bool GlobalPlanner::plan(double t) {
             point_x += point_dx;
             point_y += point_dy;
         }
+
+        octomap_msgs::binaryMapToMsg(*p_base->getLocalOctoPtr(),p_base->octomap_snu_msgs);
+
+
+
     }
     for(int i = 0; i < right.size()-1; i++){
         point_dx = right[i+1].x - right[i].x;
