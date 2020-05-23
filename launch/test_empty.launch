@@ -49,7 +49,7 @@
 <!--  </node>-->
 
   <node pkg="rosbag" type="play" name="rosbag_record_diag" args="--clock --loop  $(find atypical_driving)/worlds/$(arg bagfile)" if="$(arg playBagFile)">
-    <remap from="octomap_full" to="/atypical_planning_test/local_map"/>
+    <remap from="octomap_binary" to="/atypical_planning_test/local_map"/>
     <remap from="/airsim_car_node/object_pose" to="/atypical_planning_test/obstacle_pose"/>
   </node>
 
@@ -60,7 +60,7 @@
     <param name = "octomap_gen_frame_id" value="$(arg octomap_frame_id)" /> <!-- The frame id of octomap map or SNU-->
 
     <param name = "lane_csv_file" value = "$(find atypical_driving)/waypoint_airsim.csv"/>
-    <param name = "lane_width" value="8"/>
+    <param name = "lane_width" value="10"/>
 
 
     <param name="global_planner/horizon" value="$(arg nominal_period)" />

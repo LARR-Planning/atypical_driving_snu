@@ -28,6 +28,22 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_):p_base(p_ba
     string csv_file; double laneWidth;
     nh.param<string>("lane_csv_file",csv_file,"catkin_ws/src/atypical_driving_snu/keti_pangyo_path3.csv");
     nh.param<double>("lane_width",laneWidth,2.5);
+    nh.param<string>("log_file_prefix",p_base_->log_file_name_base,"");
+    string corridor_logger = p_base_->log_file_name_base;
+    string mpc_logger = p_base->log_file_name_base;
+    string state_logger = p_base->log_file_name_base;
+    string input_logger = p_base->log_file_name_base;
+
+    corridor_logger += "_corridor.txt";
+    mpc_logger += "_mpc.txt";
+    state_logger += "_state.txt";
+    input_logger += "_input.txt";
+
+    remove(corridor_logger.c_str());
+    remove(mpc_logger.c_str());
+    remove(state_logger.c_str());
+    remove(input_logger.c_str());
+
     p_base->parse_tool.get_Coorddata(csv_file); // This parse only the center information
 //     p_base->parse_tool.display_result();
     // TODO is valid csv?
@@ -84,6 +100,7 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_):p_base(p_ba
     pubPredictionArray = nh.advertise<visualization_msgs::MarkerArray>("prediction",1);
     pubCurCmd = nh.advertise<driving_msgs::VehicleCmd>("/vehicle_cmd",1);
     pubMPCTraj = nh.advertise<nav_msgs::Path>("mpc_traj",1);
+    pubCurPose = nh.advertise<geometry_msgs::PoseStamped>("cur_pose",1);
 
     pubLaneNode = nh.advertise<nav_msgs::Path>("lane_path",1);
     pubCurGoal = nh.advertise<geometry_msgs::PointStamped>("global_goal",1);
@@ -379,8 +396,8 @@ void RosWrapper::prepareROSmsgs() {
         curGoal.point.x = p_base->getDesiredState().x;
         curGoal.point.y = p_base->getDesiredState().y;
         pubCurGoal.publish(curGoal);
-
-
+        p_base->cur_pose.header.frame_id = SNUFrameId;
+        pubCurPose.publish(p_base->getCurPose());
 
         mSet[1].unlock();
     }else{
@@ -434,14 +451,18 @@ void RosWrapper::publish() {
     if (p_base->isLPsolved) {
         pubCurCmd.publish(p_base->getCurInput(curTime()));
         pubMPCTraj.publish(MPCTraj);
+
+        p_base->log_state_input(curTime());
+
     }
     pubPath.publish(planningPath);
     pubCorridorSeq.publish(corridorSeq);
 
 
+
     // Tranform broadcasting the tf of the current car w.r.t the first received tf
 
-    if (isFrameRefReceived) {
+    if (isFrameRefReceived and isCarPoseCovReceived) {
         // send T01
         auto pose = p_base->getCurPose();
 
@@ -455,23 +476,22 @@ void RosWrapper::publish() {
         transform.setRotation(q);
 
         tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(),SNUFrameId, "car_base_link"));
-
-        // send Tw0
-        transform.setOrigin( tf::Vector3(p_base->Tw0.translation()(0),
-                p_base->Tw0.translation()(1),
-                p_base->Tw0.translation()(2)));
-        auto qd = Eigen::Quaterniond(p_base->Tw0.rotation());
-        q.setX(qd.x());
-        q.setY(qd.y());
-        q.setZ(qd.z());
-        q.setW(qd.w());
-        transform.setRotation(q);//
-        tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(),worldFrameId,SNUFrameId));
+            // send Tw0
+            transform.setOrigin(tf::Vector3(p_base->Tw0.translation()(0),
+                                            p_base->Tw0.translation()(1),
+                                            p_base->Tw0.translation()(2)));
+            auto qd = Eigen::Quaterniond(p_base->Tw0.rotation());
+            q.setX(qd.x());
+            q.setY(qd.y());
+            q.setZ(qd.z());
+            q.setW(qd.w());
+            transform.setRotation(q);//
+            tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), worldFrameId, SNUFrameId));
 
         // Send octomap snu
-        p_base->octomap_snu_msgs.header.frame_id = octomapGenFrameId;
-        p_base->octomap_snu_msgs.header.stamp = ros::Time::now();
-        pubOctomapSNU.publish(p_base->octomap_snu_msgs);
+//        p_base->octomap_snu_msgs.header.frame_id = octomapGenFrameId;
+//        p_base->octomap_snu_msgs.header.stamp = ros::Time::now();
+//        pubOctomapSNU.publish(p_base->octomap_snu_msgs);
     }
 
     if (isLaneReceived){
@@ -651,6 +671,7 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
             q.setW(poseTransformed.orientation.w);
 
             tf::Transform Twc;
+            Twc.setIdentity();
             Twc.setRotation(q);
 
             tf::Matrix3x3 Rwc = Twc.getBasis();
@@ -725,7 +746,7 @@ void RosWrapper::cbGlobalMap(const octomap_msgs::Octomap& octomap_msg) {
  */
 void RosWrapper::cbLocalMap(const octomap_msgs::Octomap& octomap_msg) {
     // TODO you have to decide whether the update in this callback could interrupt planning thread
-    if(mSet[0].try_lock()) {
+//    if(mSet[0].try_lock()) {
 
         p_base->setLocalMap(dynamic_cast<octomap::OcTree *>(octomap_msgs::binaryMsgToMap(octomap_msg)));
         double xmin, ymin, zmin;
@@ -751,14 +772,14 @@ void RosWrapper::cbLocalMap(const octomap_msgs::Octomap& octomap_msg) {
 //                maxPnt.x(),maxPnt.y(),maxPnt.z());
 
         ROS_INFO_ONCE("Octomap loaded");
-
-        mSet[0].unlock();
         isLocalMapReceived = true;
+
+//        mSet[0].unlock();
 //        ROS_INFO("[RosWrapper] local map update");
 //    }else{
 //        ROS_WARN("[RosWrapper] callback for CarPoseCov locked by planner. Passing update");
 //    }
-    }
+
 }
 
 /**
@@ -869,13 +890,18 @@ bool Wrapper::plan(double tTrigger){
     if (gpPassed) {
         ROS_INFO_ONCE("[SNU_PLANNER/Wrapper] global planner passed. Start local planning ");
         updateCorrToBase();
+        // let's log
+        p_base_shared->log_corridor(tTrigger);
+
        // Call local planner
         bool lpPassed =false ;
         lpPassed = lp_ptr->plan(tTrigger); // TODO
 
-        if (lpPassed)
+        if (lpPassed) {
             //cout<<"Okay, fine"<<endl;
             updateMPCToBase();
+            p_base_shared->log_mpc(tTrigger);
+        }
         else
             ROS_WARN("[SNU_PLANNER/Wrapper] local planning failed");
 
@@ -931,9 +957,6 @@ void Wrapper::runPlanning() {
     bool isPlanPossible = false;
     bool isPlanSuccess = false;
     while (ros::ok()){
-
-
-
         // First, we have to check all the inputs are received for planning
         isPlanPossible = ros_wrapper_ptr->isAllInputReceived();
         if (isPlanPossible){
