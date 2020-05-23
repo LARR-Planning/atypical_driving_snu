@@ -157,6 +157,7 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<double>("global_planner/car_z_min",param_.g_param.car_z_min,0.0);
     nh.param<double>("global_planner/car_z_max",param_.g_param.car_z_max,2.0);
     nh.param<double>("global_planner/car_speed",param_.g_param.car_speed,1.0);
+    nh.param<double>("global_planner/car_acceleration",param_.g_param.car_acceleration,1);
     nh.param<double>("global_planner/world_x_min",param_.g_param.world_x_min,-10);
     nh.param<double>("global_planner/world_y_min",param_.g_param.world_y_min,-1);
     nh.param<double>("global_planner/world_x_max",param_.g_param.world_x_max,35);

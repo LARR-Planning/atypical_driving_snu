@@ -167,11 +167,13 @@ bool GlobalPlanner::plan(double t) {
     dimy = (int) round((grid_y_max - grid_y_min) / param.grid_resolution) + 1;
 
     // Set start, goal points
+    CarState current_state = p_base->getCarState();
+    CarState desired_state = p_base->getDesiredState();
     int i_start, j_start, i_goal, j_goal;
-    i_start = (int) round((p_base->getCarState().x - grid_x_min) / param.grid_resolution);
-    j_start = (int) round((p_base->getCarState().y - grid_y_min) / param.grid_resolution);
-    i_goal = (int) round((p_base->getDesiredState().x - grid_x_min) / param.grid_resolution);
-    j_goal = (int) round((p_base->getDesiredState().y - grid_y_min) / param.grid_resolution);
+    i_start = (int) round((current_state.x - grid_x_min) / param.grid_resolution);
+    j_start = (int) round((current_state.y - grid_y_min) / param.grid_resolution);
+    i_goal = (int) round((desired_state.x - grid_x_min) / param.grid_resolution);
+    j_goal = (int) round((desired_state.y - grid_y_min) / param.grid_resolution);
 
     if(i_start < 0 || i_start >= dimx || j_start < 0 || j_start >= dimy){
         printf("[GlobalPlanner] ERROR: start point is out of bound \n");
@@ -367,7 +369,6 @@ bool GlobalPlanner::plan(double t) {
         }
 
         // Expand box
-        double car_radius = param.car_width / 2;
         std::array<double, 4> box_cand, box_update;
         std::vector<int> axis_cand{0, 1, 2, 3};
         int axis, i = -1;
@@ -479,43 +480,93 @@ bool GlobalPlanner::plan(double t) {
             }
             current_index = path_iter + count / 2;
 
-
-            //TODO: Do not use this code! update with Yunwoo's branch
             timeSegment = 0;
-            double delta_x, delta_y, box_width, time_coefficient;
+            double delta_x, delta_y;
             for(int i = prev_index; i < current_index; i++){
-                //find closest LaneNode and get road width
-                double min_dist = SP_INFINITY;
-                double road_width;
-                for(const auto& laneNode: lanePath.lanes){
-                    for(auto lanePoint: laneNode.laneCenters){
-                        double dist = sqrt(pow(lanePoint.x-curSkeletonPath[i].x, 2) + pow(lanePoint.y-curSkeletonPath[i].y, 2));
-                        if(dist < min_dist){
-                            road_width = laneNode.width;
-                        }
-                    }
+//                //find closest LaneNode and get road width
+//                double min_dist = SP_INFINITY;
+//                double road_width;
+//                for(const auto& laneNode: lanePath.lanes){
+//                    for(auto lanePoint: laneNode.laneCenters){
+//                        double dist = sqrt(pow(lanePoint.x-curSkeletonPath[i].x, 2) + pow(lanePoint.y-curSkeletonPath[i].y, 2));
+//                        if(dist < min_dist){
+//                            road_width = laneNode.width;
+//                        }
+//                    }
+//                }
+//
+//                if(delta_x > SP_EPSILON_FLOAT && delta_y < SP_EPSILON_FLOAT){
+//                    box_width = min(curCorridorSeq[box_iter].yu - curCorridorSeq[box_iter].yl, road_width);
+//                    time_coefficient = road_width / box_width; //TODO: naive time_coefficient formulation
+//                    timeSegment += time_coefficient * delta_x / param.car_speed;
+//                }
+//                else if(delta_x < SP_EPSILON_FLOAT && delta_y > SP_EPSILON_FLOAT){
+//                    box_width = min(curCorridorSeq[box_iter].xu - curCorridorSeq[box_iter].xl, road_width);
+//                    time_coefficient = road_width / box_width; //TODO: naive time_coefficient formulation
+//                    timeSegment += time_coefficient * delta_y / param.car_speed;
+//                }
+//                else if(delta_x < SP_EPSILON_FLOAT && delta_y < SP_EPSILON_FLOAT){
+//                    timeSegment += param.grid_resolution / param.car_speed;
+//                }
+//                else{
+//                    printf("[GlobalPlanner] ERROR: Invalid initial trajectory. initial trajectory has diagonal move");
+//                    return false;
+//                }
+                //update current car state
+                double delta, sgn, v_0, v_n, a_n, t1, s1;
+                delta_x = curSkeletonPath[i+1].x - curSkeletonPath[i].x;
+                delta_y = curSkeletonPath[i+1].y - curSkeletonPath[i].y;
+                if(abs(delta_x) > SP_EPSILON_FLOAT && abs(delta_y) < SP_EPSILON_FLOAT) {
+                    v_0 = current_state.v * cos(current_state.theta);
+                    delta = delta_x;
                 }
-
-
-                delta_x = abs(curSkeletonPath[i+1].x - curSkeletonPath[i].x);
-                delta_y = abs(curSkeletonPath[i+1].y - curSkeletonPath[i].y);
-                if(delta_x > SP_EPSILON_FLOAT && delta_y < SP_EPSILON_FLOAT){
-                    box_width = min(curCorridorSeq[box_iter].yu - curCorridorSeq[box_iter].yl, road_width);
-                    time_coefficient = road_width / box_width; //TODO: naive time_coefficient formulation
-                    timeSegment += time_coefficient * delta_x / param.car_speed;
+                else if(abs(delta_x) < SP_EPSILON_FLOAT && abs(delta_y) > SP_EPSILON_FLOAT) {
+                    v_0 = current_state.v * sin(current_state.theta);
+                    delta = delta_y;
                 }
-                else if(delta_x < SP_EPSILON_FLOAT && delta_y > SP_EPSILON_FLOAT){
-                    box_width = min(curCorridorSeq[box_iter].xu - curCorridorSeq[box_iter].xl, road_width);
-                    time_coefficient = road_width / box_width; //TODO: naive time_coefficient formulation
-                    timeSegment += time_coefficient * delta_y / param.car_speed;
-                }
-                else if(delta_x < SP_EPSILON_FLOAT && delta_y < SP_EPSILON_FLOAT){
-                    timeSegment += param.grid_resolution / param.car_speed;
+                else if(abs(delta_x) < SP_EPSILON_FLOAT && abs(delta_y) < SP_EPSILON_FLOAT){
+                    printf("[GlobalPlanner] ERROR: Invalid initial trajectory. initial trajectory didn't move");
+                    return false;
                 }
                 else{
                     printf("[GlobalPlanner] ERROR: Invalid initial trajectory. initial trajectory has diagonal move");
                     return false;
                 }
+
+                if(delta > 0) {
+                    sgn = 1;
+                }
+                else {
+                    sgn = -1;
+                }
+                v_n = sgn * param.car_speed;
+                a_n = sgn * param.car_acceleration;
+
+                t1 = (v_n - v_0) / a_n;
+                if(t1 > 0){
+                    s1 = v_0 * t1 + 0.5 * a_n * t1 * t1;
+                    if(abs(s1) > abs(delta)){
+                        if(sgn > 0) {
+                            timeSegment += (sqrt(v_0 * v_0 + 2 * a_n * delta) - v_0) / a_n;
+                        } else {
+                            timeSegment += (-sqrt(v_0 * v_0 + 2 * a_n * delta) - v_0) / a_n;
+                        }
+                        current_state.v = v_0 + a_n * t1;
+                    }
+                    else{
+                        timeSegment += t1 + (delta - s1) / v_n;
+                        current_state.v = param.car_speed;
+                    }
+                }
+                else{
+                    //use nominal speed
+                    timeSegment += delta / param.car_speed;
+                    current_state.v = param.car_speed;
+                }
+                if(sgn > 0)
+                    current_state.theta = 0;
+                else
+                    current_state.theta = PI;
             }
             curCorridorSeq[box_iter].t_end = timeSegment;
 
