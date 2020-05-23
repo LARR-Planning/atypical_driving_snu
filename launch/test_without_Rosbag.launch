@@ -9,7 +9,7 @@
   <arg name="playBagFile"    default="true"/>
   <arg name="snu_frame_id" default="SNU"/>
   <arg name="octomap_frame_id" default="map"/>
-  <arg name="lane_width" default="6"/>
+  <arg name="lane_width" default="12"/>
   <!--  Arguments for integration with KETI-->
 
   <arg name="vehicle_model/ly"            default="2.7"/> <!-- for the dynamics -->
@@ -37,7 +37,7 @@
     <param name = "octomap_gen_frame_id" value="$(arg octomap_frame_id)" /> <!-- The frame id of octomap map or SNU-->
 
     <param name = "lane_csv_file" value = "$(find atypical_driving)/waypoint_airsim.csv"/>
-    <param name = "lane_width" value="8"/>
+    <param name = "lane_width" value="$(arg lane_width)"/>
 
 
     <param name="global_planner/horizon" value="$(arg nominal_period)" />
@@ -46,10 +46,10 @@
     <param name="global_planner/car_z_max" value="1.0" />
     <param name="global_planner/car_speed" value="$(arg nominal_speed)" />
     <param name="global_planner/road_width" value="4.0" />
-    <param name="global_planner/world_x_min" value="-10" />
-    <param name="global_planner/world_y_min" value="-1" />
-    <param name="global_planner/world_x_max" value="35" />
-    <param name="global_planner/world_y_max" value="80" />
+    <param name="global_planner/world_x_min" value="-100" />
+    <param name="global_planner/world_y_min" value="-100" />
+    <param name="global_planner/world_x_max" value="100" />
+    <param name="global_planner/world_y_max" value="100" />
     <param name="global_planner/grid_resolution" value="0.5" />
     <param name="global_planner/box_resolution" value="0.3" />
     <param name="global_planner/box_max_size" value="10" />

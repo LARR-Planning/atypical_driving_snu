@@ -221,29 +221,43 @@ void LocalPlanner::SfcToOptConstraint(){
     int count = 0;
     for(int i = 1; i<node_list.size();i++)
     {
+        t_list.push_back(t_temp);
         node_distance = (node_list[i]-node_list[i-1]).norm();
        t_temp +=node_distance * 0.5; // divided by 2m/s --> wpts list generation at Global Planner.cpp is opimal;
-       t_list.push_back(t_temp);
+
     }
      Matrix<double,2,1> velNormalized_temp;
     Matrix<double,3,1> wpts_temp2;
      vector<Matrix<double,2,1>> wpts_list1;
      vector<Matrix<double,3,1>> wpts_list2;
 
-    for (int i = 1; i< t_list.size();i++)
+    for (int i = 0; i< t_list.size();i++)
     {
-        for (int j = 0; j < round((t_list[i] - t_start_) / param.tStep); j++) {
-            velNormalized_temp = (node_list[i]-node_list[i-1]).normalized();
-            wpts_temp1 = node_list[i-1] + (t_start_+(j+1)*dt - t_list[i-1])*velNormalized_temp*2; //multiplied by 2m/s
-            wpts_temp2(0) = wpts_temp1(0);
-            wpts_temp2(1) =wpts_temp2(1);
-            wpts_temp2(2) =atan2(velNormalized_temp(1),velNormalized_temp(0));
-            wpts_list1.push_back(wpts_temp1);
-            wpts_list2.push_back(wpts_temp2);
+        if(i == 0)
+        {
+            velNormalized_temp = (node_list[1]-node_list[0]).normalized();
+            wpts_temp1=node_list[0];
+            wpts_temp2(0)=wpts_temp1(0);
+            wpts_temp2(1)=wpts_temp1(1);
+            wpts_temp2(2)=atan2(velNormalized_temp(1),velNormalized_temp(0));
             count++;
+        }
+        else
+        {
+            for (int j = 0; j < round((t_list[i] - t_start_) / param.tStep); j++) {
+                velNormalized_temp = (node_list[i]-node_list[i-1]).normalized();
+                wpts_temp1 = node_list[i-1] + (t_start_+(j+1)*dt - t_list[i-1])*velNormalized_temp*2; //multiplied by 2m/s
+                wpts_temp2(0) = wpts_temp1(0);
+                wpts_temp2(1) =wpts_temp1(1);
+                wpts_temp2(2) =atan2(velNormalized_temp(1),velNormalized_temp(0));
+                wpts_list1.push_back(wpts_temp1);
+                wpts_list2.push_back(wpts_temp2);
+                count++;
+            }
         }
         t_start_ = param.tStep * (count- 1);
     }
+
     Matrix<double,2,1> curr_pos;
     curr_pos<< p_base->getCarState().x, p_base->getCarState().y;
     int start_idx = 0;
@@ -262,12 +276,12 @@ void LocalPlanner::SfcToOptConstraint(){
     direction_my<< cos(p_base->getCarState().theta), sin(p_base->getCarState().theta);
     direction_path<< p_base->getCarState().x-wpts_list2[start_idx].coeffRef(0,0),
             p_base->getCarState().y-wpts_list2[start_idx].coeffRef(1,0);
-    double flag_changeIdx = (direction_my.array()*direction_path.array()).sum();
-    while(flag_changeIdx<0)
-    {
-        flag_changeIdx = (direction_my.array()*direction_path.array()).sum();
-        start_idx+=1;
-    }
+//    double flag_changeIdx = (direction_my.array()*direction_path.array()).sum();
+//    while(flag_changeIdx<0)
+//    {
+//        flag_changeIdx = (direction_my.array()*direction_path.array()).sum();
+//        start_idx+=1;
+//    }
     for(int i = 0; i<50; i++)
     {
         if(start_idx+i>wpts_list2.size())
@@ -315,17 +329,17 @@ bool LocalPlannerPlain::plan(double t) {
          state_weight_.coeffRef(0,0) = 0.5; //x
          state_weight_.coeffRef(1,0) = 0.5; //y
          state_weight_.coeffRef(2,0) = 0.5; //v
-         state_weight_.coeffRef(3,0) = 0.005; //delta
-         state_weight_.coeffRef(4,0) = 0.2; //theta
+         state_weight_.coeffRef(3,0) = 0.1; //delta
+         state_weight_.coeffRef(4,0) = 0.01; //theta
 
          final_weight_.coeffRef(0,0) = 0.5; // x
          final_weight_.coeffRef(1,0) = 0.5; //y
          final_weight_.coeffRef(2,0) = 0.5; //v
-         final_weight_.coeffRef(3,0) = 0.05; //delta
-         final_weight_.coeffRef(4,0) = 0.2; // theta
+         final_weight_.coeffRef(3,0) = 0.1; //delta
+         final_weight_.coeffRef(4,0) = 0.01; // theta
 
-         input_weight_.coeffRef(0,0) = 0.2;
-         input_weight_.coeffRef(1,0) = 0.1;
+         input_weight_.coeffRef(0,0) = 0.05;
+         input_weight_.coeffRef(1,0) = 0.01;
          isRefUsed = 1;
      }
 
