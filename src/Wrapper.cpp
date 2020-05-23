@@ -174,6 +174,7 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<double>("global_planner/car_z_min",param_.g_param.car_z_min,0.0);
     nh.param<double>("global_planner/car_z_max",param_.g_param.car_z_max,2.0);
     nh.param<double>("global_planner/car_speed",param_.g_param.car_speed,1.0);
+    nh.param<double>("global_planner/car_acceleration",param_.g_param.car_acceleration,1.0);
     nh.param<double>("global_planner/world_x_min",param_.g_param.world_x_min,-10);
     nh.param<double>("global_planner/world_y_min",param_.g_param.world_y_min,-1);
     nh.param<double>("global_planner/world_x_max",param_.g_param.world_x_max,35);
@@ -449,7 +450,9 @@ void RosWrapper::prepareROSmsgs() {
 void RosWrapper::publish() {
     // e.g pub1.publish(topic1)
     if (p_base->isLPsolved) {
-        pubCurCmd.publish(p_base->getCurInput(curTime()));
+        auto cmd = p_base->getCurInput(curTime());
+        cmd.header.stamp = ros::Time::now();
+        pubCurCmd.publish(cmd);
         pubMPCTraj.publish(MPCTraj);
 
         p_base->log_state_input(curTime());
@@ -645,6 +648,9 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
     }
 
     if (isCarSpeedReceived) {
+
+//        if (mSet[0].try_lock())
+        {
             ROS_INFO_ONCE("[SNU_PLANNER/RosWrapper] First received car state");
 //            cout << "call back back" << endl;
             // Converting car pose w.r.t Tw0
@@ -686,6 +692,8 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
                       curState.theta * 180 / M_PI, curState.v);
 
             p_base->setCarState(curState);
+
+//            mSet[0].unlock();
             isCarPoseCovReceived = true;
             //        ROS_INFO("[RosWrapper] car pose update");
 //        }else{
@@ -746,7 +754,9 @@ void RosWrapper::cbGlobalMap(const octomap_msgs::Octomap& octomap_msg) {
  */
 void RosWrapper::cbLocalMap(const octomap_msgs::Octomap& octomap_msg) {
     // TODO you have to decide whether the update in this callback could interrupt planning thread
-//    if(mSet[0].try_lock()) {
+
+    if(mSet[0].try_lock())
+    {
 
         p_base->setLocalMap(dynamic_cast<octomap::OcTree *>(octomap_msgs::binaryMsgToMap(octomap_msg)));
         double xmin, ymin, zmin;

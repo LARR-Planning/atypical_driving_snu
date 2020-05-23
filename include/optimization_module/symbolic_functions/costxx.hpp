@@ -13,7 +13,7 @@ namespace symbolic_functions
                 Matrix<double,Nu,1>u_,
                 Matrix<double,Nx,1>Q,
                 Matrix<double,Nu,1>R,
-                Matrix<double,2,1>g,
+                Matrix<double,3,1>g,
                 Matrix<double,2,1>obs)
     {
         float x = x_(0,0);
@@ -28,7 +28,7 @@ namespace symbolic_functions
         float Q1 = Q(0);
         float Q2 = Q(1);
         float Q3 = Q(3);
-        
+        float Q4 = Q(4);
         // float R1 = R(0);
         // float R2 = R(1);
 
@@ -38,6 +38,7 @@ namespace symbolic_functions
         A0(0,0) = Q1;
         A0(1,1) = Q2;
         A0(3,3) = Q3;
+        A0(4,4) = Q4;
         return A0;
     }
 }

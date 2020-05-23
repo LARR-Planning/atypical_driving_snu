@@ -114,17 +114,17 @@ bool GlobalPlanner::plan(double t) {
 
         for(int iter = 0; iter < step; iter++) {
             //Vector3d transformed_vector = applyTransform(p_base->Tw0, Vector3d(point_x, point_y, 0)); //SNU to world transform
-            Vector3d transformed_vector = applyTransform(p_base->To0, Vector3d(point_x, point_y, 0)); //SNU to world transform
+            Vector3d transformed_vector = applyTransform(p_base->To0, Vector3d(point_x, point_y, 0)); //SNU to octomap transform
             octomap::point3d point(transformed_vector(0), transformed_vector(1), (param.car_z_min + param.car_z_max) / 2);
-            p_base->getLocalOctoPtr()->updateNode(point, true);
+            if(point.x() > world_box_transformed[0]
+               && point.y() > world_box_transformed[1]
+               && point.x() < world_box_transformed[2]
+               && point.y() < world_box_transformed[3]) {
+                p_base->getLocalOctoPtr()->updateNode(point, true);
+            }
             point_x += point_dx;
             point_y += point_dy;
         }
-
-        // octomap_msgs::binaryMapToMsg(*p_base->getLocalOctoPtr(),p_base->octomap_snu_msgs);
-
-
-
     }
     for(int i = 0; i < right.size()-1; i++){
         point_dx = right[i+1].x - right[i].x;
@@ -143,20 +143,23 @@ bool GlobalPlanner::plan(double t) {
         point_y = right[i].y;
 
         for(int iter = 0; iter < step; iter++) {
-            Vector3d transformed_vector = applyTransform(p_base->To0, Vector3d(point_x, point_y, 0)); //SNU to world transform
+            Vector3d transformed_vector = applyTransform(p_base->To0, Vector3d(point_x, point_y, 0)); //SNU to octomap transform
             octomap::point3d point(transformed_vector(0), transformed_vector(1), (param.car_z_min + param.car_z_max) / 2);
-            p_base->getLocalOctoPtr()->updateNode(point, true);
+            if(point.x() > world_box_transformed[0]
+               && point.y() > world_box_transformed[1]
+               && point.x() < world_box_transformed[2]
+               && point.y() < world_box_transformed[3]) {
+                p_base->getLocalOctoPtr()->updateNode(point, true);
+            }
             point_x += point_dx;
             point_y += point_dy;
         }
     }
+     octomap_msgs::binaryMapToMsg(*p_base->getLocalOctoPtr(),p_base->octomap_snu_msgs);
 
     // initialize grid
     std::array<double, 4> world_box = {param.world_x_min, param.world_y_min, param.world_x_max, param.world_y_max};
-    if (param.is_world_box_snu_frame)
-        world_box_transformed =  world_box; //world to SNU transform
-    else
-        world_box_transformed = boxTransform(p_base->Tw0.inverse(), world_box); //world to SNU transform
+    world_box_transformed = boxTransform(p_base->To0.inverse(), world_box); //map to SNU transform
 
     grid_x_min = ceil((world_box_transformed[0] + SP_EPSILON) / param.grid_resolution) * param.grid_resolution;
     grid_y_min = ceil((world_box_transformed[1] + SP_EPSILON) / param.grid_resolution) * param.grid_resolution;
@@ -167,11 +170,13 @@ bool GlobalPlanner::plan(double t) {
     dimy = (int) round((grid_y_max - grid_y_min) / param.grid_resolution) + 1;
 
     // Set start, goal points
+    CarState current_state = p_base->getCarState();
+    CarState desired_state = p_base->getDesiredState();
     int i_start, j_start, i_goal, j_goal;
-    i_start = (int) round((p_base->getCarState().x - grid_x_min) / param.grid_resolution);
-    j_start = (int) round((p_base->getCarState().y - grid_y_min) / param.grid_resolution);
-    i_goal = (int) round((p_base->getDesiredState().x - grid_x_min) / param.grid_resolution);
-    j_goal = (int) round((p_base->getDesiredState().y - grid_y_min) / param.grid_resolution);
+    i_start = (int) round((current_state.x - grid_x_min) / param.grid_resolution);
+    j_start = (int) round((current_state.y - grid_y_min) / param.grid_resolution);
+    i_goal = (int) round((desired_state.x - grid_x_min) / param.grid_resolution);
+    j_goal = (int) round((desired_state.y - grid_y_min) / param.grid_resolution);
 
     if(i_start < 0 || i_start >= dimx || j_start < 0 || j_start >= dimy){
         printf("[GlobalPlanner] ERROR: start point is out of bound \n");
@@ -199,6 +204,11 @@ bool GlobalPlanner::plan(double t) {
     j_min = max(j_start - grid_horizon, 0);
     i_max = min(i_start + grid_horizon, dimx - 1);
     j_max = min(j_start + grid_horizon, dimy - 1);
+//    i_min = 0;
+//    j_min = 0;
+//    i_max = dimx - 1;
+//    j_max = dimy - 1;
+
 
     search_range.xl = i_min * param.grid_resolution + grid_x_min;
     search_range.yl = j_min * param.grid_resolution + grid_y_min;
@@ -210,27 +220,27 @@ bool GlobalPlanner::plan(double t) {
             x = i * param.grid_resolution + grid_x_min;
             y = j * param.grid_resolution + grid_y_min;
 
-            Vector3d transformed_vector = applyTransform(p_base->To0, Vector3d(x, y, 0)); //transform SNU to world
+            Vector3d transformed_vector = applyTransform(p_base->To0, Vector3d(x, y, 0)); //transform SNU to octomap
             x = transformed_vector(0);
             y = transformed_vector(1);
 
-            if (x - car_radius < param.world_x_min) {
-                box[0] = param.world_x_min;
+            if (x - car_radius < world_box_transformed[0]) {
+                box[0] = world_box_transformed[0];
             } else {
                 box[0] = x - car_radius;
             }
-            if (y - car_radius < param.world_y_min) {
-                box[1] = param.world_y_min;
+            if (y - car_radius < world_box_transformed[1]) {
+                box[1] = world_box_transformed[1];
             } else {
                 box[1] = y - car_radius;
             }
-            if (x + car_radius > param.world_x_max) {
-                box[2] = param.world_x_max;
+            if (x + car_radius > world_box_transformed[2]) {
+                box[2] = world_box_transformed[2];
             } else {
                 box[2] = x + car_radius;
             }
-            if (y + car_radius > param.world_y_max) {
-                box[3] = param.world_y_max;
+            if (y + car_radius > world_box_transformed[3]) {
+                box[3] = world_box_transformed[3];
             } else {
                 box[3] = y + car_radius;
             }
@@ -355,7 +365,7 @@ bool GlobalPlanner::plan(double t) {
 //        box.emplace_back(round(std::max(y,y_next) / param.box_xy_res) * param.box_xy_res); //TODO: consider this
 
         // Check initial box
-        box_transformed = boxTransform(p_base->To0, box_curr); // transform SNU to world
+        box_transformed = boxTransform(p_base->To0, box_curr); // transform SNU to octomap
         for (octomap::OcTree::leaf_bbx_iterator it = p_base->getLocalOctoPtr()->begin_leafs_bbx(
                 octomap::point3d(box_transformed[0], box_transformed[1], param.car_z_min),
                 octomap::point3d(box_transformed[2], box_transformed[3], param.car_z_max)),
@@ -382,7 +392,7 @@ bool GlobalPlanner::plan(double t) {
                    && box_cand[2] - box_cand[0] < param.box_max_size
                    && box_cand[3] - box_cand[1] < param.box_max_size) {
                 bool isObstacleInBox = false;
-                box_transformed = boxTransform(p_base->To0, box_update); // transform SNU to world
+                box_transformed = boxTransform(p_base->To0, box_update); // transform SNU to octomap
                 for (octomap::OcTree::leaf_bbx_iterator it = p_base->getLocalOctoPtr()->begin_leafs_bbx(
                         octomap::point3d(box_transformed[0], box_transformed[1], param.car_z_min),
                         octomap::point3d(box_transformed[2], box_transformed[3], param.car_z_max)),
@@ -484,38 +494,94 @@ bool GlobalPlanner::plan(double t) {
             timeSegment = 0;
             double delta_x, delta_y, box_width, time_coefficient;
             for(int i = prev_index; i < current_index; i++){
-                //find closest LaneNode and get road width
-                double min_dist = SP_INFINITY;
-                double road_width;
-                for(const auto& laneNode: lanePath.lanes){
-                    for(auto lanePoint: laneNode.laneCenters){
-                        double dist = sqrt(pow(lanePoint.x-curSkeletonPath[i].x, 2) + pow(lanePoint.y-curSkeletonPath[i].y, 2));
-                        if(dist < min_dist){
-                            road_width = laneNode.width;
-                        }
-                    }
+//                //find closest LaneNode and get road width
+//                double min_dist = SP_INFINITY;
+//                double road_width;
+//                for(const auto& laneNode: lanePath.lanes){
+//                    for(auto lanePoint: laneNode.laneCenters){
+//                        double dist = sqrt(pow(lanePoint.x-curSkeletonPath[i].x, 2) + pow(lanePoint.y-curSkeletonPath[i].y, 2));
+//                        if(dist < min_dist){
+//                            road_width = laneNode.width;
+//                        }
+//                    }
+//                }
+//
+//
+//                delta_x = abs(curSkeletonPath[i+1].x - curSkeletonPath[i].x);
+//                delta_y = abs(curSkeletonPath[i+1].y - curSkeletonPath[i].y);
+//                if(delta_x > SP_EPSILON_FLOAT && delta_y < SP_EPSILON_FLOAT){
+//                    box_width = min(curCorridorSeq[box_iter].yu - curCorridorSeq[box_iter].yl, road_width);
+//                    time_coefficient = road_width / box_width; //TODO: naive time_coefficient formulation
+//                    timeSegment += time_coefficient * delta_x / param.car_speed;
+//                }
+//                else if(delta_x < SP_EPSILON_FLOAT && delta_y > SP_EPSILON_FLOAT){
+//                    box_width = min(curCorridorSeq[box_iter].xu - curCorridorSeq[box_iter].xl, road_width);
+//                    time_coefficient = road_width / box_width; //TODO: naive time_coefficient formulation
+//                    timeSegment += time_coefficient * delta_y / param.car_speed;
+//                }
+//                else if(delta_x < SP_EPSILON_FLOAT && delta_y < SP_EPSILON_FLOAT){
+//                    timeSegment += param.grid_resolution / param.car_speed;
+//                }
+//                else{
+//                    printf("[GlobalPlanner] ERROR: Invalid initial trajectory. initial trajectory has diagonal move");
+//                    return false;
+//                }
+//            }
+//update current car state
+                double delta, sgn, v_0, v_n, a_n, t1, s1;
+                delta_x = curSkeletonPath[i+1].x - curSkeletonPath[i].x;
+                delta_y = curSkeletonPath[i+1].y - curSkeletonPath[i].y;
+                if(abs(delta_x) > SP_EPSILON_FLOAT && abs(delta_y) < SP_EPSILON_FLOAT) {
+                    v_0 = current_state.v * cos(current_state.theta);
+                    delta = delta_x;
                 }
-
-
-                delta_x = abs(curSkeletonPath[i+1].x - curSkeletonPath[i].x);
-                delta_y = abs(curSkeletonPath[i+1].y - curSkeletonPath[i].y);
-                if(delta_x > SP_EPSILON_FLOAT && delta_y < SP_EPSILON_FLOAT){
-                    box_width = min(curCorridorSeq[box_iter].yu - curCorridorSeq[box_iter].yl, road_width);
-                    time_coefficient = road_width / box_width; //TODO: naive time_coefficient formulation
-                    timeSegment += time_coefficient * delta_x / param.car_speed;
+                else if(abs(delta_x) < SP_EPSILON_FLOAT && abs(delta_y) > SP_EPSILON_FLOAT) {
+                    v_0 = current_state.v * sin(current_state.theta);
+                    delta = delta_y;
                 }
-                else if(delta_x < SP_EPSILON_FLOAT && delta_y > SP_EPSILON_FLOAT){
-                    box_width = min(curCorridorSeq[box_iter].xu - curCorridorSeq[box_iter].xl, road_width);
-                    time_coefficient = road_width / box_width; //TODO: naive time_coefficient formulation
-                    timeSegment += time_coefficient * delta_y / param.car_speed;
-                }
-                else if(delta_x < SP_EPSILON_FLOAT && delta_y < SP_EPSILON_FLOAT){
-                    timeSegment += param.grid_resolution / param.car_speed;
+                else if(abs(delta_x) < SP_EPSILON_FLOAT && abs(delta_y) < SP_EPSILON_FLOAT){
+                    printf("[GlobalPlanner] ERROR: Invalid initial trajectory. initial trajectory didn't move");
+                    return false;
                 }
                 else{
                     printf("[GlobalPlanner] ERROR: Invalid initial trajectory. initial trajectory has diagonal move");
                     return false;
                 }
+
+                if(delta > 0) {
+                    sgn = 1;
+                }
+                else {
+                    sgn = -1;
+                }
+                v_n = sgn * param.car_speed;
+                a_n = sgn * param.car_acceleration;
+
+                t1 = (v_n - v_0) / a_n;
+                if(t1 > 0){
+                    s1 = v_0 * t1 + 0.5 * a_n * t1 * t1;
+                    if(abs(s1) > abs(delta)){
+                        if(sgn > 0) {
+                            timeSegment += (sqrt(v_0 * v_0 + 2 * a_n * delta) - v_0) / a_n;
+                        } else {
+                            timeSegment += (-sqrt(v_0 * v_0 + 2 * a_n * delta) - v_0) / a_n;
+                        }
+                        current_state.v = v_0 + a_n * t1;
+                    }
+                    else{
+                        timeSegment += t1 + (delta - s1) / v_n;
+                        current_state.v = param.car_speed;
+                    }
+                }
+                else{
+                    //use nominal speed
+                    timeSegment += delta / param.car_speed;
+                    current_state.v = param.car_speed;
+                }
+                if(sgn > 0)
+                    current_state.theta = 0;
+                else
+                    current_state.theta = PI;
             }
             curCorridorSeq[box_iter].t_end = timeSegment;
 
