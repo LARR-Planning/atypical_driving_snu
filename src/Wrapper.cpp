@@ -625,55 +625,55 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
     }
 
     if (isCarSpeedReceived) {
-//        if(mSet[0].try_lock()){
-        ROS_INFO_ONCE("[SNU_PLANNER/RosWrapper] First received car state");
+        if (mSet[0].try_lock()) {
+            ROS_INFO_ONCE("[SNU_PLANNER/RosWrapper] First received car state");
 //            cout << "call back back" << endl;
-        // Converting car pose w.r.t Tw0
-        auto poseOrig = dataPtr->pose;
-        SE3 Tw1 = DAP::pose_to_transform_matrix(poseOrig).cast<double>(); // Tw1
-        SE3 T01 = p_base->Tw0.inverse() * Tw1;
-        auto poseTransformed = DAP::transform_matrix_to_pose(T01.cast<float>());
-        // Update the pose information w.r.t Tw1
-        geometry_msgs::PoseStamped poseStamped;
-        poseStamped.header.frame_id = SNUFrameId;
-        poseStamped.pose = poseTransformed;
-        p_base->setCurPose(poseStamped);
-        p_base->setCurTf(T01);
-        CarState curState;
-        // make xy
-        curState.x = poseTransformed.position.x;
-        curState.y = poseTransformed.position.y;
+            // Converting car pose w.r.t Tw0
+            auto poseOrig = dataPtr->pose;
+            SE3 Tw1 = DAP::pose_to_transform_matrix(poseOrig).cast<double>(); // Tw1
+            SE3 T01 = p_base->Tw0.inverse() * Tw1;
+            auto poseTransformed = DAP::transform_matrix_to_pose(T01.cast<float>());
+            // Update the pose information w.r.t Tw1
+            geometry_msgs::PoseStamped poseStamped;
+            poseStamped.header.frame_id = SNUFrameId;
+            poseStamped.pose = poseTransformed;
+            p_base->setCurPose(poseStamped);
+            p_base->setCurTf(T01);
+            CarState curState;
+            // make xy
+            curState.x = poseTransformed.position.x;
+            curState.y = poseTransformed.position.y;
 
-        // make theta
-        tf::Quaternion q;
-        q.setX(poseTransformed.orientation.x);
-        q.setY(poseTransformed.orientation.y);
-        q.setZ(poseTransformed.orientation.z);
-        q.setW(poseTransformed.orientation.w);
+            // make theta
+            tf::Quaternion q;
+            q.setX(poseTransformed.orientation.x);
+            q.setY(poseTransformed.orientation.y);
+            q.setZ(poseTransformed.orientation.z);
+            q.setW(poseTransformed.orientation.w);
 
-        tf::Transform Twc;
-        Twc.setRotation(q);
+            tf::Transform Twc;
+            Twc.setRotation(q);
 
-        tf::Matrix3x3 Rwc = Twc.getBasis();
-        tf::Vector3 e1 = Rwc.getColumn(0);
-        double theta = atan2(e1.y(), e1.x());
-        curState.theta = theta;
+            tf::Matrix3x3 Rwc = Twc.getBasis();
+            tf::Vector3 e1 = Rwc.getColumn(0);
+            double theta = atan2(e1.y(), e1.x());
+            curState.theta = theta;
 
-        // make v
-        curState.v = speed; // reverse gear = negative
+            // make v
+            curState.v = speed; // reverse gear = negative
 
-        ROS_DEBUG("Current car state (x,y,theta(degree),v) : [%f,%f,%f,%f]", curState.x, curState.y,
-                  curState.theta * 180 / M_PI, curState.v);
+            ROS_DEBUG("Current car state (x,y,theta(degree),v) : [%f,%f,%f,%f]", curState.x, curState.y,
+                      curState.theta * 180 / M_PI, curState.v);
 
-        p_base->setCarState(curState);
-        mSet[0].unlock();
-        isCarPoseCovReceived = true;
-        //        ROS_INFO("[RosWrapper] car pose update");
+            p_base->setCarState(curState);
+            mSet[0].unlock();
+            isCarPoseCovReceived = true;
+            //        ROS_INFO("[RosWrapper] car pose update");
 //        }else{
 ////        ROS_WARN("[RosWrapper] callback for CarPoseCov locked by planner. Passing update");
 //        }
-    }
-    else{
+        }
+    }else {
         ROS_WARN("[SNU_PLANNER/RosWrapper] Car speed is not being received. CarState will not be updated");
     }
 }
@@ -727,21 +727,21 @@ void RosWrapper::cbGlobalMap(const octomap_msgs::Octomap& octomap_msg) {
  */
 void RosWrapper::cbLocalMap(const octomap_msgs::Octomap& octomap_msg) {
     // TODO you have to decide whether the update in this callback could interrupt planning thread
-//    if(mSet[0].try_lock()){
+    if(mSet[0].try_lock()) {
 
-        p_base->setLocalMap(dynamic_cast<octomap::OcTree*>(octomap_msgs::fullMsgToMap(octomap_msg)));
-        double xmin,ymin,zmin;
-        double xmax,ymax,zmax;
+        p_base->setLocalMap(dynamic_cast<octomap::OcTree *>(octomap_msgs::binaryMsgToMap(octomap_msg)));
+        double xmin, ymin, zmin;
+        double xmax, ymax, zmax;
 
-        p_base->getLocalOctoPtr()->getMetricMin(xmin,ymin,zmin);
-         p_base->getLocalOctoPtr()->getMetricMax(xmax,ymax,zmax);
-        p_base->curOctomapMin = octomap::point3d(xmin,ymin,zmin);
-         p_base->curOctomapMax = octomap::point3d(xmax,ymax,zmax);
+        p_base->getLocalOctoPtr()->getMetricMin(xmin, ymin, zmin);
+        p_base->getLocalOctoPtr()->getMetricMax(xmax, ymax, zmax);
+        p_base->curOctomapMin = octomap::point3d(xmin, ymin, zmin);
+        p_base->curOctomapMax = octomap::point3d(xmax, ymax, zmax);
 
-    if (p_base->getLocalOctoPtr()->getNumLeafNodes() == 0 ){
-                ROS_ERROR("invalid octomap");
-                return;
-            }
+        if (p_base->getLocalOctoPtr()->getNumLeafNodes() == 0) {
+            ROS_ERROR("invalid octomap");
+            return;
+        }
 
 
 //        octomap::point3d minPnt(-100,-100,-100);
@@ -754,12 +754,13 @@ void RosWrapper::cbLocalMap(const octomap_msgs::Octomap& octomap_msg) {
 
         ROS_INFO_ONCE("Octomap loaded");
 
-//        mSet[0].unlock();
+        mSet[0].unlock();
         isLocalMapReceived = true;
 //        ROS_INFO("[RosWrapper] local map update");
 //    }else{
 //        ROS_WARN("[RosWrapper] callback for CarPoseCov locked by planner. Passing update");
 //    }
+    }
 }
 
 /**
