@@ -625,7 +625,6 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
     }
 
     if (isCarSpeedReceived) {
-        if (mSet[0].try_lock()) {
             ROS_INFO_ONCE("[SNU_PLANNER/RosWrapper] First received car state");
 //            cout << "call back back" << endl;
             // Converting car pose w.r.t Tw0
@@ -666,13 +665,12 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
                       curState.theta * 180 / M_PI, curState.v);
 
             p_base->setCarState(curState);
-            mSet[0].unlock();
             isCarPoseCovReceived = true;
             //        ROS_INFO("[RosWrapper] car pose update");
 //        }else{
 ////        ROS_WARN("[RosWrapper] callback for CarPoseCov locked by planner. Passing update");
 //        }
-        }
+
     }else {
         ROS_WARN("[SNU_PLANNER/RosWrapper] Car speed is not being received. CarState will not be updated");
     }
