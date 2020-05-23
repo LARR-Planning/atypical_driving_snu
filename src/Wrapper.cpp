@@ -433,7 +433,9 @@ void RosWrapper::prepareROSmsgs() {
 void RosWrapper::publish() {
     // e.g pub1.publish(topic1)
     if (p_base->isLPsolved) {
-        pubCurCmd.publish(p_base->getCurInput(curTime()));
+        auto cmd = p_base->getCurInput(curTime());
+        cmd.header.stamp = ros::Time::now();
+        pubCurCmd.publish(cmd);
         pubMPCTraj.publish(MPCTraj);
     }
     pubPath.publish(planningPath);

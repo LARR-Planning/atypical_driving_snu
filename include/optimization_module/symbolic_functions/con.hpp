@@ -24,10 +24,15 @@ namespace symbolic_functions
         CON(1,0) = steer_min - del;
         CON(2,0) = a - acc_min;
         CON(3,0) = acc_max - a;
-        CON(4,0) = x - sfc_modified_temp(0,0);
-        CON(5,0) = sfc_modified_temp(1,0)-x;
-        CON(6,0) = y - sfc_modified_temp(2,0);
-        CON(7,0) = sfc_modified_temp(3,0)-y;
+        CON(4,0) = x - (sfc_modified_temp(0,0) + car_width*0.5);
+        CON(5,0) = (sfc_modified_temp(1,0) - car_width*0.5)-x;
+        CON(6,0) = y - (sfc_modified_temp(2,0) + car_width*0.5);
+        CON(7,0) = (sfc_modified_temp(3,0) - car_width*0.5)-y;
+
+        CON(8,0) = x+car_length*cos(th) - (sfc_modified_temp(0,0) + car_width*0.5);
+        CON(9,0) = (sfc_modified_temp(1,0) - car_width*0.5)-x-car_length*cos(th);
+        CON(10,0) = y+car_length*sin(th) - (sfc_modified_temp(2,0) + car_width*0.5);
+        CON(11,0) = (sfc_modified_temp(3,0) - car_width*0.5)-y-car_length*sin(th);
 
 
 

@@ -6,6 +6,6 @@ const int Nx = 5;
 const int Nu = 2;
 const int N_obs = 2;
 const double dt = 0.1;
-const int Nc = 8;// number of constraints
+const int Nc = 12;// number of constraints, steeringMINMAX,accelMINMAX,SFC4x2
 
 #endif

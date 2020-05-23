@@ -51,7 +51,10 @@ namespace Planner {
         // YW added
         void SfcToOptConstraint(); // translate sfc into box constraints in optimization
         void ObstToConstraint(); // translate obstacle predictions
+        void SetLocalWpts(); // find closest 50 lane nodes
         void QxFromPrediction(Collection<double,51> mpcPredictionHeads);
+        int isRefUsed;
+        Collection<Matrix<double,3,1>,50> local_wpts;
 
         Matrix<double,5,1> state_weight_;
         Matrix<double,2,1> input_weight_;

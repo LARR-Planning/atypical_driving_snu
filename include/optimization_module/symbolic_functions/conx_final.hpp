@@ -27,6 +27,17 @@ namespace symbolic_functions
         CONX_FINAL(5,0) = -1.0; // sfc xu
         CONX_FINAL(6,1) = 1.0; // sfc yl
         CONX_FINAL(7,1) = -1.0; //sfc yu
+
+        CONX_FINAL(8,0) = 1.0; // sfc xl [front]
+        CONX_FINAL(9,0) = -1.0; // sfc xu [front]
+        CONX_FINAL(10,1) = 1.0; // sfc yl [front]
+        CONX_FINAL(11,1) = -1.0; //sfc yu [front]
+
+        CONX_FINAL(8,4) = -car_length*sin(th); // sfc xl [front]
+        CONX_FINAL(9,4) = car_length*sin(th); // sfc xu [front]
+        CONX_FINAL(10,4) = car_length*cos(th); // sfc yl [front]
+        CONX_FINAL(11,4) = -car_length*cos(th); //sfc yu [front]
+
         return CONX_FINAL;
     }
 }

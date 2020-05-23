@@ -23,10 +23,15 @@ namespace symbolic_functions
         CON_FINAL.setZero();
         CON_FINAL(0,0) = del -steer_min;
         CON_FINAL(1,0) = steer_min - del;
-        CON_FINAL(4,0) = x - sfc_modified_temp(0,0);
-        CON_FINAL(5,0) = sfc_modified_temp(1,0)-x;
-        CON_FINAL(6,0) = y - sfc_modified_temp(2,0);
-        CON_FINAL(7,0) = sfc_modified_temp(3,0)-y;
+        CON_FINAL(4,0) = x - (sfc_modified_temp(0,0) + car_width*0.5);
+        CON_FINAL(5,0) = (sfc_modified_temp(1,0) - car_width*0.5)-x;
+        CON_FINAL(6,0) = y - (sfc_modified_temp(2,0) + car_width*0.5);
+        CON_FINAL(7,0) = (sfc_modified_temp(3,0) -car_width*0.5)-y;
+
+        CON_FINAL(8,0) = x+car_length*cos(th) - (sfc_modified_temp(0,0) + car_width*0.5);
+        CON_FINAL(9,0) = (sfc_modified_temp(1,0) - car_width*0.5)-x-car_length*cos(th);
+        CON_FINAL(10,0) = y+car_length*sin(th) - (sfc_modified_temp(2,0) + car_width*0.5);
+        CON_FINAL(11,0) = (sfc_modified_temp(3,0) - car_width*0.5)-y-car_length*sin(th);
 
         return CON_FINAL;
     }
