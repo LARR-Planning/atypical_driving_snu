@@ -19,6 +19,8 @@ Panels:
         - /Path1
         - /PointStamped1
         - /Path2
+        - /MarkerArray5
+        - /OccupancyGrid1
       Splitter Ratio: 0.5792452692985535
     Tree Height: 728
   - Class: rviz/Selection
@@ -143,7 +145,7 @@ Visualization Manager:
       Marker Topic: /atypical_planning_test/prediction
       Name: MarkerArray
       Namespaces:
-        0: true
+        {}
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -178,10 +180,6 @@ Visualization Manager:
           Value: true
         map:
           Value: true
-        world_ent:
-          Value: false
-        world_enu:
-          Value: false
         world_ned:
           Value: false
       Marker Scale: 10
@@ -194,7 +192,7 @@ Visualization Manager:
           SNU:
             car_base_link:
               {}
-          world_ent:
+          world_ned:
             PhysXCar:
               PhysXCar/odom_local_ned:
                 LidarSensor1:
@@ -206,7 +204,7 @@ Visualization Manager:
       Marker Topic: /atypical_planning_test/observation_queue
       Name: MarkerArray
       Namespaces:
-        0: true
+        {}
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -265,6 +263,26 @@ Visualization Manager:
       Topic: /atypical_planning_test/mpc_traj
       Unreliable: false
       Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: visualization_marker_array
+      Name: MarkerArray
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
+    - Class: octomap_rviz_plugin/OccupancyGrid
+      Enabled: true
+      Max. Height Display: 3.4028234663852886e+38
+      Max. Octree Depth: 16
+      Min. Height Display: -3.4028234663852886e+38
+      Name: OccupancyGrid
+      Octomap Topic: /atypical_planning_test/octomap_snu
+      Queue Size: 5
+      Value: true
+      Voxel Alpha: 1
+      Voxel Coloring: Z-Axis
+      Voxel Rendering: Occupied Voxels
   Enabled: true
   Global Options:
     Background Color: 0; 0; 0
@@ -292,26 +310,21 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Class: rviz/Orbit
-      Distance: 31.058481216430664
+      Angle: 0
+      Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
-      Focal Point:
-        X: 0
-        Y: 0
-        Z: 0
-      Focal Shape Fixed Size: false
-      Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.2453978061676025
-      Target Frame: LidarSensor1
-      Value: Orbit (rviz)
-      Yaw: 1.8703973293304443
+      Scale: 10
+      Target Frame: SNU
+      Value: TopDownOrtho (rviz)
+      X: 0
+      Y: 0
     Saved: ~
 Window Geometry:
   Displays:

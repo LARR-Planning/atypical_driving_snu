@@ -75,7 +75,7 @@
     <param name="global_planner/world_y_max" value="80" />
     <param name="global_planner/grid_resolution" value="0.5" />
     <param name="global_planner/box_resolution" value="0.3" />
-    <param name="global_planner/box_max_size" value="10" />
+    <param name="global_planner/box_max_size" value="30" />
     <param name="local_planner/horizon" value="$(arg nominal_period)" />
     <param name="local_planner/obstacle_radius_nominal" value="$(arg obstacle_radius)" />
     <param name="local_planner/ts" value="$(arg planning_dt)" />

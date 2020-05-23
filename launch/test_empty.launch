@@ -49,7 +49,7 @@
 <!--  </node>-->
 
   <node pkg="rosbag" type="play" name="rosbag_record_diag" args="--clock --loop  $(find atypical_driving)/worlds/$(arg bagfile)" if="$(arg playBagFile)">
-    <remap from="octomap_full" to="/atypical_planning_test/local_map"/>
+    <remap from="octomap_binary" to="/atypical_planning_test/local_map"/>
     <remap from="/airsim_car_node/object_pose" to="/atypical_planning_test/obstacle_pose"/>
   </node>
 
@@ -65,17 +65,17 @@
 
     <param name="global_planner/horizon" value="$(arg nominal_period)" />
     <param name="global_planner/car_width" value="$(arg vehicle_model/lx)" />
-    <param name="global_planner/car_z_min" value="-0.2" />
-    <param name="global_planner/car_z_max" value="0.0" />
+    <param name="global_planner/car_z_min" value="0.0" />
+    <param name="global_planner/car_z_max" value="0.5" />
     <param name="global_planner/car_speed" value="$(arg nominal_speed)" />
     <param name="global_planner/road_width" value="4.0" />
     <param name="global_planner/world_x_min" value="-10" />
-    <param name="global_planner/world_y_min" value="-1" />
-    <param name="global_planner/world_x_max" value="60" />
-    <param name="global_planner/world_y_max" value="80" />
-    <param name="global_planner/grid_resolution" value="0.5" />
+    <param name="global_planner/world_y_min" value="-10" />
+    <param name="global_planner/world_x_max" value="100" />
+    <param name="global_planner/world_y_max" value="100" />
+    <param name="global_planner/grid_resolution" value="1.0" />
     <param name="global_planner/box_resolution" value="0.3" />
-    <param name="global_planner/box_max_size" value="10" />
+    <param name="global_planner/box_max_size" value="15" />
     <param name="local_planner/horizon" value="$(arg nominal_period)" />
     <param name="local_planner/obstacle_radius_nominal" value="$(arg obstacle_radius)" />
     <param name="local_planner/ts" value="$(arg planning_dt)" />
