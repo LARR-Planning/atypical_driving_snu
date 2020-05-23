@@ -199,6 +199,8 @@ namespace Planner {
         SE3 T0s; // SNU to rotation of the first pose
         parser parse_tool;
         octomap_msgs::Octomap octomap_snu_msgs;
+        octomap::point3d curOctomapMin;
+        octomap::point3d curOctomapMax;
 
         // prediction module
         vector<Predictor::TargetManager> predictorSet; // TODO erase after indexed predictor

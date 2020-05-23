@@ -386,7 +386,7 @@ bool GlobalPlanner::plan(double t) {
                 for (octomap::OcTree::leaf_bbx_iterator it = p_base->getLocalOctoPtr()->begin_leafs_bbx(
                         octomap::point3d(box_transformed[0], box_transformed[1], param.car_z_min),
                         octomap::point3d(box_transformed[2], box_transformed[3], param.car_z_max)),
-                             end = p_base->getLocalOctoPtr()->end_leafs_bbx(); it != end; ++it) {
+                             end = p_base->getLocalOctoPtr()->end_leafs_bbx(); it != end; it++) {
                     if (p_base->getLocalOctoPtr()->isNodeOccupied(*it)) {
                         isObstacleInBox = true;
                         break;
