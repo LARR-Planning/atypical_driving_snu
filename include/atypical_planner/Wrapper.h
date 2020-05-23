@@ -93,7 +93,7 @@ namespace Planner{
         ros::Publisher pubLaneNode; // lane node
         ros::Publisher pubCurGoal; // Publish current goal point (global goal)
         ros::Publisher pubOctomapSNU; // regenerated octomap
-
+        ros::Publisher pubCurPose;
         /**
          * Subscriber
          */

@@ -18,6 +18,7 @@
 #include <tuple>
 #include <Eigen/Core>
 #include <third_party/Prediction/target_manager.hpp>
+#include <fstream>
 
 #include <third_party/Vectormap.h>
 
@@ -41,6 +42,18 @@ namespace Planner {
         double yu;
         double t_start;
         double t_end;
+
+        VectorXf getPretty(){
+            VectorXf dataLine(6);
+            dataLine(0) = t_start;
+            dataLine(1) = t_end;
+            dataLine(2) = xl;
+            dataLine(3) = xu;
+            dataLine(4) = yl;
+            dataLine(5) = yu;
+            return dataLine;
+        }
+
     };
 
     /**
@@ -138,6 +151,23 @@ namespace Planner {
         vector<double> ts;
         vector<CarInput> us;
         vector<CarState> xs;
+        MatrixXf getPretty(double t_stamp){
+            if(ts.size()) {
+                int N = ts.size();
+                MatrixXf data(5,N+1);
+                for (int i = 0 ; i <5 ; i++)
+                    data(i,0) = t_stamp;
+
+                for (int i = 1 ; i < N+1 ; i ++){
+                    data(0,i) = ts[i-1];
+                    data(1,i) = xs[i-1].x;
+                    data(2,i) = xs[i-1].y;
+                    data(3,i) = us[i-1].alpha;
+                    data(4,i) = us[i-1].delta;
+                }
+                return data;
+            }
+        }
         CarState evalX(double t){
             vector<double> xSet(xs.size());
             vector<double> ySet(xs.size());
@@ -181,7 +211,6 @@ namespace Planner {
 
         CarState cur_state;
         SE3 cur_transform; // current tf of the car w.r.t the Tw0
-        geometry_msgs::PoseStamped cur_pose; // current pose of the car w.r.t the Tw0
         CarState desired_state; //jungwon
         // to be updated by planners
         LanePath lane_path; //jungwon navigation planning output from Dabin Kim
@@ -202,6 +231,9 @@ namespace Planner {
         octomap_msgs::Octomap octomap_snu_msgs;
         octomap::point3d curOctomapMin;
         octomap::point3d curOctomapMax;
+        string log_file_name_base;
+        geometry_msgs::PoseStamped cur_pose; // current pose of the car w.r.t the Tw0
+
 
         // prediction module
         vector<Predictor::TargetManager> predictorSet; // TODO erase after indexed predictor
@@ -227,8 +259,6 @@ namespace Planner {
         MPCResultTraj getMPCResultTraj() {return mpc_result;}
         geometry_msgs::PoseStamped getCurPose() {return cur_pose;};
         SE3 getCurTf() {return cur_transform;};
-
-
 
         // Set from subscriber
 
@@ -308,6 +338,36 @@ namespace Planner {
 
 
         }
+        void log_state_input(double t_cur){
+            string file_name = log_file_name_base + "_state.txt";
+            ofstream outfile;
+            outfile.open(file_name,std::ios_base::app);
+            outfile << t_cur << " "<< cur_state.x << " " << cur_state.y << " " << cur_state.theta << " " << cur_state.v << endl;
+
+            file_name = log_file_name_base + "_input.txt";
+            ofstream outfile1;
+            outfile1.open(file_name,std::ios_base::app);
+            outfile1 <<  t_cur << " "<< getCurInput(t_cur).accel_decel_cmd << " " << getCurInput(t_cur).steer_angle_cmd << endl;
+
+        }
+        void log_corridor(double t_cur){
+            // 1. Corridor
+            string file_name = log_file_name_base + "_corridor.txt";
+            ofstream outfile;
+            outfile.open(file_name,std::ios_base::app);
+//            outfile << t_cur << endl;
+            for (auto corridor : corridor_seq){
+                outfile<<  t_cur << " "<< corridor.getPretty().transpose() << endl;
+            }
+        }
+
+        void log_mpc(double t_cur){
+            string file_name = log_file_name_base + "_mpc.txt";
+            ofstream outfile;
+            outfile.open(file_name,std::ios_base::app);
+            outfile<< mpc_result.getPretty(t_cur) << endl;
+        }
+
     };
     /**
      * @brief Abstract class. The shared attributes to be inherited to the derived classes
