@@ -17,6 +17,7 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
+#include <geometry_msgs/Pose.h>
 
 #include <unsupported/Eigen/Splines>
 
@@ -61,6 +62,8 @@ namespace DAP{
     Eigen::VectorXf polyfit(Eigen::VectorXf xvals,Eigen::VectorXf yvals,int order);
     float polyeval(Eigen::VectorXf coeffs, float x);
     float polyeval_derivative(Eigen::VectorXf coeffs, float x);
+    TransformMatrix pose_to_transform_matrix(const geometry_msgs::Pose & pose);
+    geometry_msgs::Pose transform_matrix_to_pose(const TransformMatrix & trans_mat);
 }
 
 #endif

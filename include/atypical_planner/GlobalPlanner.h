@@ -15,8 +15,7 @@ namespace Planner{
         double grid_x_min, grid_y_min, grid_x_max, grid_y_max;
         int dimx, dimy;
         std::vector<std::vector<int>> grid;
-        LanePath lanePath; //TODO: delete this after debugging
-        bool has_wall;
+        std::array<double, 4> world_box_transformed;
         bool isFeasible;
 
         // Planning intermediate outputs
@@ -32,6 +31,7 @@ namespace Planner{
         bool isCurTrajFeasible(); // TODO
         bool intersect(Point i0, Point i1, Point j0, Point j1);
         int ccw(Point a, Point b, Point c);
+        static std::array<double, 4> boxTransform(const SE3& Tab, const std::array<double, 4>& box);
     };
 
 }

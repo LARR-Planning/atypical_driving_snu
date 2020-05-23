@@ -18,8 +18,11 @@
 #include <std_msgs/Float64.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf/tf.h>
+#include <tf/transform_broadcaster.h>
+#include <tf/transform_listener.h>
 #include <driving_msgs/DetectedObjectArray.h>
 #include <functional>
+#include <nav_msgs/Path.h>
 
 namespace Planner{
 
@@ -36,18 +39,33 @@ namespace Planner{
          */
         shared_ptr<PlannerBase> p_base; // planning data
         mutex* mSet; /**< mSet[0] = locking btw subset of callbacks and plan() of planner  */
-
+        Param param;
         // node handle
         ros::NodeHandle nh;
+        tf::TransformBroadcaster tf_br;
+        tf::TransformListener tf_ls;
+
         bool isGlobalMapReceived = false;
         bool isLocalMapReceived = false;
         bool isCarPoseCovReceived = false;
         bool isCarSpeedReceived = false;
+        bool isFrameRefReceived = false;
+        bool isLaneReceived = false;
+        bool isLaneRawReceived = false; // beform transform
+        bool isGoalReceived = false;
+        bool isOctomapFrameResolved = false; // octomap frame
+        /**
+         * Operation mode
+         */
+
+        bool use_nominal_obstacle_radius = false;
+
         /**
          * Parameters
          */
-
-        string worldFrameId;
+        string SNUFrameId; // global frame id (JBS)
+        string worldFrameId; //world frame id
+        string octomapGenFrameId; // the referance frame of octomap
         int max_marker_id; //count current published markers
         double speed; // current speed of car
 
@@ -56,6 +74,8 @@ namespace Planner{
          */
         // topics to be published
         nav_msgs::Path planningPath; // can be obtained from mpcResultTraj
+        nav_msgs::Path lanePathVis;
+
         visualization_msgs::MarkerArray corridorSeq;
         visualization_msgs::MarkerArray obstaclePrediction;
         nav_msgs::Path MPCTraj; // msg from mpcResultTraj
@@ -70,13 +90,16 @@ namespace Planner{
         ros::Publisher pubPredictionArray; // publisher for prediction of the target
         ros::Publisher pubCurCmd; // if MPC has been solved, it emits the command
         ros::Publisher pubMPCTraj; // if MPC has been solved, it pulish mpc traj for local planner horizon
+        ros::Publisher pubLaneNode; // lane node
+        ros::Publisher pubCurGoal; // Publish current goal point (global goal)
+        ros::Publisher pubOctomapSNU; // regenerated octomap
 
         /**
          * Subscriber
          */
         ros::Subscriber subCarPoseCov; /**< car state from KAIST */
         ros::Subscriber subDesiredCarPose; // desired pose from user
-        ros::Subscriber subGlobalMap; // global map from ????
+        ros::Subscriber subGlobalMap; // global msap from ????
         ros::Subscriber subLocalMap; // local map from LIDAR????
         ros::Subscriber subCarSpeed; //
         ros::Subscriber subExampleObstaclePose; //
@@ -97,12 +120,13 @@ namespace Planner{
         void cbDetectedObjects(const driving_msgs::DetectedObjectArray& objectsArray);
 
 
+
         /**
          * Core routines in while loop of ROS thread
          */
         void publish();
         void prepareROSmsgs();
-
+        void predictionUpdate();
     public:
         RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_);
         void updateParam(Param& param_);

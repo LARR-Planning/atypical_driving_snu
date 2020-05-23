@@ -6,6 +6,7 @@
 #define ATYPICAL_DRIVING_PLANNERBASE_H
 
 #include <octomap/OcTree.h>
+#include <octomap_msgs/Octomap.h>
 #include <vector>
 #include <memory>
 #include <geometry_msgs/Twist.h>
@@ -23,6 +24,7 @@
 #include <third_party/Utils.h>
 #include <driving_msgs/VehicleCmd.h>
 
+#include <third_party/parser.h>
 
 using namespace std;
 using namespace Eigen;
@@ -73,6 +75,8 @@ namespace Planner {
         double grid_resolution;
         double box_resolution;
         double box_max_size;
+        bool has_wall;
+        bool is_world_box_snu_frame;
     };
 
     struct ParamPredictor{
@@ -173,9 +177,11 @@ namespace Planner {
         // to be updated from callback
         shared_ptr<octomap::OcTree> octo_global_ptr;
         shared_ptr<octomap::OcTree> octo_local_ptr;
-        CarState cur_state;
-        CarState desired_state; //jungwon
 
+        CarState cur_state;
+        SE3 cur_transform; // current tf of the car w.r.t the Tw0
+        geometry_msgs::PoseStamped cur_pose; // current pose of the car w.r.t the Tw0
+        CarState desired_state; //jungwon
         // to be updated by planners
         LanePath lane_path; //jungwon navigation planning output from Dabin Kim
         vector<Point> skeleton_path;
@@ -188,6 +194,12 @@ namespace Planner {
     public:
         bool isGPsolved = false;
         bool isLPsolved = false;
+        SE3 Tw0; // Referance frame of our node every incoming data should be transformed
+        SE3 To0; // Transformation from  octomap ref frame to SNU
+        SE3 T0s; // SNU to rotation of the first pose
+        parser parse_tool;
+        octomap_msgs::Octomap octomap_snu_msgs;
+
         // prediction module
         vector<Predictor::TargetManager> predictorSet; // TODO erase after indexed predictor
         Predictor::TargetManager predictorBase;
@@ -210,13 +222,23 @@ namespace Planner {
         octomap::OcTree* getGlobalOctoPtr() {return octo_global_ptr.get();}
         octomap::OcTree* getLocalOctoPtr() {return octo_local_ptr.get();}
         MPCResultTraj getMPCResultTraj() {return mpc_result;}
+        geometry_msgs::PoseStamped getCurPose() {return cur_pose;};
+        SE3 getCurTf() {return cur_transform;};
+
+
 
         // Set from subscriber
+
+        void setLaneWidth(double width) {
+            lane_path.setWidth(width);
+        }
+
         void setCarState(const CarState& carState_) { cur_state = carState_;};
         void setDesiredState(const CarState& desiredState_) {desired_state = desiredState_;};
         void setGlobalMap(octomap::OcTree* octoGlobalPtr_) {octo_global_ptr.reset(octoGlobalPtr_);};
         void setLocalMap(octomap::OcTree* octoLocalPtr_) {octo_local_ptr.reset(octoLocalPtr_);};
-
+        void setCurPose(const geometry_msgs::PoseStamped poseStamped) {cur_pose = poseStamped;};
+        void setCurTf(const SE3& T01) {cur_transform = T01;};
         // Set from planner
         void setLanePath(const LanePath& lane_path_in_) {lane_path = lane_path_in_;}
         void setSkeletonPath(const vector<Point>& skeleton_in_) {skeleton_path = skeleton_in_;}
@@ -257,6 +279,7 @@ namespace Planner {
             }
             **/
             // ver 1
+            // TODO check the shape
             for(auto idPredictor : indexedPredictorSet){
 
                 auto predictor = get<1>(idPredictor);

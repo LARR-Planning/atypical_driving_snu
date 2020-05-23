@@ -91,17 +91,19 @@ vector<geometry_msgs::Pose> TargetManager::eval_pose_seq(Eigen::VectorXf ts){
     return eval_pose_seq(ts_vec);
 }
 
-visualization_msgs::Marker TargetManager::get_obsrv_marker(string world_frame_id){    
+visualization_msgs::Marker TargetManager::get_obsrv_marker(string world_frame_id,int ns){
     visualization_msgs::Marker marker;
     marker.header.frame_id = world_frame_id;
+    //    marker = TXYZ_traj_to_pnt_marker(obsrv_traj_for_predict,world_frame_id,1.0);
     if(is_predicted){
         marker = TXYZ_traj_to_pnt_marker(obsrv_traj_for_predict,world_frame_id,1.0);
     }else{
         if (not isNoPredictionWarnEmitted) {
-            cout << "[TargetManager] No prediction performed. empty marker will be returned" << endl;
+            // cout << "[TargetManager] No prediction performed. empty marker will be returned" << endl;
             isNoPredictionWarnEmitted = true;
         }
     }
+    marker.ns = to_string(ns);
     return marker;
 }; // observation used for the latest prediction update
 

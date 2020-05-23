@@ -366,12 +366,12 @@ bool LocalPlannerPlain::plan(double t) {
 //             uN_NextInit[49]= uN_new[49];
 //             next_state = xN_new[1];
 
-             cout<<"-------"<<endl;
-             for(int j = 0; j<50;j++)
-             {
-
-                 cout<<uN_new[j].coeff(0,0)<<endl;
-             }
+//             cout<<"-------"<<endl;
+//             for(int j = 0; j<50;j++)
+//             {
+//
+//                 cout<<uN_new[j].coeff(0,0)<<endl;
+//             }
 //             cout<<"So far, new input, from now on, new states"<<endl;
 //             for(int j = 0; j<51;j++)
 //             {
@@ -394,12 +394,12 @@ bool LocalPlannerPlain::plan(double t) {
              uN_new = ilqr.uN_;
              xN_new = ilqr.xN_;
              next_state = xN_new[1];
-             cout<<"-------"<<endl;
-             for(int j = 0; j<50;j++)
-             {
-
-                 cout<<"Accleration of Car"<<uN_new[j].coeff(0,0)<<endl;
-             }
+//             cout<<"-------"<<endl;
+//             for(int j = 0; j<50;j++)
+//             {
+//
+//                 cout<<"Accleration of Car"<<uN_new[j].coeff(0,0)<<endl;
+//             }
 //             for(int j = 0; j<51;j++)
 //             {
 //                 cout<<"updated new future x-position: "<<xN_new[j].coeff(0,0)<<" [m]"<<endl;
