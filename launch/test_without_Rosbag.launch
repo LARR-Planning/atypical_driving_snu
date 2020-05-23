@@ -38,6 +38,7 @@
 
     <param name = "lane_csv_file" value = "$(find atypical_driving)/waypoint_airsim.csv"/>
     <param name = "lane_width" value="$(arg lane_width)"/>
+    <param name = "log_file_prefix" value = "$(find atypical_driving)/log/log" />
 
 
     <param name="global_planner/horizon" value="$(arg nominal_period)" />

@@ -36,16 +36,15 @@ hold on
 
 while cur_line <= size(data_corridor,1)
     figure(fig_corridor)
-subplot(4,1,3)
-gg = plot(data_input(:,1),data_input(:,2),'b-','LineWidth',4);
-gg.Color(4) = 0.2;
-hold on
-subplot(4,1,4)
-gg = plot(data_input(:,1),data_input(:,3),'c-','LineWidth',4);
-gg.Color(4) = 0.2;
-hold on
-    
-    
+    subplot(4,1,3)
+    gg = plot(data_input(:,1),data_input(:,2),'b-','LineWidth',4);
+    gg.Color(4) = 0.2;
+    hold on
+    subplot(4,1,4)
+    gg = plot(data_input(:,1),data_input(:,3),'c-','LineWidth',4);
+    gg.Color(4) = 0.2;
+    hold on
+
     % Corridor 
     corr_start = cur_line; 
     cur_idx = find(data_corridor(:,1) == data_corridor(corr_start,1));
@@ -74,7 +73,7 @@ hold on
         
     % Corridor 
     figure(fig_corridor)
-    cur_idx = find(data_mpc(:,1) == cur_time);
+    cur_idx = find(abs(data_mpc(:,1) - cur_time)<0.001);
     mpc_start = cur_idx(1);
     
     subplot(4,1,1)
@@ -88,7 +87,7 @@ hold on
     plot(data_mpc(mpc_start,2:end),data_mpc(mpc_start+2,2:end),'g')
     hold off
     
-    cur_line = corr_end + 1;
+    cur_line = corr_end + 10;
     
     subplot(4,1,3)
     hold on
@@ -109,11 +108,28 @@ hold on
     title('angular')   
     plot(data_mpc(mpc_start,2:end),data_mpc(mpc_start+4,2:end),'c')
     plot(data_mpc(mpc_start,2),data_mpc(mpc_start+4,2),'ko')
-    pause(1)
+    
+    figure(fig_state)
+    hold on
+    plot(data_state(:,2),data_state(:,3),'k-')
+    theta = data_state(:,4);
+    xaxis = [cos(theta) sin(theta)];
+    dd = 20;
+    quiver(data_state(1:dd:end,2),data_state(1:dd:end,3),xaxis(1:dd:end,1),xaxis(1:dd:end,2),'r')
+    xlabel('x')
+    ylabel('y')
+    
+    [~,cur_idx] = min(abs(data_state(:,1) - cur_time));
+    xCur = data_state(cur_idx,2);
+    yCur = data_state(cur_idx,3);
+    plot(xCur,yCur,'ko','MarkerSize',10);
+    
+    
+    pause(1e-2)
 
-    if cur_line  < size(data_corridor,1)
-    clf
-    end
+%     if cur_line  < size(data_corridor,1)
+%     clf
+%     end
 end
 
 

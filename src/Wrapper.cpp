@@ -699,7 +699,7 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
 //        }else{
 ////        ROS_WARN("[RosWrapper] callback for CarPoseCov locked by planner. Passing update");
 //        }
-
+        }
     }else {
         ROS_WARN("[SNU_PLANNER/RosWrapper] Car speed is not being received. CarState will not be updated");
     }
@@ -755,8 +755,7 @@ void RosWrapper::cbGlobalMap(const octomap_msgs::Octomap& octomap_msg) {
 void RosWrapper::cbLocalMap(const octomap_msgs::Octomap& octomap_msg) {
     // TODO you have to decide whether the update in this callback could interrupt planning thread
 
-    if(mSet[0].try_lock())
-    {
+    if(mSet[0].try_lock()) {
 
         p_base->setLocalMap(dynamic_cast<octomap::OcTree *>(octomap_msgs::binaryMsgToMap(octomap_msg)));
         double xmin, ymin, zmin;
@@ -784,12 +783,12 @@ void RosWrapper::cbLocalMap(const octomap_msgs::Octomap& octomap_msg) {
         ROS_INFO_ONCE("Octomap loaded");
         isLocalMapReceived = true;
 
-//        mSet[0].unlock();
+        mSet[0].unlock();
 //        ROS_INFO("[RosWrapper] local map update");
 //    }else{
 //        ROS_WARN("[RosWrapper] callback for CarPoseCov locked by planner. Passing update");
 //    }
-
+    }
 }
 
 /**
