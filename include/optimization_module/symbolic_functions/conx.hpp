@@ -23,10 +23,21 @@ namespace symbolic_functions
         CONX.setZero();
         CONX(0,3) = 1.0; //steering angle min
         CONX(1,3) = -1.0; //steering angle max
-        CONX(4,0) = 1.0; // sfc xl
-        CONX(5,0) = -1.0; // sfc xu
-        CONX(6,1) = 1.0; // sfc yl
-        CONX(7,1) = -1.0; //sfc yu
+        CONX(4,0) = 1.0; // sfc xl [rear]
+        CONX(5,0) = -1.0; // sfc xu [rear]
+        CONX(6,1) = 1.0; // sfc yl [rear]
+        CONX(7,1) = -1.0; //sfc yu [rear]
+
+        CONX(8,0) = 1.0; // sfc xl [front]
+        CONX(9,0) = -1.0; // sfc xu [front]
+        CONX(10,1) = 1.0; // sfc yl [front]
+        CONX(11,1) = -1.0; //sfc yu [front]
+        CONX(8,4) = -car_length*sin(th); // sfc xl [front]
+        CONX(9,4) = car_length*sin(th); // sfc xu [front]
+        CONX(10,4) = car_length*cos(th); // sfc yl [front]
+        CONX(11,4) = -car_length*cos(th); //sfc yu [front]
+
+
         return CONX;
     }
 }

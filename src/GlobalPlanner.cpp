@@ -116,7 +116,7 @@ bool GlobalPlanner::plan(double t) {
             point_y += point_dy;
         }
 
-        octomap_msgs::binaryMapToMsg(*p_base->getLocalOctoPtr(),p_base->octomap_snu_msgs);
+//        octomap_msgs::binaryMapToMsg(*p_base->getLocalOctoPtr(),p_base->octomap_snu_msgs);
 
 
 

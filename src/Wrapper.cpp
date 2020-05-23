@@ -432,7 +432,9 @@ void RosWrapper::prepareROSmsgs() {
 void RosWrapper::publish() {
     // e.g pub1.publish(topic1)
     if (p_base->isLPsolved) {
-        pubCurCmd.publish(p_base->getCurInput(curTime()));
+        auto cmd = p_base->getCurInput(curTime());
+        cmd.header.stamp = ros::Time::now();
+        pubCurCmd.publish(cmd);
         pubMPCTraj.publish(MPCTraj);
     }
     pubPath.publish(planningPath);
@@ -830,7 +832,7 @@ void Wrapper::run(){
  */
 
 bool Wrapper::plan(double tTrigger){
-//    mSet[0].lock();
+    mSet[0].lock();
 //    ROS_INFO( "[Wrapper] Assume that planning takes 0.5 sec. Locking subscription.\n ");
 //    std::this_thread::sleep_for(std::chrono::duration<double>(0.5));
 
@@ -856,11 +858,11 @@ bool Wrapper::plan(double tTrigger){
             p_base_shared->isLPsolved = lpPassed;
 
         // Unlocking
-//        mSet[0].unlock();
+        mSet[0].unlock();
         return (gpPassed and lpPassed);
 
     }else{ //
-//        mSet[0].unlock();
+        mSet[0].unlock();
         ROS_WARN("[SNU_PLANNER/Wrapper] global planning failed");
         return false;
     }

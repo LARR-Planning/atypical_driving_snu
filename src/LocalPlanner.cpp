@@ -46,8 +46,9 @@ LocalPlanner::LocalPlanner(const Planner::ParamLocal &l_param,
     {
         bodyArray[i]<< 4.0, 0.0, 0.0, 4.0;
     }
-    state_weight_<< 0.5, 0.5, 0.5, 0.2, 0.05;
-    input_weight_<< 0.5, 0.2;
+    state_weight_<< 0.5, 0.5, 0.5 , 0.05 , 0.05;
+    final_weight_<< 0.5, 0.5, 0.5 , 0.05 , 0.05;
+    input_weight_<< 0.2,1.0;
     isRefUsed = 0;
     cout << "[LocalPlanner] Init." << endl;
     
@@ -199,8 +200,6 @@ void LocalPlanner::SfcToOptConstraint(){
  {
     Matrix<double,2,1> wpts_temp;
     Matrix<double,2,1> wpts_temp1;
-    Matrix<double,2,1> velNormalized_temp;
-    vector<Matrix<double,2,1>> wpts_list;
     vector<Matrix<double,2,1>> node_list;
     vector<int> wptsNumber_list;
     vector<double> t_list;
@@ -212,6 +211,8 @@ void LocalPlanner::SfcToOptConstraint(){
             node_list.push_back(wpts_temp);
         }
     }
+
+
     double node_distance = 0.0;
     int number_temp = 0;
     double t_temp = 0;
@@ -224,12 +225,21 @@ void LocalPlanner::SfcToOptConstraint(){
        t_temp +=node_distance * 0.5; // divided by 2m/s --> wpts list generation at Global Planner.cpp is opimal;
        t_list.push_back(t_temp);
     }
+     Matrix<double,2,1> velNormalized_temp;
+    Matrix<double,3,1> wpts_temp2;
+     vector<Matrix<double,2,1>> wpts_list1;
+     vector<Matrix<double,3,1>> wpts_list2;
+
     for (int i = 1; i< t_list.size();i++)
     {
-        for (int j = 0; j < round((t_list[i] - t_start_) / param.tStep); i++) {
+        for (int j = 0; j < round((t_list[i] - t_start_) / param.tStep); j++) {
             velNormalized_temp = (node_list[i]-node_list[i-1]).normalized();
             wpts_temp1 = node_list[i-1] + (t_start_+(j+1)*dt - t_list[i-1])*velNormalized_temp*2; //multiplied by 2m/s
-            wpts_list.push_back(wpts_temp1);
+            wpts_temp2(0) = wpts_temp1(0);
+            wpts_temp2(1) =wpts_temp2(1);
+            wpts_temp2(2) =atan2(velNormalized_temp(1),velNormalized_temp(0));
+            wpts_list1.push_back(wpts_temp1);
+            wpts_list2.push_back(wpts_temp2);
             count++;
         }
         t_start_ = param.tStep * (count- 1);
@@ -238,25 +248,35 @@ void LocalPlanner::SfcToOptConstraint(){
     curr_pos<< p_base->getCarState().x, p_base->getCarState().y;
     int start_idx = 0;
     double min_gap = 10000;
-    for(int i = 0; i<wpts_list.size();i++)
+    for(int i = 0; i<wpts_list1.size();i++)
     {
-        if(min_gap>(curr_pos-wpts_list[i]).norm())
+        if(min_gap>(curr_pos-wpts_list1[i]).norm())
         {
-            min_gap = (curr_pos-wpts_list[i]).norm();
+            min_gap = (curr_pos-wpts_list1[i]).norm();
             start_idx = i;
         }
 
     }
-
+    Matrix<double,2,1> direction_my;
+    Matrix<double,2,1> direction_path;
+    direction_my<< cos(p_base->getCarState().theta), sin(p_base->getCarState().theta);
+    direction_path<< p_base->getCarState().x-wpts_list2[start_idx].coeffRef(0,0),
+            p_base->getCarState().y-wpts_list2[start_idx].coeffRef(1,0);
+    double flag_changeIdx = (direction_my.array()*direction_path.array()).sum();
+    while(flag_changeIdx<0)
+    {
+        flag_changeIdx = (direction_my.array()*direction_path.array()).sum();
+        start_idx+=1;
+    }
     for(int i = 0; i<50; i++)
     {
-        if(start_idx+i>wpts_list.size())
+        if(start_idx+i>wpts_list2.size())
         {
-            local_wpts[i] = wpts_list[wpts_list.size()];
+            local_wpts[i] = wpts_list2[wpts_list2.size()];
         }
         else
         {
-            local_wpts[i] = wpts_list[start_idx+i];
+            local_wpts[i] = wpts_list2[start_idx+i];
         }
     }
 
@@ -292,18 +312,20 @@ bool LocalPlannerPlain::plan(double t) {
      if(p_base->getLanePath().lanes.size()>0)
      {
          LocalPlanner::SetLocalWpts();
-         state_weight_.coeffRef(0,0) = 0.5;
-         state_weight_.coeffRef(1,0) = 0.5;
-         state_weight_.coeffRef(2,0) = 0.5;
-         state_weight_.coeffRef(3,0) = 0.2;
-         state_weight_.coeffRef(4,0) = 0.05;
-         final_weight_.coeffRef(0,0) = 0.5;
-         final_weight_.coeffRef(1,0) = 0.5;
-         final_weight_.coeffRef(2,0) = 0.5;
-         final_weight_.coeffRef(3,0) = 0.2;
-         final_weight_.coeffRef(4,0) = 0.05;
-         input_weight_.coeffRef(0,0) = 0.5;
-         input_weight_.coeffRef(1,0) = 0.2;
+         state_weight_.coeffRef(0,0) = 0.5; //x
+         state_weight_.coeffRef(1,0) = 0.5; //y
+         state_weight_.coeffRef(2,0) = 0.5; //v
+         state_weight_.coeffRef(3,0) = 0.005; //delta
+         state_weight_.coeffRef(4,0) = 0.2; //theta
+
+         final_weight_.coeffRef(0,0) = 0.5; // x
+         final_weight_.coeffRef(1,0) = 0.5; //y
+         final_weight_.coeffRef(2,0) = 0.5; //v
+         final_weight_.coeffRef(3,0) = 0.05; //delta
+         final_weight_.coeffRef(4,0) = 0.2; // theta
+
+         input_weight_.coeffRef(0,0) = 0.2;
+         input_weight_.coeffRef(1,0) = 0.1;
          isRefUsed = 1;
      }
 
@@ -358,12 +380,12 @@ bool LocalPlannerPlain::plan(double t) {
              uN_NextInit = ilqr_init.uN_;
              uN_new = ilqr_init.uN_;
              xN_new = ilqr_init.xN_;
-            uN_NextInit =uN_new;
-//             for(int j = 0;j<49;j++)
-//             {
-//                 uN_NextInit[j] = uN_new[j+1];
-//             }
-//             uN_NextInit[49]= uN_new[49];
+//            uN_NextInit =uN_new;
+             for(int j = 0;j<49;j++)
+             {
+                 uN_NextInit[j] = uN_new[j+1];
+             }
+             uN_NextInit[49]= uN_new[49];
 //             next_state = xN_new[1];
 
 //             cout<<"-------"<<endl;
@@ -408,12 +430,12 @@ bool LocalPlannerPlain::plan(double t) {
 //             {
 //                 cout<<"updated new future steering angle "<<xN_new[j].coeff(3,0)*180/3.1415926535<<" [deg]"<<endl;
 //             }
-             uN_NextInit =uN_new;
-//             for(int j = 0;j<49;j++)
-//             {
-//                 uN_NextInit[j] = uN_new[j+1];
-//             }
-//             uN_NextInit[49]= uN_new[49];
+//             uN_NextInit =uN_new;
+             for(int j = 0;j<49;j++)
+             {
+                 uN_NextInit[j] = uN_new[j+1];
+             }
+             uN_NextInit[49]= uN_new[49];
          }
      }
 
