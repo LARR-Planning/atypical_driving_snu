@@ -147,7 +147,7 @@ bool GlobalPlanner::plan(double t) {
             point_y += point_dy;
         }
     }
-     octomap_msgs::binaryMapToMsg(*p_base->getLocalOctoPtr(),p_base->octomap_snu_msgs);
+    octomap_msgs::binaryMapToMsg(*p_base->getLocalOctoPtr(),p_base->octomap_snu_msgs);
 
     // initialize grid
     std::array<double, 4> world_box = {param.world_x_min, param.world_y_min, param.world_x_max, param.world_y_max};

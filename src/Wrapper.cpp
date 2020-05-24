@@ -796,6 +796,10 @@ void RosWrapper::cbLocalMap(const octomap_msgs::Octomap& octomap_msg) {
 //        ROS_WARN("[RosWrapper] callback for CarPoseCov locked by planner. Passing update");
 //    }
     }
+    else{
+               ROS_WARN("[RosWrapper] callback for octomap locked by planner. Passing update");
+
+    }
 }
 
 /**
