@@ -17,7 +17,7 @@
   <arg name="vehicle_model/steer_max"     default="0.52"/>
   <arg name="vehicle_model/accel_max"     default="1"/>
   <arg name="vehicle_model/accel_min"     default="-3"/>
-  <arg name="vehicle_model/is_rear_wheel"     default="false"/>
+  <arg name="vehicle_model/is_rear_wheel"     default="true"/>
 
   <arg name="nominal_speed"     default="2"/>
   <arg name="nominal_period"     default="5"/> <!--preirod = horizon -->

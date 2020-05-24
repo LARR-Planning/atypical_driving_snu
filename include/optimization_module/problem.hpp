@@ -10,6 +10,10 @@
 #include <optimization_module/symbolic_functions/f.hpp>
 #include <optimization_module/symbolic_functions/dfdx.hpp>
 #include <optimization_module/symbolic_functions/dfdu.hpp>
+#include <optimization_module/symbolic_functions/f_front.hpp>
+#include <optimization_module/symbolic_functions/dfdx_front.hpp>
+#include <optimization_module/symbolic_functions/dfdu_front.hpp>
+
 #include <optimization_module/symbolic_functions/cost.hpp>
 #include <optimization_module/symbolic_functions/costx.hpp>
 #include <optimization_module/symbolic_functions/costxx.hpp>
@@ -41,6 +45,7 @@ private:
     vector<vector<Vector2d>>& obs_q_;
     Collection<Planner::Corridor,N+1>& sfc_modified;
     bool noConstraint_ = true;
+    bool isRearWheel_;
 
 public:
     Problem (Collection<Matrix<double,2,2>,N+1>& car_shape,
@@ -69,6 +74,9 @@ public:
     void set_noConstraint( const bool noConstraint )
     { noConstraint_ = noConstraint; }
 
+    void setRear_wheel(const bool isRearWheel)
+    { isRearWheel_ = isRearWheel;}
+
 //		void set_constraintype( const int constraintType )
 //		{ constraintType_ = constraintType; }
     /*
@@ -84,13 +92,28 @@ public:
     {
         // simple euler integration
         DynamicsDerivatives<Nx,Nu> dyn;
-        dyn.f = x +dt*symbolic_functions::f(x,u);
-        if (type == WITHOUT_DERIVATIVES)
+        if(isRearWheel_)
+        {
+            dyn.f = x +dt*symbolic_functions::f(x,u);
+            if (type == WITHOUT_DERIVATIVES)
+                return dyn;
+            // fx and fu should be based on discretized f!!!
+            dyn.fx = MatrixXX::Identity()+ dt*symbolic_functions::dfdx(x,u);
+            dyn.fu = dt*symbolic_functions::dfdu(x,u);
             return dyn;
-        // fx and fu should be based on discretized f!!!
-        dyn.fx = MatrixXX::Identity()+ dt*symbolic_functions::dfdx(x,u);
-        dyn.fu = dt*symbolic_functions::dfdu(x,u);
-        return dyn;
+        }
+        else
+        {
+            dyn.f = x +dt*symbolic_functions::f_front(x,u);
+            if (type == WITHOUT_DERIVATIVES)
+                return dyn;
+            // fx and fu should be based on discretized f!!!
+            dyn.fx = MatrixXX::Identity()+ dt*symbolic_functions::dfdx_front(x,u);
+            dyn.fu = dt*symbolic_functions::dfdu_front(x,u);
+            return dyn;
+        }
+
+
     }
 
     CostDerivatives<Nx,Nu>
