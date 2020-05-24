@@ -13,6 +13,9 @@
 #include <mutex>
 #include <thread>
 #include <string>
+#include <queue>
+#include <deque>
+
 #include <math.h>
 #include <list>
 #include <tuple>
@@ -228,7 +231,6 @@ namespace Planner {
         MPCResultTraj mpc_result;
 
         ObstaclePathArray obstaclePathArray;
-
     public:
         bool isGPsolved = false;
         bool isLPsolved = false;
@@ -241,7 +243,8 @@ namespace Planner {
         octomap::point3d curOctomapMax;
         string log_file_name_base;
         geometry_msgs::PoseStamped cur_pose; // current pose of the car w.r.t the Tw0
-
+        deque<CarState> desired_state_seq;
+        double goal_thres;
 
         // prediction module
         vector<Predictor::TargetManager> predictorSet; // TODO erase after indexed predictor
@@ -251,7 +254,13 @@ namespace Planner {
         // Get
         LanePath getLanePath() {return lane_path;};
         CarState getCarState() {return cur_state;};
-        CarState getDesiredState() {return desired_state;}; //jungwon
+//        CarState getDesiredState() {return desired_state;}; //jungwon
+        CarState getDesiredState() {return desired_state_seq.front();}; //jungwon
+        bool isGoalReach() {
+            double dist = sqrt(pow(getDesiredState().x - cur_state.x,2) +
+            pow(getDesiredState().y - cur_state.y,2));
+            return (dist < goal_thres);
+        }
         driving_msgs::VehicleCmd getCurInput(double t) {
             driving_msgs::VehicleCmd cmd;
             cmd.steer_angle_cmd =  mpc_result.evalU(t).delta;
@@ -278,6 +287,7 @@ namespace Planner {
                 }
 
             }
+            corridor_seq[corridor_seq.size()-1].t_end = tf;
             return slicedCorridor;
         }
         Corridor getSearchRange() {return search_range;};
@@ -377,13 +387,13 @@ namespace Planner {
             outfile1 <<  t_cur << " "<< getCurInput(t_cur).accel_decel_cmd << " " << getCurInput(t_cur).steer_angle_cmd << endl;
 
         }
-        void log_corridor(double t_cur){
+        void log_corridor(double t_cur,double tf){
             // 1. Corridor
             string file_name = log_file_name_base + "_corridor.txt";
             ofstream outfile;
             outfile.open(file_name,std::ios_base::app);
 //            outfile << t_cur << endl;
-            for (auto corridor : corridor_seq){
+            for (auto corridor : getCorridorSeq(t_cur,tf)){
                 outfile<<  t_cur << " "<< corridor.getPretty().transpose() << endl;
             }
         }

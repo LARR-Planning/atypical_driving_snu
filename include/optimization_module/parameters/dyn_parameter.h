@@ -16,4 +16,5 @@ const double steer_max = 0.6; // 30 deg
 const double acc_min = -3;
 const double acc_max = 1;
 
+
 #endif

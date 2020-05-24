@@ -165,6 +165,7 @@ void LocalPlanner::SfcToOptConstraint(double t){
     int count3 = 1;
     for(auto &s: p_base->getCorridorSeq(t,t+param.horizon)) {
         if (N_corr < N+1) {
+
             if (count1 * count2 == 0) {
                 box_constraint[count2] = s;
                 count1++;
