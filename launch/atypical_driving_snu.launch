@@ -1,33 +1,33 @@
-<!--
-    test_with_virtual_environment.launch
--->
-
 <launch>
-<!-- Arguments Start -->
-  <arg name="map"            default="auto_drive.bt"/>
+
   <arg name="bagfile"        default="autoDriveIntegration.bag"/>
   <arg name="playBagFile"    default="true"/>
+
   <arg name="snu_frame_id" default="SNU"/>
-  <arg name="octomap_frame_id" default="map"/>
+  <arg name="octomap_frame_id" default="SNU"/>
+  <arg name="global_frame_id" default="map"/>
+
   <arg name="lane_width" default="12"/>
+  <arg name="lane_csv_file" default="12"/>
 
-
-  <!--  Arguments for integration with KETI-->
-  <arg name="vehicle_model/ly"            default="2.7"/> <!-- for the dynamics -->
-  <arg name="vehicle_model/lx"            default="2"/> <!-- for safe margin -->
+  <arg name="vehicle_model/ly"            default="2.7"/>
+  <arg name="vehicle_model/lx"            default="2"/>
   <arg name="vehicle_model/steer_max"     default="0.52"/>
   <arg name="vehicle_model/accel_max"     default="1"/>
   <arg name="vehicle_model/accel_min"     default="-3"/>
   <arg name="vehicle_model/is_rear_wheel"     default="false"/>
 
-  <arg name="nominal_speed"     default="2"/>
-  <arg name="nominal_period"     default="5"/> <!--preirod = horizon -->
-  <arg name="planning_dt"     default="0.1"/> <!--?-->
+  <arg name="nominal_speed_gp"     default="2"/>
+  <arg name="nominal_accel_gp"     default="2"/>
 
   <arg name="initial_goal/x" value="20" />
   <arg  name="initial_goal/y" value="73" />
 
-<!-- Arguments End -->
+  <arg name="nominal_horizon_gp"     default="10"/>
+  <arg name="nominal_horizon_lp"     default="5"/> <!--should be less than gp-->
+
+  <arg name="planning_dt"     default="0.1"/> <!-- time step for lp -->
+
 
 <!-- Nodes Start -->
   
@@ -47,7 +47,6 @@
     <param name="global_planner/car_z_min" value="0.5" />
     <param name="global_planner/car_z_max" value="1.0" />
     <param name="global_planner/car_speed" value="$(arg nominal_speed)" />
-    <param name="global_planner/road_width" value="4.0" />
     <param name="global_planner/world_x_min" value="-100" />
     <param name="global_planner/world_y_min" value="-100" />
     <param name="global_planner/world_x_max" value="100" />

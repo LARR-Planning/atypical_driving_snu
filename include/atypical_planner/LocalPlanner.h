@@ -49,7 +49,7 @@ namespace Planner {
 //        Collection<Matrix<double,2,2>,51> shape_temp; // temp-obstacle shape
         Matrix<double,2,2> carDefaultShape;
         // YW added
-        void SfcToOptConstraint(); // translate sfc into box constraints in optimization
+        void SfcToOptConstraint(double t); // translate sfc into box constraints in optimization
         void ObstToConstraint(); // translate obstacle predictions
         void SetLocalWpts(); // find closest 50 lane nodes
         void QxFromPrediction(Collection<double,51> mpcPredictionHeads);

@@ -70,6 +70,7 @@ namespace Planner {
         double maxAccel;
         double minAccel; // [minAccel,maxAccel] can be negative
         bool isRearWheeled;
+        double period;
     };
 
     /**
@@ -91,6 +92,7 @@ namespace Planner {
         double box_max_size;
         bool has_wall;
         bool is_world_box_snu_frame;
+        double period;
     };
 
     struct ParamPredictor{
@@ -252,7 +254,27 @@ namespace Planner {
         };
         ObstaclePathArray getCurObstaclePathArray() {return obstaclePathArray;};
         vector<Point> getSkeletonPath() {return skeleton_path;}; //TODO: delete this after debugging
-        vector<Corridor> getCorridorSeq() {return corridor_seq;};
+        vector<Corridor> getCorridorSeq() {return corridor_seq;}; // Returns just all the latest
+        vector<Corridor> getCorridorSeq(double t0,double tf ){ // start time is set to zero
+
+            vector<Corridor> slicedCorridor; bool doPush = false;
+            for (auto s : corridor_seq){
+                if ( (s.t_start<=t0 and t0 <= s.t_end) and !doPush)
+                    doPush = true;
+
+                if (s.t_start > tf)
+                    break;
+
+                if (doPush){
+                    s.t_start = std::max(s.t_start-t0,0.0);
+                    s.t_end = s.t_end-t0;
+                    slicedCorridor.push_back(s);
+
+                }
+
+            }
+            return slicedCorridor;
+        }
         Corridor getSearchRange() {return search_range;};
         octomap::OcTree* getGlobalOctoPtr() {return octo_global_ptr.get();}
         octomap::OcTree* getLocalOctoPtr() {return octo_local_ptr.get();}

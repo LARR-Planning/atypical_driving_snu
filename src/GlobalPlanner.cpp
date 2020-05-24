@@ -33,7 +33,7 @@ bool GlobalPlanner::plan(double t) {
     curSkeletonPath.clear();
     curCorridorSeq.clear();
     grid.clear();
-    isFeasible = false;
+    isFeasible = true;
     auto lanePath = p_base->getLanePath(); // JBS
     //set wall from lanePath
     vector<Point> left, right;
@@ -594,12 +594,20 @@ bool GlobalPlanner::plan(double t) {
         }
     }
 
-    curCorridorSeq[0].t_start = 0;
+    curCorridorSeq[0].t_start = 0 ; // JBS
     for(int i = 1; i < box_max; i++) {
         curCorridorSeq[i].t_end = curCorridorSeq[i-1].t_end + curCorridorSeq[i].t_end;
         curCorridorSeq[i].t_start = curCorridorSeq[i-1].t_end;
     }
     curCorridorSeq[box_max - 1].t_end = SP_INFINITY;
+
+    for(int i = 0 ; i < box_max; i++) {
+        curCorridorSeq[i].t_end += t;
+        curCorridorSeq[i].t_start += t ;
+    }
+
+
+
     //// Corridor Generation Finish ////
 
 //    printf("[GlobalPlanner] Done. \n");
