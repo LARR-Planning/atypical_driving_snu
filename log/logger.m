@@ -1,6 +1,4 @@
 %% log corridor information 
-
-
 horizon_global = 5;
 accel_lim = [-1.0 1.0];
 angluar_lim = [-0.52 0.52];
@@ -94,7 +92,7 @@ while cur_line <= size(data_corridor,1)
     yline(accel_lim(1),'r--')
     yline(accel_lim(2),'r--')
     title('accel decel')
-    plot(data_mpc(mpc_start,2:end),data_mpc(mpc_start+3,2:end),'b')
+    plot(data_mpc(mpc_start,2:end),data_mpc(mpc_start+3,2:end),'b','LineWidth',5)
     plot(data_mpc(mpc_start,2),data_mpc(mpc_start+3,2),'ko')
 
     
@@ -106,7 +104,7 @@ while cur_line <= size(data_corridor,1)
     yline((angluar_lim(1)),'r--')
     yline(angluar_lim(2),'r--')
     title('angular')   
-    plot(data_mpc(mpc_start,2:end),data_mpc(mpc_start+4,2:end),'c')
+    plot(data_mpc(mpc_start,2:end),data_mpc(mpc_start+4,2:end),'c','LineWidth',5)
     plot(data_mpc(mpc_start,2),data_mpc(mpc_start+4,2),'ko')
     
     figure(fig_state)
@@ -125,17 +123,26 @@ while cur_line <= size(data_corridor,1)
     plot(xCur,yCur,'ko','MarkerSize',10);
     
     
-    pause(1e-2)
+    pause(1e-1)
 
     if cur_line  < size(data_corridor,1)
-    clf
+        figure(fig_corridor)
+
+        clf
     end
 end
 
 
 
+%% 
 
-
+bag = rosbag('../worlds/keti_dataset1.bag');
+bSel = select(bag,'Topic','/current_speed');
+msgStructs = readMessages(bSel,'DataFormat','struct');
+speed = [];
+for i = 1:length(msgStructs)
+   speed = [speed msgStructs{i}];
+end
 
 
 

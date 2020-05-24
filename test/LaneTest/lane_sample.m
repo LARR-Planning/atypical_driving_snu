@@ -10,3 +10,7 @@ lane = [lane1 lane2];
 
 csvwrite('waypoint_airsim.csv',lane');
 
+mat = load('waypoint.csv');
+mat_new = float(mat(1:3:end,:));
+dlmwrite('waypoint_keti_sparse.csv',mat_new,'precision', '%.3f');
+

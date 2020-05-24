@@ -12,12 +12,11 @@
   <arg name="world_frame_id" default="map"/>
 
   <arg name="lane_width" default="9"/>
-  <arg name = "lane_csv_file" default = "$(find atypical_driving)/waypoint.csv"/>
+  <arg name = "lane_csv_file" default = "$(find atypical_driving)/waypoint_keti_sparse.csv"/>
   <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
-
     <arg name = "waypoints" default="$(find atypical_driving)/param/goal_keti.yaml"/>
 
-  <arg name="is_world_snu_frame" value="true"/> <!-- If this is true, the world bound -->
+  <arg name="is_world_snu_frame" value="true"/> <!-- If this is true, the world bound = SNU -->
   <!--  Arguments for integration with KETI-->
 
   <arg name="vehicle_model/ly"            default="2.7"/> <!-- for the dynamics -->
@@ -27,19 +26,15 @@
   <arg name="vehicle_model/accel_min"     default="-3"/>
   <arg name="vehicle_model/is_rear_wheel"     default="false"/>
 
-  <arg name="nominal_speed"     default="5"/>
+  <arg name="nominal_speed"     default="0.1"/>
   <arg name="lp_horizon"     default="5"/> <!--preirod = horizon -->
   <arg name="lp_period"     default="0.1"/> <!--preirod = horizon -->
+    <arg name="planning_dt"     default="0.1"/>
 
   <arg name="gp_horizon"     default="10"/>
   <arg name="gp_period"     default="0.3"/>
 
-  <arg name="planning_dt"     default="0.1"/> <!--?-->
     <arg name="goal_thres"     default="1"/>
-
-
-    <arg name="initial_goal/x" value="332269" />
-    <arg name="initial_goal/y" value="4138428.02" />
 
   <arg  name="obstacle_radius" value="0.8" />
 
@@ -50,21 +45,25 @@
     <rosparam file="$(find atypical_driving)/param/MPC_weight.yaml"/>
   </group>
 
+    <!-- Node start-->
+
+    <!--1. Data feeder-->
     <node pkg="rosbag" type="play" name="rosbag_record_diag" args="--loop $(find atypical_driving)/worlds/$(arg bagfile)" >
         <remap from="/current_pose_cov" to="/current_pose"/>
         <remap from="/velodyne_points" to="/velodyne_points_keti"/>
         <remap from="/tf" to="/tf_keti"/>
 
     </node>
+    <!--2. snu_car_tf to velodyne_tf -->
     <node pkg="tf" type="static_transform_publisher" name="link2lidar"
           args="0 0 0.2 0 0 0   car_base_link velodyne 100"/>
 
-
+    <!--3. client-->
     <node pkg="atypical_driving" type="keti_client" name="atypical_driving_client" output="screen">
         <param name="rejection_radius" value="1.6"/>
     </node>
 
-    <!-- Nodes Start -->
+    <!--4. octomap generator -->
     <node pkg="octomap_server" type="octomap_server_node" name="octomap_server" output="screen" >
         <param name="resolution"                 value="0.5" />
         <param name="frame_id"                   value="$(arg snu_frame_id)" />
@@ -92,8 +91,11 @@
         <remap from="cloud_in" to="/velodyne_points"/>
         <remap from="octomap_binary" to="/atypical_planning_test/local_map"/>
     </node>
+    <!--5. server -->
 
   <node pkg="atypical_driving" type="integration_server" name="atypical_planning_test" output="screen">
+
+      <param name = "goal_thres" value = "$(arg goal_thres)" />
 
     <param name = "world_frame_id" value="$(arg world_frame_id)" />
     <param name = "snu_frame_id" value="$(arg snu_frame_id)" />
@@ -101,10 +103,12 @@
 
     <param name = "lane_csv_file" value = "$(arg lane_csv_file)"/>
     <param name = "lane_width" value="$(arg lane_width)"/>
-    <param name = "log_file_prefix" value = "$(find atypical_driving)/log/log" />
+      <param name = "log_file_prefix" value = "$(arg log_file_prefix)" />
 
       <rosparam command="load" file="$(arg waypoints)" />
 
+
+    <param name = "global_planner/is_world_snu_frame" value="$(arg is_world_snu_frame)"/>
     <param name="global_planner/horizon" value="$(arg gp_horizon)" />
     <param name="global_planner/period" value="$(arg gp_period)" />
 
@@ -133,14 +137,10 @@
     <param name="local_planner/max_accel" value="1.5" />
     <param name="local_planner/min_accel" value="-1.5" />
 
-    <param name="initial_goal/x" value="$(arg initial_goal/x)" />
-    <param name="initial_goal/y" value="$(arg initial_goal/y)" />
-
     <param name="predictor/observation_queue" value="4" />
     <param name="predictor/ref_height" value="0.4" />
-    <param name = "is_world_snu_frame" value="$(arg is_world_snu_frame)"/>
-    <param name = "log_file_prefix" value = "$(arg log_file_prefix)" />
-      <param name = "goal_thres" value = "$(arg goal_thres)" />
+
+
   </node>
 
 

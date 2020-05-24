@@ -777,7 +777,8 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
 void RosWrapper::cbCarSpeed(const std_msgs::Float64 speed_) {
     speed = speed_.data;
     isCarSpeedReceived = true;
-
+    p_base->cur_state.v = speed; // reverse gear = negative
+//    cout << "speed " << p_base->cur_state.v << endl;
 }
 
 /**

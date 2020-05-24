@@ -220,7 +220,6 @@ namespace Planner {
         shared_ptr<octomap::OcTree> octo_global_ptr;
         shared_ptr<octomap::OcTree> octo_local_ptr;
 
-        CarState cur_state;
         SE3 cur_transform; // current tf of the car w.r.t the Tw0
         CarState desired_state; //jungwon
         // to be updated by planners
@@ -232,6 +231,8 @@ namespace Planner {
 
         ObstaclePathArray obstaclePathArray;
     public:
+        CarState cur_state;
+
         bool isGPsolved = false;
         bool isLPsolved = false;
         SE3 Tw0; // Referance frame of our node every incoming data should be transformed
