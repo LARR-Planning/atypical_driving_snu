@@ -196,6 +196,11 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<double>("local_planner/max_accel",param_.l_param.maxAccel,3);
     nh.param<double>("local_planner/min_accel",param_.l_param.minAccel,-1);
     nh.param<double>("local_planner/car_speed",param_.l_param.nominal_speed,2.0);
+
+
+
+
+
     Parameter ilqr_weight;
     param_.l_param.final_weight = ilqr_weight.setting.final_weight;
     param_.l_param.input_weight = ilqr_weight.setting.input_weight;
@@ -217,12 +222,11 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<double>("initial_goal/x",goal_x,0.0); // just fix 1
     nh.param<double>("initial_goal/y",goal_y,0.0); // just fix 1
     nh.param<double>("goal_thres",param_.l_param.goalReachingThres,0.4); // just fix 1
+    p_base->goal_thres = param_.l_param.goalReachingThres;
 
     nh.param<bool>("use_nominal_obstacle_rad",use_nominal_obstacle_radius,false); // just fix 1
     if(use_nominal_obstacle_radius)
         ROS_INFO("[SNU_PLANNER/RosWrapper] We assume fixed-size obstacle.");
-
-
 
 
     while (ros::Time::now().toSec()== 0 ){
@@ -236,8 +240,25 @@ void RosWrapper::updateParam(Param &param_) {
     goalState.x = goal_x;
     goalState.y = goal_y;
     p_base->setDesiredState(goalState); // TODO, convert it into our frame
-    ROS_INFO("[SNU_PLANNER/RosWrapper] received global goal [%f,%f] (in global frame)",goal_x,goal_y);
+    // ROS_INFO("[SNU_PLANNER/RosWrapper] received global goal [%f,%f] (in global frame)",goal_x,goal_y);
 
+
+    vector<double> target_waypoint_x;
+    vector<double> target_waypoint_y;
+
+    bool hasSeqGoal = nh.getParam("target_waypoint/x",target_waypoint_x);
+    nh.getParam("target_waypoint/y",target_waypoint_y);
+    if (hasSeqGoal) {
+        for (int i = 0; i < target_waypoint_x.size(); i++) {
+            ROS_INFO("[SNU_PLANNER/RosWrapper] received global goal [%f,%f] (in global frame)",
+                     target_waypoint_x[i], target_waypoint_y[i]);
+            p_base->desired_state_seq.push_back(CarState{target_waypoint_x[i],target_waypoint_y[i],0,0});
+        }
+    }
+    else{
+        ROS_ERROR("[SNU_PLANNER/RosWrapper] no goal sequence given");
+        return;
+    }
 
     param = param_;
 }
@@ -293,7 +314,7 @@ void RosWrapper::prepareROSmsgs() {
             marker_id++;
         }
         // up to 5
-
+        if (p_base->isGPsolved)
         for(auto corridor : p_base->getCorridorSeq(curTime(),curTime()+param.l_param.horizon)){
             marker.id = marker_id;
             if(marker_id > max_marker_id){
@@ -676,14 +697,22 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
         }
 
         // Convert the global goal to local goal
-        CarState global_goal = p_base->getDesiredState();
-        Vector4d xb(global_goal.x,global_goal.y,0,1);
-        Vector4d xa = p_base->Tw0.inverse()*xb;
-        global_goal.x = xa(0);
-        global_goal.y = xa(1);
-        p_base->setDesiredState(global_goal);
 
-        ROS_INFO("[SNU_PLANNER/RosWrapper] received global goal [%f,%f] (in SNU frame)",global_goal.x,global_goal.y);
+//        CarState global_goal = p_base->getDesiredState();
+//        Vector4d xb(global_goal.x,global_goal.y,0,1);
+//        Vector4d xa = p_base->Tw0.inverse()*xb;
+//        global_goal.x = xa(0);
+//        global_goal.y = xa(1);
+//        p_base->setDesiredState(global_goal);
+//        ROS_INFO("[SNU_PLANNER/RosWrapper] received global goal [%f,%f] (in SNU frame)",global_goal.x,global_goal.y);
+
+        for (auto &goal  : p_base->desired_state_seq){
+            Vector4d xb(goal.x,goal.y,0,1);
+            Vector4d xa = p_base->Tw0.inverse()*xb;
+            goal.x = xa(0);
+            goal.y = xa(1);
+            ROS_INFO("[SNU_PLANNER/RosWrapper] received global goal [%f,%f] (in SNU frame)",goal.x,goal.y);
+        }
         isGoalReceived = true;
     }
 
@@ -1064,7 +1093,7 @@ bool Wrapper::plan(double tTrigger){
         ROS_INFO_ONCE("[SNU_PLANNER/Wrapper] global planner passed. Start local planning ");
         updateCorrToBase();
         // let's log
-        p_base_shared->log_corridor(tTrigger);
+        p_base_shared->log_corridor(tTrigger,tTrigger + param.g_param.horizon);
 
        // Call local planner
         bool lpPassed =false ;
@@ -1106,7 +1135,7 @@ bool Wrapper::planGlobal(double tTrigger){
     if (gpPassed) {
         updateCorrToBase();
     }
-    p_base_shared->log_corridor(tTrigger);
+//    p_base_shared->log_corridor(tTrigger);
 
     mSet[0].unlock();
     return gpPassed;
@@ -1125,6 +1154,7 @@ bool Wrapper::planLocal(double tTrigger) {
     if (lpPassed) {
         updateMPCToBase();
     }
+    p_base_shared->log_corridor(tTrigger,tTrigger + param.l_param.horizon);
     p_base_shared->log_mpc(tTrigger);
     mSet[0].unlock();
     return lpPassed;
@@ -1168,32 +1198,63 @@ void Wrapper::runPlanning() {
     bool isPlanPossible = false;
     bool isGPSuccess = false;
     bool isLPSuccess = false;
+    bool isAllGoalReach = false;
 
     while (ros::ok()){
-        // 1. monitor states
-        ROS_DEBUG("[Wrapper] goal : [%f,%f] / cur position : [%f,%f]",
-                  p_base_shared->getDesiredState().x,p_base_shared->getDesiredState().y,
-                  p_base_shared->getCarState().x,p_base_shared->getCarState().y);
+        isAllGoalReach = p_base_shared->desired_state_seq.empty();
+        if (isAllGoalReach){
+            ROS_INFO_ONCE("[Wrapper] All goal reched!");
+        }
+        else {
+            // 1. monitor states
+            ROS_DEBUG("[Wrapper] goal : [%f,%f] / cur position : [%f,%f]",
+                      p_base_shared->getDesiredState().x, p_base_shared->getDesiredState().y,
+                      p_base_shared->getCarState().x, p_base_shared->getCarState().y);
 
 
-        // 2. Check the condition for planning
-        isPlanPossible = ros_wrapper_ptr->isAllInputReceived();
-        didLplanByG = false;
+            // 2. Check the condition for planning
+            isPlanPossible = ros_wrapper_ptr->isAllInputReceived();
+            didLplanByG = false;
 
-        if (isPlanPossible){
-            ROS_INFO_ONCE("[Wrapper] start planning!");
-            // 3. Do planning (GP->LP) or LP only
-            if (doGPlan){ // G plan
-                tCkpG = chrono::steady_clock::now(); // check point time
-                ROS_INFO("[Wrapper] begin GP..");
+            if (isPlanPossible) {
+                ROS_INFO_ONCE("[Wrapper] start planning!");
+                // 3. Do planning (GP->LP) or LP only
+                if (doGPlan) { // G plan
+                    tCkpG = chrono::steady_clock::now(); // check point time
+                    ROS_INFO("[Wrapper] begin GP..");
 
-                // Do planning
-                isGPSuccess = planGlobal(ros_wrapper_ptr->curTime());
-                if (isGPSuccess){ // let's call LP
-                    ROS_INFO_STREAM("[Wrapper] GP success! planning time for gp: " << std::chrono::duration_cast<std::chrono::microseconds>(chrono::steady_clock::now() - tCkpG).count()*0.001 << "ms");
-                    ROS_INFO("[Wrapper] begin LP..");
+                    // Do planning
+                    isGPSuccess = planGlobal(ros_wrapper_ptr->curTime());
+                    if (isGPSuccess) { // let's call LP
+                        ROS_INFO_STREAM("[Wrapper] GP success! planning time for gp: " <<
+                                                                                       std::chrono::duration_cast<std::chrono::microseconds>(
+                                                                                               chrono::steady_clock::now() -
+                                                                                               tCkpG).count() * 0.001
+                                                                                       << "ms");
+                        ROS_INFO("[Wrapper] begin LP..");
 
+                        auto tCkp_mpc = chrono::steady_clock::now();
+                        isLPSuccess = planLocal(ros_wrapper_ptr->curTime()); // TODO time ?
+                        didLplanByG = true;
+                        if (isLPSuccess)
+                            ROS_INFO_STREAM("[Wrapper] LP success! planning time for lp: " <<
+                                                                                           std::chrono::duration_cast<std::chrono::microseconds>(
+                                                                                                   chrono::steady_clock::now() -
+                                                                                                   tCkp_mpc).count() *
+                                                                                           0.001
+                                                                                           << "ms");
+                        else
+                            ROS_INFO_STREAM("[Wrapper] LP failed.");
+                    } else
+                        ROS_INFO_STREAM("[Wrapper] GP failed.");
+                } // G plan ended
+
+                // L plan
+                if (doLPlan and (not didLplanByG) and
+                    p_base_shared->isGPsolved) { // trigger at every LP period only if it was not called in GP loop
+                    tCkpL = chrono::steady_clock::now(); // check point time
                     auto tCkp_mpc = chrono::steady_clock::now();
+                    ROS_INFO("[Wrapper] begin LP..");
                     isLPSuccess = planLocal(ros_wrapper_ptr->curTime()); // TODO time ?
                     didLplanByG = true;
                     if (isLPSuccess)
@@ -1204,35 +1265,23 @@ void Wrapper::runPlanning() {
                                                                                        << "ms");
                     else
                         ROS_INFO_STREAM("[Wrapper] LP failed.");
-                }
-                else
-                    ROS_INFO_STREAM("[Wrapper] GP failed.");
-            } // G plan ended
+                } // L plan ended
 
-            // L plan
-            if (doLPlan and (not didLplanByG) and p_base_shared->isGPsolved) { // trigger at every LP period only if it was not called in GP loop
-                tCkpL = chrono::steady_clock::now(); // check point time
-                auto tCkp_mpc = chrono::steady_clock::now();
-                ROS_INFO("[Wrapper] begin LP..");
-                isLPSuccess = planLocal(ros_wrapper_ptr->curTime()); // TODO time ?
-                didLplanByG = true;
-                if (isLPSuccess)
-                    ROS_INFO_STREAM("[Wrapper] LP success! planning time for lp: " <<
-                                                                                   std::chrono::duration_cast<std::chrono::microseconds>(
-                                                                                           chrono::steady_clock::now() -
-                                                                                           tCkp_mpc).count() * 0.001
-                                                                                   << "ms");
-                else
-                    ROS_INFO_STREAM("[Wrapper] LP failed.");
-            } // L plan ended
+                doGPlan = (chrono::steady_clock::now() - tCkpG > std::chrono::duration<double>(param.g_param.period));
+                doLPlan = (chrono::steady_clock::now() - tCkpL > std::chrono::duration<double>(param.l_param.period));
 
-            doGPlan = (chrono::steady_clock::now() - tCkpG > std::chrono::duration<double>(param.g_param.period));
-            doLPlan = (chrono::steady_clock::now() - tCkpL > std::chrono::duration<double>(param.l_param.period));
-
-        }else{ // planning cannot be started
-            ROS_WARN_THROTTLE(2,"[Wrapper] waiting planning input subscriptions.. (message print out every 2 sec)");
+            } else { // planning cannot be started
+                ROS_WARN_THROTTLE(2,
+                                  "[Wrapper] waiting planning input subscriptions.. (message print out every 2 sec)");
+            }
         }
-
+        if (p_base_shared->isGoalReach()) {
+            mSet[0].lock();
+            ROS_INFO("[Wrapper] goal : [%f,%f] reached",
+                      p_base_shared->getDesiredState().x, p_base_shared->getDesiredState().y);
+            p_base_shared->desired_state_seq.pop_front();
+            mSet[0].unlock();
+        }
         ros::Rate(30).sleep();
     }
 }

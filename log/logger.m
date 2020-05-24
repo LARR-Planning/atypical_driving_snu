@@ -19,7 +19,7 @@ hold on
 plot(data_state(:,2),data_state(:,3),'k-')
 theta = data_state(:,4);
 xaxis = [cos(theta) sin(theta)];
-dd = 20;
+dd = 50;
 quiver(data_state(1:dd:end,2),data_state(1:dd:end,3),xaxis(1:dd:end,1),xaxis(1:dd:end,2))
 xlabel('x')
 ylabel('y')
@@ -127,9 +127,9 @@ while cur_line <= size(data_corridor,1)
     
     pause(1e-2)
 
-% %     if cur_line  < size(data_corridor,1)
-% %     clf
-% %     end
+    if cur_line  < size(data_corridor,1)
+    clf
+    end
 end
 
 
