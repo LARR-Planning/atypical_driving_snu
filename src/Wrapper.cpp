@@ -1210,7 +1210,7 @@ void Wrapper::runPlanning() {
             } // G plan ended
 
             // L plan
-            if (doLPlan and (not didLplanByG)) { // trigger at every LP period only if it was not called in GP loop
+            if (doLPlan and (not didLplanByG) and p_base_shared->isGPsolved) { // trigger at every LP period only if it was not called in GP loop
                 tCkpL = chrono::steady_clock::now(); // check point time
                 auto tCkp_mpc = chrono::steady_clock::now();
                 ROS_INFO("[Wrapper] begin LP..");
