@@ -5,6 +5,7 @@
 #include <atypical_planner/LocalPlanner.h>
 #include <optimization_module/problem.hpp>
 #include <optimization_module/dimension.h>
+
 #include <math.h>
 #include <cmath>
 using namespace Planner;
@@ -223,7 +224,7 @@ void LocalPlanner::SfcToOptConstraint(double t){
     {
         t_list.push_back(t_temp);
         node_distance = (node_list[i]-node_list[i-1]).norm();
-       t_temp +=node_distance * 0.5; // divided by 2m/s --> wpts list generation at Global Planner.cpp is opimal;
+       t_temp +=node_distance /param.nominal_speed; // divided by 2m/s --> wpts list generation at Global Planner.cpp is opimal;
 
     }
      Matrix<double,2,1> velNormalized_temp;
@@ -246,7 +247,7 @@ void LocalPlanner::SfcToOptConstraint(double t){
         {
             for (int j = 0; j < round((t_list[i] - t_start_) / param.tStep); j++) {
                 velNormalized_temp = (node_list[i]-node_list[i-1]).normalized();
-                wpts_temp1 = node_list[i-1] + (t_start_+(j+1)*dt - t_list[i-1])*velNormalized_temp*2; //multiplied by 2m/s
+                wpts_temp1 = node_list[i-1] + (t_start_+(j+1)*dt - t_list[i-1])*velNormalized_temp*param.nominal_speed; //multiplied by 2m/s
                 wpts_temp2(0) = wpts_temp1(0);
                 wpts_temp2(1) =wpts_temp1(1);
                 wpts_temp2(2) =atan2(velNormalized_temp(1),velNormalized_temp(0));
@@ -271,11 +272,12 @@ void LocalPlanner::SfcToOptConstraint(double t){
         }
 
     }
-    Matrix<double,2,1> direction_my;
-    Matrix<double,2,1> direction_path;
-    direction_my<< cos(p_base->getCarState().theta), sin(p_base->getCarState().theta);
-    direction_path<< p_base->getCarState().x-wpts_list2[start_idx].coeffRef(0,0),
-            p_base->getCarState().y-wpts_list2[start_idx].coeffRef(1,0);
+	start_idx ++;
+//    Matrix<double,2,1> direction_my;
+//    Matrix<double,2,1> direction_path;
+//    direction_my<< cos(p_base->getCarState().theta), sin(p_base->getCarState().theta);
+//    direction_path<< p_base->getCarState().x-wpts_list2[start_idx].coeffRef(0,0),
+//            p_base->getCarState().y-wpts_list2[start_idx].coeffRef(1,0);
 //    double flag_changeIdx = (direction_my.array()*direction_path.array()).sum();
 //    while(flag_changeIdx<0)
 //    {
@@ -326,20 +328,20 @@ bool LocalPlannerPlain::plan(double t) {
      if(p_base->getLanePath().lanes.size()>0)
      {
          LocalPlanner::SetLocalWpts();
-         state_weight_.coeffRef(0,0) = 0.5; //x
-         state_weight_.coeffRef(1,0) = 0.5; //y
-         state_weight_.coeffRef(2,0) = 0.5; //v
-         state_weight_.coeffRef(3,0) = 0.1; //delta
-         state_weight_.coeffRef(4,0) = 0.01; //theta
-
-         final_weight_.coeffRef(0,0) = 0.5; // x
-         final_weight_.coeffRef(1,0) = 0.5; //y
-         final_weight_.coeffRef(2,0) = 0.5; //v
-         final_weight_.coeffRef(3,0) = 0.1; //delta
-         final_weight_.coeffRef(4,0) = 0.01; // theta
-
-         input_weight_.coeffRef(0,0) = 0.05;
-         input_weight_.coeffRef(1,0) = 0.01;
+//         state_weight_.coeffRef(0,0) = 0.5; //x
+//         state_weight_.coeffRef(1,0) = 0.5; //y
+//         state_weight_.coeffRef(2,0) = 0.5; //v
+//         state_weight_.coeffRef(3,0) = 0.1; //delta
+//         state_weight_.coeffRef(4,0) = 0.01; //theta
+//
+//         final_weight_.coeffRef(0,0) = 0.5; // x
+//         final_weight_.coeffRef(1,0) = 0.5; //y
+//         final_weight_.coeffRef(2,0) = 0.5; //v
+//         final_weight_.coeffRef(3,0) = 0.1; //delta
+//         final_weight_.coeffRef(4,0) = 0.01; // theta
+//
+//         input_weight_.coeffRef(0,0) = 0.05;
+//         input_weight_.coeffRef(1,0) = 0.01;
          isRefUsed = 1;
      }
 
@@ -351,9 +353,10 @@ bool LocalPlannerPlain::plan(double t) {
      // Do not have to be defined every loop
 
      bool noConstraint_ = 0;
-     prob->set_state_weight(state_weight_);
-     prob->set_final_weight(final_weight_);
-     prob->set_input_weight(input_weight_);
+     prob->set_state_weight(param.state_weight);
+     prob->set_final_weight(param.final_weight);
+     prob->set_input_weight(param.input_weight);
+     prob->setRear_wheel(param.isRearWheeled);
      prob->set_noConstraint(noConstraint_);
      prob->set_refUsed(isRefUsed);
      prob->set_goal(x_goal_);
@@ -378,7 +381,7 @@ bool LocalPlannerPlain::plan(double t) {
          {
              for(auto &s :u0)
              {
-                 s=(Matrix<double,Nu,1>()<< 1,0.0).finished();
+                 s=(Matrix<double,Nu,1>()<< 0.5,0.0).finished();
              }
              x0_new = (Matrix<double,Nx,1>()<<p_base->getCarState().x, p_base->getCarState().y,p_base->getCarState().v,
                      0.0, p_base->getCarState().theta).finished();

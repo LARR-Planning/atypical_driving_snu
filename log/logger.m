@@ -127,9 +127,9 @@ while cur_line <= size(data_corridor,1)
     
     pause(1e-2)
 
-%     if cur_line  < size(data_corridor,1)
-%     clf
-%     end
+% %     if cur_line  < size(data_corridor,1)
+% %     clf
+% %     end
 end
 
 

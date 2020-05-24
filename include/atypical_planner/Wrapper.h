@@ -9,6 +9,8 @@
 #include <atypical_planner/LocalPlanner.h>
 #include <atypical_planner/GlobalPlanner.h>
 
+#include <optimization_module/parameter.hpp>
+
 #include <ros/ros.h>
 #include <nav_msgs/Path.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>

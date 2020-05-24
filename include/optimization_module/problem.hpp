@@ -10,6 +10,10 @@
 #include <optimization_module/symbolic_functions/f.hpp>
 #include <optimization_module/symbolic_functions/dfdx.hpp>
 #include <optimization_module/symbolic_functions/dfdu.hpp>
+#include <optimization_module/symbolic_functions/f_front.hpp>
+#include <optimization_module/symbolic_functions/dfdx_front.hpp>
+#include <optimization_module/symbolic_functions/dfdu_front.hpp>
+
 #include <optimization_module/symbolic_functions/cost.hpp>
 #include <optimization_module/symbolic_functions/costx.hpp>
 #include <optimization_module/symbolic_functions/costxx.hpp>
@@ -29,9 +33,9 @@ class Problem : public ProblemDescription<Nx,Nu>
 private:
 
     Matrix<double,2,1> x_goal_; // Goal : the last point of last corridor
-    Collection<Matrix<double,3,1>,50> x_ref; // Reference Tracking Mode
+    Collection<Matrix<double,3,1>,N> x_ref; // Reference Tracking Mode
     int isRefUsed;
-    Collection<Matrix<double,2,2>,51>& Qx; // shape matrix, constant in plain_MPC
+    Collection<Matrix<double,2,2>,N+1>& Qx; // shape matrix, constant in plain_MPC
 
     VectorX final_weight_ = VectorX::Zero(); //Final Cost Weight Factor
     VectorX state_weight_ = VectorX::Zero(); //Running Cost State Weight Factor
@@ -41,9 +45,10 @@ private:
     vector<vector<Vector2d>>& obs_q_;
     Collection<Planner::Corridor,N+1>& sfc_modified;
     bool noConstraint_ = true;
+    bool isRearWheel_;
 
 public:
-    Problem (Collection<Matrix<double,2,2>,51>& car_shape,
+    Problem (Collection<Matrix<double,2,2>,N+1>& car_shape,
              Collection<Planner::Corridor,N+1>& corridor_seq, vector<vector<Matrix2d>>& obs_Q,
              vector<vector<Vector2d>>& obs_q)
             : sfc_modified(corridor_seq), Qx(car_shape),  obs_Q_(obs_Q), obs_q_(obs_q)
@@ -60,7 +65,7 @@ public:
     void set_final_weight( const VectorX weight )
     { final_weight_ = weight;	}
 
-    void set_ref(const Collection<Matrix<double,3,1>,50> x_ref_)
+    void set_ref(const Collection<Matrix<double,3,1>,N> x_ref_)
     {x_ref = x_ref_;}
 
     void set_refUsed(const int isRefUsed_)
@@ -68,6 +73,9 @@ public:
 
     void set_noConstraint( const bool noConstraint )
     { noConstraint_ = noConstraint; }
+
+    void setRear_wheel(const bool isRearWheel)
+    { isRearWheel_ = isRearWheel;}
 
 //		void set_constraintype( const int constraintType )
 //		{ constraintType_ = constraintType; }
@@ -84,13 +92,28 @@ public:
     {
         // simple euler integration
         DynamicsDerivatives<Nx,Nu> dyn;
-        dyn.f = x +dt*symbolic_functions::f(x,u);
-        if (type == WITHOUT_DERIVATIVES)
+        if(isRearWheel_)
+        {
+            dyn.f = x +dt*symbolic_functions::f(x,u);
+            if (type == WITHOUT_DERIVATIVES)
+                return dyn;
+            // fx and fu should be based on discretized f!!!
+            dyn.fx = MatrixXX::Identity()+ dt*symbolic_functions::dfdx(x,u);
+            dyn.fu = dt*symbolic_functions::dfdu(x,u);
             return dyn;
-        // fx and fu should be based on discretized f!!!
-        dyn.fx = MatrixXX::Identity()+ dt*symbolic_functions::dfdx(x,u);
-        dyn.fu = dt*symbolic_functions::dfdu(x,u);
-        return dyn;
+        }
+        else
+        {
+            dyn.f = x +dt*symbolic_functions::f_front(x,u);
+            if (type == WITHOUT_DERIVATIVES)
+                return dyn;
+            // fx and fu should be based on discretized f!!!
+            dyn.fx = MatrixXX::Identity()+ dt*symbolic_functions::dfdx_front(x,u);
+            dyn.fu = dt*symbolic_functions::dfdu_front(x,u);
+            return dyn;
+        }
+
+
     }
 
     CostDerivatives<Nx,Nu>

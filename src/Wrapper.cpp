@@ -175,7 +175,7 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<double>("global_planner/car_width",param_.g_param.car_width,2);
     nh.param<double>("global_planner/car_z_min",param_.g_param.car_z_min,0.0);
     nh.param<double>("global_planner/car_z_max",param_.g_param.car_z_max,2.0);
-    nh.param<double>("global_planner/car_speed",param_.g_param.car_speed,1.0);
+    nh.param<double>("global_planner/car_speed",param_.g_param.car_speed,2.0);
     nh.param<double>("global_planner/car_acceleration",param_.g_param.car_acceleration,1.0);
     nh.param<double>("global_planner/world_x_min",param_.g_param.world_x_min,-10);
     nh.param<double>("global_planner/world_y_min",param_.g_param.world_y_min,-1);
@@ -195,6 +195,13 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<double>("local_planner/max_steer",param_.l_param.maxSteer,M_PI/30);
     nh.param<double>("local_planner/max_accel",param_.l_param.maxAccel,3);
     nh.param<double>("local_planner/min_accel",param_.l_param.minAccel,-1);
+    nh.param<double>("local_planner/car_speed",param_.l_param.nominal_speed,2.0);
+    Parameter ilqr_weight;
+    param_.l_param.final_weight = ilqr_weight.setting.final_weight;
+    param_.l_param.input_weight = ilqr_weight.setting.input_weight;
+    param_.l_param.state_weight = ilqr_weight.setting.state_weight;
+
+
     bool isUseSimTimeMode = false;
 
 
@@ -941,6 +948,10 @@ void RosWrapper::cbLocalMap(const octomap_msgs::Octomap& octomap_msg) {
 //    }else{
 //        ROS_WARN("[RosWrapper] callback for CarPoseCov locked by planner. Passing update");
 //    }
+    }
+    else{
+               ROS_WARN("[RosWrapper] callback for octomap locked by planner. Passing update");
+
     }
 }
 

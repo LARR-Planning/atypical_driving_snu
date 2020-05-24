@@ -69,8 +69,14 @@ namespace Planner {
         double maxSteer; // [-maxSteer,maxSteer]
         double maxAccel;
         double minAccel; // [minAccel,maxAccel] can be negative
+        double nominal_speed;
         bool isRearWheeled;
         double period;
+
+        //ilQR parameters
+        Matrix<double,5,1> state_weight;
+        Matrix<double,5,1> final_weight;
+        Matrix<double,2,1> input_weight;
     };
 
     /**
