@@ -6,8 +6,8 @@
   <param name="use_sim_time" value="true"/>
 <!-- Arguments Start -->
   <arg name="map"            default="auto_drive.bt"/>
-  <arg name="bagfile"        default="autoDriveIntegration.bag"/>
-<!--  <arg name="bagfile"        default="empty.bag"/>-->
+<!--  <arg name="bagfile"        default="autoDriveIntegration.bag"/>-->
+  <arg name="bagfile"        default="empty.bag"/>
   <arg name="playBagFile"    default="true"/>
   <arg name="snu_frame_id" default="SNU"/>
   <arg name="octomap_frame_id" default="map"/>

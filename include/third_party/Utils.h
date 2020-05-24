@@ -14,9 +14,10 @@ using namespace std;
 using namespace Eigen;
 double interpolate(vector<double> &xData, vector<double> &yData, double x, bool extrapolate );
 Vector3d applyTransform(const SE3& Tab, const Vector3d & vb);
+using namespace geometry_msgs;
 
-
-
+bool intersect(Point i0, Point i1, Point j0, Point j1);
+int ccw(Point a, Point b, Point c);
 
 #endif //ATYPICAL_DRIVING_UTILS_H
 
