@@ -116,12 +116,8 @@ bool GlobalPlanner::plan(double t) {
             //Vector3d transformed_vector = applyTransform(p_base->Tw0, Vector3d(point_x, point_y, 0)); //SNU to world transform
             Vector3d transformed_vector = applyTransform(p_base->To0, Vector3d(point_x, point_y, 0)); //SNU to octomap transform
             octomap::point3d point(transformed_vector(0), transformed_vector(1), (param.car_z_min + param.car_z_max) / 2);
-            if(point.x() > world_box_transformed[0]
-               && point.y() > world_box_transformed[1]
-               && point.x() < world_box_transformed[2]
-               && point.y() < world_box_transformed[3]) {
-                p_base->getLocalOctoPtr()->updateNode(point, true);
-            }
+            p_base->getLocalOctoPtr()->updateNode(point, true);
+
             point_x += point_dx;
             point_y += point_dy;
         }
@@ -145,12 +141,8 @@ bool GlobalPlanner::plan(double t) {
         for(int iter = 0; iter < step; iter++) {
             Vector3d transformed_vector = applyTransform(p_base->To0, Vector3d(point_x, point_y, 0)); //SNU to octomap transform
             octomap::point3d point(transformed_vector(0), transformed_vector(1), (param.car_z_min + param.car_z_max) / 2);
-            if(point.x() > world_box_transformed[0]
-               && point.y() > world_box_transformed[1]
-               && point.x() < world_box_transformed[2]
-               && point.y() < world_box_transformed[3]) {
-                p_base->getLocalOctoPtr()->updateNode(point, true);
-            }
+            p_base->getLocalOctoPtr()->updateNode(point, true);
+
             point_x += point_dx;
             point_y += point_dy;
         }

@@ -29,9 +29,9 @@ class Problem : public ProblemDescription<Nx,Nu>
 private:
 
     Matrix<double,2,1> x_goal_; // Goal : the last point of last corridor
-    Collection<Matrix<double,3,1>,50> x_ref; // Reference Tracking Mode
+    Collection<Matrix<double,3,1>,N> x_ref; // Reference Tracking Mode
     int isRefUsed;
-    Collection<Matrix<double,2,2>,51>& Qx; // shape matrix, constant in plain_MPC
+    Collection<Matrix<double,2,2>,N+1>& Qx; // shape matrix, constant in plain_MPC
 
     VectorX final_weight_ = VectorX::Zero(); //Final Cost Weight Factor
     VectorX state_weight_ = VectorX::Zero(); //Running Cost State Weight Factor
@@ -43,7 +43,7 @@ private:
     bool noConstraint_ = true;
 
 public:
-    Problem (Collection<Matrix<double,2,2>,51>& car_shape,
+    Problem (Collection<Matrix<double,2,2>,N+1>& car_shape,
              Collection<Planner::Corridor,N+1>& corridor_seq, vector<vector<Matrix2d>>& obs_Q,
              vector<vector<Vector2d>>& obs_q)
             : sfc_modified(corridor_seq), Qx(car_shape),  obs_Q_(obs_Q), obs_q_(obs_q)
@@ -60,7 +60,7 @@ public:
     void set_final_weight( const VectorX weight )
     { final_weight_ = weight;	}
 
-    void set_ref(const Collection<Matrix<double,3,1>,50> x_ref_)
+    void set_ref(const Collection<Matrix<double,3,1>,N> x_ref_)
     {x_ref = x_ref_;}
 
     void set_refUsed(const int isRefUsed_)
