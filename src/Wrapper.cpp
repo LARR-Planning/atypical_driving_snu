@@ -170,6 +170,8 @@ void RosWrapper::updateParam(Param &param_) {
 
     // global planner
     nh.param<double>("global_planner/horizon",param_.g_param.horizon,15);
+    nh.param<double>("global_planner/period",param_.g_param.period,2);
+
     nh.param<double>("global_planner/car_width",param_.g_param.car_width,2);
     nh.param<double>("global_planner/car_z_min",param_.g_param.car_z_min,0.0);
     nh.param<double>("global_planner/car_z_max",param_.g_param.car_z_max,2.0);
@@ -186,6 +188,7 @@ void RosWrapper::updateParam(Param &param_) {
 
     // local planner
     nh.param<double>("local_planner/horizon",param_.l_param.horizon,5);
+    nh.param<double>("local_planner/period",param_.l_param.period,0.1);
     nh.param<double>("local_planner/ts",param_.l_param.tStep,0.1);
     nh.param<double>("local_planner/obstacle_radius_nominal",param_.l_param.obstRadiusNominal,0.3);
     nh.param<double>("local_planner/car_longtitude",param_.l_param.carLongtitude,2.7);
@@ -265,7 +268,7 @@ void RosWrapper::prepareROSmsgs() {
         visualization_msgs::Marker marker;
         marker.header.frame_id = SNUFrameId;
         marker.type = visualization_msgs::Marker::CUBE;
-
+        // gp horizon
         for(auto corridor : p_base->getCorridorSeq()){
             marker.id = marker_id;
             if(marker_id > max_marker_id){
@@ -285,9 +288,39 @@ void RosWrapper::prepareROSmsgs() {
             marker.scale.x = corridor.xu - corridor.xl;
             marker.scale.y = corridor.yu - corridor.yl;
             marker.scale.z = car_z_max - car_z_min;
+            marker.text =  to_string(corridor.t_start) + "-"+to_string(corridor.t_end);
             corridorSeq.markers.emplace_back(marker);
             marker_id++;
         }
+        // up to 5
+
+        for(auto corridor : p_base->getCorridorSeq(curTime(),curTime()+param.l_param.horizon)){
+            marker.id = marker_id;
+            if(marker_id > max_marker_id){
+                marker.action = visualization_msgs::Marker::ADD;
+                max_marker_id = marker_id;
+            } else{
+                marker.action = visualization_msgs::Marker::ADD;
+            }
+
+            marker.color.a = 0.4;
+            marker.color.r = 0;
+            marker.color.g = 0;
+            marker.color.b = 1;
+            marker.pose.position.x = (corridor.xu + corridor.xl) / 2;
+            marker.pose.position.y = (corridor.yu + corridor.yl) / 2;
+            marker.pose.position.z = (car_z_min + car_z_max)/2;
+            marker.scale.x = (corridor.xu - corridor.xl);
+            marker.scale.y = (corridor.yu - corridor.yl);
+            marker.scale.z = car_z_max - car_z_min;
+            corridorSeq.markers.emplace_back(marker);
+            marker_id++;
+        }
+
+
+
+
+
         // skeleton path - jungwon
         for(auto node : p_base->getSkeletonPath()){
             marker.id = marker_id;
@@ -761,8 +794,9 @@ void RosWrapper::cbGlobalMap(const octomap_msgs::Octomap& octomap_msg) {
  */
 void RosWrapper::cbLocalMap(const octomap_msgs::Octomap& octomap_msg) {
     // TODO you have to decide whether the update in this callback could interrupt planning thread
-
-    if(mSet[0].try_lock()) {
+    mSet[0].lock();
+    if(true)
+    {
 
         p_base->setLocalMap(dynamic_cast<octomap::OcTree *>(octomap_msgs::binaryMsgToMap(octomap_msg)));
         double xmin, ymin, zmin;
@@ -779,6 +813,7 @@ void RosWrapper::cbLocalMap(const octomap_msgs::Octomap& octomap_msg) {
         }
 
 
+
 //        octomap::point3d minPnt(-100,-100,-100);
 //        octomap::point3d maxPnt(100,100,100);
 //        p_base->getLocalOctoPtr()->setBBXMax(maxPnt);
@@ -789,6 +824,124 @@ void RosWrapper::cbLocalMap(const octomap_msgs::Octomap& octomap_msg) {
 
         ROS_INFO_ONCE("Octomap loaded");
         isLocalMapReceived = true;
+
+
+        auto lanePath = p_base->getLanePath(); // JBS
+        //set wall from lanePath
+        vector<Point> left, right;
+        Point left_point, right_point;
+        double d, theta, theta_curr, theta_prev;
+        for(auto laneNode: lanePath.lanes){
+            d = laneNode.width / 2;
+            for(int iter = 0; iter < laneNode.laneCenters.size(); iter++){
+                auto lanePoint = laneNode.laneCenters[iter];
+                if(iter < laneNode.laneCenters.size() - 1){
+                    auto nextPoint = laneNode.laneCenters[iter+1];
+                    theta_prev = theta_curr;
+                    theta_curr = atan2(nextPoint.y - lanePoint.y, nextPoint.x - lanePoint.x);
+                }
+                else{
+                    theta_curr = theta_prev;
+                }
+                if(iter == 0) {
+                    theta = theta_curr;
+                }
+                else{
+                    if(abs(theta_curr-theta_prev) <= M_PI){
+                        theta = (theta_curr+theta_prev)/2;
+                    }
+                    else{
+                        theta = (theta_curr + theta_prev) / 2 + M_PI;
+                    }
+                }
+
+                left_point.x = lanePoint.x + d * cos(theta + M_PI / 2);
+                left_point.y = lanePoint.y + d * sin(theta + M_PI / 2);
+                left.emplace_back(left_point);
+
+                right_point.x = lanePoint.x + d * cos(theta - M_PI / 2);
+                right_point.y = lanePoint.y + d * sin(theta - M_PI / 2);
+                right.emplace_back(right_point);
+            }
+        }
+
+        int left_i = 0;
+        while(left_i < left.size() - 1){
+            for(int left_j = left_i + 2; left_j < left.size() - 1; left_j++){
+                if(intersect(left[left_i], left[left_i+1], left[left_j], left[left_j+1])){
+                    left.erase(left.begin() + left_i+1, left.begin() + left_j+1);
+                    break;
+                }
+            }
+            left_i++;
+        }
+
+        int right_i = 0;
+        while(right_i < right.size() - 1){
+            for(int right_j = right_i + 2; right_j < right.size() - 1; right_j++){
+                if(intersect(right[right_i], right[right_i+1], right[right_j], right[right_j+1])){
+                    right.erase(right.begin() + right_i+1, right.begin() + right_j+1);
+                    break;
+                }
+            }
+            right_i++;
+        }
+
+        double point_x, point_y, point_dx, point_dy, step;
+        for(int i = 0; i < left.size()-1; i++){
+            point_dx = left[i+1].x - left[i].x;
+            point_dy = left[i+1].y - left[i].y;
+
+            if(abs(point_dx) >= abs(point_dy)){
+                step = abs(point_dx) * 10;
+            }
+            else{
+                step = abs(point_dy) * 10;
+            }
+            point_dx = point_dx / step;
+            point_dy = point_dy / step;
+
+            point_x = left[i].x;
+            point_y = left[i].y;
+
+            for(int iter = 0; iter < step; iter++) {
+                //Vector3d transformed_vector = applyTransform(p_base->Tw0, Vector3d(point_x, point_y, 0)); //SNU to world transform
+                Vector3d transformed_vector = applyTransform(p_base->To0, Vector3d(point_x, point_y, 0)); //SNU to octomap transform
+                octomap::point3d point(transformed_vector(0), transformed_vector(1), (param.g_param.car_z_min + param.g_param.car_z_max) / 2);
+{
+                    p_base->getLocalOctoPtr()->updateNode(point, true);
+                }
+                point_x += point_dx;
+                point_y += point_dy;
+            }
+        }
+        for(int i = 0; i < right.size()-1; i++){
+            point_dx = right[i+1].x - right[i].x;
+            point_dy = right[i+1].y - right[i].y;
+
+            if(abs(point_dx) >= abs(point_dy)){
+                step = abs(point_dx) * 10;
+            }
+            else{
+                step = abs(point_dy) * 10;
+            }
+            point_dx = point_dx / step;
+            point_dy = point_dy / step;
+
+            point_x = right[i].x;
+            point_y = right[i].y;
+
+            for(int iter = 0; iter < step; iter++) {
+                Vector3d transformed_vector = applyTransform(p_base->To0, Vector3d(point_x, point_y, 0)); //SNU to octomap transform
+                octomap::point3d point(transformed_vector(0), transformed_vector(1), (param.g_param.car_z_min + param.g_param.car_z_max) / 2);
+                {
+                    p_base->getLocalOctoPtr()->updateNode(point, true);
+                }
+                point_x += point_dx;
+                point_y += point_dy;
+            }
+        }
+        octomap_msgs::binaryMapToMsg(*p_base->getLocalOctoPtr(),p_base->octomap_snu_msgs);
 
         mSet[0].unlock();
 //        ROS_INFO("[RosWrapper] local map update");
@@ -942,6 +1095,42 @@ bool Wrapper::plan(double tTrigger){
 
 }
 
+bool Wrapper::planGlobal(double tTrigger){
+    mSet[0].lock();
+    // call global planner
+    bool gpPassed = gp_ptr->plan(tTrigger);
+    if (not p_base_shared->isGPsolved)
+        p_base_shared->isGPsolved = gpPassed;
+
+    // let's log
+    if (gpPassed) {
+        updateCorrToBase();
+    }
+    p_base_shared->log_corridor(tTrigger);
+
+    mSet[0].unlock();
+    return gpPassed;
+}
+
+bool Wrapper::planLocal(double tTrigger) {
+
+    mSet[0].lock();
+
+    // call global planner
+    bool lpPassed = lp_ptr->plan(tTrigger); // TODO
+    // if (not p_base_shared->isGPsolved)
+    if (not p_base_shared->isLPsolved)
+        p_base_shared->isLPsolved = lpPassed;
+    // let's log
+    if (lpPassed) {
+        updateMPCToBase();
+    }
+    p_base_shared->log_mpc(tTrigger);
+    mSet[0].unlock();
+    return lpPassed;
+}
+
+
 /**
  * @brief Modify p_base with the resultant planning output
  */
@@ -960,8 +1149,6 @@ void Wrapper::updateMPCToBase() {
     lp_ptr->updateTrajToBase();
     mSet[1].unlock();
 //    ROS_INFO( "[Wrapper] p_base updated. Unlocking.\n ");
-
-
 }
 
 /**
@@ -971,48 +1158,82 @@ void Wrapper::runPlanning() {
 
 //    ROS_INFO( "[Wrapper] Assuming planning is updated at every 0.5 sec.\n"); // TODO
     // initial stuffs
-    double Tp = 0.1; // sec
-    auto tCkp = chrono::steady_clock::now(); // check point time
-    bool doPlan = true; // turn on if we have started the class
+    double Tp = 4.0; // sec
+    auto tCkpG = chrono::steady_clock::now(); // check point time
+    auto tCkpL = chrono::steady_clock::now(); // check point time
+
+    bool doGPlan = true; // turn on if we have started the class
+    bool doLPlan = true; // turn on if we have started the class
+    bool didLplanByG = false; // Lp already done in GP loop
     bool isPlanPossible = false;
-    bool isPlanSuccess = false;
+    bool isGPSuccess = false;
+    bool isLPSuccess = false;
+
     while (ros::ok()){
-        // First, we have to check all the inputs are received for planning
+        // 1. monitor states
+        ROS_DEBUG("[Wrapper] goal : [%f,%f] / cur position : [%f,%f]",
+                  p_base_shared->getDesiredState().x,p_base_shared->getDesiredState().y,
+                  p_base_shared->getCarState().x,p_base_shared->getCarState().y);
+
+
+        // 2. Check the condition for planning
         isPlanPossible = ros_wrapper_ptr->isAllInputReceived();
+        didLplanByG = false;
+
         if (isPlanPossible){
             ROS_INFO_ONCE("[Wrapper] start planning!");
-            // If planning is triggered
-            if (doPlan){
-                tCkp = chrono::steady_clock::now(); // check point time
-//                printf("================================================================");
-//                ROS_INFO( "[Wrapper] Planning started."); // TODO
+            // 3. Do planning (GP->LP) or LP only
+            if (doGPlan){ // G plan
+                tCkpG = chrono::steady_clock::now(); // check point time
+                ROS_INFO("[Wrapper] begin GP..");
 
                 // Do planning
+                isGPSuccess = planGlobal(ros_wrapper_ptr->curTime());
+                if (isGPSuccess){ // let's call LP
+                    ROS_INFO_STREAM("[Wrapper] GP success! planning time for gp: " << std::chrono::duration_cast<std::chrono::microseconds>(chrono::steady_clock::now() - tCkpG).count()*0.001 << "ms");
+                    ROS_INFO("[Wrapper] begin LP..");
 
-                ROS_DEBUG("[Wrapper] goal : [%f,%f] / cur position : [%f,%f]",
-                          p_base_shared->getDesiredState().x,p_base_shared->getDesiredState().y,
-                        p_base_shared->getCarState().x,p_base_shared->getCarState().y);
-
-                // prepare prediction sequence for  MPC. for time window (tcur,tcur+horizon)
-                isPlanSuccess = plan(ros_wrapper_ptr->curTime());
-//                printf("================================================================");
-
-                ROS_INFO_STREAM("[Wrapper] planning time: " << std::chrono::duration_cast<std::chrono::microseconds>(chrono::steady_clock::now() - tCkp).count()*0.001 << "ms");
-                // Only when the planning results are valid, we update p_base
-                // At this step, the prepareROSmsgs() of RosWraper is unavailable
-                if (isPlanSuccess){
+                    auto tCkp_mpc = chrono::steady_clock::now();
+                    isLPSuccess = planLocal(ros_wrapper_ptr->curTime()); // TODO time ?
+                    didLplanByG = true;
+                    if (isLPSuccess)
+                        ROS_INFO_STREAM("[Wrapper] LP success! planning time for lp: " <<
+                                                                                       std::chrono::duration_cast<std::chrono::microseconds>(
+                                                                                               chrono::steady_clock::now() -
+                                                                                               tCkp_mpc).count() * 0.001
+                                                                                       << "ms");
+                    else
+                        ROS_INFO_STREAM("[Wrapper] LP failed.");
                 }
-                else{
-                    ROS_ERROR("[Wrapper] planning failed");
-                }
-            }
-            // TODO update the obstaclePathArray to monitor current feasibilty
-            // Trigger condition of planning. This can be anything other than the simple periodic triggering
-            doPlan = chrono::steady_clock::now() - tCkp > std::chrono::duration<double>(Tp);
-            ros::Rate(30).sleep();
-        }else{
-            ROS_WARN_ONCE("[Wrapper] waiting planning input subscriptions..");
+                else
+                    ROS_INFO_STREAM("[Wrapper] GP failed.");
+            } // G plan ended
+
+            // L plan
+            if (doLPlan and (not didLplanByG)) { // trigger at every LP period only if it was not called in GP loop
+                tCkpL = chrono::steady_clock::now(); // check point time
+                auto tCkp_mpc = chrono::steady_clock::now();
+                ROS_INFO("[Wrapper] begin LP..");
+                isLPSuccess = planLocal(ros_wrapper_ptr->curTime()); // TODO time ?
+                didLplanByG = true;
+                if (isLPSuccess)
+                    ROS_INFO_STREAM("[Wrapper] LP success! planning time for lp: " <<
+                                                                                   std::chrono::duration_cast<std::chrono::microseconds>(
+                                                                                           chrono::steady_clock::now() -
+                                                                                           tCkp_mpc).count() * 0.001
+                                                                                   << "ms");
+                else
+                    ROS_INFO_STREAM("[Wrapper] LP failed.");
+            } // L plan ended
+
+            doGPlan = (chrono::steady_clock::now() - tCkpG > std::chrono::duration<double>(param.g_param.period));
+            doLPlan = (chrono::steady_clock::now() - tCkpL > std::chrono::duration<double>(param.l_param.period));
+
+        }else{ // planning cannot be started
+            ROS_WARN_THROTTLE(2,"[Wrapper] waiting planning input subscriptions.. (message print out every 2 sec)");
         }
+
+        ros::Rate(30).sleep();
     }
 }
 

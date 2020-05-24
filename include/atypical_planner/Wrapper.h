@@ -158,6 +158,8 @@ namespace Planner{
 
         // Do two-staged planning
         bool plan(double tTrigger); // this includes the two below routines
+        bool planGlobal(double tTrigger);
+        bool planLocal(double tTrigger);;
         void updateCorrToBase(); // update the results of the planners to p_base
         void updateMPCToBase(); // update the results of the planners to p_base
         void updatePrediction();

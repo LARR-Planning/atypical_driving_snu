@@ -33,3 +33,25 @@ Vector3d applyTransform(const SE3& Tab, const Vector3d & vb){
     Vector3d va = Tab*vb;
     return va;
 }
+
+
+
+bool intersect(Point i0, Point i1, Point j0, Point j1){
+    int ab = ccw(i0, i1, j0)*ccw(i0, i1, j1);
+    int cd = ccw(j0, j1, i0)*ccw(j0, j1, i1);
+    if (ab == 0 && cd == 0) {
+//        if (a > b)swap(a, b);
+//        if (c > d)swap(c, d);
+//        return c <= b && a <= d;
+        return false;
+    }
+    return ab <= 0 && cd <= 0;
+}
+
+int ccw(Point a, Point b, Point c) {
+    double op = a.x*b.y + b.x*c.y + c.x*a.y;
+    op -= (a.y*b.x + b.y*c.x + c.y*a.x);
+    if (op > 1e-9) return 1;
+    else if (abs(op) < 1e-9) return 0;
+    else return -1;
+}

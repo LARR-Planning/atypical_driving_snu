@@ -153,14 +153,14 @@ Matrix<double,2,1> LocalPlanner::getLocalGoal(){
     return tempLocalGoal;
 }
 
-void LocalPlanner::SfcToOptConstraint(){
+void LocalPlanner::SfcToOptConstraint(double t){
     double t_end_;
     double t_start_  = 0.0;
     int N_corr = 0;
     int count1 = 0;
     int count2 = 0;
     int count3 = 1;
-    for(auto &s: p_base->getCorridorSeq()) {
+    for(auto &s: p_base->getCorridorSeq(t,t+param.horizon)) {
         if (N_corr < 51) {
             if (count1 * count2 == 0) {
                 box_constraint[count2] = s;
@@ -322,7 +322,7 @@ bool LocalPlannerPlain::plan(double t) {
      cout<<"Current y-position: "<<p_base->getCarState().y<< " [m]"<<endl;
      cout<<"Current heading angle: "<<p_base->getCarState().theta*180/3.1415926535<< " [deg]"<<endl;
 
-     LocalPlanner::SfcToOptConstraint(); // convert SFC to box constraints
+     LocalPlanner::SfcToOptConstraint(t); // convert SFC to box constraints
 
      LocalPlanner::ObstToConstraint();
      if(p_base->getLanePath().lanes.size()>0)
