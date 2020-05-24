@@ -275,7 +275,6 @@ namespace Planner {
                     s.t_start = std::max(s.t_start-t0,0.0);
                     s.t_end = s.t_end-t0;
                     slicedCorridor.push_back(s);
-
                 }
 
             }

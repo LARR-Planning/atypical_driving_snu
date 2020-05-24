@@ -43,7 +43,7 @@ LocalPlanner::LocalPlanner(const Planner::ParamLocal &l_param,
 
     carDefaultShape << 4.0, 0.0,
                         0.0, 4.0;
-    for(int i = 0; i<51;i++)
+    for(int i = 0; i<N+1;i++)
     {
         bodyArray[i]<< 4.0, 0.0, 0.0, 4.0;
     }
@@ -51,7 +51,9 @@ LocalPlanner::LocalPlanner(const Planner::ParamLocal &l_param,
     final_weight_<< 0.5, 0.5, 0.5 , 0.05 , 0.05;
     input_weight_<< 0.2,1.0;
     isRefUsed = 0;
+    wpts_initial<<p_base->getCarState().x,p_base->getCarState().y;
     cout << "[LocalPlanner] Init." << endl;
+
     
 }
 /**
@@ -61,6 +63,7 @@ void LocalPlanner::updateTrajToBase(){
     // update routine here
     p_base->setMPCResultTraj(curPlanning); // just an example
 }
+
 /**
  * @brief moniter whether current path is feasible against the obstaclePathArray
  * @return
@@ -69,10 +72,10 @@ bool LocalPlanner::isCurTrajFeasible() {
 
     return true;
 }
-void LocalPlanner::QxFromPrediction(Collection<double,51> mpcPredictionHeads)
+void LocalPlanner::QxFromPrediction(Collection<double,N+1> mpcPredictionHeads)
 {
     Matrix<double,2,2> rotationMatrix;
-    for (int i = 0 ; i <51; i++)
+    for (int i = 0 ; i <N+1; i++)
     {
         double theta = mpcPredictionHeads[i];
         rotationMatrix<< cos(theta), -sin(theta),
@@ -102,7 +105,7 @@ void LocalPlanner::ObstToConstraint() {
     {
         int count_id = 0;
         for (auto s : p_base->getCurObstaclePathArray().obstPathArray) {
-            for (int i = 0; i < 50; i++)
+            for (int i = 0; i < N; i++)
             {
                 path_temp.push_back(s.obstPath[i].q);
                 shape_temp.push_back(s.obstPath[i].Q.inverse());
@@ -111,8 +114,8 @@ void LocalPlanner::ObstToConstraint() {
 //                if (shape_temp[i].rows() != 2 or shape_temp[i].cols() != 2)
 //                    cout << "shape_temp size invalid" <<endl;
             }
-            path_temp.push_back(s.obstPath[49].q);
-            shape_temp.push_back(s.obstPath[49].Q.inverse());
+            path_temp.push_back(s.obstPath[N-1].q);
+            shape_temp.push_back(s.obstPath[N-1].Q.inverse());
             obs_Q.push_back(shape_temp);
             obs_q.push_back(path_temp);
 //           shape_temp.clear();
@@ -161,7 +164,7 @@ void LocalPlanner::SfcToOptConstraint(double t){
     int count2 = 0;
     int count3 = 1;
     for(auto &s: p_base->getCorridorSeq(t,t+param.horizon)) {
-        if (N_corr < 51) {
+        if (N_corr < N+1) {
             if (count1 * count2 == 0) {
                 box_constraint[count2] = s;
                 count1++;
@@ -192,25 +195,30 @@ void LocalPlanner::SfcToOptConstraint(double t){
         }
     }
 }
- Collection<Corridor,51> LocalPlanner::getOptCorridor()
+ Collection<Corridor,N+1> LocalPlanner::getOptCorridor()
  {
     return box_constraint;
  }
 
  void LocalPlanner::SetLocalWpts()
  {
+    //static int flag_initial_point = 0;
     Matrix<double,2,1> wpts_temp;
     Matrix<double,2,1> wpts_temp1;
     vector<Matrix<double,2,1>> node_list;
     vector<int> wptsNumber_list;
     vector<double> t_list;
+
+    //node_list.push_back(wpts_initial);
     for (auto& ss : p_base->getLanePath().lanes)
     {
+
         for(auto &tt: ss.laneCenters)
         {
             wpts_temp<<tt.x, tt.y;
             node_list.push_back(wpts_temp);
         }
+
     }
 
 
@@ -262,7 +270,7 @@ void LocalPlanner::SfcToOptConstraint(double t){
     Matrix<double,2,1> curr_pos;
     curr_pos<< p_base->getCarState().x, p_base->getCarState().y;
     int start_idx = 0;
-    double min_gap = 10000;
+    double min_gap = 100000;
     for(int i = 0; i<wpts_list1.size();i++)
     {
         if(min_gap>(curr_pos-wpts_list1[i]).norm())
@@ -284,7 +292,7 @@ void LocalPlanner::SfcToOptConstraint(double t){
 //        flag_changeIdx = (direction_my.array()*direction_path.array()).sum();
 //        start_idx+=1;
 //    }
-    for(int i = 0; i<50; i++)
+    for(int i = 0; i<N; i++)
     {
         if(start_idx+i>wpts_list2.size())
         {
@@ -394,15 +402,29 @@ bool LocalPlannerPlain::plan(double t) {
              ilqr_init.solve();
 
 
-             uN_NextInit = ilqr_init.uN_;
+             //uN_NextInit = ilqr_init.uN_;
              uN_new = ilqr_init.uN_;
              xN_new = ilqr_init.xN_;
+             for(int j = 0; j<N;j++)
+             {
+                 if(uN_new[j][0]>param.maxAccel)
+                     uN_new[j][0]=param.maxAccel;
+                 if(uN_new[j][0]<param.minAccel)
+                     uN_new[j][0]=param.minAccel;
+                 if(xN_new[j][3]>param.maxSteer)
+                     xN_new[j][3]=param.maxSteer;
+                 if(xN_new[j][3]>-param.maxSteer);
+                     xN_new[j][3]=-param.maxSteer;
+
+             }
+
+
 //            uN_NextInit =uN_new;
-             for(int j = 0;j<49;j++)
+             for(int j = 0;j<N-1;j++)
              {
                  uN_NextInit[j] = uN_new[j+1];
              }
-             uN_NextInit[49]= uN_new[49];
+             uN_NextInit[N-1]= uN_new[N-1];
 //             next_state = xN_new[1];
 
 //             cout<<"-------"<<endl;
@@ -448,16 +470,16 @@ bool LocalPlannerPlain::plan(double t) {
 //                 cout<<"updated new future steering angle "<<xN_new[j].coeff(3,0)*180/3.1415926535<<" [deg]"<<endl;
 //             }
 //             uN_NextInit =uN_new;
-             for(int j = 0;j<49;j++)
+             for(int j = 0;j<N-1;j++)
              {
                  uN_NextInit[j] = uN_new[j+1];
              }
-             uN_NextInit[49]= uN_new[49];
+             uN_NextInit[N-1]= uN_new[N-1];
          }
      }
 
      // Update CarState and CarInput into the form designed in PlannerCore header file
-     Matrix<double,50,1> ts_temp = VectorXd::LinSpaced(50,0.0,4.9);
+     Matrix<double,N,1> ts_temp = VectorXd::LinSpaced(N,0.0,4.9);
      ts_temp = ts_temp.array()+ t;
      CarState carState_temp;
      CarInput carInput_temp;
@@ -465,7 +487,7 @@ bool LocalPlannerPlain::plan(double t) {
      curPlanning.ts.clear();
      curPlanning.xs.clear();
      curPlanning.us.clear();
-     for(int i = 0 ;i<50; i++)
+     for(int i = 0 ;i<N; i++)
      {
          carState_temp.x = xN_new[i].coeffRef(0,0);
          carState_temp.y = xN_new[i].coeffRef(1,0);
