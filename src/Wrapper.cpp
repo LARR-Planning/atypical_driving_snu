@@ -23,7 +23,7 @@ bool Planner::comparePredictorId(const Predictor::IndexedPredictor &p1, int id )
  * @param mSet_ mutex set of size 2.
  */
 RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_):p_base(p_base_),nh("~"),mSet(mSet_){
-
+	cout << "-------------------------------------------------------" <<endl;
     // Load lanemap from parser
     string csv_file; double laneWidth;
     nh.param<string>("lane_csv_file",csv_file,"catkin_ws/src/atypical_driving_snu/keti_pangyo_path3.csv");
@@ -513,6 +513,7 @@ void RosWrapper::publish() {
     if (p_base->isLPsolved) {
         auto cmd = p_base->getCurInput(curTime());
         cmd.header.stamp = ros::Time::now();
+        cmd.steer_angle_cmd *= (180.0/3.14);
         pubCurCmd.publish(cmd);
         pubMPCTraj.publish(MPCTraj);
 
@@ -775,7 +776,7 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
 }
 
 void RosWrapper::cbCarSpeed(const std_msgs::Float64 speed_) {
-    speed = speed_.data;
+    speed = speed_.data*1000.0/3600;
     isCarSpeedReceived = true;
     p_base->cur_state.v = speed; // reverse gear = negative
 //    cout << "speed " << p_base->cur_state.v << endl;
@@ -971,7 +972,7 @@ void RosWrapper::cbLocalMap(const octomap_msgs::Octomap& octomap_msg) {
                 point_y += point_dy;
             }
         }
-        octomap_msgs::binaryMapToMsg(*p_base->getLocalOctoPtr(),p_base->octomap_snu_msgs);
+        // octomap_msgs::binaryMapToMsg(*p_base->getLocalOctoPtr(),p_base->octomap_snu_msgs);
 
         mSet[0].unlock();
 //        ROS_INFO("[RosWrapper] local map update");

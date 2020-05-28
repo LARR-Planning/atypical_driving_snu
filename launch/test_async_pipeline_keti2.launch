@@ -1,3 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
 <!-- 
     test_with_virtual_environment.launch
 -->
@@ -26,20 +28,20 @@
   <arg name="vehicle_model/accel_min"     default="-3"/>
   <arg name="vehicle_model/is_rear_wheel"     default="false"/>
 
-  <arg name="nominal_speed"     default="0.1"/>
+  <arg name="nominal_speed"     default="2.1"/>
   <arg name="lp_horizon"     default="5"/> <!--preirod = horizon -->
   <arg name="lp_period"     default="0.1"/> <!--preirod = horizon -->
     <arg name="planning_dt"     default="0.1"/>
 
-  <arg name="gp_horizon"     default="10"/>
+  <arg name="gp_horizon"     default="20"/>
   <arg name="gp_period"     default="0.3"/>
 
     <arg name="goal_thres"     default="1"/>
 
   <arg  name="obstacle_radius" value="0.8" />
 
-  <arg name="gp_z_min" value = "-0.2"/>
-  <arg name="gp_z_max" value = "0.2"/>
+  <arg name="gp_z_min" value = "0.0"/>
+  <arg name="gp_z_max" value = "0.5"/>
 
   <group ns="atypical_planning_test">
     <rosparam file="$(find atypical_driving)/param/MPC_weight.yaml"/>
@@ -52,7 +54,6 @@
         <remap from="/current_pose_cov" to="/current_pose"/>
         <remap from="/velodyne_points" to="/velodyne_points_keti"/>
         <remap from="/tf" to="/tf_keti"/>
-
     </node>
     <!--2. snu_car_tf to velodyne_tf -->
     <node pkg="tf" type="static_transform_publisher" name="link2lidar"
@@ -61,6 +62,7 @@
     <!--3. client-->
     <node pkg="atypical_driving" type="keti_client" name="atypical_driving_client" output="screen">
         <param name="rejection_radius" value="1.6"/>
+		<remap from="/current_pose" to="current_pose_non" />
     </node>
 
     <!--4. octomap generator -->
@@ -73,9 +75,9 @@
         <param name="sensor_model/min_range" value="3.0" />
 
         <!--Should be carefully chosen -->
-        <!--        <param name="pointcloud_min_z" value="-0.7" />-->
+                <param name="pointcloud_min_z" value="0.3" />
         <!--        <param name="pointcloud_max_z" value="-0.0" />-->
-        <param name="occupancy_min_z" value="-0.4" />
+<!--        <param name="occupancy_min_z" value="0.0" />-->
 
         <param name="color/r"                    value="0.2" />
         <param name="color/g"                    value="0.2" />

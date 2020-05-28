@@ -295,9 +295,9 @@ void LocalPlanner::SfcToOptConstraint(double t){
 //    }
     for(int i = 0; i<N; i++)
     {
-        if(start_idx+i>wpts_list2.size())
+        if(start_idx+i+1>wpts_list2.size())
         {
-            local_wpts[i] = wpts_list2[wpts_list2.size()];
+            local_wpts[i] = wpts_list2[wpts_list2.size()-1];
         }
         else
         {
@@ -365,7 +365,10 @@ bool LocalPlannerPlain::plan(double t) {
      prob->set_state_weight(param.state_weight);
      prob->set_final_weight(param.final_weight);
      prob->set_input_weight(param.input_weight);
-     prob->setRear_wheel(param.isRearWheeled);
+
+     prob->setRear_wheel(false);
+//     prob->setRear_wheel(param.isRearWheeled);
+
      prob->set_noConstraint(noConstraint_);
      prob->set_refUsed(isRefUsed);
      prob->set_goal(x_goal_);
@@ -414,7 +417,7 @@ bool LocalPlannerPlain::plan(double t) {
                      uN_new[j][0]=param.minAccel;
                  if(xN_new[j][3]>param.maxSteer)
                      xN_new[j][3]=param.maxSteer;
-                 if(xN_new[j][3]>-param.maxSteer);
+                 if(xN_new[j][3]<-param.maxSteer)
                      xN_new[j][3]=-param.maxSteer;
 
              }
@@ -471,6 +474,23 @@ bool LocalPlannerPlain::plan(double t) {
 //                 cout<<"updated new future steering angle "<<xN_new[j].coeff(3,0)*180/3.1415926535<<" [deg]"<<endl;
 //             }
 //             uN_NextInit =uN_new;
+
+
+
+             for(int j = 0; j<N;j++)
+             {
+                 if(uN_new[j][0]>param.maxAccel)
+                     uN_new[j][0]=param.maxAccel;
+                 if(uN_new[j][0]<param.minAccel)
+                     uN_new[j][0]=param.minAccel;
+                 if(xN_new[j][3]>param.maxSteer)
+                     xN_new[j][3]=param.maxSteer;
+                 if(xN_new[j][3]<-param.maxSteer)
+                     xN_new[j][3]=-param.maxSteer;
+
+             }
+
+
              for(int j = 0;j<N-1;j++)
              {
                  uN_NextInit[j] = uN_new[j+1];

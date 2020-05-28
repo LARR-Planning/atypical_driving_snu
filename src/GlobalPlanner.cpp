@@ -288,7 +288,8 @@ bool GlobalPlanner::plan(double t) {
 //    }
 //    cout << "[GlobalPlanner] grid generation: " << std::chrono::duration_cast<std::chrono::microseconds>(chrono::steady_clock::now() - tCkp).count()/1000.0 << "ms" << endl;
 
-    //// JPS start ////
+    //// JPS start ///
+    ROS_INFO("JBS_START");
     JPS::Node start(i_start,j_start,0,0,0,0);
     JPS::Node goal(i_goal,j_goal,0,0,0,0);
 
@@ -335,6 +336,7 @@ bool GlobalPlanner::plan(double t) {
             }
         }
     }
+    ROS_INFO("JBS_END");
      //// JPS finish ////
 
     //// Corridor Generation Start ////
@@ -446,7 +448,7 @@ bool GlobalPlanner::plan(double t) {
         curCorridorSeq.emplace_back(corridor);
         box_prev = box_curr;
     }
-
+    ROS_INFO("CORR_START");
     // Generate box time segment
     int box_max = curCorridorSeq.size();
     int path_max = M + 1;
@@ -610,6 +612,7 @@ bool GlobalPlanner::plan(double t) {
     }
 
 
+    ROS_INFO("CORR_END");
 
     //// Corridor Generation Finish ////
 

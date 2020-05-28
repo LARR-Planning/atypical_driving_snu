@@ -1,6 +1,6 @@
 %% log corridor information 
 horizon_global = 5;
-accel_lim = [-1.0 1.0];
+accel_lim = [-3.0 1.0];
 angluar_lim = [-0.52 0.52];
 
 data_corridor = load('log_corridor.txt');
