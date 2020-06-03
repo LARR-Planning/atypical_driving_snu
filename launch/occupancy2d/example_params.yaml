@@ -1,0 +1,40 @@
+global_frame: map
+robot_base_frame: LidarSensor1
+footprint: [
+  # tail
+[-1.325, -1.20],
+[-1.325, 1.2],
+  # nose
+[1.325, 2.2],
+[1.325, -2.2]
+]
+
+plugins:
+  - {name: inflation,        type: "costmap_2d::InflationLayer"}
+  - {name: obstacles,       type: "costmap_2d::ObstacleLayer"}
+  - {name: tof_layer, type: "costmap_2d::VoxelLayer"}
+
+publish_frequency: 10
+update_frequency: 10
+transform_tolerance: 2.0
+origin_x: -2
+origin_y: -2
+width: 20
+resolution: 0.6
+height: 40
+rolling_window: true
+obstacles:
+  track_unkown_space: true,
+  observation_sources: base_scan
+  base_scan: {
+    data_type: LaserScan,
+    sensor_frame: LidarSensor1,
+    clearing: true,
+    marking: true,
+    topic: /scan,
+    observation_persistance: 10.0,
+    obstacle_range: 20
+  }
+inflation:
+  inflation_radius: 4.2,
+  cost_scaling_factor: 0.4
