@@ -5,7 +5,7 @@
   <param name = "use_sim_time" value = "true" />
 
 <!--1. Data feeder-->
-<node pkg="rosbag" type="play" name="rosbag_record_diag" args="--clock $(find atypical_driving)/worlds/$(arg bagfile)" >
+<node pkg="rosbag" type="play" name="rosbag_record_diag" args="--clock --loop $(find atypical_driving)/worlds/$(arg bagfile)" >
     <remap from="octomap_binary" to="/atypical_planning_test/local_map"/>
     <remap from="/airsim_car_node/object_pose" to="/atypical_planning_test/obstacle_pose"/>
 </node>
@@ -43,6 +43,7 @@
 
   <node name="costmap_node" pkg="costmap_2d" type="costmap_2d_node" output="screen" >
     <rosparam file="$(find atypical_driving)/launch/occupancy2d/example_params.yaml" command="load" ns="costmap" />
+    <remap from = "/costmap_node/costmap/voxel/voxel_grid" to = "/voxel_grid"/>
   </node>
 
 
