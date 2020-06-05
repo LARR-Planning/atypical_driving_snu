@@ -45,18 +45,7 @@ namespace Planner {
         double yu;
         double t_start;
         double t_end;
-
-        VectorXf getPretty(){
-            VectorXf dataLine(6);
-            dataLine(0) = t_start;
-            dataLine(1) = t_end;
-            dataLine(2) = xl;
-            dataLine(3) = xu;
-            dataLine(4) = yl;
-            dataLine(5) = yu;
-            return dataLine;
-        }
-
+        VectorXf getPretty();
     };
 
     /**
@@ -109,7 +98,6 @@ namespace Planner {
         float  zHeight;
         int polyOrder;
         double trackingTime; // it observation expires with this value, we detach predictor
-
     };
 
     /**
@@ -121,6 +109,7 @@ namespace Planner {
         ParamLocal l_param;
         ParamPredictor p_param;
     };
+
     /**
      * @brief State feed for MPC
      * @todo Conversion btw ROS messages / covariance
@@ -162,52 +151,36 @@ namespace Planner {
         vector<double> ts;
         vector<CarInput> us;
         vector<CarState> xs;
-        MatrixXf getPretty(double t_stamp){
-            if(ts.size()) {
-                int N = ts.size();
-                MatrixXf data(5,N+1);
-                for (int i = 0 ; i <5 ; i++)
-                    data(i,0) = t_stamp;
+        MatrixXf getPretty(double t_stamp);
+        CarState evalX(double t);
+        CarInput evalU(double t);
+    };
 
-                for (int i = 1 ; i < N+1 ; i ++){
-                    data(0,i) = ts[i-1];
-                    data(1,i) = xs[i-1].x;
-                    data(2,i) = xs[i-1].y;
-                    data(3,i) = us[i-1].alpha;
-                    data(4,i) = us[i-1].delta;
-                }
-                return data;
-            }
-        }
-        CarState evalX(double t){
-            vector<double> xSet(xs.size());
-            vector<double> ySet(xs.size());
-            // TDOO v, theta?
-            for(uint i = 0 ; i < xs.size(); i++){
-                xSet[i] = xs[i].x;
-                ySet[i] = xs[i].y;
-            }
 
-            CarState xy;
-            xy.x = interpolate(ts,xSet,t,true);
-            xy.y = interpolate(ts,ySet,t,true);
-            return xy;
+    /**
+     * @brief Initial lane
+     */
+    struct Lane{
+        vector<Vector2d> points;
+        double width;
+        vector<Vector2d> slicing(const CarState& curCarState,Vector2d windowOrig,double w, double h );
+        nav_msgs::Path getPath(string frame_id);
+    };
 
-        };
-        CarInput evalU(double t){
-            vector<double> aSet(us.size());
-            vector<double> dSet(us.size());
-            // TDOO v, theta?
-            for(uint i = 0 ; i < us.size(); i++){
-                aSet[i] = us[i].alpha;
-                dSet[i] = us[i].delta;
-            }
+    /**
+     * @brief Modified lane by global planner
+     */
+    struct SkeletonLane : public Lane{
 
-            CarInput input;
-            input.alpha = interpolate(ts,aSet,t,true);
-            input.delta = interpolate(ts,dSet,t,true);
-            return input;
-        }
+    };
+
+    /**
+     * @brief final output
+     */
+    struct SmoothLane: public Lane{
+
+        vector<double> ts;
+        // Vector3d evalX(double t); TODO
     };
 
     /**
