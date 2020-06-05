@@ -100,7 +100,9 @@ vector<Vector2d> Lane::slicing(const CarState &curCarState, Vector2d windowOrig,
         Vector2d point = points[i];
         double distance = pow(point(0) - curCarState.x,2) + pow(point(1) - curCarState.y,2);
         Vector2d directionVector = (point - points[i-1]);
-        if (distance < closestDist and directionVector.dot(Vector2d(cos(curCarState.theta),sin(curCarState.theta)))){
+        Vector2d headingVector = point - Vector2d(curCarState.x,curCarState.y);
+        double innerProduct = (directionVector.dot(headingVector)); // TODO
+        if (distance < closestDist and innerProduct >= 0 ){
             closestDist = distance;
             StartPointIdx = i;
         }
@@ -108,13 +110,13 @@ vector<Vector2d> Lane::slicing(const CarState &curCarState, Vector2d windowOrig,
 
     // Then, let us select the final index
     int EndPointIdx = StartPointIdx;
-    for (int i = StartPointIdx ; i < points.size() - 1 ; i++){
+    for (int i = StartPointIdx ; i < points.size()  ; i++){
         EndPointIdx = i;
-        Vector2d point = points[i+1]; // next point
+        Vector2d point = points[i-1]; // next point
         bool isInWindow = (point(0) < windowOrig(0) + w) and
                           (point(0) > windowOrig(0) - w) and
                           (point(1) < windowOrig(1) + h) and
-                          (point(1) < windowOrig(1) - h);
+                          (point(1) > windowOrig(1) - h);
 
         if (not isInWindow)
             break;

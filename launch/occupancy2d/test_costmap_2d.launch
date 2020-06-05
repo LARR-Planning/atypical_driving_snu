@@ -5,46 +5,50 @@
   <param name = "use_sim_time" value = "true" />
 
 <!--1. Data feeder-->
-<node pkg="rosbag" type="play" name="rosbag_record_diag" args="--clock --loop $(find atypical_driving)/worlds/$(arg bagfile)" >
+<node pkg="rosbag" type="play" name="rosbag_record_diag" args="--clock --loop -r 5 $(find atypical_driving)/worlds/$(arg bagfile)" >
     <remap from="octomap_binary" to="/atypical_planning_test/local_map"/>
     <remap from="/airsim_car_node/object_pose" to="/atypical_planning_test/obstacle_pose"/>
 </node>
 
-    <!-- run pointcloud_to_laserscan node -->
-    <node pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node" name="pointcloud_to_laserscan">
+<!-- run pointcloud_to_laserscan node -->
+<node pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node" name="pointcloud_to_laserscan">
 
-            <remap from="cloud_in" to="/airsim_car_node/PhysXCar/lidar/LidarSensor1"/>
-        <remap from="scan" to="/scan"/>
-        <rosparam>
-            target_frame: LidarSensor1  # Leave disabled to output scan in pointcloud frame
-            transform_tolerance: 0.01
-            min_height: -0.2
-            max_height: 0.2
+        <remap from="cloud_in" to="/airsim_car_node/PhysXCar/lidar/LidarSensor1"/>
+    <remap from="scan" to="/scan"/>
+    <rosparam>
+        target_frame: LidarSensor1  # Leave disabled to output scan in pointcloud frame
+        transform_tolerance: 0.01
+        min_height: -0.2
+        max_height: 0.2
 
-            angle_min: -3.1408 # -M_PI/2
-            angle_max: 3.1408 # M_PI/2
-            angle_increment: 0.0087 # M_PI/360.0
-            scan_time: 0.3333
-            range_min: 0.45
-            range_max: 40.0
-            use_inf: true
-            inf_epsilon: 1.0
+        angle_min: -3.1408 # -M_PI/2
+        angle_max: 3.1408 # M_PI/2
+        angle_increment: 0.0087 # M_PI/360.0
+        scan_time: 0.3333
+        range_min: 0.45
+        range_max: 40.0
+        use_inf: true
+        inf_epsilon: 1.0
 
-            # Concurrency level, affects number of pointclouds queued for processing and number of threads used
-            # 0 : Detect number of cores
-            # 1 : Single threaded
-            # 2->inf : Parallelism level
-            concurrency_level: 1
-        </rosparam>
+        # Concurrency level, affects number of pointclouds queued for processing and number of threads used
+        # 0 : Detect number of cores
+        # 1 : Single threaded
+        # 2->inf : Parallelism level
+        concurrency_level: 1
+    </rosparam>
 
-    </node>
+</node>
 
-  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find atypical_driving)/launch/rviz_config/config.rviz" output="log" />
+<node pkg="rviz" type="rviz" name="rviz" args="-d $(find atypical_driving)/launch/rviz_config/config.rviz" output="log" />
 
-  <node name="costmap_node" pkg="costmap_2d" type="costmap_2d_node" output="screen" >
+<node name="costmap_node" pkg="costmap_2d" type="costmap_2d_node" output="screen" >
     <rosparam file="$(find atypical_driving)/launch/occupancy2d/example_params.yaml" command="load" ns="costmap" />
     <remap from = "/costmap_node/costmap/voxel/voxel_grid" to = "/voxel_grid"/>
-  </node>
+</node>
 
+<node pkg = "atypical_driving" type = "lane_tester" name ="lane_tester"  output= "screen">
+    <remap from = "~car_odom" to = "airsim_car_node/PhysXCar/odom_local_ned"/>
+    <remap from = "~occupancy_grid" to = "/costmap_node/costmap/costmap"/>
+</node>
 
 </launch>

@@ -119,6 +119,10 @@ namespace Planner {
         double y;
         double v; //linear body velocity
         double theta;
+
+        void print(){
+            printf("Current car state: x = %f, y = %f, v = %f, theta = %f\n ",x,y,v,theta);
+        }
     };
 
     struct ObstacleEllipse{
