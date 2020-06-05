@@ -55,3 +55,19 @@ int ccw(Point a, Point b, Point c) {
     else if (abs(op) < 1e-9) return 0;
     else return -1;
 }
+
+nav_msgs::Path getPath(const vector<Vector2d>& point2dSeq, string frame_id ){
+
+
+    nav_msgs::Path nodeNavPath;
+    nodeNavPath.header.frame_id = frame_id.c_str();
+    for (auto & lane : point2dSeq){
+        geometry_msgs::PoseStamped aPoint;
+        aPoint.pose.position.x = lane(0);
+        aPoint.pose.position.y = lane(1);
+        nodeNavPath.poses.push_back(aPoint);
+    }
+    return nodeNavPath;
+
+}
+
