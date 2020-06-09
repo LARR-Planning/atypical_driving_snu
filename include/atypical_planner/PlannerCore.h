@@ -5,34 +5,30 @@
 #ifndef ATYPICAL_DRIVING_PLANNERBASE_H
 #define ATYPICAL_DRIVING_PLANNERBASE_H
 
-#include <octomap/OcTree.h>
-#include <octomap_msgs/Octomap.h>
 #include <vector>
 #include <memory>
-#include <geometry_msgs/Twist.h>
 #include <mutex>
 #include <thread>
 #include <string>
 #include <queue>
 #include <deque>
-
-#include <math.h>
+#include <cmath>
 #include <list>
 #include <tuple>
 #include <Eigen/Core>
-#include <third_party/Prediction/target_manager.hpp>
 #include <fstream>
 
 #include <third_party/Vectormap.h>
-
 #include <third_party/Utils.h>
-#include <driving_msgs/VehicleCmd.h>
-
 #include <third_party/parser.h>
+#include <third_party/Prediction/target_manager.hpp>
+
+#include <driving_msgs/VehicleCmd.h>
+#include <geometry_msgs/Twist.h>
+#include <nav_msgs/OccupancyGrid.h>
 
 using namespace std;
 using namespace Eigen;
-
 
 namespace Planner {
     /**
@@ -166,7 +162,9 @@ namespace Planner {
      */
     struct Lane{
         vector<Vector2d> points;
-        double width;
+        vector<double> widths;
+        Lane(){};
+        Lane(const LanePath& lanePath);
         vector<Vector2d> slicing(const CarState& curCarState,Vector2d windowOrig,double w, double h );
         nav_msgs::Path getPath(string frame_id);
     };
@@ -192,36 +190,40 @@ namespace Planner {
      */
     class PlannerBase{
 
-    private:
-        // to be updated from callback
-        shared_ptr<octomap::OcTree> octo_global_ptr;
-        shared_ptr<octomap::OcTree> octo_local_ptr;
+    public:
+        // Map
+        nav_msgs::OccupancyGrid localMap;
 
-        SE3 cur_transform; // current tf of the car w.r.t the Tw0
-        CarState desired_state; //jungwon
-        // to be updated by planners
-        LanePath lane_path; //jungwon navigation planning output from Dabin Kim
-        vector<Point> skeleton_path;
+        // Flag
+        bool isGPsolved = false;
+        bool isLPsolved = false;
+
+        // Lane
+        parser parse_tool;
+        LanePath lane_path; // deprecated (better not to be used in routine source block )
+        Lane laneOrig;
+        SkeletonLane laneSkeleton;
+        SmoothLane laneSmooth;
+
         vector<Corridor> corridor_seq;
         Corridor search_range;
         MPCResultTraj mpc_result;
 
         ObstaclePathArray obstaclePathArray;
-    public:
-        CarState cur_state;
 
-        bool isGPsolved = false;
-        bool isLPsolved = false;
-        SE3 Tw0; // Referance frame of our node every incoming data should be transformed
-        SE3 To0; // Transformation from  octomap ref frame to SNU
-        SE3 T0s; // SNU to rotation of the first pose
-        parser parse_tool;
-        octomap_msgs::Octomap octomap_snu_msgs;
-        octomap::point3d curOctomapMin;
-        octomap::point3d curOctomapMax;
+        CarState cur_state;
+        mutex mSet[2]; /**< two mutex. 0 = planning vs subscription & 1 = update vs publishing */
+
+        // Transformation
+        SE3 Tws; // global UTM to SNU (static)
+        SE3 Tso; // occupancy map frame to SNU
+        SE3 Tsb; // SNU to body
+
+
         string log_file_name_base;
-        geometry_msgs::PoseStamped cur_pose; // current pose of the car w.r.t the Tw0
+        geometry_msgs::PoseStamped cur_pose; // current pose of the car w.r.t the {SNU}
         deque<CarState> desired_state_seq;
+
         double goal_thres;
 
         // prediction module
@@ -230,15 +232,16 @@ namespace Planner {
         list<Predictor::IndexedPredictor> indexedPredictorSet;
 
         // Get
-        LanePath getLanePath() {return lane_path;};
         CarState getCarState() {return cur_state;};
-//        CarState getDesiredState() {return desired_state;}; //jungwon
+        LanePath getLanePath() {return lane_path;};
+
         CarState getDesiredState() {return desired_state_seq.front();}; //jungwon
         bool isGoalReach() {
             double dist = sqrt(pow(getDesiredState().x - cur_state.x,2) +
             pow(getDesiredState().y - cur_state.y,2));
             return (dist < goal_thres);
         }
+
         driving_msgs::VehicleCmd getCurInput(double t) {
             driving_msgs::VehicleCmd cmd;
             cmd.steer_angle_cmd =  mpc_result.evalU(t).delta;
@@ -246,144 +249,36 @@ namespace Planner {
             return cmd;
         };
         ObstaclePathArray getCurObstaclePathArray() {return obstaclePathArray;};
-        vector<Point> getSkeletonPath() {return skeleton_path;}; //TODO: delete this after debugging
         vector<Corridor> getCorridorSeq() {return corridor_seq;}; // Returns just all the latest
-        vector<Corridor> getCorridorSeq(double t0,double tf ){ // start time is set to zero
+        vector<Corridor> getCorridorSeq(double t0,double tf ); // start time is set to zero
 
-            vector<Corridor> slicedCorridor; bool doPush = false;
-            for (auto s : corridor_seq){
-                if ( (s.t_start<=t0 and t0 <= s.t_end) and !doPush)
-                    doPush = true;
-
-                if (s.t_start > tf)
-                    break;
-
-                if (doPush){
-                    s.t_start = std::max(s.t_start-t0,0.0);
-                    s.t_end = s.t_end-t0;
-                    slicedCorridor.push_back(s);
-                }
-
-            }
-            corridor_seq[corridor_seq.size()-1].t_end = tf;
-            return slicedCorridor;
-        }
         Corridor getSearchRange() {return search_range;};
-        octomap::OcTree* getGlobalOctoPtr() {return octo_global_ptr.get();}
-        octomap::OcTree* getLocalOctoPtr() {return octo_local_ptr.get();}
         MPCResultTraj getMPCResultTraj() {return mpc_result;}
         geometry_msgs::PoseStamped getCurPose() {return cur_pose;};
-        SE3 getCurTf() {return cur_transform;};
 
         // Set from subscriber
-
-        void setLaneWidth(double width) {
-            lane_path.setWidth(width);
-        }
-
-        void setCarState(const CarState& carState_) { cur_state = carState_;};
-        void setDesiredState(const CarState& desiredState_) {desired_state = desiredState_;};
-        void setGlobalMap(octomap::OcTree* octoGlobalPtr_) {octo_global_ptr.reset(octoGlobalPtr_);};
-        void setLocalMap(octomap::OcTree* octoLocalPtr_) {octo_local_ptr.reset(octoLocalPtr_);};
-        void setCurPose(const geometry_msgs::PoseStamped poseStamped) {cur_pose = poseStamped;};
-        void setCurTf(const SE3& T01) {cur_transform = T01;};
-        // Set from planner
         void setLanePath(const LanePath& lane_path_in_) {lane_path = lane_path_in_;}
-        void setSkeletonPath(const vector<Point>& skeleton_in_) {skeleton_path = skeleton_in_;}
+        void setCarState(const CarState& carState_) { cur_state = carState_;};
+        void setCurPose(const geometry_msgs::PoseStamped poseStamped) {cur_pose = poseStamped;};
+        // Set from planner
         void setCorridorSeq(const vector<Corridor>& corridor_in_) {corridor_seq = corridor_in_;}
         void setSearchRange(const Corridor& search_range_in_) {search_range = search_range_in_;}
         void setMPCResultTraj(const MPCResultTraj& mpc_result_in_) {mpc_result = mpc_result_in_;}
 
-        // Set from predictor
-        // update obstaclePathArray so that it is prediction from [tPredictionStart,tPredictionStart+ horizon[
         // prepare prediction sequence for MPC
-        void uploadPrediction(VectorXd tSeq_, double rNominal = 0) {
-            VectorXf tSeq = tSeq_.cast<float>();
-            // TODO predictor should be multiple
-            obstaclePathArray.obstPathArray.clear();
+        void uploadPrediction(VectorXd tSeq_, double rNominal = 0);
 
-            // ver0
-            /**
-            for(auto predictor : predictorSet){
-                //predictor.update_predict(); // this will do nothing if observation is not enough
-                if (predictor.is_prediction_available()) {
-                    vector<geometry_msgs::Pose> obstFuturePose = predictor.eval_pose_seq(tSeq);
-                    ObstaclePath obstPath;
-                    for (auto &obstPose : obstFuturePose) {
-                        // construct one obstaclePath
-                        ObstacleEllipse obstE;
-                        obstE.q = Vector2d(obstPose.position.x, obstPose.position.y);
-
-                        // TODO shape should be consider later and its frame
-                        obstE.Q.setZero();
-                        obstE.Q(0, 0) = 1 / pow(rNominal, 2);
-                        obstE.Q(1, 1) = 1 / pow(rNominal, 2);
-
-
-                        obstPath.obstPath.push_back(obstE);
-                    }
-                    obstaclePathArray.obstPathArray.push_back(obstPath);
-                }
-            }
-            **/
-            // ver 1
-            // TODO check the shape
-            for(auto idPredictor : indexedPredictorSet){
-
-                auto predictor = get<1>(idPredictor);
-                //predictor.update_predict(); // this will do nothing if observation is not enough
-                if (predictor.is_prediction_available()) {
-                    vector<geometry_msgs::Pose> obstFuturePose = predictor.eval_pose_seq(tSeq);
-                    ObstaclePath obstPath;
-                    for (auto obstPose : obstFuturePose) {
-                        // construct one obstaclePath
-                        ObstacleEllipse obstE;
-                        obstE.q = Vector2d(obstPose.position.x, obstPose.position.y);
-
-                        // TODO exact tf should be handled / box to elliposid
-                        obstE.Q.setZero();
-                        obstE.Q(0, 0) = 1 / pow(predictor.getLastDimensions()(0)/sqrt(2), 2);
-                        obstE.Q(1, 1) = 1 / pow(predictor.getLastDimensions()(1)/sqrt(2), 2);
-
-                        obstPath.obstPath.push_back(obstE);
-                    }
-                    obstaclePathArray.obstPathArray.push_back(obstPath);
-                }
-            }
-
-
-        }
-        void log_state_input(double t_cur){
-            string file_name = log_file_name_base + "_state.txt";
-            ofstream outfile;
-            outfile.open(file_name,std::ios_base::app);
-            outfile << t_cur << " "<< cur_state.x << " " << cur_state.y << " " << cur_state.theta << " " << cur_state.v << endl;
-
-            file_name = log_file_name_base + "_input.txt";
-            ofstream outfile1;
-            outfile1.open(file_name,std::ios_base::app);
-            outfile1 <<  t_cur << " "<< getCurInput(t_cur).accel_decel_cmd << " " << getCurInput(t_cur).steer_angle_cmd << endl;
-
-        }
-        void log_corridor(double t_cur,double tf){
-            // 1. Corridor
-            string file_name = log_file_name_base + "_corridor.txt";
-            ofstream outfile;
-            outfile.open(file_name,std::ios_base::app);
-//            outfile << t_cur << endl;
-            for (auto corridor : getCorridorSeq(t_cur,tf)){
-                outfile<<  t_cur << " "<< corridor.getPretty().transpose() << endl;
-            }
-        }
-
-        void log_mpc(double t_cur){
-            string file_name = log_file_name_base + "_mpc.txt";
-            ofstream outfile;
-            outfile.open(file_name,std::ios_base::app);
-            outfile<< mpc_result.getPretty(t_cur) << endl;
-        }
+        // logger
+        void log_state_input(double t_cur);
+        void log_corridor(double t_cur,double tf);
+        void log_mpc(double t_cur);
 
     };
+
+
+
+
+
     /**
      * @brief Abstract class. The shared attributes to be inherited to the derived classes
      */

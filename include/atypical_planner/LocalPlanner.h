@@ -27,7 +27,6 @@ namespace Planner {
         void updateTrajToBase();
         Collection<Corridor,N+1> getOptCorridor();
         bool isCurTrajFeasible(); // TODO
-        Matrix<double,2,1> getLocalGoal();
 
 
     protected:

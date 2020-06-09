@@ -22,13 +22,15 @@ bool Planner::comparePredictorId(const Predictor::IndexedPredictor &p1, int id )
  * @param p_base_
  * @param mSet_ mutex set of size 2.
  */
-RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_):p_base(p_base_),nh("~"),mSet(mSet_){
+RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
 	cout << "-------------------------------------------------------" <<endl;
     // Load lanemap from parser
     string csv_file; double laneWidth;
     nh.param<string>("lane_csv_file",csv_file,"catkin_ws/src/atypical_driving_snu/keti_pangyo_path3.csv");
     nh.param<double>("lane_width",laneWidth,2.5);
     nh.param<string>("log_file_prefix",p_base_->log_file_name_base,"");
+
+    // Logger reset
     string corridor_logger = p_base_->log_file_name_base;
     string mpc_logger = p_base->log_file_name_base;
     string state_logger = p_base->log_file_name_base;
@@ -44,55 +46,21 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_):p_base(p_ba
     remove(state_logger.c_str());
     remove(input_logger.c_str());
 
+    // Get lane information
     p_base->parse_tool.get_Coorddata(csv_file); // This parse only the center information
+    p_base->lane_path = p_base->parse_tool.get_lanepath(); // should be applied transform
+
 //     p_base->parse_tool.display_result();
-    // TODO is valid csv?
-    p_base->setLanePath(p_base->parse_tool.get_lanepath());
-    p_base->setLaneWidth(laneWidth);
+    // p_base->laneOrig = Lane(p_base->parse_tool.get_lanepath());
+
     ROS_INFO("Setting %f as lane width ",laneWidth);
 
-    /**
-    // Or just directly define here for easy test
-    LanePath lanePath;
-     LaneNode l1, l2;
-     int N1 = 20, N2 = 10;
-
-     l1.width = 10;
-     l2.width = 13;
-
-     VectorXf l1X(N1);
-     l1X.setZero();
-     VectorXf l1Y(N1);
-     l1Y.setLinSpaced(N1, 0, 73);
-     VectorXf l2X(N2);
-     l2X.setLinSpaced(N2, 0, 49);
-     VectorXf l2Y(N2);
-     l2Y.setConstant(73);
-
-     for (int n = 0; n < N1; n++) {
-         geometry_msgs::Point pnt;
-         pnt.x = l1X(n);
-         pnt.y = l1Y(n);
-         l1.laneCenters.push_back(pnt);
-     }
-
-     for (int n = 0; n < N2; n++) {
-         geometry_msgs::Point pnt;
-         pnt.x = l2X(n);
-         pnt.y = l2Y(n);
-         l2.laneCenters.push_back(pnt);
-     }
-     lanePath.lanes.emplace_back(l1);
-     lanePath.lanes.emplace_back(l2);
-     p_base->setLanePath(lanePath);
-    **/
-
-     isLaneReceived =false; // Still false. After applying Tw0, it is true
-     isLaneRawReceived = true;
-
+    isLaneReceived =false; // Still false. After applying Tw0, it is true
+    isLaneRawReceived = true;
 
     // Initiate ros communication (caution: parameters are parsed in udpateParam)
     max_marker_id = 0;
+
     // Publisher
     pubPath = nh.advertise<nav_msgs::Path>("planning_path",1);
     pubCorridorSeq = nh.advertise<visualization_msgs::MarkerArray>("corridor_seq",1);
@@ -102,18 +70,17 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_,mutex* mSet_):p_base(p_ba
     pubMPCTraj = nh.advertise<nav_msgs::Path>("mpc_traj",1);
     pubCurPose = nh.advertise<geometry_msgs::PoseStamped>("cur_pose",1);
 
-    pubLaneNode = nh.advertise<nav_msgs::Path>("lane_path",1);
+    pubOrigLane = nh.advertise<nav_msgs::Path>("lane_orig",1);
+    pubSlicedLane = nh.advertise<nav_msgs::Path>("lane_sliced",1);
+
     pubCurGoal = nh.advertise<geometry_msgs::PointStamped>("global_goal",1);
-    pubOctomapSNU = nh.advertise<octomap_msgs::Octomap>("octomap_snu",1);
 
     // Subscriber
     subCarPoseCov = nh.subscribe("/current_pose",1,&RosWrapper::cbCarPoseCov,this);
-    subDesiredCarPose = nh.subscribe("desired_car_pose",1,&RosWrapper::cbDesiredCarPose,this);
-    subGlobalMap = nh.subscribe("global_map",1,&RosWrapper::cbGlobalMap,this);
-    subLocalMap = nh.subscribe("local_map",1,&RosWrapper::cbLocalMap,this);
     subCarSpeed = nh.subscribe("/current_speed",1,&RosWrapper::cbCarSpeed,this);
     //subExampleObstaclePose = nh.subscribe("obstacle_pose",1,&RosWrapper::cbObstacles,this);
     subDetectedObjects= nh.subscribe("/detected_objects",1,&RosWrapper::cbDetectedObjects,this);
+    subOccuMap = nh.subscribe("/occupancy_grid",1,&RosWrapper::cbOccuMap,this);
 }
 /**
  * @brief update the fitting model only. It does not directly update the obstaclePath in p_base
@@ -144,8 +111,6 @@ void RosWrapper::updatePredictionModel() {
     VectorXd tSeq(nStep);
     tSeq.setLinSpaced(nStep,curTime(),curTime()+param.l_param.horizon);
     p_base->uploadPrediction(tSeq, param.l_param.obstRadiusNominal);
-
-
 }
 
 
@@ -156,17 +121,12 @@ void RosWrapper::updatePredictionModel() {
 void RosWrapper::updateParam(Param &param_) {
     // Do some parsing here from reading from ros launch
     ROS_INFO("Reading the parameters from launch..");
+
     nh.param<string>("world_frame_id",worldFrameId,"/map");
     nh.param<string>("snu_frame_id",SNUFrameId,"/SNU");
-    nh.param<string>("octomap_gen_frame_id",octomapGenFrameId,"/SNU");
-
-    // Own
-    planningPath.header.frame_id = SNUFrameId;
-    if (octomapGenFrameId == (SNUFrameId)){
-        ROS_INFO("[SNU_PLANNER/RosWrapper] SNU frame is identical with octomap frame.");
-        p_base->To0.setIdentity();
-        isOctomapFrameResolved = true;
-    }
+    nh.param<string>("occu_map_frame_id",octomapGenFrameId,"/map");
+    nh.param<string>("base_link_id",baseLinkId,"/base_link");
+    nh.param<string>("detected_objects_id",detectedObjectId,"/map");
 
     // global planner
     nh.param<double>("global_planner/horizon",param_.g_param.horizon,15);
@@ -198,9 +158,6 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<double>("local_planner/car_speed",param_.l_param.nominal_speed,2.0);
 
 
-
-
-
     Parameter ilqr_weight;
     param_.l_param.final_weight = ilqr_weight.setting.final_weight;
     param_.l_param.input_weight = ilqr_weight.setting.input_weight;
@@ -211,16 +168,12 @@ void RosWrapper::updateParam(Param &param_) {
 
 
     // predictor
-
     nh.param<int>("predictor/observation_queue",param_.p_param.queueSize,6);
     nh.param<float>("predictor/ref_height",param_.p_param.zHeight,1.0);
     nh.param<int>("predictor/poly_order",param_.p_param.polyOrder,1); // just fix 1
     nh.param<double>("predictor/tracking_expiration",param_.p_param.trackingTime,2.0); // just fix 1
 
     // Common
-    double goal_x,goal_y;
-    nh.param<double>("initial_goal/x",goal_x,0.0); // just fix 1
-    nh.param<double>("initial_goal/y",goal_y,0.0); // just fix 1
     nh.param<double>("goal_thres",param_.l_param.goalReachingThres,0.4); // just fix 1
     p_base->goal_thres = param_.l_param.goalReachingThres;
 
@@ -235,12 +188,6 @@ void RosWrapper::updateParam(Param &param_) {
     }
     ROS_INFO("[SNU_PLANNER/RosWrapper] Initialized clock with ROS time %f",ros::Time::now().toSec());
     t0 = ros::Time::now().toSec();
-
-    CarState goalState;
-    goalState.x = goal_x;
-    goalState.y = goal_y;
-    p_base->setDesiredState(goalState); // TODO, convert it into our frame
-    // ROS_INFO("[SNU_PLANNER/RosWrapper] received global goal [%f,%f] (in global frame)",goal_x,goal_y);
 
 
     vector<double> target_waypoint_x;
@@ -270,201 +217,52 @@ void RosWrapper::updateParam(Param &param_) {
 void RosWrapper::prepareROSmsgs() {
 
     // 1. Topics directly obtained from p_base
-    if(mSet[1].try_lock()){
-        // planning path
-        planningPath.poses.clear();
-        geometry_msgs::PoseStamped poseStamped;
-        for (auto pose : p_base->getMPCResultTraj().xs){
-            poseStamped.pose.position.x = pose.x;
-            poseStamped.pose.position.y = pose.y;
-            planningPath.poses.push_back(poseStamped);
+
+    // planning path
+    planningPath.poses.clear();
+    geometry_msgs::PoseStamped poseStamped;
+
+    /**
+     * MUTEX
+     */
+    p_base->mSet[1].lock();
+    for (auto pose : p_base->getMPCResultTraj().xs){
+        poseStamped.pose.position.x = pose.x;
+        poseStamped.pose.position.y = pose.y;
+        planningPath.poses.push_back(poseStamped);
         }
+    p_base->mSet[1].unlock();
 
-        // corridor_seq - jungwon
-        corridorSeq.markers.clear();
-        int marker_id = 0;
-        double car_z_min = param.g_param.car_z_min;
-        double car_z_max = param.g_param.car_z_max;
+    // MPC path
+    if (p_base->isLPsolved) {
+        MPCTraj.header.frame_id = SNUFrameId;
+        MPCTraj.poses.clear();
+        PoseStamped MPCPose;
 
-        visualization_msgs::Marker marker;
-        marker.header.frame_id = SNUFrameId;
-        marker.type = visualization_msgs::Marker::CUBE;
-        // gp horizon
-        for(auto corridor : p_base->getCorridorSeq()){
-            marker.id = marker_id;
-            if(marker_id > max_marker_id){
-                marker.action = visualization_msgs::Marker::ADD;
-                max_marker_id = marker_id;
-            } else{
-                marker.action = visualization_msgs::Marker::MODIFY;
-            }
+        p_base->mSet[1].lock();
+        MPCResultTraj mpcResultTraj = p_base->getMPCResultTraj();
+        p_base->mSet[1].unlock();
 
-            marker.color.a = 0.2;
-            marker.color.r = 0;
-            marker.color.g = 1;
-            marker.color.b = 0;
-            marker.pose.position.x = (corridor.xu + corridor.xl) / 2;
-            marker.pose.position.y = (corridor.yu + corridor.yl) / 2;
-            marker.pose.position.z = (car_z_min + car_z_max)/2;
-            marker.scale.x = corridor.xu - corridor.xl;
-            marker.scale.y = corridor.yu - corridor.yl;
-            marker.scale.z = car_z_max - car_z_min;
-            marker.text =  to_string(corridor.t_start) + "-"+to_string(corridor.t_end);
-            corridorSeq.markers.emplace_back(marker);
-            marker_id++;
+        double t = mpcResultTraj.ts[0];
+        double dt = 0.1;
+        while(t < mpcResultTraj.ts[mpcResultTraj.ts.size()-1]){
+            CarState state = mpcResultTraj.evalX(t);
+            MPCPose.pose.position.x = state.x;
+            MPCPose.pose.position.y = state.y;
+            MPCTraj.poses.emplace_back(MPCPose);
+            t += dt;
         }
-        // up to 5
-        if (p_base->isGPsolved)
-        for(auto corridor : p_base->getCorridorSeq(curTime(),curTime()+param.l_param.horizon)){
-            marker.id = marker_id;
-            if(marker_id > max_marker_id){
-                marker.action = visualization_msgs::Marker::ADD;
-                max_marker_id = marker_id;
-            } else{
-                marker.action = visualization_msgs::Marker::ADD;
-            }
-
-            marker.color.a = 0.4;
-            marker.color.r = 0;
-            marker.color.g = 0;
-            marker.color.b = 1;
-            marker.pose.position.x = (corridor.xu + corridor.xl) / 2;
-            marker.pose.position.y = (corridor.yu + corridor.yl) / 2;
-            marker.pose.position.z = (car_z_min + car_z_max)/2;
-            marker.scale.x = (corridor.xu - corridor.xl);
-            marker.scale.y = (corridor.yu - corridor.yl);
-            marker.scale.z = car_z_max - car_z_min;
-            corridorSeq.markers.emplace_back(marker);
-            marker_id++;
-        }
-
-
-
-
-
-        // skeleton path - jungwon
-        for(auto node : p_base->getSkeletonPath()){
-            marker.id = marker_id;
-            if(marker_id > max_marker_id){
-                marker.action = visualization_msgs::Marker::ADD;
-                max_marker_id = marker_id;
-            } else{
-                marker.action = visualization_msgs::Marker::MODIFY;
-            }
-
-            marker.color.a = 1;
-            marker.color.r = 1;
-            marker.color.g = 0;
-            marker.color.b = 0;
-            marker.pose.position.x = node.x;
-            marker.pose.position.y = node.y;
-            marker.pose.position.z = (car_z_min + car_z_max)/2;
-            marker.scale.x = 0.1;
-            marker.scale.y = 0.1;
-            marker.scale.z = 0.1;
-            corridorSeq.markers.emplace_back(marker);
-            marker_id++;
-        }
-        // search range - jungwon
-        {
-            Corridor search_range = p_base->getSearchRange();
-
-            marker.id = marker_id;
-            if(marker_id > max_marker_id){
-                marker.action = visualization_msgs::Marker::ADD;
-                max_marker_id = marker_id;
-            } else{
-                marker.action = visualization_msgs::Marker::MODIFY;
-            }
-
-            marker.color.a = 1;
-            marker.color.r = 0;
-            marker.color.g = 1;
-            marker.color.b = 1;
-
-            marker.type = visualization_msgs::Marker::LINE_LIST;
-
-            marker.pose.position.x = 0;
-            marker.pose.position.y = 0;
-            marker.pose.position.z = 0;
-
-            marker.pose.orientation.x = 0;
-            marker.pose.orientation.y = 0;
-            marker.pose.orientation.z = 0;
-            marker.pose.orientation.w = 1.0;
-
-            marker.scale.x = 0.1;
-            geometry_msgs::Point point;
-            point.z = (car_z_min + car_z_max)/2;
-
-            point.x = search_range.xl;
-            point.y = search_range.yl;
-            marker.points.emplace_back(point);
-            point.x = search_range.xl;
-            point.y = search_range.yu;
-            marker.points.emplace_back(point);
-
-            point.x = search_range.xl;
-            point.y = search_range.yu;
-            marker.points.emplace_back(point);
-            point.x = search_range.xu;
-            point.y = search_range.yu;
-            marker.points.emplace_back(point);
-
-            point.x = search_range.xu;
-            point.y = search_range.yu;
-            marker.points.emplace_back(point);
-            point.x = search_range.xu;
-            point.y = search_range.yl;
-            marker.points.emplace_back(point);
-
-            point.x = search_range.xu;
-            point.y = search_range.yl;
-            marker.points.emplace_back(point);
-            point.x = search_range.xl;
-            point.y = search_range.yl;
-            marker.points.emplace_back(point);
-
-            corridorSeq.markers.emplace_back(marker);
-            marker_id++;
-        }
-        for(int i = marker_id; i <= max_marker_id; i++){
-            marker.id = i;
-            marker.action = visualization_msgs::Marker::DELETE;
-            corridorSeq.markers.emplace_back(marker);
-        }
-        max_marker_id = marker_id - 1;
-
-        // MPC path
-        if (p_base->isLPsolved) {
-            MPCTraj.header.frame_id = SNUFrameId;
-            MPCTraj.poses.clear();
-            PoseStamped MPCPose;
-            MPCResultTraj mpcResultTraj = p_base->getMPCResultTraj();
-            double t = mpcResultTraj.ts[0];
-            double dt = 0.1;
-            while(t < mpcResultTraj.ts[mpcResultTraj.ts.size()-1]){
-                CarState state = mpcResultTraj.evalX(t);
-                MPCPose.pose.position.x = state.x;
-                MPCPose.pose.position.y = state.y;
-                MPCTraj.poses.emplace_back(MPCPose);
-                t += dt;
-            }
-        }
-        // Current goal
-
-        geometry_msgs::PointStamped curGoal;
-        curGoal.header.frame_id = SNUFrameId;
-        curGoal.point.x = p_base->getDesiredState().x;
-        curGoal.point.y = p_base->getDesiredState().y;
-        pubCurGoal.publish(curGoal);
-        p_base->cur_pose.header.frame_id = SNUFrameId;
-        pubCurPose.publish(p_base->getCurPose());
-
-        mSet[1].unlock();
-    }else{
-//        ROS_WARN("[RosWrapper] Locking failed for ros data update. The output of p_base is being modified in planner ");
     }
+
+    // Current goal
+    geometry_msgs::PointStamped curGoal;
+    curGoal.header.frame_id = SNUFrameId;
+    curGoal.point.x = p_base->getDesiredState().x;
+    curGoal.point.y = p_base->getDesiredState().y;
+    pubCurGoal.publish(curGoal);
+    p_base->cur_pose.header.frame_id = SNUFrameId;
+    pubCurPose.publish(p_base->getCurPose());
+
 
     // 2. topics which is not obtained from planning thread
     visualization_msgs::MarkerArray observations;
@@ -504,63 +302,27 @@ void RosWrapper::prepareROSmsgs() {
     }
     pubPredictionArray.publish(obstaclePrediction); // <- why this is in here? It should go to publish() (jungwon)
 }
+
 /**
  * @brief publish the car input and visualization markers
  * @details Do not use p_base here !!
  */
 void RosWrapper::publish() {
-    // e.g pub1.publish(topic1)
+
+    // 1. Actuation command
     if (p_base->isLPsolved) {
         auto cmd = p_base->getCurInput(curTime());
         cmd.header.stamp = ros::Time::now();
-        cmd.steer_angle_cmd *= (180.0/3.14);
+        cmd.steer_angle_cmd *= (180.0/3.14); // cmd output deg
         pubCurCmd.publish(cmd);
         pubMPCTraj.publish(MPCTraj);
-
         p_base->log_state_input(curTime());
-
     }
     pubPath.publish(planningPath);
     pubCorridorSeq.publish(corridorSeq);
 
-
-
-    // Tranform broadcasting the tf of the current car w.r.t the first received tf
-
-    if (isFrameRefReceived and isCarPoseCovReceived) {
-        // send T01
-        auto pose = p_base->getCurPose();
-
-        tf::Transform transform;
-        transform.setOrigin( tf::Vector3(pose.pose.position.x, pose.pose.position.y, pose.pose.position.z) );
-        tf::Quaternion q;
-        q.setX(pose.pose.orientation.x);
-        q.setY(pose.pose.orientation.y);
-        q.setZ(pose.pose.orientation.z);
-        q.setW(pose.pose.orientation.w);
-        transform.setRotation(q);
-
-        tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(),SNUFrameId, "car_base_link"));
-            // send Tw0
-            transform.setOrigin(tf::Vector3(p_base->Tw0.translation()(0),
-                                            p_base->Tw0.translation()(1),
-                                            p_base->Tw0.translation()(2)));
-            auto qd = Eigen::Quaterniond(p_base->Tw0.rotation());
-            q.setX(qd.x());
-            q.setY(qd.y());
-            q.setZ(qd.z());
-            q.setW(qd.w());
-            transform.setRotation(q);//
-            tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), worldFrameId, SNUFrameId));
-
-        // Send octomap snu
-        p_base->octomap_snu_msgs.header.frame_id = octomapGenFrameId;
-        p_base->octomap_snu_msgs.header.stamp = ros::Time::now();
-        pubOctomapSNU.publish(p_base->octomap_snu_msgs);
-    }
-
     if (isLaneReceived){
-        pubLaneNode.publish(p_base->getLanePath().getPath(SNUFrameId));
+        pubOrigLane.publish(p_base->laneOrig.getPath(SNUFrameId));
     }
 }
 
@@ -574,9 +336,68 @@ void RosWrapper::runROS() {
             updatePredictionModel();
             prepareROSmsgs(); // you may trigger this only under some conditions
             publish();
+            processTf();
             ros::spinOnce(); // callback functions are executed
             lr.sleep();
         }
+}
+
+/**
+ * @brief broadcasting and listening tf
+ */
+void RosWrapper::processTf() {
+    // Broadcasting
+
+
+    // 2. Transform broadcasting the tf of the current car w.r.t the first received tf
+
+    if (isFrameRefReceived and isCarPoseCovReceived) {
+        // (a) send Tsb
+        auto pose = p_base->getCurPose();
+
+        tf::Transform transform;
+        transform.setOrigin( tf::Vector3(pose.pose.position.x, pose.pose.position.y, pose.pose.position.z) );
+        tf::Quaternion q;
+        q.setX(pose.pose.orientation.x);
+        q.setY(pose.pose.orientation.y);
+        q.setZ(pose.pose.orientation.z);
+        q.setW(pose.pose.orientation.w);
+        transform.setRotation(q);
+        tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(),SNUFrameId, baseLinkId));
+
+
+        // (b) send Tws (static)
+        transform.setOrigin(tf::Vector3(p_base->Tws.translation()(0),p_base->Tws.translation()(1),p_base->Tws.translation()(2)));
+        auto qd = Eigen::Quaterniond(p_base->Tws.rotation());
+        q.setX(qd.x());
+        q.setY(qd.y());
+        q.setZ(qd.z());
+        q.setW(qd.w());
+        transform.setRotation(q);//
+        tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), worldFrameId, SNUFrameId));
+
+        // (c) lookup frame occupancy referance frame
+        try {
+
+            tf::StampedTransform Tsr;// SNU frame to the referance frame of obstacle
+            tf_ls.lookupTransform(SNUFrameId,octomapGenFrameId, ros::Time(0), Tsr);
+            p_base->mSet[0].lock();
+            p_base->Tso.setIdentity();
+            p_base->Tso.translate(Vector3d(Tsr.getOrigin().x(),Tsr.getOrigin().y(),Tsr.getOrigin().z()));
+            Eigen::Quaterniond q;
+            q.x() = Tsr.getRotation().getX();
+            q.y() = Tsr.getRotation().getY();
+            q.z() = Tsr.getRotation().getZ();
+            q.w() = Tsr.getRotation().getW();
+            p_base->Tso.rotate(q);
+            p_base->mSet[0].unlock();
+
+        }
+        catch(tf::TransformException ex){
+            ROS_ERROR("[SNU_PLANNER/RosWrapper] No tf connecting SNU frame with header of occupancy");
+        }
+    }
+
 }
 
 void RosWrapper::cbDetectedObjects(const driving_msgs::DetectedObjectArray &objectsArray) {
@@ -592,7 +413,7 @@ void RosWrapper::cbDetectedObjects(const driving_msgs::DetectedObjectArray &obje
 
             // Convert it into SNU frame
 
-            string obstacleRefFrame = object.header.frame_id;
+            string obstacleRefFrame = detectedObjectId;
             tf::StampedTransform Tsr;// SNU frame to the referance frame of obstacle
 
             try {
@@ -650,13 +471,14 @@ void RosWrapper::cbDetectedObjects(const driving_msgs::DetectedObjectArray &obje
  * @param dataPtr
  */
 void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr) {
+
     // First, generate the ref frame based on the first-received pose
     if (not isFrameRefReceived){
         if (dataPtr->pose.position.x == 0 and dataPtr->pose.position.y == 0 ){
             ROS_ERROR("[SNU_PLANNER/RosWrapper] The first received pose is just zero. It is ignored as the ref tf");
             return;
         }
-        p_base->Tw0.setIdentity();
+        p_base->Tws.setIdentity(); // just initialization
         Eigen::Quaterniond quat;
         Eigen::Vector3d transl;
 
@@ -669,27 +491,17 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
         quat.z() =  dataPtr->pose.orientation.z;
         quat.w() =  dataPtr->pose.orientation.w;
 
-
-        p_base->Tw0.translate(transl);
-        p_base->Tw0.rotate(quat);
-        p_base->T0s.setIdentity();
-        p_base->T0s.rotate(quat);
+        p_base->Tws.translate(transl);
+        p_base->Tws.rotate(quat);
 
         ROS_INFO("[SNU_PLANNER/RosWrapper] Reference tf has been initialized with [%f,%f,%f,%f,%f,%f,%f]",
                 transl(0),transl(1),transl(2),quat.x(),quat.y(),quat.z(),quat.w());
-//        ROS_INFO("[SNU_PLANNER/RosWrapper] Reference tf has been initialized with [%f,%f,%f,%f,%f,%f,%f]",
-//                 transl(0),transl(1),transl(2),0.0,0.0,0.0,1.0);
         isFrameRefReceived = true;
-        if(not isOctomapFrameResolved){
-            ROS_INFO("[SNU_PLANNER/RosWrapper] seems that frame of octomap = map frame.");
-            p_base->To0 = p_base->Tw0;
-            isOctomapFrameResolved = true;
-        }
 
         // If ref frame was set, then transform the laneNode
         if (isLaneRawReceived){
             auto lane_w = p_base->getLanePath(); // w.r.t world frame
-            lane_w.applyTransform(p_base->Tw0.inverse());
+            lane_w.applyTransform(p_base->Tws.inverse());
             p_base->setLanePath(lane_w); // w.r.t SNU frame
             ROS_INFO("[SNU_PLANNER/RosWrapper] Lane-path transform completed!");
             isLaneReceived = true;
@@ -698,294 +510,84 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
         }
 
         // Convert the global goal to local goal
-
-//        CarState global_goal = p_base->getDesiredState();
-//        Vector4d xb(global_goal.x,global_goal.y,0,1);
-//        Vector4d xa = p_base->Tw0.inverse()*xb;
-//        global_goal.x = xa(0);
-//        global_goal.y = xa(1);
-//        p_base->setDesiredState(global_goal);
-//        ROS_INFO("[SNU_PLANNER/RosWrapper] received global goal [%f,%f] (in SNU frame)",global_goal.x,global_goal.y);
-
         for (auto &goal  : p_base->desired_state_seq){
             Vector4d xb(goal.x,goal.y,0,1);
-            Vector4d xa = p_base->Tw0.inverse()*xb;
+            Vector4d xa = p_base->Tws.inverse()*xb;
             goal.x = xa(0);
             goal.y = xa(1);
             ROS_INFO("[SNU_PLANNER/RosWrapper] received global goal [%f,%f] (in SNU frame)",goal.x,goal.y);
         }
         isGoalReceived = true;
     }
-
+    // Retreive Tsb
     if (isCarSpeedReceived) {
+        ROS_INFO_ONCE("[SNU_PLANNER/RosWrapper] First received car state");
 
-//        if (mSet[0].try_lock())
-        {
-            ROS_INFO_ONCE("[SNU_PLANNER/RosWrapper] First received car state");
-//            cout << "call back back" << endl;
-            // Converting car pose w.r.t Tw0
-            auto poseOrig = dataPtr->pose;
-            SE3 Tw1 = DAP::pose_to_transform_matrix(poseOrig).cast<double>(); // Tw1
-            SE3 T01 = p_base->Tw0.inverse() * Tw1;
-            auto poseTransformed = DAP::transform_matrix_to_pose(T01.cast<float>());
-            // Update the pose information w.r.t Tw1
-            geometry_msgs::PoseStamped poseStamped;
-            poseStamped.header.frame_id = SNUFrameId;
-            poseStamped.pose = poseTransformed;
-            p_base->setCurPose(poseStamped);
-            p_base->setCurTf(T01);
-            CarState curState;
-            // make xy
-            curState.x = poseTransformed.position.x;
-            curState.y = poseTransformed.position.y;
+        // 1. Converting car pose w.r.t Tw0
+        auto poseOrig = dataPtr->pose;
+        SE3 Tw1 = DAP::pose_to_transform_matrix(poseOrig).cast<double>(); // Tw1
+        SE3 T01 = p_base->Tws.inverse() * Tw1;
+        auto poseTransformed = DAP::transform_matrix_to_pose(T01.cast<float>());
+        // Update the pose information w.r.t Tw1
+        geometry_msgs::PoseStamped poseStamped;
+        poseStamped.header.frame_id = SNUFrameId;
+        poseStamped.pose = poseTransformed;
 
-            // make theta
-            tf::Quaternion q;
-            q.setX(poseTransformed.orientation.x);
-            q.setY(poseTransformed.orientation.y);
-            q.setZ(poseTransformed.orientation.z);
-            q.setW(poseTransformed.orientation.w);
+        // 2. CarState
+        CarState curState;
 
-            tf::Transform Twc;
-            Twc.setIdentity();
-            Twc.setRotation(q);
+        // make xy
+        curState.x = poseTransformed.position.x;
+        curState.y = poseTransformed.position.y;
 
-            tf::Matrix3x3 Rwc = Twc.getBasis();
-            tf::Vector3 e1 = Rwc.getColumn(0);
-            double theta = atan2(e1.y(), e1.x());
-            curState.theta = theta;
+        // make theta
+        tf::Quaternion q;
+        q.setX(poseTransformed.orientation.x);
+        q.setY(poseTransformed.orientation.y);
+        q.setZ(poseTransformed.orientation.z);
+        q.setW(poseTransformed.orientation.w);
 
-            // make v
-            curState.v = speed; // reverse gear = negative
+        tf::Transform Twc;
+        Twc.setIdentity();
+        Twc.setRotation(q);
 
-            ROS_DEBUG("Current car state (x,y,theta(degree),v) : [%f,%f,%f,%f]", curState.x, curState.y,
-                      curState.theta * 180 / M_PI, curState.v);
+        tf::Matrix3x3 Rwc = Twc.getBasis();
+        tf::Vector3 e1 = Rwc.getColumn(0);
+        double theta = atan2(e1.y(), e1.x());
+        curState.theta = theta;
 
-            p_base->setCarState(curState);
+        // make v
+        curState.v = speed; // reverse gear = negative
+        ROS_DEBUG("Current car state (x,y,theta(degree),v) : [%f,%f,%f,%f]", curState.x, curState.y,
+                  curState.theta * 180 / M_PI, curState.v);
 
-//            mSet[0].unlock();
-            isCarPoseCovReceived = true;
-            //        ROS_INFO("[RosWrapper] car pose update");
-//        }else{
-////        ROS_WARN("[RosWrapper] callback for CarPoseCov locked by planner. Passing update");
-//        }
-        }
+        /**
+         * MUTEX - upload
+         */
+         p_base->mSet[0].lock();
+         p_base->Tsb = T01;
+         p_base->setCurPose(poseStamped);
+         p_base->setCarState(curState);
+         p_base->mSet[0].unlock();
+
+         isCarPoseCovReceived = true;
     }else {
         ROS_WARN("[SNU_PLANNER/RosWrapper] Car speed is not being received. CarState will not be updated");
     }
 }
 
-void RosWrapper::cbCarSpeed(const std_msgs::Float64 speed_) {
+void RosWrapper::cbOccuMap(const nav_msgs::OccupancyGrid & occuMap) {
+
+    p_base->localMap = occuMap;
+    ROS_INFO_STREAM_ONCE("Received frist occupancy map");
+    isLocalMapReceived = true;
+}
+
+void RosWrapper::cbCarSpeed(const std_msgs::Float64& speed_) {
     speed = speed_.data*1000.0/3600;
     isCarSpeedReceived = true;
     p_base->cur_state.v = speed; // reverse gear = negative
-//    cout << "speed " << p_base->cur_state.v << endl;
 }
-
-/**
- * @brief receive the desired car pose and update
- * @param dataPtr
- */
-void RosWrapper::cbDesiredCarPose(geometry_msgs::PoseConstPtr dataPtr) {
-    // Just an example
-    // TODO you have to decide whether the update in this callback could interrupt planning thread
-    if(mSet[0].try_lock()){
-        CarState desiredState;
-        desiredState.x = dataPtr->position.x;
-        desiredState.y = dataPtr->position.y;
-        p_base->setDesiredState(desiredState);
-        mSet[0].unlock();
-        isCarPoseCovReceived = true;
-    }else{
-//        ROS_WARN("[RosWrapper] callback for CarPoseCov locked by planner. Passing update");
-    }
-}
-
-/**
- * @brief receive the global map and update
- * @param octomap_msg
- */
-void RosWrapper::cbGlobalMap(const octomap_msgs::Octomap& octomap_msg) {
-    // TODO you have to decide whether the update in this callback could interrupt planning thread
-    if(isGlobalMapReceived){
-        return;
-    }
-    if(mSet[0].try_lock()){
-        p_base->setGlobalMap(dynamic_cast<octomap::OcTree*>(octomap_msgs::fullMsgToMap(octomap_msg)));
-        mSet[0].unlock();
-        isGlobalMapReceived = true;
-    }else{
-//        ROS_WARN("[RosWrapper] callback for CarPoseCov locked by planner. Passing update");
-    }
-}
-
-/**
- * @brief receive the global map and update
- * @param octomap_msg
- */
-void RosWrapper::cbLocalMap(const octomap_msgs::Octomap& octomap_msg) {
-    // TODO you have to decide whether the update in this callback could interrupt planning thread
-    mSet[0].lock();
-    if(true)
-    {
-
-        p_base->setLocalMap(dynamic_cast<octomap::OcTree *>(octomap_msgs::binaryMsgToMap(octomap_msg)));
-        double xmin, ymin, zmin;
-        double xmax, ymax, zmax;
-
-        p_base->getLocalOctoPtr()->getMetricMin(xmin, ymin, zmin);
-        p_base->getLocalOctoPtr()->getMetricMax(xmax, ymax, zmax);
-        p_base->curOctomapMin = octomap::point3d(xmin, ymin, zmin);
-        p_base->curOctomapMax = octomap::point3d(xmax, ymax, zmax);
-
-        if (p_base->getLocalOctoPtr()->getNumLeafNodes() == 0) {
-            ROS_ERROR("invalid octomap");
-            return;
-        }
-
-
-
-//        octomap::point3d minPnt(-100,-100,-100);
-//        octomap::point3d maxPnt(100,100,100);
-//        p_base->getLocalOctoPtr()->setBBXMax(maxPnt);
-//        p_base->getLocalOctoPtr()->setBBXMin(minPnt);
-
-//         ROS_INFO("Octomap bbx = [%f, %f, %f] / [%f, %f, %f ]",minPnt.x(),minPnt.y(),minPnt.z(),
-//                maxPnt.x(),maxPnt.y(),maxPnt.z());
-
-        ROS_INFO_ONCE("Octomap loaded");
-        isLocalMapReceived = true;
-
-
-        auto lanePath = p_base->getLanePath(); // JBS
-        //set wall from lanePath
-        vector<Point> left, right;
-        Point left_point, right_point;
-        double d, theta, theta_curr, theta_prev;
-        for(auto laneNode: lanePath.lanes){
-            d = laneNode.width / 2;
-            for(int iter = 0; iter < laneNode.laneCenters.size(); iter++){
-                auto lanePoint = laneNode.laneCenters[iter];
-                if(iter < laneNode.laneCenters.size() - 1){
-                    auto nextPoint = laneNode.laneCenters[iter+1];
-                    theta_prev = theta_curr;
-                    theta_curr = atan2(nextPoint.y - lanePoint.y, nextPoint.x - lanePoint.x);
-                }
-                else{
-                    theta_curr = theta_prev;
-                }
-                if(iter == 0) {
-                    theta = theta_curr;
-                }
-                else{
-                    if(abs(theta_curr-theta_prev) <= M_PI){
-                        theta = (theta_curr+theta_prev)/2;
-                    }
-                    else{
-                        theta = (theta_curr + theta_prev) / 2 + M_PI;
-                    }
-                }
-
-                left_point.x = lanePoint.x + d * cos(theta + M_PI / 2);
-                left_point.y = lanePoint.y + d * sin(theta + M_PI / 2);
-                left.emplace_back(left_point);
-
-                right_point.x = lanePoint.x + d * cos(theta - M_PI / 2);
-                right_point.y = lanePoint.y + d * sin(theta - M_PI / 2);
-                right.emplace_back(right_point);
-            }
-        }
-
-        int left_i = 0;
-        while(left_i < left.size() - 1){
-            for(int left_j = left_i + 2; left_j < left.size() - 1; left_j++){
-                if(intersect(left[left_i], left[left_i+1], left[left_j], left[left_j+1])){
-                    left.erase(left.begin() + left_i+1, left.begin() + left_j+1);
-                    break;
-                }
-            }
-            left_i++;
-        }
-
-        int right_i = 0;
-        while(right_i < right.size() - 1){
-            for(int right_j = right_i + 2; right_j < right.size() - 1; right_j++){
-                if(intersect(right[right_i], right[right_i+1], right[right_j], right[right_j+1])){
-                    right.erase(right.begin() + right_i+1, right.begin() + right_j+1);
-                    break;
-                }
-            }
-            right_i++;
-        }
-
-        double point_x, point_y, point_dx, point_dy, step;
-        for(int i = 0; i < left.size()-1; i++){
-            point_dx = left[i+1].x - left[i].x;
-            point_dy = left[i+1].y - left[i].y;
-
-            if(abs(point_dx) >= abs(point_dy)){
-                step = abs(point_dx) * 10;
-            }
-            else{
-                step = abs(point_dy) * 10;
-            }
-            point_dx = point_dx / step;
-            point_dy = point_dy / step;
-
-            point_x = left[i].x;
-            point_y = left[i].y;
-
-            for(int iter = 0; iter < step; iter++) {
-                //Vector3d transformed_vector = applyTransform(p_base->Tw0, Vector3d(point_x, point_y, 0)); //SNU to world transform
-                Vector3d transformed_vector = applyTransform(p_base->To0, Vector3d(point_x, point_y, 0)); //SNU to octomap transform
-                octomap::point3d point(transformed_vector(0), transformed_vector(1), (param.g_param.car_z_min + param.g_param.car_z_max) / 2);
-{
-                    p_base->getLocalOctoPtr()->updateNode(point, true);
-                }
-                point_x += point_dx;
-                point_y += point_dy;
-            }
-        }
-        for(int i = 0; i < right.size()-1; i++){
-            point_dx = right[i+1].x - right[i].x;
-            point_dy = right[i+1].y - right[i].y;
-
-            if(abs(point_dx) >= abs(point_dy)){
-                step = abs(point_dx) * 10;
-            }
-            else{
-                step = abs(point_dy) * 10;
-            }
-            point_dx = point_dx / step;
-            point_dy = point_dy / step;
-
-            point_x = right[i].x;
-            point_y = right[i].y;
-
-            for(int iter = 0; iter < step; iter++) {
-                Vector3d transformed_vector = applyTransform(p_base->To0, Vector3d(point_x, point_y, 0)); //SNU to octomap transform
-                octomap::point3d point(transformed_vector(0), transformed_vector(1), (param.g_param.car_z_min + param.g_param.car_z_max) / 2);
-                {
-                    p_base->getLocalOctoPtr()->updateNode(point, true);
-                }
-                point_x += point_dx;
-                point_y += point_dy;
-            }
-        }
-        // octomap_msgs::binaryMapToMsg(*p_base->getLocalOctoPtr(),p_base->octomap_snu_msgs);
-
-        mSet[0].unlock();
-//        ROS_INFO("[RosWrapper] local map update");
-//    }else{
-//        ROS_WARN("[RosWrapper] callback for CarPoseCov locked by planner. Passing update");
-//    }
-    }
-    else{
-               ROS_WARN("[RosWrapper] callback for octomap locked by planner. Passing update");
-
-    }
-}
-
 /**
  * @brief update the observation for obstacles
  * @param obstPose
@@ -1007,7 +609,7 @@ bool RosWrapper::isAllInputReceived() {
 
     bool isOKKK = true;
     if (not isLocalMapReceived) {
-        ROS_ERROR_THROTTLE(2,"[SNU_PLANNER/RosWrapper] Still no octomap received.");
+        ROS_ERROR_THROTTLE(2,"[SNU_PLANNER/RosWrapper] Still no occupancy grid received.");
         return false;
     }
     if (not isCarPoseCovReceived) {
@@ -1047,7 +649,7 @@ bool RosWrapper::isAllInputReceived() {
 Wrapper::Wrapper() : p_base_shared(make_shared<PlannerBase>()) {
 
     // 1. Parse all parameters from nh
-    ros_wrapper_ptr = new RosWrapper(p_base_shared,mSet);
+    ros_wrapper_ptr = new RosWrapper(p_base_shared);
     ros_wrapper_ptr->updateParam(param);
 
     // 2. initialize planners
@@ -1075,59 +677,25 @@ void Wrapper::run(){
     threadPlanner.join();
 };
 
-
 /**
- * @brief Update the planning result from lp and gp
- * @return True if both planner succeeded
+ * @brief lane slicing + etc
+ * @param tTrigger
  */
+void Wrapper::processLane(double tTrigger) {
 
-bool Wrapper::plan(double tTrigger){
-    mSet[0].lock();
-//    ROS_INFO( "[Wrapper] Assume that planning takes 0.5 sec. Locking subscription.\n ");
-//    std::this_thread::sleep_for(std::chrono::duration<double>(0.5));
+    auto curOccupancyGrid = p_base_shared->localMap;
+    Vector2d windowOrig(curOccupancyGrid.info.origin.position.x,curOccupancyGrid.info.origin.position.y);
+    double windowWidth = curOccupancyGrid.info.width*curOccupancyGrid.info.resolution;
+    double windowHeight = curOccupancyGrid.info.height*curOccupancyGrid.info.resolution ;
 
-    // call global planner
-    bool gpPassed = gp_ptr->plan(tTrigger);
-    if (not p_base_shared->isGPsolved)
-        p_base_shared->isGPsolved = gpPassed;
+    CarState curCarState = p_base_shared->getCarState(); //
+    vector<Vector2d> pathSliced = p_base_shared->laneOrig.slicing(curCarState,windowOrig,windowWidth,windowHeight);
 
-    if (gpPassed) {
-        ROS_INFO_ONCE("[SNU_PLANNER/Wrapper] global planner passed. Start local planning ");
-        updateCorrToBase();
-        // let's log
-        p_base_shared->log_corridor(tTrigger,tTrigger + param.g_param.horizon);
-
-       // Call local planner
-        bool lpPassed =false ;
-        lpPassed = lp_ptr->plan(tTrigger); // TODO
-
-        if (lpPassed) {
-            //cout<<"Okay, fine"<<endl;
-            updateMPCToBase();
-            p_base_shared->log_mpc(tTrigger);
-        }
-        else
-            ROS_WARN("[SNU_PLANNER/Wrapper] local planning failed");
-
-        if (not p_base_shared->isLPsolved)
-            p_base_shared->isLPsolved = lpPassed;
-
-        // Unlocking
-        mSet[0].unlock();
-        return (gpPassed and lpPassed);
-
-    }else{ //
-        mSet[0].unlock();
-        ROS_WARN("[SNU_PLANNER/Wrapper] global planning failed");
-        return false;
-    }
-//    printf("----------------------------------------------------------------\n");
 
 
 }
 
 bool Wrapper::planGlobal(double tTrigger){
-    mSet[0].lock();
     // call global planner
     bool gpPassed = gp_ptr->plan(tTrigger);
     if (not p_base_shared->isGPsolved)
@@ -1139,13 +707,11 @@ bool Wrapper::planGlobal(double tTrigger){
     }
 //    p_base_shared->log_corridor(tTrigger);
 
-    mSet[0].unlock();
     return gpPassed;
 }
 
 bool Wrapper::planLocal(double tTrigger) {
 
-    mSet[0].lock();
 
     // call global planner
     bool lpPassed = lp_ptr->plan(tTrigger); // TODO
@@ -1158,7 +724,6 @@ bool Wrapper::planLocal(double tTrigger) {
     }
     p_base_shared->log_corridor(tTrigger,tTrigger + param.l_param.horizon);
     p_base_shared->log_mpc(tTrigger);
-    mSet[0].unlock();
     return lpPassed;
 }
 
@@ -1167,19 +732,15 @@ bool Wrapper::planLocal(double tTrigger) {
  * @brief Modify p_base with the resultant planning output
  */
 void Wrapper::updateCorrToBase() {
-    mSet[1].lock();
 //    ROS_INFO( "[Wrapper] Assume that updating takes 0.2 sec. Locking rosmsg update.\n ");
 //    std::this_thread::sleep_for(std::chrono::duration<double>(0.2));
     gp_ptr->updateCorridorToBase();
-    mSet[1].unlock();
 //    ROS_INFO( "[Wrapper] p_base updated. Unlocking.\n ");
 }
 void Wrapper::updateMPCToBase() {
-    mSet[1].lock();
 //    ROS_INFO( "[Wrapper] Assume that updating takes 0.2 sec. Locking rosmsg update.\n ");
 //    std::this_thread::sleep_for(std::chrono::duration<double>(0.2));
     lp_ptr->updateTrajToBase();
-    mSet[1].unlock();
 //    ROS_INFO( "[Wrapper] p_base updated. Unlocking.\n ");
 }
 
@@ -1278,11 +839,9 @@ void Wrapper::runPlanning() {
             }
         }
         if (p_base_shared->isGoalReach()) {
-            mSet[0].lock();
             ROS_INFO("[Wrapper] goal : [%f,%f] reached",
                       p_base_shared->getDesiredState().x, p_base_shared->getDesiredState().y);
             p_base_shared->desired_state_seq.pop_front();
-            mSet[0].unlock();
         }
         ros::Rate(30).sleep();
     }

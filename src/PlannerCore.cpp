@@ -82,6 +82,24 @@ CarInput MPCResultTraj::evalU(double t) {
     return input;
 }
 
+/**
+ * @brief convert lanePath to lane
+ * @param lanePath
+ */
+Lane::Lane(const LanePath& lanePath){
+
+    points.clear();
+    widths.clear();
+
+    for (auto & lane :lanePath.lanes){
+        for(auto it = lane.laneCenters.begin() ; it!= lane.laneCenters.end(); it++){
+            widths.push_back(lane.width);
+            points.push_back(Vector2d(it->x,it->y));
+        }
+    }
+
+}
+
 
 /**
  * @breif get the points to be considered in a sliding map
@@ -142,4 +160,98 @@ nav_msgs::Path Lane::getPath(string frame_id) {
     }
     return nodeNavPath;
 }
+
+vector<Corridor> PlannerBase::getCorridorSeq(double t0, double tf) {
+
+    vector<Corridor> slicedCorridor; bool doPush = false;
+    for (auto s : corridor_seq){
+        if ( (s.t_start<=t0 and t0 <= s.t_end) and !doPush)
+            doPush = true;
+
+        if (s.t_start > tf)
+            break;
+
+        if (doPush){
+            s.t_start = std::max(s.t_start-t0,0.0);
+            s.t_end = s.t_end-t0;
+            slicedCorridor.push_back(s);
+        }
+
+    }
+    corridor_seq[corridor_seq.size()-1].t_end = tf;
+    return slicedCorridor;
+}
+
+
+/**
+ * @breif update obstaclePathArray so that it is prediction from [tPredictionStart,tPredictionStart+ horizon[
+ * @param tSeq_
+ * @param rNominal
+ */
+void PlannerBase::uploadPrediction(VectorXd tSeq_, double rNominal) {
+
+    VectorXf tSeq = tSeq_.cast<float>();
+    // TODO predictor should be multiple
+    obstaclePathArray.obstPathArray.clear();
+
+    // ver 1
+    // TODO check the shape
+    for(auto idPredictor : indexedPredictorSet){
+
+        auto predictor = get<1>(idPredictor);
+        //predictor.update_predict(); // this will do nothing if observation is not enough
+        if (predictor.is_prediction_available()) {
+            vector<geometry_msgs::Pose> obstFuturePose = predictor.eval_pose_seq(tSeq);
+            ObstaclePath obstPath;
+            for (auto obstPose : obstFuturePose) {
+                // construct one obstaclePath
+                ObstacleEllipse obstE;
+                obstE.q = Vector2d(obstPose.position.x, obstPose.position.y);
+
+                // TODO exact tf should be handled / box to elliposid
+                obstE.Q.setZero();
+                obstE.Q(0, 0) = 1 / pow(predictor.getLastDimensions()(0)/sqrt(2), 2);
+                obstE.Q(1, 1) = 1 / pow(predictor.getLastDimensions()(1)/sqrt(2), 2);
+
+                obstPath.obstPath.push_back(obstE);
+            }
+            obstaclePathArray.obstPathArray.push_back(obstPath);
+        }
+    }
+
+
+}
+void PlannerBase::log_state_input(double t_cur) {
+
+    string file_name = log_file_name_base + "_state.txt";
+    ofstream outfile;
+    outfile.open(file_name,std::ios_base::app);
+    outfile << t_cur << " "<< cur_state.x << " " << cur_state.y << " " << cur_state.theta << " " << cur_state.v << endl;
+
+    file_name = log_file_name_base + "_input.txt";
+    ofstream outfile1;
+    outfile1.open(file_name,std::ios_base::app);
+    outfile1 <<  t_cur << " "<< getCurInput(t_cur).accel_decel_cmd << " " << getCurInput(t_cur).steer_angle_cmd << endl;
+}
+
+
+void PlannerBase::log_corridor(double t_cur, double tf) {
+
+    // 1. Corridor
+    string file_name = log_file_name_base + "_corridor.txt";
+    ofstream outfile;
+    outfile.open(file_name,std::ios_base::app);
+//            outfile << t_cur << endl;
+    for (auto corridor : getCorridorSeq(t_cur,tf)){
+        outfile<<  t_cur << " "<< corridor.getPretty().transpose() << endl;
+    }
+}
+
+void PlannerBase::log_mpc(double t_cur) {
+    string file_name = log_file_name_base + "_mpc.txt";
+    ofstream outfile;
+    outfile.open(file_name,std::ios_base::app);
+    outfile<< mpc_result.getPretty(t_cur) << endl;
+}
+
 

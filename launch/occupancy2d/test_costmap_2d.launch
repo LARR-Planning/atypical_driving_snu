@@ -2,10 +2,13 @@
 <launch>
 
   <arg name="bagfile"        default="autoDriveHD.bag"/>
-  <param name = "use_sim_time" value = "true" />
+  <arg name = "play_bag" default = "true"/>
+  <arg name = "use_sim_time" default = "true"/>
+
+  <param name = "use_sim_time" value = "$(arg use_sim_time)" />
 
 <!--1. Data feeder-->
-<node pkg="rosbag" type="play" name="rosbag_record_diag" args="--clock --loop -r 5 $(find atypical_driving)/worlds/$(arg bagfile)" >
+<node pkg="rosbag" type="play" name="rosbag_record_diag" args="--clock --loop -r 5 $(find atypical_driving)/worlds/$(arg bagfile)" if = "$(arg play_bag)" >
     <remap from="octomap_binary" to="/atypical_planning_test/local_map"/>
     <remap from="/airsim_car_node/object_pose" to="/atypical_planning_test/obstacle_pose"/>
 </node>
@@ -36,19 +39,18 @@
         # 2->inf : Parallelism level
         concurrency_level: 1
     </rosparam>
-
 </node>
 
-<node pkg="rviz" type="rviz" name="rviz" args="-d $(find atypical_driving)/launch/rviz_config/config.rviz" output="log" />
+<!-- <node pkg="rviz" type="rviz" name="rviz" args="-d $(find atypical_driving)/launch/rviz_config/config.rviz" output="log" /> -->
 
 <node name="costmap_node" pkg="costmap_2d" type="costmap_2d_node" output="screen" >
     <rosparam file="$(find atypical_driving)/launch/occupancy2d/example_params.yaml" command="load" ns="costmap" />
     <remap from = "/costmap_node/costmap/voxel/voxel_grid" to = "/voxel_grid"/>
 </node>
 
-<node pkg = "atypical_driving" type = "lane_tester" name ="lane_tester"  output= "screen">
-    <remap from = "~car_odom" to = "airsim_car_node/PhysXCar/odom_local_ned"/>
-    <remap from = "~occupancy_grid" to = "/costmap_node/costmap/costmap"/>
-</node>
+<!-- <node pkg = "atypical_driving" type = "lane_tester" name ="lane_tester"  output= "screen"> -->
+<!--     <remap from = "~car_odom" to = "airsim_car_node/PhysXCar/odom_local_ned"/> -->
+<!--     <remap from = "~occupancy_grid" to = "/costmap_node/costmap/costmap"/> -->
+<!-- </node> -->
 
 </launch>

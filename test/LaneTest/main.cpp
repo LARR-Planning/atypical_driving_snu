@@ -75,7 +75,6 @@ int main(int argc, char ** argv){
      */
 
     Lane laneOrig;
-    laneOrig.width = 10;
     // This code mock the vector map cases
 
     int N1 = 20, N2 = 10;

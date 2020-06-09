@@ -3,19 +3,29 @@
 -->
 
 <launch>
-  <param name="use_sim_time" value="false"/>
+  <arg name = "use_sim_time" value = "true"/>
   <arg name="bagfile"        default="autoDriveIntegration.bag"/>
+
+
+  <param name="use_sim_time" value="$(arg use_sim_time)"/>
+
+<!--   OccupancyGrid  -->
+ <include file = "$(find atypical_driving)/launch/occupancy2d/test_costmap_2d.launch">
+     <arg name = "play_bag" value = "false"/>
+     <arg name="bagfile" value="$(arg bagfile)"/>
+     <arg name="use_sim_time" value="$(arg use_sim_time)"/>
+ </include>
 
 <!-- Arguments Start -->
   <arg name="snu_frame_id" default="SNU"/>
-  <arg name="octomap_frame_id" default="map"/>
+  <arg name="occu_frame_id" default="map"/>
   <arg name="world_frame_id" default="map"/>
+  <arg name="car_base_frame_id" default="/car_base_link"/>
 
   <arg name="lane_width" default="10"/>
-  <arg name = "lane_csv_file" default = "$(find atypical_driving)/waypoint_airsim.csv"/>
+  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/waypoint_airsim.csv"/>
   <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
-    <arg name = "waypoints" default="$(find atypical_driving)/param/goal_airsim.yaml"/>
-
+  <arg name = "waypoints" default="$(find atypical_driving)/param/goal_airsim.yaml"/>
 
   <arg name="vehicle_model/ly"            default="2.7"/> <!-- for the dynamics -->
   <arg name="vehicle_model/lx"            default="2"/> <!-- for safe margin -->
@@ -43,7 +53,7 @@
 <!-- Node start-->
 
     <!--1. Data feeder-->
-    <node pkg="rosbag" type="play" name="rosbag_record_diag" args="$(find atypical_driving)/worlds/$(arg bagfile)" >
+    <node pkg="rosbag" type="play" name="rosbag_record_diag" args="--clock $(find atypical_driving)/worlds/$(arg bagfile)" >
         <remap from="octomap_binary" to="/atypical_planning_test/local_map"/>
         <remap from="/airsim_car_node/object_pose" to="/atypical_planning_test/obstacle_pose"/>
     </node>
@@ -56,15 +66,20 @@
     <!--3. server-->
     <node pkg="atypical_driving" type="integration_server" name="atypical_planning_test" output="screen">
 
+    <remap from = "/occupancy_grid" to = "/costmap_node/costmap/costmap"/>
+
+
     <param name = "world_frame_id" value="$(arg world_frame_id)" />
     <param name = "snu_frame_id" value="$(arg snu_frame_id)" />
-    <param name = "octomap_gen_frame_id" value="$(arg octomap_frame_id)" /> <!-- The frame id of octomap map or SNU-->
+    <param name = "occu_map_frame_id" value="$(arg occu_frame_id)" />
+    <param name = "base_link_id" value="$(arg car_base_frame_id)" />
+
 
     <param name = "lane_csv_file" value = "$(arg lane_csv_file)"/>
     <param name = "lane_width" value="$(arg lane_width)"/>
-      <param name = "log_file_prefix" value = "$(arg log_file_prefix)" />
+    <param name = "log_file_prefix" value = "$(arg log_file_prefix)" />
 
-      <rosparam command="load" file="$(arg waypoints)" />
+    <rosparam command="load" file="$(arg waypoints)" />
 
     <param name="global_planner/horizon" value="$(arg gp_horizon)" />
     <param name="global_planner/period" value="$(arg gp_period)" />

@@ -16,6 +16,8 @@ using namespace geometry_msgs;
 using namespace Eigen;
 
 namespace Planner{
+
+    // Lane node and path are deprecated ...
     struct LaneNode{
         vector<Point> laneCenters;
         double width;
@@ -65,7 +67,6 @@ namespace Planner{
                     lane.width = width;
                 }
             }
-
 
 
     };

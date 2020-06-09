@@ -126,36 +126,6 @@ void LocalPlanner::ObstToConstraint() {
     }
 }
 
-Matrix<double,2,1> LocalPlanner::getLocalGoal(){
-    double SP_EPSILON = 1e-9;
-    int box_index = -1;
-    for(int i = 0; i < p_base->getCorridorSeq().size(); i++){
-        Corridor corridor = p_base->getCorridorSeq().at(i);
-        if(corridor.t_end >= param.horizon){
-            box_index = i;
-            break;
-        }
-    }
-    Corridor lastBox = p_base->getCorridorSeq().at(box_index);
-    int goal_index = -1;
-    for(int i = 0; i < p_base->getSkeletonPath().size(); i++){
-        Point skeletonPoint = p_base->getSkeletonPath().at(i);
-        if(skeletonPoint.x > lastBox.xl - SP_EPSILON
-           && skeletonPoint.y > lastBox.yl - SP_EPSILON
-           && skeletonPoint.x < lastBox.xu + SP_EPSILON
-           && skeletonPoint.y < lastBox.yu + SP_EPSILON)
-        {
-            goal_index = i;
-        }
-        else if(goal_index >= 0){
-            break;
-        }
-    }
-    Matrix<double,2,1> tempLocalGoal;
-    tempLocalGoal<< p_base->getSkeletonPath().at(goal_index).x, p_base->getSkeletonPath().at(goal_index).y;
-    return tempLocalGoal;
-}
-
 void LocalPlanner::SfcToOptConstraint(double t){
     double t_end_;
     double t_start_  = 0.0;
@@ -324,7 +294,7 @@ bool LocalPlannerPlain::plan(double t) {
 //    cout<< "I am in the Local Planner plan function"<<endl;
      cout<<"---------------------------------"<<endl;
      Matrix<double,2,1> x_goal_;
-     x_goal_ = LocalPlanner::getLocalGoal();
+//     x_goal_ = LocalPlanner::getLocalGoal();
      cout<< "New Local Goal is"<<x_goal_.coeffRef(0,0)<<"and"<<x_goal_.coeffRef(1,0)<<endl;
      cout<<"Current car Speed: "<<p_base->getCarState().v<<" [m/s]"<<endl;
      cout<<"Current x-position: "<<p_base->getCarState().x<< " [m]"<<endl;
