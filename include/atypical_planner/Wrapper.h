@@ -46,16 +46,6 @@ namespace Planner{
         tf::TransformBroadcaster tf_br;
         tf::TransformListener tf_ls;
 
-        bool isLocalMapReceived = false;
-        bool isCarPoseCovReceived = false;
-        bool isCarSpeedReceived = false;
-        bool isFrameRefReceived = false;
-        bool isLaneReceived = false;
-        bool isLaneRawReceived = false; // beform transform
-        bool isGoalReceived = false;
-        bool isOctomapFrameResolved = false; // octomap frame
-
-
         /**
          * Operation mode
          */
@@ -131,6 +121,18 @@ namespace Planner{
         void predictionUpdate();
         void processTf();
     public:
+
+
+        bool isLocalMapReceived = false;
+        bool isCarPoseCovReceived = false;
+        bool isCarSpeedReceived = false;
+        bool isFrameRefReceived = false;
+        bool isLaneReceived = false;
+        bool isLaneRawReceived = false; // beform transform
+        bool isLaneSliceLoaded = false;
+        bool isGoalReceived = false;
+        bool isOctomapFrameResolved = false; // octomap frame
+
         RosWrapper(shared_ptr<PlannerBase> p_base_);
         void updateParam(Param& param_);
         void updatePredictionModel();

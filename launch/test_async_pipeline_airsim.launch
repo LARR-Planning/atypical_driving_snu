@@ -18,7 +18,7 @@
 
 <!-- Arguments Start -->
   <arg name="snu_frame_id" default="SNU"/>
-  <arg name="occu_frame_id" default="map"/>
+  <arg name="occu_frame_id" default="SNU"/>
   <arg name="world_frame_id" default="map"/>
   <arg name="car_base_frame_id" default="/car_base_link"/>
 

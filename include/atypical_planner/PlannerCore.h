@@ -27,10 +27,16 @@
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/OccupancyGrid.h>
 
+#include <occupancy_grid_utils/coordinate_conversions.h>
+
+
 using namespace std;
 using namespace Eigen;
 
 namespace Planner {
+
+    const int OCCUPANCY = 70;
+
     /**
      * @brief
      */
@@ -202,7 +208,7 @@ namespace Planner {
         parser parse_tool;
         LanePath lane_path; // deprecated (better not to be used in routine source block )
         Lane laneOrig;
-        Lane laneSlided; // lane in current sliding window
+        Lane laneSliced; // lane in current sliding window
         SkeletonLane laneSkeleton;
         SmoothLane laneSmooth;
 
@@ -227,6 +233,8 @@ namespace Planner {
 
         double goal_thres;
 
+        bool isOccupied(Vector2d queryPoint); // query point frame = SNU
+
         // prediction module
         vector<Predictor::TargetManager> predictorSet; // TODO erase after indexed predictor
         Predictor::TargetManager predictorBase;
@@ -235,6 +243,7 @@ namespace Planner {
         // Get
         CarState getCarState() {return cur_state;};
         LanePath getLanePath() {return lane_path;};
+
 
         CarState getDesiredState() {return desired_state_seq.front();}; //jungwon
         bool isGoalReach() {

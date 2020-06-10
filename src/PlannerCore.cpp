@@ -254,4 +254,23 @@ void PlannerBase::log_mpc(double t_cur) {
     outfile<< mpc_result.getPretty(t_cur) << endl;
 }
 
+/**
+ * @brief Get occpuancy
+ * @param queryPoint frame = SNU
+ * @return true if occupied
+ */
+bool PlannerBase::isOccupied(Vector2d queryPoint) {
+    geometry_msgs::Point queryPoint3;
+    queryPoint3.x = queryPoint(0);
+    queryPoint3.y = queryPoint(1);
+    queryPoint3.z = 0;
 
+    if (occupancy_grid_utils::withinBounds(localMap.info,queryPoint3)){
+        ROS_WARN("querying point [%f,%f]  is out of bound of occupancy map ", queryPoint3.x,queryPoint3.y );
+    }
+
+
+    occupancy_grid_utils::index_t idx = occupancy_grid_utils::pointIndex(localMap.info,queryPoint3);
+
+    return (localMap.data[idx] > OCCUPANCY);
+}

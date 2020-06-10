@@ -1,4 +1,4 @@
-global_frame: map
+global_frame: SNU
 robot_base_frame: LidarSensor1
 footprint: [
   # tail

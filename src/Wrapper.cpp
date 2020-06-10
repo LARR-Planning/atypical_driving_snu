@@ -48,12 +48,9 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
 
     // Get lane information
     p_base->parse_tool.get_Coorddata(csv_file); // This parse only the center information
-    p_base->lane_path = p_base->parse_tool.get_lanepath(); // should be applied transform
 
 //     p_base->parse_tool.display_result();
-    // p_base->laneOrig = Lane(p_base->parse_tool.get_lanepath());
-
-    ROS_INFO("Setting %f as lane width ",laneWidth);
+    p_base->lane_path = (p_base->parse_tool.get_lanepath());
 
     isLaneReceived =false; // Still false. After applying Tw0, it is true
     isLaneRawReceived = true;
@@ -321,9 +318,15 @@ void RosWrapper::publish() {
     pubPath.publish(planningPath);
     pubCorridorSeq.publish(corridorSeq);
 
+    p_base->mSet[1].lock();
     if (isLaneReceived){
         pubOrigLane.publish(p_base->laneOrig.getPath(SNUFrameId));
     }
+    if(isLaneSliceLoaded){
+        pubSlicedLane.publish(p_base->laneSliced.getPath(SNUFrameId));
+    }
+    p_base->mSet[1].unlock();
+
 }
 
 /**
@@ -504,6 +507,7 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
             lane_w.applyTransform(p_base->Tws.inverse());
             p_base->setLanePath(lane_w); // w.r.t SNU frame
             ROS_INFO("[SNU_PLANNER/RosWrapper] Lane-path transform completed!");
+            p_base->laneOrig = Lane(lane_w); // should be applied transform
             isLaneReceived = true;
         }else{
             ROS_ERROR("Tried transforming Lane raw in the pose callback. But no lane exsiting");
@@ -521,7 +525,6 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
     }
     // Retreive Tsb
     if (isCarSpeedReceived) {
-        ROS_INFO_ONCE("[SNU_PLANNER/RosWrapper] First received car state");
 
         // 1. Converting car pose w.r.t Tw0
         auto poseOrig = dataPtr->pose;
@@ -571,6 +574,7 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
          p_base->mSet[0].unlock();
 
          isCarPoseCovReceived = true;
+        ROS_INFO_ONCE("[SNU_PLANNER/RosWrapper] First received car state! ");
     }else {
         ROS_WARN("[SNU_PLANNER/RosWrapper] Car speed is not being received. CarState will not be updated");
     }
@@ -579,7 +583,7 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
 void RosWrapper::cbOccuMap(const nav_msgs::OccupancyGrid & occuMap) {
 
     p_base->localMap = occuMap;
-    ROS_INFO_STREAM_ONCE("Received frist occupancy map");
+    ROS_INFO_STREAM_ONCE("[SNU_PLANNER/RosWrapper] Received first occupancy map");
     isLocalMapReceived = true;
 }
 
@@ -622,10 +626,6 @@ bool RosWrapper::isAllInputReceived() {
     }
     if (not isFrameRefReceived) {
         ROS_ERROR_THROTTLE(2,"[SNU_PLANNER/RosWrapper] Still no referance frame (SNU) fixed.");
-        return false;
-    }
-    if (not isOctomapFrameResolved) {
-        ROS_ERROR_THROTTLE(2,"[SNU_PLANNER/RosWrapper] Still we could not find the frame_id of octomap");
         return false;
     }
 
@@ -686,23 +686,27 @@ void Wrapper::processLane(double tTrigger) {
 
     if (ros_wrapper_ptr->isLocalMapReceived) {
 
+
+        // Occupancy map frame = octomapGenFrameId
         auto curOccupancyGrid = p_base_shared->localMap;
         Vector2d windowOrig(curOccupancyGrid.info.origin.position.x, curOccupancyGrid.info.origin.position.y);
         double windowWidth = curOccupancyGrid.info.width * curOccupancyGrid.info.resolution;
         double windowHeight = curOccupancyGrid.info.height * curOccupancyGrid.info.resolution;
 
-        CarState curCarState = p_base_shared->getCarState();
-        vector<Vector2d> pathSliced = p_base_shared->laneOrig.slicing(curCarState, windowOrig, windowWidth,
+        Vector3d windowOrigSNU = p_base_shared -> Tso * Vector3d(windowOrig(0),windowOrig(1),0);
+
+
+        CarState curCarState = p_base_shared->getCarState(); // SNU frame
+        vector<Vector2d> pathSliced = p_base_shared->laneOrig.slicing(curCarState, Vector2d(windowOrigSNU(0),windowOrigSNU(1)), windowWidth,
                                                                       windowHeight);
+        p_base_shared->mSet[1].lock();
         p_base_shared->laneSliced.points = pathSliced; // TODO width
+        p_base_shared->mSet[1].unlock();
 
-        // PROCESS LANE HERE
-        // TODO mutex (Boseong)
-        // p_base_shared->laneSkeleton = ...
-        // p_base_shared->laneSmooth = ...
-
-
-
+        if (not ros_wrapper_ptr->isLaneSliceLoaded){
+            ros_wrapper_ptr->isLaneSliceLoaded = true;
+            ROS_INFO("[SNU_PLANNER] Starting lane slicing! ");
+        }
 
 
     }else{
@@ -729,19 +733,20 @@ bool Wrapper::planGlobal(double tTrigger){
 
 bool Wrapper::planLocal(double tTrigger) {
 
-
-    // call global planner
-    bool lpPassed = lp_ptr->plan(tTrigger); // TODO
-    // if (not p_base_shared->isGPsolved)
-    if (not p_base_shared->isLPsolved)
-        p_base_shared->isLPsolved = lpPassed;
-    // let's log
-    if (lpPassed) {
-        updateMPCToBase();
-    }
-    p_base_shared->log_corridor(tTrigger,tTrigger + param.l_param.horizon);
-    p_base_shared->log_mpc(tTrigger);
-    return lpPassed;
+//
+//    // call global planner
+//    bool lpPassed = lp_ptr->plan(tTrigger); // TODO
+//    // if (not p_base_shared->isGPsolved)
+//    if (not p_base_shared->isLPsolved)
+//        p_base_shared->isLPsolved = lpPassed;
+//    // let's log
+//    if (lpPassed) {
+//        updateMPCToBase();
+//    }
+//    p_base_shared->log_corridor(tTrigger,tTrigger + param.l_param.horizon);
+//    p_base_shared->log_mpc(tTrigger);
+//    return lpPassed;
+    return true;
 }
 
 
@@ -793,6 +798,7 @@ void Wrapper::runPlanning() {
                       p_base_shared->getCarState().x, p_base_shared->getCarState().y);
 
 
+
             // 2. Check the condition for planning
             isPlanPossible = ros_wrapper_ptr->isAllInputReceived();
             didLplanByG = false;
@@ -803,6 +809,10 @@ void Wrapper::runPlanning() {
                 if (doGPlan) { // G plan
                     tCkpG = chrono::steady_clock::now(); // check point time
                     ROS_INFO("[Wrapper] begin GP..");
+
+                    // Lane processing
+                    processLane(ros_wrapper_ptr->curTime());
+
 
                     // Do planning
                     isGPSuccess = planGlobal(ros_wrapper_ptr->curTime());

@@ -8,6 +8,7 @@
 #include "nav_msgs/Odometry.h"
 #include "nav_msgs/OccupancyGrid.h"
 #include <ros/ros.h>
+#include <occupancy_grid_utils/coordinate_conversions.h>
 
 #include "Eigen/Core"
 
@@ -102,12 +103,28 @@ int main(int argc, char ** argv){
     ros::Subscriber subCarPose = nh.subscribe("car_odom",1,cbCarPose);
     ros::Publisher pubOrigLane = nh.advertise<nav_msgs::Path>("orignal_lane",1);
     ros::Publisher pubSlicedLane = nh.advertise<nav_msgs::Path>("sliced_lane",1);
+    ros::Publisher pubFreeCells = nh.advertise<visualization_msgs::Marker>("free_cells",1);
+
     string map_frame = "map";
+
+    visualization_msgs::Marker freeCells;
+    freeCells.type = visualization_msgs::Marker::CUBE_LIST;
+    freeCells.pose.orientation.w = 1.0;
+    freeCells.header.frame_id = map_frame;
+    freeCells.color.a = 1.0;
+    freeCells.color.r = 1.0;
+    freeCells.color.g = 1.0;
+    freeCells.color.b = 1.0;
+    freeCells.scale.x = 0.5;
+    freeCells.scale.y = 0.5;
+    freeCells.scale.z = 0.5;
+
 
     nav_msgs::Path origLane = laneOrig.getPath(map_frame);
 
     ros::Rate rl(20);
-
+    int Nx = 20;
+    int Ny = 20;
     while (ros::ok()){
 
         if (isMapReceived){
@@ -118,6 +135,30 @@ int main(int argc, char ** argv){
             printf("Current window: origin = [%f,%f] / dimension = [%f,%f]\n",windowOrig(0),windowOrig(1),windowWidth,windowHeight);
             curCarState.print();
 
+
+            // Test occupancy
+            VectorXd xs = VectorXd::LinSpaced(Nx,windowOrig(0)+0.4,windowOrig(0) + windowWidth-0.4);
+            VectorXd ys = VectorXd::LinSpaced(Ny,windowOrig(1)+0.4,windowOrig(1) + windowHeight-0.4);
+            freeCells.points.clear();
+
+            for (int i = 0 ; i < Nx ; i++)
+                for (int j = 0; j < Ny ; j++){
+                    Vector2d point(xs(i),ys(j));
+
+                    geometry_msgs::Point queryPoint3;
+                    queryPoint3.x = point(0);
+                    queryPoint3.y = point(1);
+                    queryPoint3.z = 0;
+
+                    occupancy_grid_utils::index_t idx = occupancy_grid_utils::pointIndex(curOccupancyGrid.info,queryPoint3);
+                    if (curOccupancyGrid.data[idx] <50 ){
+                       freeCells.points.push_back(queryPoint3);
+                    }
+                }
+
+
+
+            pubFreeCells.publish(freeCells);
             vector<Vector2d> pathSliced = laneOrig.slicing(curCarState,windowOrig,windowWidth,windowHeight);
             pubSlicedLane.publish(getPath(pathSliced,map_frame));
 
