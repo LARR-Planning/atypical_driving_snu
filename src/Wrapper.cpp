@@ -678,20 +678,37 @@ void Wrapper::run(){
 };
 
 /**
- * @brief lane slicing + etc
+ * @brief lane slicing + Jungwon
  * @param tTrigger
+ * @todo Jungwon
  */
 void Wrapper::processLane(double tTrigger) {
 
-    auto curOccupancyGrid = p_base_shared->localMap;
-    Vector2d windowOrig(curOccupancyGrid.info.origin.position.x,curOccupancyGrid.info.origin.position.y);
-    double windowWidth = curOccupancyGrid.info.width*curOccupancyGrid.info.resolution;
-    double windowHeight = curOccupancyGrid.info.height*curOccupancyGrid.info.resolution ;
+    if (ros_wrapper_ptr->isLocalMapReceived) {
 
-    CarState curCarState = p_base_shared->getCarState(); //
-    vector<Vector2d> pathSliced = p_base_shared->laneOrig.slicing(curCarState,windowOrig,windowWidth,windowHeight);
+        auto curOccupancyGrid = p_base_shared->localMap;
+        Vector2d windowOrig(curOccupancyGrid.info.origin.position.x, curOccupancyGrid.info.origin.position.y);
+        double windowWidth = curOccupancyGrid.info.width * curOccupancyGrid.info.resolution;
+        double windowHeight = curOccupancyGrid.info.height * curOccupancyGrid.info.resolution;
+
+        CarState curCarState = p_base_shared->getCarState();
+        vector<Vector2d> pathSliced = p_base_shared->laneOrig.slicing(curCarState, windowOrig, windowWidth,
+                                                                      windowHeight);
+        p_base_shared->laneSliced.points = pathSliced; // TODO width
+
+        // PROCESS LANE HERE
+        // TODO mutex (Boseong)
+        // p_base_shared->laneSkeleton = ...
+        // p_base_shared->laneSmooth = ...
 
 
+
+
+
+    }else{
+        ROS_WARN_THROTTLE(2,"[SNU_PLANNER/Wrapper] Lane cannot be processed. No occupancy map received");
+
+    }
 
 }
 
@@ -765,8 +782,9 @@ void Wrapper::runPlanning() {
 
     while (ros::ok()){
         isAllGoalReach = p_base_shared->desired_state_seq.empty();
-        if (isAllGoalReach){
+        if (isAllGoalReach){ // all goal was acheived
             ROS_INFO_ONCE("[Wrapper] All goal reched!");
+            // idling (TODO)
         }
         else {
             // 1. monitor states

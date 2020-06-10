@@ -202,6 +202,7 @@ namespace Planner {
         parser parse_tool;
         LanePath lane_path; // deprecated (better not to be used in routine source block )
         Lane laneOrig;
+        Lane laneSlided; // lane in current sliding window
         SkeletonLane laneSkeleton;
         SmoothLane laneSmooth;
 
