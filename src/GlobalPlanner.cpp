@@ -96,23 +96,44 @@ bool GlobalPlanner::plan(double t) {
     }
 
     // Find initial laneTree
-    int i_tree_start = 0;
+    int i_tree_start = -1;
+    double dist, dist_start = SP_INFINITY;
     Vector2d currentPoint(p_base->cur_state.x, p_base->cur_state.y);
-    for(int i_tree = 0; i_tree < laneTree.size(); i_tree++){
-        if(laneTree[i_tree].id > 0){
+    for(int i_tree = 0; i_tree < laneTree.size(); i_tree++) {
+        if (laneTree[i_tree].id > 0) {
             break;
         }
-        if(!p_base->isOccupied(laneTree[i_tree].midPoint, currentPoint)) {
-            i_tree_start = i_tree;
+        dist = (laneTree[i_tree].midPoint - currentPoint).norm();
+        if(!p_base->isOccupied(laneTree[i_tree].midPoint, currentPoint)){
+            if (i_tree_start == -1 || dist < dist_start) {
+                i_tree_start = i_tree;
+                dist_start = dist;
+            }
         }
-        else{
-            int debug = 1;
+    }
+    if(i_tree_start == -1){
+        int i_shortest = -1;
+        for(int i_tree = 0; i_tree < laneTree.size(); i_tree++) {
+            if (laneTree[i_tree].id > 0) {
+                break;
+            }
+            dist = (laneTree[i_tree].midPoint - currentPoint).norm();
+            if (dist < dist_start) {
+                i_shortest = i_tree;
+                dist_start = dist;
+            }
         }
+        i_tree_start = i_shortest;
     }
 
     // DFS to find midPoints
     int i_tree = laneTree.size() - 1;
-    std::vector<int> tail = laneTreeDFS(i_tree, i_tree_start); //TODO: failsafe
+    std::vector<int> tail = laneTreeDFS(i_tree, i_tree_start);
+
+    if(tail[0] == -1){
+        return false; //TODO: failsafe
+    }
+
     std::vector<Vector2d> midPoints, leftPoints, rightPoints;
     midPoints.resize(tail.size());
     leftPoints.resize(tail.size());

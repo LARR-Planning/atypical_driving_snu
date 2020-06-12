@@ -132,9 +132,9 @@ vector<Vector2d> Lane::slicing(const CarState &curCarState, Vector2d windowOrig,
         EndPointIdx = i;
         Vector2d point = points[i-1]; // next point
         bool isInWindow = (point(0) < windowOrig(0) + w) and
-                          (point(0) > windowOrig(0) - w) and
+                          (point(0) > windowOrig(0)) and
                           (point(1) < windowOrig(1) + h) and
-                          (point(1) > windowOrig(1) - h);
+                          (point(1) > windowOrig(1));
 
         if (not isInWindow)
             break;
@@ -306,7 +306,7 @@ bool PlannerBase::isOccupied(Vector2d queryPoint) {
 
     if (!occupancy_grid_utils::withinBounds(localMap.info,queryPoint3)){
 //        ROS_WARN("querying point [%f,%f]  is out of bound of occupancy map ", queryPoint3.x,queryPoint3.y );
-        return true;
+        return false;
     }
 
 
@@ -327,7 +327,7 @@ bool PlannerBase::isOccupied(Vector2d queryPoint1, Vector2d queryPoint2) {
     p2.z = 0;
 
 
-    occupancy_grid_utils::RayTraceIterRange range = occupancy_grid_utils::rayTrace(localMap.info, p1, p2);
+    occupancy_grid_utils::RayTraceIterRange range = occupancy_grid_utils::rayTrace(localMap.info, p1, p2, true, true);
     auto iter = range.first;
     while(iter != range.second){
         occupancy_grid_utils::Cell cell = *iter;
