@@ -200,8 +200,6 @@ namespace Planner {
      * @brief final output
      */
     struct SmoothLane: public Lane{
-        vector<Vector2d> leftPoints;
-        vector<Vector2d> rightPoints;
         vector<double> ts;
         int n_total_markers = 0;
 

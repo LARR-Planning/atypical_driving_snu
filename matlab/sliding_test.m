@@ -268,8 +268,11 @@ end
 
 for i_smooth = 0:max_smoothing_iteration-1
     for i  = 1:size(midAngle, 1)
-        idx_start = max(i - i_smooth, 1);
-        idx_end = min(i+3+i_smooth, size(midPoints,1));
+%         idx_start = max(i - i_smooth, 1);
+%         idx_end = min(i+3+i_smooth, size(midPoints,1));
+        idx_start = max(i, 1);
+        idx_end = min(i+3, size(midPoints,1));
+        
         delta = idx_end - idx_start;
         smoothingPoint = zeros(delta-1, 2);
         is_smoothing_valid = true;
