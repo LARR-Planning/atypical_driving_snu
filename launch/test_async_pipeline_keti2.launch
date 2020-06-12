@@ -5,21 +5,21 @@
 -->
 
 <launch>
-    <arg name="bagfile"        default="200518-SNU-1_result.bag"/>
 
+  <arg name = "use_sim_time" value = "true"/>
+  <arg name= "bagfile"        default="200518-SNU-1_result.bag"/>
 
     <!-- Arguments Start -->
   <arg name="snu_frame_id" default="SNU"/>
-  <arg name="octomap_frame_id" default="SNU"/>
+  <arg name="occu_frame_id" default="SNU"/>
   <arg name="world_frame_id" default="map"/>
+  <arg name="car_base_frame_id" default="/car_base_link"/>
+  <arg name = "lidar_frame_id" default = "velodyne"/>
 
   <arg name="lane_width" default="9"/>
   <arg name = "lane_csv_file" default = "$(find atypical_driving)/waypoint_keti_sparse.csv"/>
   <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
-    <arg name = "waypoints" default="$(find atypical_driving)/param/goal_keti.yaml"/>
-
-  <arg name="is_world_snu_frame" value="true"/> <!-- If this is true, the world bound = SNU -->
-  <!--  Arguments for integration with KETI-->
+  <arg name = "waypoints" default="$(find atypical_driving)/param/goal_keti.yaml"/>
 
   <arg name="vehicle_model/ly"            default="2.7"/> <!-- for the dynamics -->
   <arg name="vehicle_model/lx"            default="2"/> <!-- for safe margin -->
@@ -31,7 +31,7 @@
   <arg name="nominal_speed"     default="2.1"/>
   <arg name="lp_horizon"     default="5"/> <!--preirod = horizon -->
   <arg name="lp_period"     default="0.1"/> <!--preirod = horizon -->
-    <arg name="planning_dt"     default="0.1"/>
+  <arg name="planning_dt"     default="0.1"/>
 
   <arg name="gp_horizon"     default="20"/>
   <arg name="gp_period"     default="0.3"/>
@@ -64,50 +64,22 @@
         <param name="rejection_radius" value="1.6"/>
 		<remap from="/current_pose" to="current_pose_non" />
     </node>
-
-    <!--4. octomap generator -->
-    <node pkg="octomap_server" type="octomap_server_node" name="octomap_server" output="screen" >
-        <param name="resolution"                 value="0.5" />
-        <param name="frame_id"                   value="$(arg snu_frame_id)" />
-        <param name="height_map"                 value="true"/>
-        <param name="track_changes" value="true"/>
-        <param name="sensor_model/max_range" value="20.0" />
-        <param name="sensor_model/min_range" value="3.0" />
-
-        <!--Should be carefully chosen -->
-                <param name="pointcloud_min_z" value="0.3" />
-        <!--        <param name="pointcloud_max_z" value="-0.0" />-->
-<!--        <param name="occupancy_min_z" value="0.0" />-->
-
-        <param name="color/r"                    value="0.2" />
-        <param name="color/g"                    value="0.2" />
-        <param name="color/b"                    value="0.2" />
-        <param name="color/a"                    value="0.2" />
-
-        <param name="sensor_model/miss" value="0.1" />
-        <param name="sensor_model/hit" value="0.97" />
-
-        <param name="sensor_model/min" value="0.4" />
-        <param name="sensor_model/max" value="0.7" />
-
-        <remap from="cloud_in" to="/velodyne_points"/>
-        <remap from="octomap_binary" to="/atypical_planning_test/local_map"/>
-    </node>
     <!--5. server -->
 
   <node pkg="atypical_driving" type="integration_server" name="atypical_planning_test" output="screen">
 
-      <param name = "goal_thres" value = "$(arg goal_thres)" />
+    <param name = "goal_thres" value = "$(arg goal_thres)" />
 
     <param name = "world_frame_id" value="$(arg world_frame_id)" />
     <param name = "snu_frame_id" value="$(arg snu_frame_id)" />
-    <param name = "octomap_gen_frame_id" value="$(arg octomap_frame_id)" /> <!-- The frame id of octomap map or SNU-->
+
+
 
     <param name = "lane_csv_file" value = "$(arg lane_csv_file)"/>
     <param name = "lane_width" value="$(arg lane_width)"/>
-      <param name = "log_file_prefix" value = "$(arg log_file_prefix)" />
+    <param name = "log_file_prefix" value = "$(arg log_file_prefix)" />
 
-      <rosparam command="load" file="$(arg waypoints)" />
+    <rosparam command="load" file="$(arg waypoints)" />
 
 
     <param name = "global_planner/is_world_snu_frame" value="$(arg is_world_snu_frame)"/>
