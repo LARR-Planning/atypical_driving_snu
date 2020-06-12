@@ -5,7 +5,7 @@
 <launch>
   <arg name = "use_sim_time" value = "true"/>
   <arg name="bagfile"        default="autoDriveIntegration.bag"/>
-
+  <arg name = "pcl_topic" default = "/airsim_car_node/PhysXCar/lidar/LidarSensor1"/>
 
   <param name="use_sim_time" value="$(arg use_sim_time)"/>
 
@@ -45,7 +45,6 @@
   </group>
 
 
-
 <!--   OccupancyGrid  -->
  <include file = "$(find atypical_driving)/launch/occupancy2d/costmap_2d.launch">
      <arg name = "play_bag" value = "false"/>
@@ -54,7 +53,7 @@
      <arg name = "rviz" value = "false"/>
      <arg name = "occupancy_frame_id" value = "$(arg occu_frame_id)"/>
      <arg name = "lidar_frame_id" value = "$(arg lidar_frame_id)"/>
-     <arg name = "pcl_topic" value = "/airsim_car_node/PhysXCar/lidar/LidarSensor1"/>
+     <arg name = "pcl_topic" value = "$(arg pcl_topic)"/>
  </include>
 
 
@@ -74,11 +73,12 @@
 
     <!--3. server-->
     <include file = "$(find atypical_driving)/launch/integration_server.launch" >
-        <arg name = "world_frame_id" value = "$(world_frame_id)"/>
-        <arg name = "snu_frame_id" value = "$(snu_frame_id)"/>
-        <arg name = "occu_frame_id" value = "$(world_frame_id)"/>
-
-
+        <arg name = "world_frame_id" value = "$(arg world_frame_id)"/>
+        <arg name = "snu_frame_id" value = "$(arg snu_frame_id)"/>
+        <arg name = "occu_frame_id" value = "$(arg occu_frame_id)"/>
+        <arg name = "car_base_frame_id" value = "$(arg car_base_frame_id)"/>
+        <arg name = "lidar_frame_id" value = "$(arg lidar_frame_id)"/>
+        <arg name = "lane_csv_file" value = "$(arg lane_csv_file)"/>
     </include>
 
 

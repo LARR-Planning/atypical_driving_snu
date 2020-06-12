@@ -131,10 +131,11 @@ vector<Vector2d> Lane::slicing(const CarState &curCarState, Vector2d windowOrig,
     for (int i = StartPointIdx ; i < points.size()  ; i++){
         EndPointIdx = i;
         Vector2d point = points[i-1]; // next point
+        ROS_INFO_STREAM("Included points: "<<point.transpose());
         bool isInWindow = (point(0) < windowOrig(0) + w) and
-                          (point(0) > windowOrig(0) - w) and
+                          (point(0) > windowOrig(0)) and
                           (point(1) < windowOrig(1) + h) and
-                          (point(1) > windowOrig(1) - h);
+                          (point(1) > windowOrig(1));
 
         if (not isInWindow)
             break;

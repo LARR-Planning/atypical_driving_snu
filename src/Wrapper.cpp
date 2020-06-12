@@ -695,7 +695,7 @@ void Wrapper::processLane(double tTrigger) {
 
         Vector3d windowOrigSNU = p_base_shared -> Tso * Vector3d(windowOrig(0),windowOrig(1),0);
 
-
+        ROS_INFO("orig window = [%f,%f]",windowOrigSNU(0),windowOrigSNU(1));
         CarState curCarState = p_base_shared->getCarState(); // SNU frame
         vector<Vector2d> pathSliced = p_base_shared->laneOrig.slicing(curCarState, Vector2d(windowOrigSNU(0),windowOrigSNU(1)), windowWidth,
                                                                       windowHeight);
