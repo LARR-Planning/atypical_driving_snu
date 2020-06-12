@@ -207,10 +207,7 @@ end
 %     else
 %         i = i + 1;    
 %     end
-% end
 
-% i = 1;
-% while i < size(midAngle, 1)
 %     for i_smooth = 0:max_smoothing_iteration-1
 %         idx_start = max(i - i_smooth, 1);
 %         idx_end = min(i+3+i_smooth, size(midPoints,1));
@@ -238,59 +235,30 @@ end
 %         end
 %     end
 % end
-% end
 
-% window = 1;
-% for i_smooth = 0:max_smoothing_iteration-1
-%     smoothingPoints = zeros(size(midAngle, 1), 2);
-%     for i = 1+window:size(midAngle, 1)-window
-%         idx_start = i-window;
-%         idx_end = i+window;
-%         
-%         delta = idx_end - idx_start + 1;
-%         is_smoothing_valid = true;
-%         
-%         for j = idx_start:idx_end
-%             smoothingPoints(i,:) = smoothingPoints(i,:) + midPoints(j,:) / delta;
-%         end
-%         
-%         leftMargin = leftPoints(i,:) - smoothingPoints(i,:);
-%         rightMargin = rightPoints(i,:) - smoothingPoints(i,:);
-%         if dot(leftMargin, rightMargin) >= 0 || norm(leftMargin) < smoothing_margin || norm(rightMargin) < smoothing_margin
-%             % collision occured!
-%             smoothingPoints(i,:) = midPoints(i,:);
-%         end
-%     end
-%     
-%     midPoints(1+window:size(midAngle, 1)-window,:) = smoothingPoints(1+window:size(midAngle, 1)-window,:);
-% end
-
-
+window = 1;
 for i_smooth = 0:max_smoothing_iteration-1
-    for i  = 1:size(midAngle, 1)
-        idx_start = max(i - i_smooth, 1);
-        idx_end = min(i+3+i_smooth, size(midPoints,1));
+    smoothingPoint = zeros(size(midAngle, 1), 2);
+    for i = 1+window:size(midAngle, 1)-window
+        idx_start = i-window;
+        idx_end = i+window;
+        
         delta = idx_end - idx_start;
-        smoothingPoint = zeros(delta-1, 2);
         is_smoothing_valid = true;
         
-        for j = 1:delta-1
-            alpha = j/delta;
-            smoothingPoint(j,:) = (1-alpha) * midPoints(idx_start,:) + alpha * midPoints(idx_end,:);
-            leftMargin = leftPoints(idx_start+j,:) - smoothingPoint(j,:);
-            rightMargin = rightPoints(idx_start+j,:) - smoothingPoint(j,:);
-            if dot(leftMargin, rightMargin) >= 0 || norm(leftMargin) < smoothing_margin || norm(rightMargin) < smoothing_margin
-                % collision occured!
-                is_smoothing_valid = false;
-            end
+        for j = idx_start:idx_end
+            smoothingPoint(i,:) = smoothingPoint(i,:) + midPoints(j,:) / delta;
         end
         
-        if is_smoothing_valid
-            for j = 1:delta-1
-                midPoints(idx_start+j,:) = smoothingPoint(j,:);
-            end
+        leftMargin = leftPoints(i,:) - smoothingPoint;
+        rightMargin = rightPoints(i,:) - smoothingPoint;
+        if dot(leftMargin, rightMargin) >= 0 || norm(leftMargin) < smoothing_margin || norm(rightMargin) < smoothing_margin
+            % collision occured!
+            smoothingPoint(i,:) = midPoints(i,:);
         end
     end
+    
+    
 end
 
 %% Plot map and grid

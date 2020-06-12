@@ -28,6 +28,7 @@
 #include <nav_msgs/OccupancyGrid.h>
 
 #include <occupancy_grid_utils/coordinate_conversions.h>
+#include <occupancy_grid_utils/ray_tracer.h>
 
 
 using namespace std;
@@ -93,6 +94,8 @@ namespace Planner {
         bool has_wall;
         bool is_world_box_snu_frame;
         double period;
+        int max_smoothing_iteration;
+        double smoothing_margin;
     };
 
     struct ParamPredictor{
@@ -183,12 +186,27 @@ namespace Planner {
     };
 
     /**
+     * @brief Modified lane by global planner
+     */
+    struct LaneTreeElement{
+        int id;
+        Vector2d leftPoint;
+        Vector2d midPoint;
+        Vector2d rightPoint;
+        vector<int> parents;
+    };
+
+    /**
      * @brief final output
      */
     struct SmoothLane: public Lane{
-
+        vector<Vector2d> leftPoints;
+        vector<Vector2d> rightPoints;
         vector<double> ts;
+        int n_total_markers = 0;
+
         // Vector3d evalX(double t); TODO
+        visualization_msgs::MarkerArray getPoints(const string& frame_id);
     };
 
     /**
@@ -234,6 +252,7 @@ namespace Planner {
         double goal_thres;
 
         bool isOccupied(Vector2d queryPoint); // query point frame = SNU
+        bool isOccupied(Vector2d queryPoint1, Vector2d queryPoint2); // rayIntersection query point frame = SNU
 
         // prediction module
         vector<Predictor::TargetManager> predictorSet; // TODO erase after indexed predictor

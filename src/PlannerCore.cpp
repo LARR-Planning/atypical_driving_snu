@@ -161,6 +161,45 @@ nav_msgs::Path Lane::getPath(string frame_id) {
     return nodeNavPath;
 }
 
+/**
+ * @brief get visualization_msgs of points
+ * @param frame_id
+ * @return
+ */
+visualization_msgs::MarkerArray SmoothLane::getPoints(const string& frame_id) {
+    visualization_msgs::MarkerArray markers;
+    int i_marker = 0;
+    for (auto & point : points){
+        visualization_msgs::Marker marker;
+        marker.header.frame_id = frame_id;
+        marker.id = i_marker++;
+        marker.type = visualization_msgs::Marker::CUBE;
+        marker.action = visualization_msgs::Marker::ADD;
+        marker.pose.position.x = point(0);
+        marker.pose.position.y = point(1);
+        marker.pose.position.z = 0;
+        marker.scale.x = 0.1;
+        marker.scale.y = 0.1;
+        marker.scale.z = 0.1;
+        marker.color.a = 1;
+        marker.color.r = 1;
+        marker.color.g = 0;
+        marker.color.b = 0;
+        markers.markers.emplace_back(marker);
+    }
+    for(int i = i_marker; i < n_total_markers; i++){
+        visualization_msgs::Marker marker;
+        marker.header.frame_id = frame_id;
+        marker.id = i;
+        marker.action = visualization_msgs::Marker::DELETE;
+        markers.markers.emplace_back(marker);
+    }
+    if(i_marker > n_total_markers){
+        n_total_markers = i_marker;
+    }
+    return markers;
+}
+
 vector<Corridor> PlannerBase::getCorridorSeq(double t0, double tf) {
 
     vector<Corridor> slicedCorridor; bool doPush = false;
@@ -265,12 +304,38 @@ bool PlannerBase::isOccupied(Vector2d queryPoint) {
     queryPoint3.y = queryPoint(1);
     queryPoint3.z = 0;
 
-    if (occupancy_grid_utils::withinBounds(localMap.info,queryPoint3)){
-        ROS_WARN("querying point [%f,%f]  is out of bound of occupancy map ", queryPoint3.x,queryPoint3.y );
+    if (!occupancy_grid_utils::withinBounds(localMap.info,queryPoint3)){
+//        ROS_WARN("querying point [%f,%f]  is out of bound of occupancy map ", queryPoint3.x,queryPoint3.y );
+        return true;
     }
 
 
     occupancy_grid_utils::index_t idx = occupancy_grid_utils::pointIndex(localMap.info,queryPoint3);
 
     return (localMap.data[idx] > OCCUPANCY);
+}
+
+bool PlannerBase::isOccupied(Vector2d queryPoint1, Vector2d queryPoint2) {
+    geometry_msgs::Point p1;
+    p1.x = queryPoint1(0);
+    p1.y = queryPoint1(1);
+    p1.z = 0;
+
+    geometry_msgs::Point p2;
+    p2.x = queryPoint2(0);
+    p2.y = queryPoint2(1);
+    p2.z = 0;
+
+
+    occupancy_grid_utils::RayTraceIterRange range = occupancy_grid_utils::rayTrace(localMap.info, p1, p2);
+    auto iter = range.first;
+    while(iter != range.second){
+        occupancy_grid_utils::Cell cell = *iter;
+        occupancy_grid_utils::index_t idx = occupancy_grid_utils::cellIndex(localMap.info, cell);
+        if(localMap.data[idx] > OCCUPANCY){
+            return true;
+        }
+        iter++;
+    }
+    return false;
 }
