@@ -97,6 +97,8 @@
     <param name="global_planner/grid_resolution" value="0.5" />
     <param name="global_planner/box_resolution" value="0.3" />
     <param name="global_planner/box_max_size" value="30" />
+    <param name="global_planner/max_smoothing_iteration" value="5" />
+    <param name="global_planner/smoothing_margin" value="0.5" />
 
 
     <param name="local_planner/horizon" value="$(arg lp_horizon)" />

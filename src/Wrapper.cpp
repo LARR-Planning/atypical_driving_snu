@@ -79,7 +79,7 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
     subCarSpeed = nh.subscribe("/current_speed",1,&RosWrapper::cbCarSpeed,this);
     //subExampleObstaclePose = nh.subscribe("obstacle_pose",1,&RosWrapper::cbObstacles,this);
     subDetectedObjects= nh.subscribe("/detected_objects",1,&RosWrapper::cbDetectedObjects,this);
-    subOccuMap = nh.subscribe("/occupancy_grid",1,&RosWrapper::cbOccuMap,this); //TODO: fix to /occupancy_grid
+    subOccuMap = nh.subscribe("/costmap_node/costmap/costmap",1,&RosWrapper::cbOccuMap,this); //TODO: fix /costmap_node/costmap/costmap to /occupancy_grid
 }
 /**
  * @brief update the fitting model only. It does not directly update the obstaclePath in p_base

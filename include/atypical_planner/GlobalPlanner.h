@@ -34,7 +34,7 @@ namespace Planner{
         int ccw(Point a, Point b, Point c);
         static std::array<double, 4> boxTransform(const SE3& Tab, const std::array<double, 4>& box);
         std::vector<int> findParents(int id, Vector2d mid_point);
-        std::vector<int> laneTreeDFS(int i);
+        std::vector<int> laneTreeDFS(int i, int i_start);
     };
 
 }

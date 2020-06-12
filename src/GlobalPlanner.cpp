@@ -95,9 +95,24 @@ bool GlobalPlanner::plan(double t) {
         }
     }
 
+    // Find initial laneTree
+    int i_tree_start = 0;
+    Vector2d currentPoint(p_base->cur_state.x, p_base->cur_state.y);
+    for(int i_tree = 0; i_tree < laneTree.size(); i_tree++){
+        if(laneTree[i_tree].id > 0){
+            break;
+        }
+        if(!p_base->isOccupied(laneTree[i_tree].midPoint, currentPoint)) {
+            i_tree_start = i_tree;
+        }
+        else{
+            int debug = 1;
+        }
+    }
+
     // DFS to find midPoints
     int i_tree = laneTree.size() - 1;
-    std::vector<int> tail = laneTreeDFS(i_tree); //TODO: reference jump!
+    std::vector<int> tail = laneTreeDFS(i_tree, i_tree_start); //TODO: failsafe
     std::vector<Vector2d> midPoints, leftPoints, rightPoints;
     midPoints.resize(tail.size());
     leftPoints.resize(tail.size());
@@ -113,8 +128,8 @@ bool GlobalPlanner::plan(double t) {
     Vector2d left_margin, right_margin;
     std::vector<Vector2d> smoothing_points;
     bool is_smoothing_valid;
-    for(int i_mid = 0; i_mid < midPoints.size(); i_mid++) {
-        for (int i_smooth = 0; i_smooth < param.max_smoothing_iteration; i_smooth++) {
+    for (int i_smooth = 0; i_smooth < param.max_smoothing_iteration; i_smooth++) {
+        for(int i_mid = 0; i_mid < midPoints.size(); i_mid++) {
             idx_start = max(i_mid - i_smooth, 0);
             idx_end = min(i_mid+3+i_smooth, (int)midPoints.size()-1);
             idx_delta = idx_end - idx_start;
@@ -131,6 +146,7 @@ bool GlobalPlanner::plan(double t) {
                 right_margin = rightPoints[idx_start + j_smooth + 1] - smoothing_points[j_smooth];
                 if(left_margin.dot(right_margin) >= 0 || left_margin.norm() < param.smoothing_margin || right_margin.norm() < param.smoothing_margin){
                     is_smoothing_valid = false;
+                    break;
                 }
             }
 
@@ -143,14 +159,13 @@ bool GlobalPlanner::plan(double t) {
     }
 
     SmoothLane smoothLane;
-    smoothLane.n_total_markers = 0;
     smoothLane.points = midPoints;
 
     p_base->mSet[1].lock();
+    smoothLane.n_total_markers = p_base->laneSmooth.n_total_markers;
     p_base->laneSmooth = smoothLane;
     p_base->mSet[1].unlock();
 
-    // DFS tree search
     return true; // change this line properly
 }
 
@@ -218,19 +233,19 @@ std::vector<int> GlobalPlanner::findParents(int id, Vector2d mid_point){
     return parents;
 }
 
-std::vector<int> GlobalPlanner::laneTreeDFS(int i_tree){
+std::vector<int> GlobalPlanner::laneTreeDFS(int i_tree, int i_start){
     std::vector<int> tail;
-    if(i_tree == 0){
-        tail.emplace_back(0);
+    if(i_tree == i_start){
+        tail.emplace_back(i_start);
         return tail;
     }
-    else if(laneTree[i_tree].parents.empty()){
+    else if(laneTree[i_tree].id == 0 || laneTree[i_tree].parents.empty()){
         tail.emplace_back(-1);
         return tail;
     }
 
     for(int i_parents = 0; i_parents < laneTree[i_tree].parents.size(); i_parents++){
-        std::vector<int> tail_prev = laneTreeDFS(laneTree[i_tree].parents[i_parents]);
+        std::vector<int> tail_prev = laneTreeDFS(laneTree[i_tree].parents[i_parents], i_start);
         if(tail_prev[0] == -1){
             continue;
         }
