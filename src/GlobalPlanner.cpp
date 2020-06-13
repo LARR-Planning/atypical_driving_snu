@@ -134,49 +134,102 @@ bool GlobalPlanner::plan(double t) {
         return false; //TODO: failsafe
     }
 
+//    std::vector<Vector2d> midPoints, leftPoints, rightPoints;
+//    midPoints.resize(tail.size()+1);
+//    leftPoints.resize(tail.size()+1);
+//    rightPoints.resize(tail.size()+1);
+//    midPoints[0] = currentPoint;
+//    for(int i_tail = 0; i_tail < tail.size(); i_tail++){
+//        midPoints[i_tail+1] = laneTree[tail[i_tail]].midPoint;
+//        leftPoints[i_tail+1] = laneTree[tail[i_tail]].leftPoint;
+//        rightPoints[i_tail+1] = laneTree[tail[i_tail]].rightPoint;
+//    }
+
     std::vector<Vector2d> midPoints, leftPoints, rightPoints;
-    midPoints.resize(tail.size()+1);
-    leftPoints.resize(tail.size()+1);
-    rightPoints.resize(tail.size()+1);
-    midPoints[0] = currentPoint;
+    midPoints.resize(tail.size());
+    leftPoints.resize(tail.size());
+    rightPoints.resize(tail.size());
     for(int i_tail = 0; i_tail < tail.size(); i_tail++){
-        midPoints[i_tail+1] = laneTree[tail[i_tail]].midPoint;
-        leftPoints[i_tail+1] = laneTree[tail[i_tail]].leftPoint;
-        rightPoints[i_tail+1] = laneTree[tail[i_tail]].rightPoint;
+        midPoints[i_tail] = laneTree[tail[i_tail]].midPoint;
+        leftPoints[i_tail] = laneTree[tail[i_tail]].leftPoint;
+        rightPoints[i_tail] = laneTree[tail[i_tail]].rightPoint;
+    }
+
+    // Find midAngles
+    std::vector<double> midAngles;
+    midAngles.resize(midPoints.size()-1);
+    double angle;
+    for(int i_angle = 0; i_angle < midAngles.size(); i_angle++) {
+        delta = midPoints[i_angle+1] - midPoints[i_angle];
+        angle = atan2(delta.y(), delta.x());
+        if(angle < 0) {
+            angle = angle + 2 * M_PI;
+        }
+        midAngles[i_angle] = angle;
     }
 
     // Smoothing using linear interpolation
-    int idx_start, idx_end, idx_delta;
-    Vector2d left_margin, right_margin, l2r;
-    std::vector<Vector2d> smoothing_points;
-    bool is_smoothing_valid;
-    for (int i_smooth = 0; i_smooth < param.max_smoothing_iteration; i_smooth++) {
-        for(int i_mid = 0; i_mid < midPoints.size(); i_mid++) {
-            idx_start = max(i_mid, 0);
-            idx_end = min(i_mid+3, (int)midPoints.size()-1);
+//    int idx_start, idx_end, idx_delta;
+//    Vector2d left_margin, right_margin, l2r;
+//    std::vector<Vector2d> smoothing_points;
+//    for (int i_smooth = 0; i_smooth < param.max_smoothing_iteration; i_smooth++) {
+//        for(int i_mid = 0; i_mid < midPoints.size(); i_mid++) {
+//            idx_start = max(i_mid - i_smooth, 0);
+//            idx_end = min(i_mid+3+i_smooth, (int)midPoints.size()-1);
+//            idx_delta = idx_end - idx_start;
+//            if(idx_delta < 1){
+//                break;
+//            }
+//            smoothing_points.resize(idx_delta - 1);
+//
+//            for(int j_smooth = 0; j_smooth < idx_delta-1; j_smooth++){
+//                alpha = static_cast<double>(j_smooth+1)/static_cast<double>(idx_delta);
+//                smoothing_points[j_smooth] = (1-alpha) * midPoints[idx_start] + alpha * midPoints[idx_end];
+//                left_margin = smoothing_points[j_smooth] - leftPoints[idx_start + j_smooth + 1];
+//                right_margin = smoothing_points[j_smooth] - rightPoints[idx_start + j_smooth + 1];
+//                l2r = rightPoints[idx_start + j_smooth + 1] - leftPoints[idx_start + j_smooth + 1];
+//                if(left_margin.norm() < param.smoothing_margin || left_margin.dot(-l2r) >= 0){
+//                    smoothing_points[j_smooth] = leftPoints[idx_start + j_smooth + 1] + l2r.normalized() * param.smoothing_margin;
+//                }
+//                else if(right_margin.norm() < param.smoothing_margin || right_margin.dot(l2r) >= 0){
+//                    smoothing_points[j_smooth] = rightPoints[idx_start + j_smooth + 1] - l2r.normalized() * param.smoothing_margin;
+//                }
+//            }
+//            for(int j_smooth = 0; j_smooth < idx_delta-1; j_smooth++) {
+//                midPoints[idx_start + j_smooth + 1] = smoothing_points[j_smooth];
+//            }
+//        }
+//    }
+
+    int idx_start, idx_end, idx_delta, i_angle = 0;
+    Vector2d smoothingPoint;
+    while(i_angle < midAngles.size()-1) {
+        double diff = abs(midAngles[i_angle+1] - midAngles[i_angle]);
+        if(diff > M_PI) {
+            diff = 2 * M_PI - diff;
+        }
+
+        if(diff > param.max_steering_angle) {
+            idx_start = i_angle;
+            idx_end = min(i_angle+3, (int)midPoints.size());
             idx_delta = idx_end - idx_start;
-            if(idx_delta < 1){
-                break;
+            for(int j_smooth = 1; j_smooth < idx_delta; j_smooth++) {
+                alpha = static_cast<double>(j_smooth)/static_cast<double>(idx_delta);
+                smoothingPoint = (1-alpha) * midPoints[idx_start] + alpha * midPoints[idx_end];
+                midPoints[idx_start+j_smooth] = smoothingPoint;
             }
-            smoothing_points.resize(idx_delta - 1);
-
-            for(int j_smooth = 0; j_smooth < idx_delta-1; j_smooth++){
-                alpha = static_cast<double>(j_smooth+1)/static_cast<double>(idx_delta);
-                smoothing_points[j_smooth] = (1-alpha) * midPoints[idx_start] + alpha * midPoints[idx_end];
-                left_margin = smoothing_points[j_smooth] - leftPoints[idx_start + j_smooth + 1];
-                right_margin = smoothing_points[j_smooth] - rightPoints[idx_start + j_smooth + 1];
-                l2r = rightPoints[idx_start + j_smooth + 1] - leftPoints[idx_start + j_smooth + 1];
-                if(left_margin.norm() < param.smoothing_margin || left_margin.dot(-l2r) >= 0){
-                    smoothing_points[j_smooth] = leftPoints[idx_start + j_smooth + 1] + l2r.normalized() * param.smoothing_margin;
+            for(int j_smooth = 0; j_smooth < idx_delta; j_smooth++) {
+                delta = midPoints[idx_start+j_smooth+1] - midPoints[idx_start+j_smooth];
+                angle = atan2(delta.y(), delta.x());
+                if(angle < 0){
+                    angle = angle + 2 * M_PI;
                 }
-                else if(right_margin.norm() < param.smoothing_margin || right_margin.dot(l2r) >= 0){
-                    smoothing_points[j_smooth] = rightPoints[idx_start + j_smooth + 1] - l2r.normalized() * param.smoothing_margin;
-                }
+                midAngles[idx_start+j_smooth] = angle;
             }
-
-            for(int j_smooth = 0; j_smooth < idx_delta-1; j_smooth++) {
-                midPoints[idx_start + j_smooth + 1] = smoothing_points[j_smooth];
-            }
+            i_angle = max(i_angle-1, 0);
+        }
+        else{
+            i_angle++;
         }
     }
 
@@ -184,7 +237,7 @@ bool GlobalPlanner::plan(double t) {
     double nominal_speed = 1; //TODO: nominal speed allocation
     std::vector<double> ts;
     ts.resize(midPoints.size());
-    ts[0] = 0;
+    ts[0] = (midPoints[0] - currentPoint).norm() / nominal_speed;
     for(int i_mid = 1; i_mid < midPoints.size(); i_mid++){
         ts[i_mid] = ts[i_mid-1] + (midPoints[i_mid] - midPoints[i_mid-1]).norm() / nominal_speed; //TODO: nominal speed allocation
 //        ts[i_mid] = ts[i_mid-1] + (midPoints[i_mid] - midPoints[i_mid-1]).norm() / p_base->nominal_speed; //TODO: fix to this!
@@ -252,6 +305,7 @@ std::vector<int> GlobalPlanner::findParents(int id, Vector2d mid_point){
         return parents;
     }
 
+    double shortestDist = SP_INFINITY;
     int i_tree = laneTree.size()-1;
     while(i_tree >= 0 && laneTree[i_tree].id >= id-1){
         if(laneTree[i_tree].id == id){
@@ -260,7 +314,18 @@ std::vector<int> GlobalPlanner::findParents(int id, Vector2d mid_point){
         }
         Vector2d parent_point = laneTree[i_tree].midPoint;
         if(!p_base->isOccupied(parent_point, mid_point)){
-            parents.emplace_back(i_tree);
+            double dist = (parent_point-mid_point).norm();
+            if(parents.empty()){
+                parents.emplace_back(i_tree);
+                shortestDist = dist;
+            }
+            else if(dist < shortestDist){
+                parents.insert(parents.begin(), i_tree);
+                shortestDist = dist;
+            }
+            else{
+                parents.emplace_back(i_tree);
+            }
         }
         i_tree--;
     }

@@ -9,8 +9,8 @@ nav_msg_topic_name = '/costmap_node/costmap/costmap';
 car_width = 2;
 grid_resolution = 0.5;
 threshold = 0.5;
-max_steering_angle = pi/4;
-max_smoothing_iteration = 5;
+max_steering_angle = pi/8;
+max_smoothing_iteration = 0;
 smoothing_margin = 0.5;
 
 
@@ -184,30 +184,30 @@ for i = 1:size(midAngle, 1)
 end
 
 %% Smoothing using linear interpolation TODO: valid smoothing check
-% i = 1;
-% while i < size(midAngle, 1)
-%     if(angDiff(midAngle(i+1), midAngle(i)) > max_steering_angle)
-%         idx_start = i;
-%         idx_end = min(i+3, size(midPoints,1));
-%         delta = idx_end - idx_start;
-%         for j = 1:delta-1
-%             alpha = j/delta;
-%             smoothingPoint = (1-alpha) * midPoints(idx_start,:) + alpha * midPoints(idx_end,:);
-%             midPoints(idx_start+j,:) = smoothingPoint;
-%         end
-%         for j = 0:delta-1
-%             delta_angle = midPoints(idx_start+j+1,:) - midPoints(idx_start+j,:);
-%             angle = atan2(delta_angle(2), delta_angle(1));
-%             if(angle < 0)
-%                 angle = angle + 2 * pi;
-%             end
-%             midAngle(idx_start+j) = angle;
-%         end
-%         i = max(i-1 , 1);
-%     else
-%         i = i + 1;    
-%     end
-% end
+i = 1;
+while i < size(midAngle, 1)
+    if(angDiff(midAngle(i+1), midAngle(i)) > max_steering_angle)
+        idx_start = i;
+        idx_end = min(i+3, size(midPoints,1));
+        delta = idx_end - idx_start;
+        for j = 1:delta-1
+            alpha = j/delta;
+            smoothingPoint = (1-alpha) * midPoints(idx_start,:) + alpha * midPoints(idx_end,:);
+            midPoints(idx_start+j,:) = smoothingPoint;
+        end
+        for j = 0:delta-1
+            delta_angle = midPoints(idx_start+j+1,:) - midPoints(idx_start+j,:);
+            angle = atan2(delta_angle(2), delta_angle(1));
+            if(angle < 0)
+                angle = angle + 2 * pi;
+            end
+            midAngle(idx_start+j) = angle;
+        end
+        i = max(i-1 , 1);
+    else
+        i = i + 1;
+    end
+end
 
 % i = 1;
 % while i < size(midAngle, 1)
@@ -237,7 +237,7 @@ end
 %             break;
 %         end
 %     end
-% end
+%     i = i + 1;  
 % end
 
 % window = 1;
@@ -266,35 +266,65 @@ end
 % end
 
 
-for i_smooth = 0:max_smoothing_iteration-1
-    for i  = 1:size(midAngle, 1)
+% for i_smooth = 0:max_smoothing_iteration-1
+%     for i  = 1:size(midAngle, 1)
+% %         idx_start = max(i - i_smooth, 1);
+% %         idx_end = min(i+3+i_smooth, size(midPoints,1));
+%         idx_start = max(i, 1);
+%         idx_end = min(i+3, size(midPoints,1));
+%         
+%         delta = idx_end - idx_s% i = 1;
+% while i < size(midAngle, 1)
+%     for i_smooth = 0:max_smoothing_iteration-1
 %         idx_start = max(i - i_smooth, 1);
 %         idx_end = min(i+3+i_smooth, size(midPoints,1));
-        idx_start = max(i, 1);
-        idx_end = min(i+3, size(midPoints,1));
-        
-        delta = idx_end - idx_start;
-        smoothingPoint = zeros(delta-1, 2);
-        is_smoothing_valid = true;
-        
-        for j = 1:delta-1
-            alpha = j/delta;
-            smoothingPoint(j,:) = (1-alpha) * midPoints(idx_start,:) + alpha * midPoints(idx_end,:);
-            leftMargin = leftPoints(idx_start+j,:) - smoothingPoint(j,:);
-            rightMargin = rightPoints(idx_start+j,:) - smoothingPoint(j,:);
-            if dot(leftMargin, rightMargin) >= 0 || norm(leftMargin) < smoothing_margin || norm(rightMargin) < smoothing_margin
-                % collision occured!
-                is_smoothing_valid = false;
-            end
-        end
-        
-        if is_smoothing_valid
-            for j = 1:delta-1
-                midPoints(idx_start+j,:) = smoothingPoint(j,:);
-            end
-        end
-    end
-end
+%         delta = idx_end - idx_start;
+%         smoothingPoint = zeros(delta-1, 2);
+%         is_smoothing_valid = true;
+%         
+%         for j = 1:delta-1
+%             alpha = j/delta;
+%             smoothingPoint(j,:) = (1-alpha) * midPoints(idx_start,:) + alpha * midPoints(idx_end,:);
+%             leftMargin = leftPoints(idx_start+j,:) - smoothingPoint(j,:);
+%             rightMargin = rightPoints(idx_start+j,:) - smoothingPoint(j,:);
+%             if dot(leftMargin, rightMargin) >= 0 || norm(leftMargin) < smoothing_margin || norm(rightMargin) < smoothing_margin
+%                 % collision occured!
+%                 is_smoothing_valid = false;
+%             end
+%         end
+%         
+%         if is_smoothing_valid
+%             for j = 1:delta-1
+%                 midPoints(idx_start+j,:) = smoothingPoint(j,:);
+%             end
+%         else
+%             break;
+%         end
+%     end
+%     i = i + 1;  
+% end
+
+%         smoothingPoint = zeros(delta-1, 2);
+%         is_smoothing_valid = true;
+%         
+%         for j = 1:delta-1
+%             alpha = j/delta;
+%             smoothingPoint(j,:) = (1-alpha) * midPoints(idx_start,:) + alpha * midPoints(idx_end,:);
+%             leftMargin = leftPoints(idx_start+j,:) - smoothingPoint(j,:);
+%             rightMargin = rightPoints(idx_start+j,:) - smoothingPoint(j,:);
+%             if dot(leftMargin, rightMargin) >= 0 || norm(leftMargin) < smoothing_margin || norm(rightMargin) < smoothing_margin
+%                 % collision occured!
+%                 is_smoothing_valid = false;
+%             end
+%         end
+%         
+%         if is_smoothing_valid
+%             for j = 1:delta-1
+%                 midPoints(idx_start+j,:) = smoothingPoint(j,:);
+%             end
+%         end
+%     end
+% end
 
 %% Plot map and grid
 hold on

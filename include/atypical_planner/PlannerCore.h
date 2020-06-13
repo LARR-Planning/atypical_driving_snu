@@ -96,6 +96,7 @@ namespace Planner {
         double period;
         int max_smoothing_iteration;
         double smoothing_margin;
+        double max_steering_angle;
     };
 
     struct ParamPredictor{

@@ -126,6 +126,27 @@ vector<Vector2d> Lane::slicing(const CarState &curCarState, Vector2d windowOrig,
         }
     }
 
+//    //Jungwon: Find closest segment point to current car position
+//    Vector2d current_point(curCarState.x, curCarState.y);
+//    Vector2d a,b,c,pi_min,n;
+//    double dist, dist_min;
+//    a = points[StartPointIdx-1] - current_point;
+//    b = points[StartPointIdx] - current_point;
+//    pi_min = a;
+//    dist_min = a.norm();
+//    dist = b.norm();
+//    if(dist_min > dist){
+//        pi_min = b;
+//        dist_min = dist;
+//    }
+//    n = (b-a).normalized();
+//    c = a - n * a.dot(n);
+//    dist = c.norm();
+//    if((c-a).dot(c-b) < 0 && dist_min > dist){
+//        pi_min = c;
+//    }
+//    pi_min = pi_min + current_point;
+
     // Then, let us select the final index
     int EndPointIdx = StartPointIdx;
     for (int i = StartPointIdx ; i < points.size()  ; i++){
@@ -140,6 +161,11 @@ vector<Vector2d> Lane::slicing(const CarState &curCarState, Vector2d windowOrig,
             break;
 
     }
+
+//    vector<Vector2d> ret(points.begin()+StartPointIdx,points.begin()+EndPointIdx);
+//    ret.insert(ret.begin(), pi_min);
+//    return ret;
+
     return vector<Vector2d>(points.begin()+StartPointIdx,points.begin()+EndPointIdx);
 }
 
