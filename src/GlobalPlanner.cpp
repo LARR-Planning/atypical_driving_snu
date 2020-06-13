@@ -36,7 +36,7 @@ bool GlobalPlanner::plan(double t) {
     int i_grid = 0;
     for(int i_lane = 0; i_lane < p_base->laneSliced.points.size() - 1; i_lane++){
 //        int grid_size = 2 * floor(p_base->laneSliced.widths[i_lane]/2/param.grid_resolution) + 1; //TODO: fix to this
-        int grid_size = 2 * floor(10/2/param.grid_resolution) + 1;
+        int grid_size = 2 * floor(6/2/param.grid_resolution) + 1;
         delta = p_base->laneSliced.points[i_lane+1] - p_base->laneSliced.points[i_lane];
         lane_length = delta.norm();
         lane_angle = atan2(delta.y(), delta.x());
