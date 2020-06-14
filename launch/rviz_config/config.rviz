@@ -50,7 +50,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: PointCloud2
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -154,7 +154,7 @@ Visualization Manager:
       Marker Topic: /atypical_planning_test/prediction
       Name: MarkerArray
       Namespaces:
-        {}
+        0: true
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -177,14 +177,23 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
+        LidarSensor1:
+          Value: true
+        PhysXCar:
+          Value: true
+        PhysXCar/odom_local_ned:
+          Value: true
         SNU:
           Value: true
         car_base_link:
           Value: true
-
         map:
           Value: true
-        velodyne:
+        world_ent:
+          Value: true
+        world_enu:
+          Value: true
+        world_ned:
           Value: true
       Marker Scale: 10
       Name: TF
@@ -195,9 +204,12 @@ Visualization Manager:
         map:
           SNU:
             car_base_link:
-
-              velodyne:
-                {}
+              {}
+          world_ent:
+            PhysXCar:
+              PhysXCar/odom_local_ned:
+                LidarSensor1:
+                  {}
       Update Interval: 0
       Value: true
     - Class: rviz/MarkerArray
@@ -481,8 +493,24 @@ Visualization Manager:
       Marker Topic: /smooth_lane
       Name: MarkerArray
       Namespaces:
-        {}
-
+        "": true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /atypical_planning_test/side_lanes
+      Name: MarkerArray
+      Namespaces:
+        left: true
+        right: true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /atypical_planning_test/current_lane
+      Name: Marker
+      Namespaces:
+        "": true
       Queue Size: 100
       Value: true
   Enabled: true
@@ -512,28 +540,26 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-
       Class: rviz/Orbit
-      Distance: 57.52853775024414
+      Distance: 52.733604431152344
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
-
       Focal Point:
-        X: 29.742801666259766
-        Y: 3.7624971866607666
-        Z: 6.256491184234619
+        X: 1.4548745155334473
+        Y: 3.2806785106658936
+        Z: 6.479267597198486
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.5647963285446167
+      Pitch: 0.659797191619873
       Target Frame: PhysXCar/odom_local_ned
       Value: Orbit (rviz)
-      Yaw: 4.6890153884887695
+      Yaw: 3.1040117740631104
     Saved: ~
 Window Geometry:
   Displays:

@@ -109,7 +109,9 @@ Lane::Lane(const LanePath& lanePath){
  * @param h height
  * @return
  */
-vector<Vector2d> Lane::slicing(const CarState &curCarState, Vector2d windowOrig, double w, double h) {
+vector<Vector2d> Lane::slicing(const CarState &curCarState, Vector2d windowOrig, double w, double h, int& startIdx,int& endIdx) {
+
+
 
     // First, we pick the point in points which is closest to current car position
     int StartPointIdx = 1; // this is the index which the current
@@ -125,7 +127,7 @@ vector<Vector2d> Lane::slicing(const CarState &curCarState, Vector2d windowOrig,
             StartPointIdx = i;
         }
     }
-
+    startIdx = StartPointIdx;
 //    //Jungwon: Find closest segment point to current car position
 //    Vector2d current_point(curCarState.x, curCarState.y);
 //    Vector2d a,b,c,pi_min,n;
@@ -152,7 +154,7 @@ vector<Vector2d> Lane::slicing(const CarState &curCarState, Vector2d windowOrig,
     for (int i = StartPointIdx ; i < points.size()  ; i++){
         EndPointIdx = i;
         Vector2d point = points[i-1]; // next point
-        ROS_INFO_STREAM("Included points: "<<point.transpose());
+//        ROS_INFO_STREAM("Included points: "<<point.transpose());
         bool isInWindow = (point(0) < windowOrig(0) + w) and
                           (point(0) > windowOrig(0)) and
                           (point(1) < windowOrig(1) + h) and
@@ -162,6 +164,8 @@ vector<Vector2d> Lane::slicing(const CarState &curCarState, Vector2d windowOrig,
             break;
 
     }
+
+    endIdx = EndPointIdx-1;
 
 //    vector<Vector2d> ret(points.begin()+StartPointIdx,points.begin()+EndPointIdx);
 //    ret.insert(ret.begin(), pi_min);
@@ -187,6 +191,51 @@ nav_msgs::Path Lane::getPath(string frame_id) {
     }
     return nodeNavPath;
 }
+
+visualization_msgs::MarkerArray Lane::getSidePath(string frame_id) {
+
+    visualization_msgs::Marker baseLane;
+    visualization_msgs::MarkerArray sideLanes;
+
+    baseLane.header.frame_id = frame_id;
+    baseLane.type = visualization_msgs::Marker::LINE_STRIP;
+    baseLane.pose.orientation.w = 1.0;
+    baseLane.color.a  = 1.0;
+    baseLane.color.r  = 1.0;
+    baseLane.color.g  = 1.0;
+    baseLane.color.b  = 1.0;
+    baseLane.scale.x = 0.1;
+
+    visualization_msgs::Marker leftLane = baseLane; leftLane.ns = "left";
+    visualization_msgs::Marker rightLane = baseLane; rightLane.ns = "right";
+    int idx = 0 ;
+
+    Matrix2d rot;
+    rot << 0, -1,
+            1,0;
+
+    for (; idx < points.size() -1; idx ++ ){
+        Vector2d dir = (points[idx+1] - points[idx]); dir.normalize();
+        Vector2d leftDir = rot*dir;
+        Vector2d rightDir = -leftDir;
+
+        geometry_msgs::Point left;
+        geometry_msgs::Point right;
+        left.x = points[idx](0) + widths[idx]/2*leftDir(0) ;
+        left.y = points[idx](1) + widths[idx]/2*leftDir(1) ;
+        leftLane.points.push_back(left);
+
+        right.x = points[idx](0) + widths[idx]/2*rightDir(0) ;
+        right.y = points[idx](1) + widths[idx]/2*rightDir(1);
+        rightLane.points.push_back(right);
+    }
+
+    sideLanes.markers.push_back(leftLane);
+    sideLanes.markers.push_back(rightLane);
+
+    return sideLanes;
+}
+
 
 /**
  * @brief get visualization_msgs of points

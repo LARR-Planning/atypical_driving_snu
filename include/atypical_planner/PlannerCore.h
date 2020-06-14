@@ -82,7 +82,11 @@ namespace Planner {
         double car_width;
         double car_z_min;
         double car_z_max;
-        double car_speed;
+        // by JBS
+        double car_speed_max;
+        double car_speed_min;
+        double curvature_thres;
+
         double car_acceleration;
         double world_x_min;
         double world_y_min;
@@ -175,8 +179,9 @@ namespace Planner {
         vector<double> widths;
         Lane(){};
         Lane(const LanePath& lanePath);
-        vector<Vector2d> slicing(const CarState& curCarState,Vector2d windowOrig,double w, double h );
+        vector<Vector2d> slicing(const CarState& curCarState,Vector2d windowOrig,double w, double h , int & startIdx , int & endIdx );
         nav_msgs::Path getPath(string frame_id);
+        visualization_msgs::MarkerArray getSidePath(string frame_id);
     };
 
     /**
@@ -228,6 +233,8 @@ namespace Planner {
         Lane laneSliced; // lane in current sliding window
         SkeletonLane laneSkeleton;
         SmoothLane laneSmooth;
+        double laneSpeed; // current speed to be applied to the lane in slice
+        double laneCurvature;  // current mean curvature of the slide
 
         vector<Corridor> corridor_seq;
         Corridor search_range;

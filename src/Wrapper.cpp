@@ -51,6 +51,8 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
 
 //     p_base->parse_tool.display_result();
     p_base->lane_path = (p_base->parse_tool.get_lanepath());
+    // TODO (accurate lane width)
+    p_base->lane_path.setWidth(laneWidth);
 
     isLaneReceived =false; // Still false. After applying Tw0, it is true
     isLaneRawReceived = true;
@@ -69,10 +71,11 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
 
     pubOrigLane = nh.advertise<nav_msgs::Path>("lane_orig",1);
     pubSlicedLane = nh.advertise<nav_msgs::Path>("lane_sliced",1);
-
+    pubSideLane = nh.advertise<visualization_msgs::MarkerArray>("side_lanes",1);
     pubCurGoal = nh.advertise<geometry_msgs::PointStamped>("global_goal",1);
 
     pubSmoothLane = nh.advertise<visualization_msgs::MarkerArray>("/smooth_lane",1);
+    pubTextSlider = nh.advertise<visualization_msgs::Marker>("current_lane",1);
 
     // Subscriber
     subCarPoseCov = nh.subscribe("/current_pose",1,&RosWrapper::cbCarPoseCov,this);
@@ -127,14 +130,21 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<string>("base_link_id",baseLinkId,"/base_link");
     nh.param<string>("detected_objects_id",detectedObjectId,"/map");
 
+
+
+
     // global planner
+
+    nh.param<double>("vmax",param_.g_param.car_speed_max,4);
+    nh.param<double>("vmin",param_.g_param.car_speed_min,1);
+    nh.param<double>("curve_thres",param_.g_param.curvature_thres,(3.141592/3.0));
+
     nh.param<double>("global_planner/horizon",param_.g_param.horizon,15);
     nh.param<double>("global_planner/period",param_.g_param.period,2);
 
     nh.param<double>("global_planner/car_width",param_.g_param.car_width,2);
     nh.param<double>("global_planner/car_z_min",param_.g_param.car_z_min,0.0);
     nh.param<double>("global_planner/car_z_max",param_.g_param.car_z_max,2.0);
-    nh.param<double>("global_planner/car_speed",param_.g_param.car_speed,2.0);
     nh.param<double>("global_planner/car_acceleration",param_.g_param.car_acceleration,1.0);
     nh.param<double>("global_planner/world_x_min",param_.g_param.world_x_min,-10);
     nh.param<double>("global_planner/world_y_min",param_.g_param.world_y_min,-1);
@@ -265,6 +275,18 @@ void RosWrapper::prepareROSmsgs() {
     p_base->cur_pose.header.frame_id = SNUFrameId;
     pubCurPose.publish(p_base->getCurPose());
 
+    // Current lane information
+    visualization_msgs::Marker laneInfoText;
+    laneInfoText.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+    laneInfoText.text = "curv: " + to_string(p_base->laneCurvature) + "/speed_nom: " + to_string(p_base->laneSpeed);
+    laneInfoText.header.frame_id = baseLinkId;
+    laneInfoText.pose.orientation.w = 1.0;
+    laneInfoText.pose.position.x = -5;
+    laneInfoText.pose.position.y = -5;
+    laneInfoText.color.a = 1.0;
+    laneInfoText.color.g = 1.0;
+    laneInfoText.scale.z = 0.7;
+    pubTextSlider.publish(laneInfoText);
 
     // 2. topics which is not obtained from planning thread
     visualization_msgs::MarkerArray observations;
@@ -318,7 +340,7 @@ void RosWrapper::publish() {
         cmd.steer_angle_cmd *= (180.0/3.14); // cmd output deg
         pubCurCmd.publish(cmd);
         pubMPCTraj.publish(MPCTraj);
-        p_base->log_state_input(curTime());
+        p_base->log_state_input(curTime());;
     }
     pubPath.publish(planningPath);
     pubCorridorSeq.publish(corridorSeq);
@@ -326,6 +348,7 @@ void RosWrapper::publish() {
     p_base->mSet[1].lock();
     if (isLaneReceived){
         pubOrigLane.publish(p_base->laneOrig.getPath(SNUFrameId));
+        pubSideLane.publish(p_base->laneOrig.getSidePath(SNUFrameId));
     }
     if(isLaneSliceLoaded){
         pubSlicedLane.publish(p_base->laneSliced.getPath(SNUFrameId));
@@ -393,6 +416,7 @@ void RosWrapper::processTf() {
             p_base->mSet[0].lock();
             p_base->Tso.setIdentity();
             p_base->Tso.translate(Vector3d(Tsr.getOrigin().x(),Tsr.getOrigin().y(),Tsr.getOrigin().z()));
+            isOctomapFrameResolved = true;
             Eigen::Quaterniond q;
             q.x() = Tsr.getRotation().getX();
             q.y() = Tsr.getRotation().getY();
@@ -639,6 +663,10 @@ bool RosWrapper::isAllInputReceived() {
         ROS_ERROR_THROTTLE(2,"[SNU_PLANNER/RosWrapper] No lane information loaded");
         return false;
     }
+    if (not isOctomapFrameResolved){
+        ROS_ERROR_THROTTLE(2,"[SNU_PLANNER/RosWrapper] Still tf from occupancy to SNU not resolved.");
+        return false;
+    }
     return true;
 }
 
@@ -703,10 +731,28 @@ void Wrapper::processLane(double tTrigger) {
 
         ROS_INFO("orig window = [%f,%f]",windowOrigSNU(0),windowOrigSNU(1));
         CarState curCarState = p_base_shared->getCarState(); // SNU frame
+        int idxSliceStart,idxSliceEnd;
         vector<Vector2d> pathSliced = p_base_shared->laneOrig.slicing(curCarState, Vector2d(windowOrigSNU(0),windowOrigSNU(1)), windowWidth,
-                                                                      windowHeight);
+                                                                      windowHeight,idxSliceStart,idxSliceEnd);
+        double meanCurv = meanCurvature(pathSliced);
+        double vLaneRef; // referance velocity for the current lane
+        double vmin = param.g_param.car_speed_min;
+        double vmax = param.g_param.car_speed_max;
+        double rho_thres = param.g_param.curvature_thres;
+
+        if (meanCurv > rho_thres)
+            vLaneRef = vmin;
+        else{
+            vLaneRef = vmax - (vmax-vmin)/rho_thres*meanCurv;
+        }
+
+
         p_base_shared->mSet[1].lock();
-        p_base_shared->laneSliced.points = pathSliced; // TODO width
+        p_base_shared->laneSliced.points = pathSliced;
+        p_base_shared->laneSliced.widths = vector<double>(p_base_shared->laneOrig.widths.begin()+idxSliceStart,p_base_shared->laneOrig.widths.begin()+idxSliceEnd+1);
+        p_base_shared->laneSpeed = vLaneRef;
+        p_base_shared->laneCurvature = meanCurv;
+        ROS_INFO("lane [%f,%f]" ,meanCurv,vLaneRef);
         p_base_shared->mSet[1].unlock();
 
         if (not ros_wrapper_ptr->isLaneSliceLoaded){

@@ -28,6 +28,9 @@ bool GlobalPlanner::isCurTrajFeasible() {
  * @return true if success
  */
 bool GlobalPlanner::plan(double t) {
+
+    //
+
     // Generate LaneTree
     laneTree.clear();
     Vector2d currentPoint(p_base->cur_state.x, p_base->cur_state.y);
@@ -35,8 +38,8 @@ bool GlobalPlanner::plan(double t) {
     Vector2d delta, left_point, mid_point, right_point;
     int i_grid = 0;
     for(int i_lane = 0; i_lane < p_base->laneSliced.points.size() - 1; i_lane++){
-//        int grid_size = 2 * floor(p_base->laneSliced.widths[i_lane]/2/param.grid_resolution) + 1; //TODO: fix to this
-        int grid_size = 2 * floor(6/2/param.grid_resolution) + 1;
+        int grid_size = 2 * floor(p_base->laneSliced.widths[i_lane]/2/param.grid_resolution) + 1; //TODO: fix to this
+//        int grid_size = 2 * floor(6/2/param.grid_resolution) + 1;
         delta = p_base->laneSliced.points[i_lane+1] - p_base->laneSliced.points[i_lane];
         lane_length = delta.norm();
         lane_angle = atan2(delta.y(), delta.x());
@@ -234,7 +237,8 @@ bool GlobalPlanner::plan(double t) {
     }
 
     // Time allocation
-    double nominal_speed = 1; //TODO: nominal speed allocation
+    // TODO speed assignment?
+    double nominal_speed = p_base->laneSpeed;
     std::vector<double> ts;
     ts.resize(midPoints.size());
     ts[0] = (midPoints[0] - currentPoint).norm() / nominal_speed;
