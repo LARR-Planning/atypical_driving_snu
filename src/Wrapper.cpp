@@ -561,7 +561,7 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
 
         // make v
         curState.v = speed; // reverse gear = negative
-        ROS_DEBUG("Current car state (x,y,theta(degree),v) : [%f,%f,%f,%f]", curState.x, curState.y,
+        ROS_DEBUG("Current car state (x,y,theta(degree),v(m/s)) : [%f,%f,%f,%f]", curState.x, curState.y,
                   curState.theta * 180 / M_PI, curState.v);
 
         /**
