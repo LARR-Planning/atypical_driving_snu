@@ -567,7 +567,7 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
 
         // make v
         curState.v = speed; // reverse gear = negative
-        ROS_DEBUG("Current car state (x,y,theta(degree),v) : [%f,%f,%f,%f]", curState.x, curState.y,
+        ROS_DEBUG("Current car state (x,y,theta(degree),v(m/s)) : [%f,%f,%f,%f]", curState.x, curState.y,
                   curState.theta * 180 / M_PI, curState.v);
 
         /**
@@ -701,7 +701,7 @@ void Wrapper::processLane(double tTrigger) {
 
         Vector3d windowOrigSNU = p_base_shared -> Tso * Vector3d(windowOrig(0),windowOrig(1),0);
 
-
+        ROS_INFO("orig window = [%f,%f]",windowOrigSNU(0),windowOrigSNU(1));
         CarState curCarState = p_base_shared->getCarState(); // SNU frame
         vector<Vector2d> pathSliced = p_base_shared->laneOrig.slicing(curCarState, Vector2d(windowOrigSNU(0),windowOrigSNU(1)), windowWidth,
                                                                       windowHeight);
