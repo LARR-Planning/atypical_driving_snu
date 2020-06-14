@@ -91,6 +91,7 @@ namespace Planner{
         ros::Publisher pubCurPose;
         ros::Publisher pubSlicedLane;
         ros::Publisher pubOrigLane;
+        ros::Publisher pubSmoothLane;
 
         /**
          * Subscriber

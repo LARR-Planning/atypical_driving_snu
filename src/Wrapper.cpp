@@ -72,12 +72,14 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
 
     pubCurGoal = nh.advertise<geometry_msgs::PointStamped>("global_goal",1);
 
+    pubSmoothLane = nh.advertise<visualization_msgs::MarkerArray>("/smooth_lane",1);
+
     // Subscriber
     subCarPoseCov = nh.subscribe("/current_pose",1,&RosWrapper::cbCarPoseCov,this);
     subCarSpeed = nh.subscribe("/current_speed",1,&RosWrapper::cbCarSpeed,this);
     //subExampleObstaclePose = nh.subscribe("obstacle_pose",1,&RosWrapper::cbObstacles,this);
     subDetectedObjects= nh.subscribe("/detected_objects",1,&RosWrapper::cbDetectedObjects,this);
-    subOccuMap = nh.subscribe("/occupancy_grid",1,&RosWrapper::cbOccuMap,this);
+    subOccuMap = nh.subscribe("/costmap_node/costmap/costmap",1,&RosWrapper::cbOccuMap,this); //TODO: fix /costmap_node/costmap/costmap to /occupancy_grid
 }
 /**
  * @brief update the fitting model only. It does not directly update the obstaclePath in p_base
@@ -142,6 +144,9 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<double>("global_planner/box_resolution",param_.g_param.box_resolution,0.3);
     nh.param<double>("global_planner/box_max_size",param_.g_param.box_max_size,10);
     nh.param<bool>("global_planner/is_world_snu_frame",param_.g_param.is_world_box_snu_frame,false);
+    nh.param<int>("global_planner/max_smoothing_iteration", param_.g_param.max_smoothing_iteration,5);
+    nh.param<double>("global_planner/smoothing_margin", param_.g_param.smoothing_margin,0.5);
+    nh.param<double>("global_planner/max_steering_angle", param_.g_param.max_steering_angle, M_PI/6);
 
     // local planner
     nh.param<double>("local_planner/horizon",param_.l_param.horizon,5);
@@ -325,6 +330,7 @@ void RosWrapper::publish() {
     if(isLaneSliceLoaded){
         pubSlicedLane.publish(p_base->laneSliced.getPath(SNUFrameId));
     }
+    pubSmoothLane.publish(p_base->laneSmooth.getPoints(SNUFrameId));
     p_base->mSet[1].unlock();
 
 }

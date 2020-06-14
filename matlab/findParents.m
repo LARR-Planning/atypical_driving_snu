@@ -3,10 +3,6 @@ function parents = findParents(map, laneTree, id, midPoint)
         parents = 0;
         return;
     end
-
-    if midPoint == [11.25 1]
-        debug = 1;
-    end
     
     parents = [];
     i_tree = size(laneTree, 1);
