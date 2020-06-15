@@ -67,25 +67,23 @@ bool GlobalPlanner::plan(double t) {
                     }
                     if(k_side == laneGridPoints.size()-1){
                         mid_point = (laneGridPoints[k_side] + laneGridPoints[start_idx])/2;
-                        std::vector<int> parents = findParents(i_grid, mid_point);
                         LaneTreeElement laneTreeElement;
                         laneTreeElement.id = i_grid;
                         laneTreeElement.leftPoint = laneGridPoints[k_side];
                         laneTreeElement.midPoint = mid_point;
                         laneTreeElement.rightPoint = laneGridPoints[start_idx];
-                        laneTreeElement.parents = parents;
+                        laneTreeElement.width = (laneGridPoints[k_side] - laneGridPoints[start_idx]).norm();
                         laneTree.emplace_back(laneTreeElement);
                     }
                 }
                 else if(start_idx > -1){
                     mid_point = (laneGridPoints[k_side-1] + laneGridPoints[start_idx])/2;
-                    std::vector<int> parents = findParents(i_grid, mid_point);
                     LaneTreeElement laneTreeElement;
                     laneTreeElement.id = i_grid;
                     laneTreeElement.leftPoint = laneGridPoints[k_side-1];
                     laneTreeElement.midPoint = mid_point;
                     laneTreeElement.rightPoint = laneGridPoints[start_idx];
-                    laneTreeElement.parents = parents;
+                    laneTreeElement.width = (laneGridPoints[k_side-1] - laneGridPoints[start_idx]).norm();
                     laneTree.emplace_back(laneTreeElement);
                     start_idx = -1;
                 }
@@ -99,7 +97,13 @@ bool GlobalPlanner::plan(double t) {
         }
     }
 
-    // Find initial laneTree
+    // Allocate children of each node in laneTree
+    for(int i_tree = 0; i_tree < laneTree.size(); i_tree++){
+        laneTree[i_tree].children = findChildren(i_tree);
+    }
+
+
+    // Find start node of laneTree
     int i_tree_start = -1;
     double dist, dist_start = SP_INFINITY;
     for(int i_tree = 0; i_tree < laneTree.size(); i_tree++) {
@@ -129,13 +133,9 @@ bool GlobalPlanner::plan(double t) {
         i_tree_start = i_shortest;
     }
 
-    // DFS to find midPoints
-    int i_tree = laneTree.size() - 1;
-    std::vector<int> tail = laneTreeDFS(i_tree, i_tree_start);
-
-    if(tail[0] == -1){
-        return false; //TODO: failsafe
-    }
+    // Update laneTree to find midPoints
+    laneTreeSearch(i_tree_start);
+    std::vector<int> tail = getMidPointsFromLaneTree(i_tree_start);
 
 //    std::vector<Vector2d> midPoints, leftPoints, rightPoints;
 //    midPoints.resize(tail.size()+1);
@@ -148,7 +148,7 @@ bool GlobalPlanner::plan(double t) {
 //        rightPoints[i_tail+1] = laneTree[tail[i_tail]].rightPoint;
 //    }
 
-    std::vector<Vector2d> midPoints, leftPoints, rightPoints;
+    std::vector<Vector2d, aligned_allocator<Vector2d>> midPoints, leftPoints, rightPoints;
     midPoints.resize(tail.size());
     leftPoints.resize(tail.size());
     rightPoints.resize(tail.size());
@@ -206,7 +206,7 @@ bool GlobalPlanner::plan(double t) {
 
     int idx_start, idx_end, idx_delta, i_angle = 0;
     Vector2d smoothingPoint;
-    while(i_angle < midAngles.size()-1) {
+    while(i_angle < midAngles.size()-2) {
         double diff = abs(midAngles[i_angle+1] - midAngles[i_angle]);
         if(diff > M_PI) {
             diff = 2 * M_PI - diff;
@@ -214,8 +214,9 @@ bool GlobalPlanner::plan(double t) {
 
         if(diff > param.max_steering_angle) {
             idx_start = i_angle;
-            idx_end = min(i_angle+3, (int)midPoints.size());
+            idx_end = min(i_angle+2, (int)midPoints.size());
             idx_delta = idx_end - idx_start;
+
             for(int j_smooth = 1; j_smooth < idx_delta; j_smooth++) {
                 alpha = static_cast<double>(j_smooth)/static_cast<double>(idx_delta);
                 smoothingPoint = (1-alpha) * midPoints[idx_start] + alpha * midPoints[idx_end];
@@ -236,21 +237,21 @@ bool GlobalPlanner::plan(double t) {
         }
     }
 
-    // Time allocation
-    // TODO speed assignment?
-    double nominal_speed = p_base->laneSpeed;
-    std::vector<double> ts;
-    ts.resize(midPoints.size());
-    ts[0] = (midPoints[0] - currentPoint).norm() / nominal_speed;
-    for(int i_mid = 1; i_mid < midPoints.size(); i_mid++){
-        ts[i_mid] = ts[i_mid-1] + (midPoints[i_mid] - midPoints[i_mid-1]).norm() / nominal_speed; //TODO: nominal speed allocation
-//        ts[i_mid] = ts[i_mid-1] + (midPoints[i_mid] - midPoints[i_mid-1]).norm() / p_base->nominal_speed; //TODO: fix to this!
-    }
+//    // Time allocation
+//    // TODO speed assignment?
+//    double nominal_speed = p_base->laneSpeed;
+//    std::vector<double> ts;
+//    ts.resize(midPoints.size());
+//    ts[0] = (midPoints[0] - currentPoint).norm() / nominal_speed;
+//    for(int i_mid = 1; i_mid < midPoints.size(); i_mid++){
+//        ts[i_mid] = ts[i_mid-1] + (midPoints[i_mid] - midPoints[i_mid-1]).norm() / nominal_speed; //TODO: nominal speed allocation
+////        ts[i_mid] = ts[i_mid-1] + (midPoints[i_mid] - midPoints[i_mid-1]).norm() / p_base->nominal_speed; //TODO: fix to this!
+//    }
 
 
     SmoothLane smoothLane;
     smoothLane.points = midPoints;
-    smoothLane.ts = ts;
+//    smoothLane.ts = ts;
 
     p_base->mSet[1].lock();
     smoothLane.n_total_markers = p_base->laneSmooth.n_total_markers;
@@ -303,63 +304,79 @@ std::array<double, 4> GlobalPlanner::boxTransform(const SE3& Tab, const std::arr
     return box_transformed;
 }
 
-std::vector<int> GlobalPlanner::findParents(int id, Vector2d mid_point){
-    std::vector<int> parents;
-    if(id == 0){
-        return parents;
+std::vector<int> GlobalPlanner::findChildren(int idx){
+    std::vector<int> children;
+    if(laneTree[idx].id == laneTree.back().id){
+        return children;
     }
 
     double shortestDist = SP_INFINITY;
-    int i_tree = laneTree.size()-1;
-    while(i_tree >= 0 && laneTree[i_tree].id >= id-1){
-        if(laneTree[i_tree].id == id){
-            i_tree--;
+    for(int i_tree = idx + 1; i_tree < laneTree.size(); i_tree++){
+        if(laneTree[i_tree].id == laneTree[idx].id){
             continue;
         }
-        Vector2d parent_point = laneTree[i_tree].midPoint;
-        if(!p_base->isOccupied(parent_point, mid_point)){
-            double dist = (parent_point-mid_point).norm();
-            if(parents.empty()){
-                parents.emplace_back(i_tree);
+        if(laneTree[i_tree].id != laneTree[idx].id + 1){
+            break;
+        }
+
+        Vector2d child_point = laneTree[i_tree].midPoint;
+        Vector2d current_point = laneTree[idx].midPoint;
+        if(!p_base->isOccupied(child_point, current_point)){
+            double dist = (child_point - current_point).norm();
+            if(children.empty()){
+                children.emplace_back(i_tree);
                 shortestDist = dist;
             }
             else if(dist < shortestDist){
-                parents.insert(parents.begin(), i_tree);
+                children.insert(children.begin(), i_tree);
                 shortestDist = dist;
             }
             else{
-                parents.emplace_back(i_tree);
+                children.emplace_back(i_tree);
             }
         }
-        i_tree--;
     }
-    return parents;
+    return children;
 }
 
-std::vector<int> GlobalPlanner::laneTreeDFS(int i_tree, int i_start){
+void GlobalPlanner::laneTreeSearch(int i_tree){
+    // terminal condition
+    if(laneTree[i_tree].children.empty()){
+        laneTree[i_tree].total_width = laneTree[i_tree].width;
+        laneTree[i_tree].visited = true;
+        laneTree[i_tree].next = -1; // end of the node
+        return;
+    }
+
+    // update all children
+    for(int i_child = 0; i_child < laneTree[i_tree].children.size(); i_child++){
+        if(!laneTree[i_tree].visited) {
+            laneTreeSearch(laneTree[i_tree].children[i_child]);
+        }
+    }
+
+    // find longest path
+    for(int i_child = 0; i_child < laneTree[i_tree].children.size(); i_child++){
+        int i_tree_child = laneTree[i_tree].children[i_child];
+        if(laneTree[i_tree].distance < laneTree[i_tree_child].distance + 1
+            || (laneTree[i_tree].distance == laneTree[i_tree_child].distance + 1
+                && laneTree[i_tree].total_width > laneTree[i_tree_child].total_width + laneTree[i_tree].width)){
+            laneTree[i_tree].distance = laneTree[i_tree_child].distance + 1;
+            laneTree[i_tree].total_width = laneTree[i_tree_child].total_width + laneTree[i_tree].width;
+            laneTree[i_tree].next = i_tree_child;
+        }
+    }
+
+    laneTree[i_tree].visited = true;
+}
+
+std::vector<int> GlobalPlanner::getMidPointsFromLaneTree(int i_tree_start){
     std::vector<int> tail;
-    if(i_tree == i_start){
-        tail.emplace_back(i_start);
-        return tail;
+    int i_tree = i_tree_start;
+    while(laneTree[i_tree].next != -1){
+        tail.emplace_back(i_tree);
+        i_tree = laneTree[i_tree].next;
     }
-    else if(laneTree[i_tree].id == 0 || laneTree[i_tree].parents.empty()){
-        tail.emplace_back(-1);
-        return tail;
-    }
-
-    for(int i_parents = 0; i_parents < laneTree[i_tree].parents.size(); i_parents++){
-        std::vector<int> tail_prev = laneTreeDFS(laneTree[i_tree].parents[i_parents], i_start);
-        if(tail_prev[0] == -1){
-            continue;
-        }
-        else{
-            tail = tail_prev;
-            tail.emplace_back(i_tree);
-            return tail;
-        }
-    }
-
-    tail.clear();
-    tail.emplace_back(-1);
+    tail.emplace_back(i_tree);
     return tail;
 }

@@ -16,6 +16,7 @@
 #include <list>
 #include <tuple>
 #include <Eigen/Core>
+#include <Eigen/StdVector>
 #include <fstream>
 
 #include <third_party/Vectormap.h>
@@ -175,11 +176,11 @@ namespace Planner {
      * @brief Initial lane
      */
     struct Lane{
-        vector<Vector2d> points;
+        vector<Vector2d, aligned_allocator<Vector2d>> points;
         vector<double> widths;
         Lane(){};
         Lane(const LanePath& lanePath);
-        vector<Vector2d> slicing(const CarState& curCarState,Vector2d windowOrig,double w, double h , int & startIdx , int & endIdx );
+        vector<Vector2d, aligned_allocator<Vector2d>> slicing(const CarState& curCarState,Vector2d windowOrig,double w, double h , int & startIdx , int & endIdx );
         nav_msgs::Path getPath(string frame_id);
         visualization_msgs::MarkerArray getSidePath(string frame_id);
     };
@@ -194,12 +195,28 @@ namespace Planner {
     /**
      * @brief Modified lane by global planner
      */
-    struct LaneTreeElement{
+    class LaneTreeElement{
+    public:
+        LaneTreeElement(){
+            id = -1;
+            distance = 0;
+            total_width = 0;
+            visited = false;
+            next = -1;
+        }
         int id;
         Vector2d leftPoint;
         Vector2d midPoint;
         Vector2d rightPoint;
-        vector<int> parents;
+        vector<int> children;
+
+        int distance;
+        double total_width;
+        double width;
+
+        bool visited;
+        int next;
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     };
 
     /**

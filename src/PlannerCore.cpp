@@ -109,7 +109,7 @@ Lane::Lane(const LanePath& lanePath){
  * @param h height
  * @return
  */
-vector<Vector2d> Lane::slicing(const CarState &curCarState, Vector2d windowOrig, double w, double h, int& startIdx,int& endIdx) {
+vector<Vector2d, aligned_allocator<Vector2d>> Lane::slicing(const CarState &curCarState, Vector2d windowOrig, double w, double h, int& startIdx,int& endIdx) {
 
 
 
@@ -171,7 +171,7 @@ vector<Vector2d> Lane::slicing(const CarState &curCarState, Vector2d windowOrig,
 //    ret.insert(ret.begin(), pi_min);
 //    return ret;
 
-    return vector<Vector2d>(points.begin()+StartPointIdx,points.begin()+EndPointIdx);
+    return vector<Vector2d, aligned_allocator<Vector2d>>(points.begin()+StartPointIdx,points.begin()+EndPointIdx);
 }
 
 /**

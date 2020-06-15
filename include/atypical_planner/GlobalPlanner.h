@@ -33,8 +33,9 @@ namespace Planner{
         bool intersect(Point i0, Point i1, Point j0, Point j1);
         int ccw(Point a, Point b, Point c);
         static std::array<double, 4> boxTransform(const SE3& Tab, const std::array<double, 4>& box);
-        std::vector<int> findParents(int id, Vector2d mid_point);
-        std::vector<int> laneTreeDFS(int i, int i_start);
+        std::vector<int> findChildren(int idx);
+        void laneTreeSearch(int idx);
+        std::vector<int> getMidPointsFromLaneTree(int i_tree_start);
     };
 
 }

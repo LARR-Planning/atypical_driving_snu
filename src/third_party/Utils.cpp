@@ -56,7 +56,7 @@ int ccw(Point a, Point b, Point c) {
     else return -1;
 }
 
-nav_msgs::Path getPath(const vector<Vector2d>& point2dSeq, string frame_id ){
+nav_msgs::Path getPath(const vector<Vector2d, aligned_allocator<Vector2d>>& point2dSeq, string frame_id ){
 
 
     nav_msgs::Path nodeNavPath;
@@ -71,7 +71,7 @@ nav_msgs::Path getPath(const vector<Vector2d>& point2dSeq, string frame_id ){
 
 }
 
-double meanCurvature(const vector<Vector2d> & point2dSeq){
+double meanCurvature(const vector<Vector2d, aligned_allocator<Vector2d>> & point2dSeq){
 
     double curvatureSum = 0;
     if (point2dSeq.size() <= 2){

@@ -732,7 +732,7 @@ void Wrapper::processLane(double tTrigger) {
         ROS_INFO("orig window = [%f,%f]",windowOrigSNU(0),windowOrigSNU(1));
         CarState curCarState = p_base_shared->getCarState(); // SNU frame
         int idxSliceStart,idxSliceEnd;
-        vector<Vector2d> pathSliced = p_base_shared->laneOrig.slicing(curCarState, Vector2d(windowOrigSNU(0),windowOrigSNU(1)), windowWidth,
+        vector<Vector2d, aligned_allocator<Vector2d>> pathSliced = p_base_shared->laneOrig.slicing(curCarState, Vector2d(windowOrigSNU(0),windowOrigSNU(1)), windowWidth,
                                                                       windowHeight,idxSliceStart,idxSliceEnd);
         double meanCurv = meanCurvature(pathSliced);
         double vLaneRef; // referance velocity for the current lane
