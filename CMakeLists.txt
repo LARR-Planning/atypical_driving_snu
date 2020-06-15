@@ -43,8 +43,8 @@ target_link_libraries(atypical_driving_test ${catkin_LIBRARIES} -lstdc++fs )
 add_executable(virtual_environment_generator test/virtual_environment_generator.cpp ${SNU_PLANNER_SRC})
 target_link_libraries(virtual_environment_generator ${catkin_LIBRARIES} -lstdc++fs)
 
-add_executable(lane_tester test/LaneTest/main.cpp ${SNU_PLANNER_SRC})
-target_link_libraries(lane_tester ${catkin_LIBRARIES} -lstdc++fs)
+#add_executable(lane_tester test/LaneTest/main.cpp ${SNU_PLANNER_SRC})
+#target_link_libraries(lane_tester ${catkin_LIBRARIES} -lstdc++fs)
 
 add_executable(integration_server test/IntegrationTest/server_main.cpp ${SNU_PLANNER_SRC})
 target_link_libraries(integration_server ${catkin_LIBRARIES} -lstdc++fs)

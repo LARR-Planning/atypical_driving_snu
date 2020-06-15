@@ -371,12 +371,9 @@ for i_ts = 2:size(ts, 1)
 end
 
 %% Generate Corridor
-epsilon = 0.0001;
 corridorPoints = [];
 corridors = [];
-count = 0;
 for t_corr = current_time : corridor_dt : current_time + corridor_horizon
-    count = count + 1;
     corridorPoint = findMidPoint(midPoints, ts, t_corr);
     width = findLaneWidth(laneGridWidth, ts, t_corr) / 2;
     
@@ -389,27 +386,23 @@ for t_corr = current_time : corridor_dt : current_time + corridor_horizon
     ld = corridorPoint + [-width, -width];
     ru = corridorPoint + [width, width];
 
-    if i_msg == 3 && count == 11
-        breakpoint = 1;
-    end
-    
     for x_corr = corridorPoint(1) - width : map_resolution : corridorPoint(1) + width
         for y_corr = corridorPoint(2) - width : map_resolution : corridorPoint(2) + width
             checkPoint = [x_corr, y_corr];
-            if checkPoint(1) > ld(1) - epsilon && checkPoint(1) < ru(1) + epsilon && checkPoint(2) > ld(2) - epsilon && checkPoint(2) < ru(2) + epsilon
+            if checkPoint(1) >= ld(1) && checkPoint(1) <= ru(1) && checkPoint(2) >= ld(2) && checkPoint(2) <= ru(2)
                 if checkOccupancy(map, checkPoint) > threshold
                     delta = checkPoint - corridorPoint;
                     angle = atan2(delta(2), delta(1));
-                    if angle > -pi/4-epsilon && angle < pi/4+epsilon
-                        ru(1) = checkPoint(1) - map_resolution;
-                    elseif angle > 3*pi/4-epsilon || angle < -3*pi/4+epsilon
-                        ld(1) = checkPoint(1) + map_resolution; 
+                    if angle >= -pi/4 && angle <= pi/4
+                        ru(1) = ru(1) - map_resolution;
+                    elseif angle >= 3*pi/4 || angle <= -3*pi/4
+                        ld(1) = ld(1) + map_resolution; 
                     end
                     
-                    if angle > pi/4-epsilon && angle < 3*pi/4+epsilon
-                        ru(2) = checkPoint(2) - map_resolution;
-                    elseif angle > -3*pi/4-epsilon && angle < -pi/4+epsilon
-                        ld(2) = checkPoint(2) + map_resolution; 
+                    if angle >= pi/4 && angle <= 3*pi/4
+                        ru(2) = ru(2) - map_resolution;
+                    elseif angle >= -3*pi/4 || angle <= -pi/4
+                        ld(2) = ld(2) + map_resolution; 
                     end
                 end
             end
@@ -420,16 +413,8 @@ for t_corr = current_time : corridor_dt : current_time + corridor_horizon
     
     delta = ru-ld;
     if delta(1) < 0 || delta(2) < 0
-        disp("invalid square")
+        error("invalid square")
     end
-    if checkOccupancy(map, ld) > threshold
-        disp("invalid square")
-    end
-    if checkOccupancy(map, ru) > threshold
-        disp("invalid square")
-    end
-    
-    
 end
 
 
@@ -440,13 +425,17 @@ scatter(midPoints(:,1), midPoints(:,2), '.', 'b')
 scatter(leftPoints(:,1), leftPoints(:,2), '.', 'r')
 scatter(rightPoints(:,1), rightPoints(:,2), '.', 'g')
 scatter(corridorPoints(:,1), corridorPoints(:,2),  'filled');
-for i_corr = 1:size(corridors,1)
-    rectangle('Position',corridors(i_corr,:));
-end
+rectangle('Position',corridors(1,:));
 hold off
 
 % figure
 % plot(midGridAngle)
+
+
+
+
+
+
 
 pause(0.01)
 end
