@@ -35,6 +35,26 @@ nav_msgs::Path DAP::TXYZQuat_to_nav_msgs(const TXYZQuatTraj & traj,string frame_
     return path;
 };
 
+vector<geometry_msgs::Pose> DAP::TXYZQuat_to_pose_vector(const TXYZQuatTraj &traj) {
+    vector<geometry_msgs::Pose> pose_vector;
+
+    geometry_msgs::PoseStamped pose_stamped;
+
+    for(int i = 0 ; i < traj.cols() ; i++){
+        VectorXf result = traj.block(0,i,8,1);
+        pose_stamped.pose.position.x = result(1);
+        pose_stamped.pose.position.y = result(2);
+        pose_stamped.pose.position.z = result(3);
+        float quat_norm = result.segment(4,4).norm();
+        pose_stamped.pose.orientation.w = result(4)/quat_norm;
+        pose_stamped.pose.orientation.x = result(5)/quat_norm;
+        pose_stamped.pose.orientation.y = result(6)/quat_norm;
+        pose_stamped.pose.orientation.z = result(7)/quat_norm;
+        pose_vector.push_back(pose_stamped.pose);
+    }
+    return pose_vector;
+
+}
 
 vector<TransformMatrix> DAP::pose_vector_to_transform_matrix_vec(const vector<geometry_msgs::Pose> & pose_vec){
     vector<TransformMatrix> transform_vec(pose_vec.size());

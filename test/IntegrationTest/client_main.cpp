@@ -22,7 +22,8 @@ static geometry_msgs::PoseWithCovariance curState;
 static geometry_msgs::PoseStamped curPose;
 static float speed;
 static float steering_angle = 0; // at the initial, it is zero
-static double obst_rad;
+static double obst_rad_x;
+static double obst_rad_y;
 static driving_msgs::DetectedObjectArray objectsArray; // object should be emitted based on object_pose
 static driving_msgs::DetectedObject object;
 
@@ -112,10 +113,11 @@ void cbObject(const geometry_msgs::PoseStamped& object_pose){
 int main(int argc,char** argv) {
     ros::init(argc,argv,"virtual_environment_generator");
     ros::NodeHandle nh("~");
-    nh.param<double>("obstacle_radius",obst_rad,0.8);
+    nh.param<double>("obstacle_radius_x",obst_rad_x,0.8);
+    nh.param<double>("obstacle_radius_y",obst_rad_y,0.8);
 
-    object.dimensions.x = 2*obst_rad;
-    object.dimensions.y = 2*obst_rad;
+    object.dimensions.x = 2*obst_rad_x;
+    object.dimensions.y = 2*obst_rad_y; // play with this! JBS
     // z value will not be used
     objectsArray.objects.push_back(object);
 
