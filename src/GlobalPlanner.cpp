@@ -28,9 +28,6 @@ bool GlobalPlanner::isCurTrajFeasible() {
  * @return true if success
  */
 bool GlobalPlanner::plan(double t) {
-
-    //
-
     // Generate LaneTree
     laneTree.clear();
     Vector2d currentPoint(p_base->cur_state.x, p_base->cur_state.y);
@@ -237,26 +234,41 @@ bool GlobalPlanner::plan(double t) {
         }
     }
 
-//    // Time allocation
-//    // TODO speed assignment?
-//    double nominal_speed = p_base->laneSpeed;
-//    std::vector<double> ts;
-//    ts.resize(midPoints.size());
-//    ts[0] = (midPoints[0] - currentPoint).norm() / nominal_speed;
-//    for(int i_mid = 1; i_mid < midPoints.size(); i_mid++){
-//        ts[i_mid] = ts[i_mid-1] + (midPoints[i_mid] - midPoints[i_mid-1]).norm() / nominal_speed; //TODO: nominal speed allocation
-////        ts[i_mid] = ts[i_mid-1] + (midPoints[i_mid] - midPoints[i_mid-1]).norm() / p_base->nominal_speed; //TODO: fix to this!
-//    }
+    //TODO: debug purpose code, delete after debugging
+    for(int i_mid = 0; i_mid < midPoints.size(); i_mid++) {
+        if (p_base->isOccupied(midPoints[i_mid])) {
+            ROS_ERROR("[GlobalPlaneer] midPoint error, midPoint is occluded by obstacles");
+            throw -1;
+        }
+    }
+
+    // Time allocation
+    double nominal_speed = p_base->laneSpeed;
+    std::vector<double> ts;
+    ts.resize(midPoints.size());
+    ts[0] = t + (midPoints[0] - currentPoint).norm() / nominal_speed;
+    for(int i_mid = 1; i_mid < midPoints.size(); i_mid++){
+        ts[i_mid] = ts[i_mid-1] + (midPoints[i_mid] - midPoints[i_mid-1]).norm() / nominal_speed;
+    }
+
 
 
     SmoothLane smoothLane;
     smoothLane.points = midPoints;
-//    smoothLane.ts = ts;
+    smoothLane.ts = ts;
 
     p_base->mSet[1].lock();
     smoothLane.n_total_markers = p_base->laneSmooth.n_total_markers;
     p_base->laneSmooth = smoothLane;
     p_base->mSet[1].unlock();
+
+    {
+        //TODO: test corridors for debugging delete this after debugging - jungwon
+        curCorridorSeq = p_base->expandCorridors(ts, 6, 0.5);
+        p_base->mSet[1].lock();
+        p_base->corridor_seq = curCorridorSeq;
+        p_base->mSet[1].unlock();
+    }
 
     return true; // change this line properly
 }

@@ -238,7 +238,7 @@ visualization_msgs::MarkerArray Lane::getSidePath(string frame_id) {
 
 
 /**
- * @brief get visualization_msgs of points
+ * @brief get visualization_msgs of smooth lane points (midPoints)
  * @param frame_id
  * @return
  */
@@ -274,6 +274,91 @@ visualization_msgs::MarkerArray SmoothLane::getPoints(const string& frame_id) {
         n_total_markers = i_marker;
     }
     return markers;
+}
+
+/**
+ * @brief get interpolated smooth lane point when time is t
+ * @param t
+ * @return Vector2d
+ */
+Vector2d SmoothLane::evalX(double t){
+    int i = 0;
+    while(ts[i] < t && i < ts.size()){
+        i++;
+    }
+
+    if(i == 0){
+        return points[0];
+    }
+    else if(i == ts.size()){
+        return points[ts.size()-1];
+    }
+    else{
+        double alpha = (t - ts[i-1]) / (ts[i] - ts[i-1]);
+        return alpha * points[i] + (1 - alpha) * points[i-1];
+    }
+}
+
+/**
+ * @brief expand corridor from given point
+ * @param point, max_box_size
+ * @return Corridor
+ */
+Corridor PlannerBase::expandCorridor(Vector2d point, double max_box_size, double map_resolution){
+    Corridor corridor;
+    corridor.xl = point.x() - max_box_size/2;
+    corridor.yl = point.y() - max_box_size/2;
+    corridor.xu = point.x() + max_box_size/2;
+    corridor.yu = point.y() + max_box_size/2;
+
+    if(isOccupied(point)){
+        ROS_ERROR("[PlannerBase] expandCorridor error, point is occluded by obstacles");
+        throw -1;
+    }
+
+    double epsilon = 0.00001;
+    for(double x = point.x() - max_box_size/2; x < point.x() + max_box_size/2 + epsilon; x += map_resolution){
+        for(double y = point.y() - max_box_size/2; y < point.y() + max_box_size/2 + epsilon; y += map_resolution){
+            Vector2d check_point(x, y);
+            if(check_point.x() > corridor.xl - epsilon && check_point.x() < corridor.xu + epsilon
+               && check_point.y() > corridor.yl - epsilon && check_point.y() < corridor.yu + epsilon
+               && isOccupied(check_point))
+            {
+                float angle = atan2(check_point.y() - point.y(), check_point.x() - point.x());
+                if(angle > - M_PI/4 - epsilon && angle < M_PI/4 + epsilon){
+                    corridor.xu = check_point.x() - map_resolution;
+                }
+                else if(angle > 3*M_PI/4 - epsilon || angle < -3*M_PI/4 + epsilon){
+                    corridor.xl = check_point.x() + map_resolution;
+                }
+
+                if(angle > M_PI/4 - epsilon && angle < 3*M_PI/4 + epsilon){
+                    corridor.yu = check_point.y() - map_resolution;
+                }
+                else if(angle > -3*M_PI/4 - epsilon && angle < - M_PI/4 + epsilon){
+                    corridor.yl = check_point.y() + map_resolution;
+                }
+            }
+        }
+    }
+
+    return corridor;
+}
+
+/**
+ * @brief given ts, construct corridors
+ * @param ts, max_box_size, map_resolution
+ * @return std::vector<Corridor>
+ */
+std::vector<Corridor> PlannerBase::expandCorridors(std::vector<double> ts, double max_box_size, double map_resolution){
+    std::vector<Corridor> corridors;
+    corridors.resize(ts.size());
+    for(int i = 0; i < ts.size(); i++){
+        Vector2d corridor_point = laneSmooth.evalX(ts[i]);
+        Corridor corridor = expandCorridor(corridor_point, max_box_size, map_resolution);
+        corridors.emplace_back(corridor);
+    }
+    return corridors;
 }
 
 vector<Corridor> PlannerBase::getCorridorSeq(double t0, double tf) {

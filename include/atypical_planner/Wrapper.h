@@ -65,6 +65,7 @@ namespace Planner{
 
         int max_marker_id; //count current published markers
         double speed; // current speed of car
+        int count_corridors; //count current pulibhsed corridor markers;
 
         /**
          * Topic to be published

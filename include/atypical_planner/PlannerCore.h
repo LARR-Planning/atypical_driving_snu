@@ -226,7 +226,7 @@ namespace Planner {
         vector<double> ts;
         int n_total_markers = 0;
 
-        // Vector3d evalX(double t); TODO
+        Vector2d evalX(double t);
         visualization_msgs::MarkerArray getPoints(const string& frame_id);
     };
 
@@ -276,6 +276,11 @@ namespace Planner {
 
         bool isOccupied(Vector2d queryPoint); // query point frame = SNU
         bool isOccupied(Vector2d queryPoint1, Vector2d queryPoint2); // rayIntersection query point frame = SNU
+
+        // Corridor generation
+        Corridor expandCorridor(Vector2d point, double max_box_size, double map_resolution);
+        std::vector<Corridor> expandCorridors(std::vector<double> ts, double max_box_size, double map_resolution);
+        visualization_msgs::MarkerArray getTestCorridors(std::string frame_id); //TODO: debug purpose, delete this after debugging - jungwon
 
         // prediction module
         vector<Predictor::TargetManager> predictorSet; // TODO erase after indexed predictor
@@ -327,10 +332,6 @@ namespace Planner {
 
     };
 
-
-
-
-
     /**
      * @brief Abstract class. The shared attributes to be inherited to the derived classes
      */
@@ -344,7 +345,6 @@ namespace Planner {
         AbstractPlanner(shared_ptr<PlannerBase> p_base_):p_base(p_base_) {};
         virtual bool plan(double t ) = 0;
         virtual bool isCurTrajFeasible() = 0;
-
     };
 
 }

@@ -59,6 +59,7 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
 
     // Initiate ros communication (caution: parameters are parsed in udpateParam)
     max_marker_id = 0;
+    count_corridors = 0;
 
     // Publisher
     pubPath = nh.advertise<nav_msgs::Path>("planning_path",1);
@@ -324,6 +325,38 @@ void RosWrapper::prepareROSmsgs() {
         }
         nsId++;
     }
+
+    {
+        corridorSeq.markers.clear();
+        for(int i = 0; i < p_base->corridor_seq.size(); i++){
+            visualization_msgs::Marker marker;
+            marker.header.frame_id = SNUFrameId;
+            marker.id = i;
+            marker.type = visualization_msgs::Marker::CUBE;
+            marker.action = visualization_msgs::Marker::ADD;
+            marker.pose.position.x = (p_base->corridor_seq[i].xl + p_base->corridor_seq[i].xu)/2;
+            marker.pose.position.y = (p_base->corridor_seq[i].yl + p_base->corridor_seq[i].yu)/2;
+            marker.pose.position.z = 0;
+            marker.scale.x = p_base->corridor_seq[i].xu - p_base->corridor_seq[i].xl;
+            marker.scale.y = p_base->corridor_seq[i].yu - p_base->corridor_seq[i].yl;
+            marker.scale.z = 0.1;
+            marker.color.a = 0.1;
+            marker.color.r = 0;
+            marker.color.g = 1;
+            marker.color.b = 0;
+            corridorSeq.markers.emplace_back(marker);
+        }
+        for(int i = p_base->corridor_seq.size(); i < count_corridors; i++){
+            visualization_msgs::Marker marker;
+            marker.id = i;
+            marker.action = visualization_msgs::Marker::DELETE;
+            corridorSeq.markers.emplace_back(marker);
+        }
+        if(p_base->corridor_seq.size() > count_corridors){
+            count_corridors = p_base->corridor_seq.size();
+        }
+    }
+
     pubPredictionArray.publish(obstaclePrediction); // <- why this is in here? It should go to publish() (jungwon)
 }
 
@@ -340,7 +373,7 @@ void RosWrapper::publish() {
         cmd.steer_angle_cmd *= (180.0/3.14); // cmd output deg
         pubCurCmd.publish(cmd);
         pubMPCTraj.publish(MPCTraj);
-        p_base->log_state_input(curTime());;
+        p_base->log_state_input(curTime());
     }
     pubPath.publish(planningPath);
     pubCorridorSeq.publish(corridorSeq);
@@ -355,7 +388,6 @@ void RosWrapper::publish() {
     }
     pubSmoothLane.publish(p_base->laneSmooth.getPoints(SNUFrameId));
     p_base->mSet[1].unlock();
-
 }
 
 /**
@@ -774,10 +806,11 @@ bool Wrapper::planGlobal(double tTrigger){
     if (not p_base_shared->isGPsolved)
         p_base_shared->isGPsolved = gpPassed;
 
-    // let's log
-    if (gpPassed) {
-        updateCorrToBase();
-    }
+    // let's log //TODO: Now, we don't need to log corridor in global planner step
+//    if (gpPassed) {
+//        updateCorrToBase();
+//    }
+
 //    p_base_shared->log_corridor(tTrigger);
 
     return gpPassed;

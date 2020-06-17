@@ -50,7 +50,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: PointCloud2
+    SyncSource: ""
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -81,7 +81,7 @@ Visualization Manager:
       Marker Topic: /atypical_planning_test/corridor_seq
       Name: MarkerArray
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -154,7 +154,7 @@ Visualization Manager:
       Marker Topic: /atypical_planning_test/prediction
       Name: MarkerArray
       Namespaces:
-        0: true
+        {}
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -177,23 +177,13 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        LidarSensor1:
-          Value: true
-        PhysXCar:
-          Value: true
-        PhysXCar/odom_local_ned:
-          Value: true
         SNU:
           Value: true
         car_base_link:
           Value: true
         map:
           Value: true
-        world_ent:
-          Value: true
-        world_enu:
-          Value: true
-        world_ned:
+        velodyne:
           Value: true
       Marker Scale: 10
       Name: TF
@@ -204,12 +194,8 @@ Visualization Manager:
         map:
           SNU:
             car_base_link:
-              {}
-          world_ent:
-            PhysXCar:
-              PhysXCar/odom_local_ned:
-                LidarSensor1:
-                  {}
+              velodyne:
+                {}
       Update Interval: 0
       Value: true
     - Class: rviz/MarkerArray
@@ -540,26 +526,21 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Class: rviz/Orbit
-      Distance: 52.733604431152344
+      Angle: 4.619992733001709
+      Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
-      Focal Point:
-        X: 1.4548745155334473
-        Y: 3.2806785106658936
-        Z: 6.479267597198486
-      Focal Shape Fixed Size: false
-      Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.659797191619873
+      Scale: 14.049280166625977
       Target Frame: PhysXCar/odom_local_ned
-      Value: Orbit (rviz)
-      Yaw: 3.1040117740631104
+      Value: TopDownOrtho (rviz)
+      X: 19.201921463012695
+      Y: 8.298785209655762
     Saved: ~
 Window Geometry:
   Displays:

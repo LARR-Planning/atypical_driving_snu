@@ -388,10 +388,6 @@ for t_corr = current_time : corridor_dt : current_time + corridor_horizon
     
     ld = corridorPoint + [-width, -width];
     ru = corridorPoint + [width, width];
-
-    if i_msg == 3 && count == 11
-        breakpoint = 1;
-    end
     
     for x_corr = corridorPoint(1) - width : map_resolution : corridorPoint(1) + width
         for y_corr = corridorPoint(2) - width : map_resolution : corridorPoint(2) + width
