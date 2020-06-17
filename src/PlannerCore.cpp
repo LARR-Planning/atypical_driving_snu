@@ -281,21 +281,44 @@ visualization_msgs::MarkerArray SmoothLane::getPoints(const string& frame_id) {
  * @param t
  * @return Vector2d
  */
-Vector2d SmoothLane::evalX(double t){
+Vector2d SmoothLane::evalX(const std::vector<Vector2d, aligned_allocator<Vector2d>>& points_vector, double t){
     int i = 0;
     while(ts[i] < t && i < ts.size()){
         i++;
     }
 
     if(i == 0){
-        return points[0];
+        return points_vector[0];
     }
     else if(i == ts.size()){
-        return points[ts.size()-1];
+        return points_vector[ts.size()-1];
     }
     else{
         double alpha = (t - ts[i-1]) / (ts[i] - ts[i-1]);
-        return alpha * points[i] + (1 - alpha) * points[i-1];
+        return alpha * points_vector[i] + (1 - alpha) * points[i-1];
+    }
+}
+
+/**
+ * @brief get interpolated smooth lane point when time is t
+ * @param t
+ * @return Vector2d
+ */
+double SmoothLane::evalWidth(double t){
+    int i = 0;
+    while(ts[i] < t && i < ts.size()){
+        i++;
+    }
+
+    if(i == 0){
+        return box_size[0];
+    }
+    else if(i == ts.size()){
+        return box_size[ts.size()-1];
+    }
+    else{
+        double alpha = (t - ts[i-1]) / (ts[i] - ts[i-1]);
+        return alpha * box_size[i] + (1 - alpha) * box_size[i-1];
     }
 }
 
@@ -304,7 +327,7 @@ Vector2d SmoothLane::evalX(double t){
  * @param point, max_box_size
  * @return Corridor
  */
-Corridor PlannerBase::expandCorridor(Vector2d point, double max_box_size, double map_resolution){
+Corridor PlannerBase::expandCorridor(Vector2d point, Vector2d leftBoundaryPoint, Vector2d rightBoundaryPoint, double max_box_size, double map_resolution){
     Corridor corridor;
     corridor.xl = point.x() - max_box_size/2;
     corridor.yl = point.y() - max_box_size/2;
@@ -316,7 +339,7 @@ Corridor PlannerBase::expandCorridor(Vector2d point, double max_box_size, double
         throw -1;
     }
 
-    double epsilon = 0.00001;
+    double epsilon = 0.001;
     for(double x = point.x() - max_box_size/2; x < point.x() + max_box_size/2 + epsilon; x += map_resolution){
         for(double y = point.y() - max_box_size/2; y < point.y() + max_box_size/2 + epsilon; y += map_resolution){
             Vector2d check_point(x, y);
@@ -342,6 +365,46 @@ Corridor PlannerBase::expandCorridor(Vector2d point, double max_box_size, double
         }
     }
 
+    epsilon = 0.001;
+    double angle_margin = M_PI/8;
+    if(leftBoundaryPoint.x() > corridor.xl + epsilon && leftBoundaryPoint.x() < corridor.xu - epsilon
+       && leftBoundaryPoint.y() > corridor.yl + epsilon && leftBoundaryPoint.y() < corridor.yu - epsilon)
+    {
+        float angle = atan2(leftBoundaryPoint.y() - point.y(), leftBoundaryPoint.x() - point.x());
+        if(angle > - M_PI/4 - angle_margin - epsilon && angle < M_PI/4 + angle_margin+ epsilon){
+            corridor.xu = leftBoundaryPoint.x();
+        }
+        else if(angle > 3*M_PI/4 - angle_margin - epsilon || angle < -3*M_PI/4 + angle_margin + epsilon){
+            corridor.xl = leftBoundaryPoint.x();
+        }
+
+        if(angle > M_PI/4 - angle_margin - epsilon && angle < 3*M_PI/4 + angle_margin + epsilon){
+            corridor.yu = leftBoundaryPoint.y();
+        }
+        else if(angle > -3*M_PI/4 - angle_margin - epsilon && angle < - M_PI/4 + angle_margin + epsilon){
+            corridor.yl = leftBoundaryPoint.y();
+        }
+    }
+
+    if(rightBoundaryPoint.x() > corridor.xl + epsilon && rightBoundaryPoint.x() < corridor.xu - epsilon
+       && rightBoundaryPoint.y() > corridor.yl + epsilon && rightBoundaryPoint.y() < corridor.yu - epsilon)
+    {
+        float angle = atan2(rightBoundaryPoint.y() - point.y(), rightBoundaryPoint.x() - point.x());
+        if(angle > - M_PI/4 - angle_margin - epsilon && angle < M_PI/4 + angle_margin+ epsilon){
+            corridor.xu = rightBoundaryPoint.x();
+        }
+        else if(angle > 3*M_PI/4 - angle_margin - epsilon || angle < -3*M_PI/4 + angle_margin + epsilon){
+            corridor.xl = rightBoundaryPoint.x();
+        }
+
+        if(angle > M_PI/4 - angle_margin - epsilon && angle < 3*M_PI/4 + angle_margin + epsilon){
+            corridor.yu = rightBoundaryPoint.y();
+        }
+        else if(angle > -3*M_PI/4 - angle_margin - epsilon && angle < - M_PI/4 + angle_margin + epsilon){
+            corridor.yl = rightBoundaryPoint.y();
+        }
+    }
+
     return corridor;
 }
 
@@ -350,12 +413,14 @@ Corridor PlannerBase::expandCorridor(Vector2d point, double max_box_size, double
  * @param ts, max_box_size, map_resolution
  * @return std::vector<Corridor>
  */
-std::vector<Corridor> PlannerBase::expandCorridors(std::vector<double> ts, double max_box_size, double map_resolution){
+std::vector<Corridor> PlannerBase::expandCorridors(std::vector<double> ts, double map_resolution){
     std::vector<Corridor> corridors;
     corridors.resize(ts.size());
     for(int i = 0; i < ts.size(); i++){
-        Vector2d corridor_point = laneSmooth.evalX(ts[i]);
-        Corridor corridor = expandCorridor(corridor_point, max_box_size, map_resolution);
+        Vector2d corridor_point = laneSmooth.evalX(laneSmooth.points, ts[i]);
+        Vector2d leftBoundaryPoint = laneSmooth.evalX(laneSmooth.leftBoundaryPoints, ts[i]);
+        Vector2d rightBoundaryPoint = laneSmooth.evalX(laneSmooth.rightBoundaryPoints, ts[i]);
+        Corridor corridor = expandCorridor(corridor_point, leftBoundaryPoint, rightBoundaryPoint, laneSmooth.evalWidth(ts[i]), map_resolution);
         corridors.emplace_back(corridor);
     }
     return corridors;

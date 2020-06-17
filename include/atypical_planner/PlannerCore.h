@@ -205,9 +205,11 @@ namespace Planner {
             next = -1;
         }
         int id;
+        Vector2d leftBoundaryPoint;
         Vector2d leftPoint;
         Vector2d midPoint;
         Vector2d rightPoint;
+        Vector2d rightBoundaryPoint;
         vector<int> children;
 
         int distance;
@@ -224,9 +226,14 @@ namespace Planner {
      */
     struct SmoothLane: public Lane{
         vector<double> ts;
+        vector<double> box_size;
+        vector<Vector2d, aligned_allocator<Vector2d>> leftBoundaryPoints;
+        vector<Vector2d, aligned_allocator<Vector2d>> rightBoundaryPoints;
+
         int n_total_markers = 0;
 
-        Vector2d evalX(double t);
+        Vector2d evalX(const vector<Vector2d, aligned_allocator<Vector2d>>& points, double t);
+        double evalWidth(double t);
         visualization_msgs::MarkerArray getPoints(const string& frame_id);
     };
 
@@ -278,8 +285,8 @@ namespace Planner {
         bool isOccupied(Vector2d queryPoint1, Vector2d queryPoint2); // rayIntersection query point frame = SNU
 
         // Corridor generation
-        Corridor expandCorridor(Vector2d point, double max_box_size, double map_resolution);
-        std::vector<Corridor> expandCorridors(std::vector<double> ts, double max_box_size, double map_resolution);
+        Corridor expandCorridor(Vector2d point, Vector2d leftBoundaryPoint, Vector2d rightBoundaryPoint, double max_box_size, double map_resolution);
+        std::vector<Corridor> expandCorridors(std::vector<double> ts, double map_resolution);
         visualization_msgs::MarkerArray getTestCorridors(std::string frame_id); //TODO: debug purpose, delete this after debugging - jungwon
 
         // prediction module

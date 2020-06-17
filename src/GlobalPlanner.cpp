@@ -35,8 +35,7 @@ bool GlobalPlanner::plan(double t) {
     Vector2d delta, left_point, mid_point, right_point;
     int i_grid = 0;
     for(int i_lane = 0; i_lane < p_base->laneSliced.points.size() - 1; i_lane++){
-        int grid_size = 2 * floor(p_base->laneSliced.widths[i_lane]/2/param.grid_resolution) + 1; //TODO: fix to this
-//        int grid_size = 2 * floor(6/2/param.grid_resolution) + 1;
+        int grid_size = 2 * floor(p_base->laneSliced.widths[i_lane]/2/param.grid_resolution) + 1;
         delta = p_base->laneSliced.points[i_lane+1] - p_base->laneSliced.points[i_lane];
         lane_length = delta.norm();
         lane_angle = atan2(delta.y(), delta.x());
@@ -66,9 +65,11 @@ bool GlobalPlanner::plan(double t) {
                         mid_point = (laneGridPoints[k_side] + laneGridPoints[start_idx])/2;
                         LaneTreeElement laneTreeElement;
                         laneTreeElement.id = i_grid;
+                        laneTreeElement.leftBoundaryPoint = laneGridPoints[laneGridPoints.size()-1];
                         laneTreeElement.leftPoint = laneGridPoints[k_side];
                         laneTreeElement.midPoint = mid_point;
                         laneTreeElement.rightPoint = laneGridPoints[start_idx];
+                        laneTreeElement.rightBoundaryPoint = laneGridPoints[0];
                         laneTreeElement.width = (laneGridPoints[k_side] - laneGridPoints[start_idx]).norm();
                         laneTree.emplace_back(laneTreeElement);
                     }
@@ -77,9 +78,11 @@ bool GlobalPlanner::plan(double t) {
                     mid_point = (laneGridPoints[k_side-1] + laneGridPoints[start_idx])/2;
                     LaneTreeElement laneTreeElement;
                     laneTreeElement.id = i_grid;
+                    laneTreeElement.leftBoundaryPoint = laneGridPoints[laneGridPoints.size()-1];
                     laneTreeElement.leftPoint = laneGridPoints[k_side-1];
                     laneTreeElement.midPoint = mid_point;
                     laneTreeElement.rightPoint = laneGridPoints[start_idx];
+                    laneTreeElement.rightBoundaryPoint = laneGridPoints[0];
                     laneTreeElement.width = (laneGridPoints[k_side-1] - laneGridPoints[start_idx]).norm();
                     laneTree.emplace_back(laneTreeElement);
                     start_idx = -1;
@@ -145,14 +148,19 @@ bool GlobalPlanner::plan(double t) {
 //        rightPoints[i_tail+1] = laneTree[tail[i_tail]].rightPoint;
 //    }
 
-    std::vector<Vector2d, aligned_allocator<Vector2d>> midPoints, leftPoints, rightPoints;
+    std::vector<Vector2d, aligned_allocator<Vector2d>> midPoints, leftPoints, rightPoints, leftBoundaryPoints, rightBoundaryPoints;
     midPoints.resize(tail.size());
     leftPoints.resize(tail.size());
     rightPoints.resize(tail.size());
+    leftBoundaryPoints.resize(tail.size());
+    rightBoundaryPoints.resize(tail.size());
+
     for(int i_tail = 0; i_tail < tail.size(); i_tail++){
         midPoints[i_tail] = laneTree[tail[i_tail]].midPoint;
         leftPoints[i_tail] = laneTree[tail[i_tail]].leftPoint;
         rightPoints[i_tail] = laneTree[tail[i_tail]].rightPoint;
+        leftBoundaryPoints[i_tail] = laneTree[tail[i_tail]].leftBoundaryPoint;
+        rightBoundaryPoints[i_tail] = laneTree[tail[i_tail]].rightBoundaryPoint;
     }
 
     // Find midAngles
@@ -246,6 +254,18 @@ bool GlobalPlanner::plan(double t) {
         }
     }
 
+    // width allocation
+    std::vector<double> box_size;
+    std::vector<Vector2d, aligned_allocator<Vector2d>> leftBoxPoints, rightBoxPoints;
+    box_size.resize(midPoints.size());
+    leftBoxPoints.resize(midPoints.size());
+    rightBoxPoints.resize(midPoints.size());
+    for(int i_mid = 0; i_mid < midPoints.size(); i_mid++) {
+        box_size[i_mid] = 2 * std::min((midPoints[i_mid] - leftBoundaryPoints[i_mid]).norm(), (midPoints[i_mid] - rightBoundaryPoints[i_mid]).norm());
+        leftBoxPoints[i_mid] = leftBoundaryPoints[i_mid];
+        rightBoxPoints[i_mid] = rightBoundaryPoints[i_mid];
+    }
+
     // Time allocation
     double nominal_speed = p_base->laneSpeed;
     std::vector<double> ts;
@@ -255,11 +275,12 @@ bool GlobalPlanner::plan(double t) {
         ts[i_mid] = ts[i_mid-1] + (midPoints[i_mid] - midPoints[i_mid-1]).norm() / nominal_speed;
     }
 
-
-
     SmoothLane smoothLane;
     smoothLane.points = midPoints;
     smoothLane.ts = ts;
+    smoothLane.box_size = box_size;
+    smoothLane.leftBoundaryPoints = leftBoundaryPoints;
+    smoothLane.rightBoundaryPoints = rightBoundaryPoints;
 
     p_base->mSet[1].lock();
     smoothLane.n_total_markers = p_base->laneSmooth.n_total_markers;
@@ -268,7 +289,7 @@ bool GlobalPlanner::plan(double t) {
 
     {
         //TODO: test corridors for debugging delete this after debugging - jungwon
-        curCorridorSeq = p_base->expandCorridors(ts, 6, 0.5);
+        curCorridorSeq = p_base->expandCorridors(ts, 0.5);
         p_base->mSet[1].lock();
         p_base->corridor_seq = curCorridorSeq;
         p_base->mSet[1].unlock();
