@@ -234,11 +234,15 @@ bool GlobalPlanner::plan(double t) {
         }
     }
 
-    //TODO: debug purpose code, delete after debugging
+    // Super heuristic
     for(int i_mid = 0; i_mid < midPoints.size(); i_mid++) {
         if (p_base->isOccupied(midPoints[i_mid])) {
-            ROS_ERROR("[GlobalPlaneer] midPoint error, midPoint is occluded by obstacles");
-            throw -1;
+            if((midPoints[i_mid] - leftPoints[i_mid]).norm() < (midPoints[i_mid] - rightPoints[i_mid]).norm()){
+                midPoints[i_mid] = leftPoints[i_mid];
+            }
+            else{
+                midPoints[i_mid] = rightPoints[i_mid];
+            }
         }
     }
 

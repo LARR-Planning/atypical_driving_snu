@@ -50,7 +50,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: PointCloud2
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -154,7 +154,7 @@ Visualization Manager:
       Marker Topic: /atypical_planning_test/prediction
       Name: MarkerArray
       Namespaces:
-        {}
+        0: true
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -177,13 +177,23 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
+        LidarSensor1:
+          Value: true
+        PhysXCar:
+          Value: true
+        PhysXCar/odom_local_ned:
+          Value: true
         SNU:
           Value: true
         car_base_link:
           Value: true
         map:
           Value: true
-        velodyne:
+        world_ent:
+          Value: true
+        world_enu:
+          Value: true
+        world_ned:
           Value: true
       Marker Scale: 10
       Name: TF
@@ -194,8 +204,12 @@ Visualization Manager:
         map:
           SNU:
             car_base_link:
-              velodyne:
-                {}
+              {}
+          world_ent:
+            PhysXCar:
+              PhysXCar/odom_local_ned:
+                LidarSensor1:
+                  {}
       Update Interval: 0
       Value: true
     - Class: rviz/MarkerArray
@@ -526,7 +540,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: 4.619992733001709
+      Angle: 4.719994068145752
       Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
@@ -536,11 +550,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 14.049280166625977
+      Scale: 21.10823631286621
       Target Frame: PhysXCar/odom_local_ned
       Value: TopDownOrtho (rviz)
-      X: 19.201921463012695
-      Y: 8.298785209655762
+      X: 1.209837794303894
+      Y: -1.0704572200775146
     Saved: ~
 Window Geometry:
   Displays:
