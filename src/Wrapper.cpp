@@ -687,6 +687,7 @@ void RosWrapper::cbOccuMap(const nav_msgs::OccupancyGrid & occuMap) {
 }
 
 void RosWrapper::cbCarSpeed(const std_msgs::Float64& speed_) {
+    // Incoming data is km/h
     speed = speed_.data*1000.0/3600;
     isCarSpeedReceived = true;
     p_base->cur_state.v = speed; // reverse gear = negative
@@ -937,8 +938,8 @@ void Wrapper::runPlanning() {
 
 
                     // Do planning
-                    // isGPSuccess = planGlobal(ros_wrapper_ptr->curTime());
-                    isGPSuccess = false;
+                    isGPSuccess = planGlobal(ros_wrapper_ptr->curTime());
+//                    isGPSuccess = false;
                     if (isGPSuccess) { // let's call LP
                         ROS_INFO_STREAM("[Wrapper] GP success! planning time for gp: " <<
                                                                                        std::chrono::duration_cast<std::chrono::microseconds>(

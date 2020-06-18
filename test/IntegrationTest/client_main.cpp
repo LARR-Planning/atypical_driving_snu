@@ -137,7 +137,7 @@ int main(int argc,char** argv) {
         curAngle.data = steering_angle;
 
         std_msgs::Float64 curSpeed;
-        curSpeed.data = speed;
+        curSpeed.data = speed*3600.0/1000.0; // m/s to km/h
 
         pubCarPoseCov.publish(curState);
         pubCurSteering.publish(curAngle);

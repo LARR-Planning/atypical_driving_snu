@@ -154,7 +154,7 @@ vector<Vector2d, aligned_allocator<Vector2d>> Lane::slicing(const CarState &curC
     for (int i = StartPointIdx ; i < points.size()  ; i++){
         EndPointIdx = i;
         Vector2d point = points[i-1]; // next point
-        ROS_INFO_STREAM("Included points: "<<point.transpose());
+//        ROS_INFO_STREAM("Included points: "<<point.transpose());
         bool isInWindow = (point(0) < windowOrig(0) + w) and
                           (point(0) > windowOrig(0)) and
                           (point(1) < windowOrig(1) + h) and
