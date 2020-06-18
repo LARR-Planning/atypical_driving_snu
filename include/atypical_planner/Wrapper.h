@@ -54,6 +54,8 @@ namespace Planner{
         bool use_nominal_obstacle_radius = false;
 
 
+
+
         /**
          * Parameters
          */
@@ -63,6 +65,7 @@ namespace Planner{
         string baseLinkId; // frame id of car frame
         string detectedObjectId; // frame id of detected objects
 
+        string predictorLogFileDir; // directory of observations of predictor
 
         int max_marker_id; //count current published markers
         double speed; // current speed of car
@@ -117,7 +120,6 @@ namespace Planner{
         void cbCarSpeed(const std_msgs::Float64& speed);
         void cbOccuMap(const nav_msgs::OccupancyGrid& occuMap);
 
-        // TODO currently we only receive the location of obstacles not with shape
         void cbObstacles(const geometry_msgs::PoseStamped& obstPose);
         void cbDetectedObjects(const driving_msgs::DetectedObjectArray& objectsArray);
 

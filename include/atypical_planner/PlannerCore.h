@@ -109,6 +109,7 @@ namespace Planner {
         float  zHeight;
         int polyOrder;
         double trackingTime; // it observation expires with this value, we detach predictor
+        string log_dir; // base dir for log
     };
 
     /**

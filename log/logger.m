@@ -146,6 +146,37 @@ end
 
 
 
+%% Prediction 
+
+data_observation= load('predictor_saved/observation_35.txt');
+figure(1)
+subplot(4,2,1)
+plot(data_observation(:,1),'r-');
+title('x')
+subplot(4,2,3)
+plot(data_observation(:,2),'g-');
+title('y')
+subplot(4,2,5)
+plot(data_observation(:,7),'k-');
+title('dimX')
+subplot(4,2,7)
+plot(data_observation(:,8),'k-');
+title('dimY')
+
+subplot(4,2,2)
+plot(data_observation(:,3),'r-');
+title('qx')
+subplot(4,2,4)
+plot(data_observation(:,4),'g-');
+title('qy')
+subplot(4,2,6)
+plot(data_observation(:,5),'b-');
+title('qz')
+subplot(4,2,8)
+plot(data_observation(:,6),'k-');
+title('qw')
+sgtitle('id = 35')
+
 
 
 

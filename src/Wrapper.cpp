@@ -137,7 +137,6 @@ void RosWrapper::updateParam(Param &param_) {
 
 
 
-
     // global planner
 
     nh.param<double>("vmax",param_.g_param.car_speed_max,4);
@@ -189,7 +188,7 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<float>("predictor/ref_height",param_.p_param.zHeight,1.0);
     nh.param<int>("predictor/poly_order",param_.p_param.polyOrder,1); // just fix 1
     nh.param<double>("predictor/tracking_expiration",param_.p_param.trackingTime,2.0); // just fix 1
-
+    nh.param<string>("predictor/log_dir",param_.p_param.log_dir,"/home/jbs/test_ws/src/atypical_driving_snu/log/predictor");
     // Common
     nh.param<double>("goal_thres",param_.l_param.goalReachingThres,0.4); // just fix 1
     p_base->goal_thres = param_.l_param.goalReachingThres;
@@ -548,6 +547,7 @@ void RosWrapper::cbDetectedObjects(const driving_msgs::DetectedObjectArray &obje
                 } else {
                     // no owner found, we create predictor and attach it
                     auto newPredictor = make_tuple(id, p_base->predictorBase);
+                    get<1>(newPredictor).setIndex(id);
                     get<1>(newPredictor).update_observation(curTime(), objectSNU.pose,
                                                             updateDimension);
                     p_base->indexedPredictorSet.push_back(newPredictor);
@@ -764,6 +764,7 @@ Wrapper::Wrapper() : p_base_shared(make_shared<PlannerBase>()) {
     Predictor::TargetManager predictor(param.p_param.queueSize,param.p_param.zHeight,param.p_param.polyOrder);
     p_base_shared->predictorBase = predictor;
     p_base_shared->predictorBase.setExpiration(param.p_param.trackingTime);
+    p_base_shared->predictorBase.setLogFileDir(param.p_param.log_dir);
     p_base_shared->predictorSet.push_back(predictor);
 
 

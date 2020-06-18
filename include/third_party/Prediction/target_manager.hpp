@@ -7,9 +7,12 @@
 using namespace std;
 using namespace Eigen;
 typedef Matrix<float,6,1> Vector6f;
+typedef Matrix<float,8,1> Vector8f;
+
 namespace Predictor{
     class TargetManager{
         private:
+            int managerIdx;
             bool isNoPredictionWarnEmitted = false;
             std::list<std::tuple<float,Vector6f>> observations; // (t,state) where state = [x,y,qx,qy,qz,qw]
 
@@ -20,22 +23,24 @@ namespace Predictor{
             Eigen::VectorXf fit_coeff_qz;
             Eigen::VectorXf fit_coeff_qw;
 
-        float z_value;
+            float z_value;
             int queue_size; 
             int poly_order;
             bool is_predicted = false;
             DAP::TXYZQuatTraj obsrv_traj_full; // full state having the entire pose information
             DAP::TXYZQuatTraj obsrv_traj_for_predict;
             DAP::TXYZTraj obsrv_traj_for_predict_total;
-            int size_history = 0;
+            int size_history = 2000;
             double lastObservationTime;
             double trackingExpirationTime;
             Vector3f dimensions;
 
+            list<Vector8f> observationHistory;
+            string logFileDir;
         public:
             TargetManager () {};
             ~TargetManager();
-            TargetManager(int queue_size,float z_value,int poly_order);
+            TargetManager(int queue_size,float z_value,int poly_order,int index = 0 );
             void update_observation(float t , geometry_msgs::Pose target_pose,Vector3f dimensions_ );
             void update_predict();
             float getHeight() {return z_value;};
@@ -49,6 +54,8 @@ namespace Predictor{
             void setExpiration(const double & T) {trackingExpirationTime =  T;};
             double getExpiration() const {return trackingExpirationTime;};
             Vector3f getLastDimensions() const{return dimensions;}
+            void setLogFileDir(string dir) {logFileDir = dir;};
+            void setIndex(int idx) {managerIdx = idx;};
     };
 
     typedef tuple<uint, TargetManager >  IndexedPredictor;

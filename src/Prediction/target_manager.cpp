@@ -2,10 +2,13 @@
 using namespace DAP;
 using namespace Predictor;
 
-TargetManager::TargetManager(int queue_size,float z_value,int poly_order):queue_size(queue_size),z_value(z_value),poly_order(poly_order) {
+
+
+TargetManager::TargetManager(int queue_size,float z_value,int poly_order,int index):queue_size(queue_size),z_value(z_value),poly_order(poly_order),managerIdx(index) {
 
     assert(poly_order > 0 or queue_size >0 && "Invalid initialization of target manager" );
     //obsrv_traj_for_predict_total = TXYZTraj(4,100000);
+
 
 };
 
@@ -16,13 +19,18 @@ void TargetManager::update_observation(float t, geometry_msgs::Pose target_pose,
     geometry_msgs::Quaternion quat = target_pose.orientation;
 
     Vector6f state; state << position.x,position.y,quat.x,quat.y,quat.z,quat.w;
+    Vector8f stateWithDim; stateWithDim << state , dimensions_(0),dimensions_(1) ;
     observations.push_back(std::make_tuple(t,state));
+    // total history for logging
+    observationHistory.push_back(stateWithDim);
+
     lastObservationTime = t;
 
     if (observations.size() > queue_size)
         observations.pop_front();
+    if (observationHistory.size() > size_history)
+        observationHistory.pop_front();
 
-    size_history ++ ;
 }
 
 /**
@@ -161,9 +169,17 @@ geometry_msgs::PoseArray TargetManager::get_obsrv_pose(string world_frame_id) {
 
 
 TargetManager::~TargetManager(){
-    // cout << "[TargetManager] Destroyed with log file" << endl;
-    //std::ofstream file("observation.txt");
-    //if(file.is_open())
-    //    // file << obsrv_traj_for_predict_total.transpose().block(0,0,size_history,4);
-    //file.close();
+     cout << "[TargetManager] Destroyed with log file" << endl;
+     string fileName = logFileDir+"/observation_"+ to_string(managerIdx) +  ".txt";
+    std::ofstream file(fileName);
+    // vec8 = [x,y,qx,qy,qz,qw,dimx,dimy]
+    if(file.is_open()){
+        for (auto vec8 : observationHistory){
+            file << vec8.transpose() << endl;
+        }
+    }
+    else{
+        cerr<< fileName << " was not opened" << endl;
+    }
+    file.close();
 }

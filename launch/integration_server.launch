@@ -87,8 +87,9 @@
     <param name="local_planner/max_accel" value="1.5" />
     <param name="local_planner/min_accel" value="-1.5" />
 
-    <param name="predictor/observation_queue" value="4" />
+    <param name="predictor/observation_queue" value="10" />
     <param name="predictor/ref_height" value="0.4" />
+    <param name="predictor/log_dir" value="$(find atypical_driving)/log/predictor" />
 </node>
 
 </launch>
