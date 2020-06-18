@@ -22,7 +22,7 @@ using namespace geometry_msgs;
 bool intersect(Point i0, Point i1, Point j0, Point j1);
 int ccw(Point a, Point b, Point c);
 nav_msgs::Path getPath(const vector<Vector2d> & point2dSeq,string frame_id);
-double meanCurvature(const vector<Vector2d> & point2dSeq);
+double meanCurvature(const vector<Vector2d, aligned_allocator<Vector2d>> & point2dSeq);
 #endif //ATYPICAL_DRIVING_UTILS_H
 
 

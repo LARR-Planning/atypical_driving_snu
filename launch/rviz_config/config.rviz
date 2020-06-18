@@ -84,7 +84,7 @@ Visualization Manager:
       Marker Topic: /atypical_planning_test/corridor_seq
       Name: MarkerArray
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -575,6 +575,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
+
       Class: rviz/Orbit
       Distance: 45.81024169921875
       Enable Stereo Rendering:
@@ -582,6 +583,7 @@ Visualization Manager:
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
+
       Focal Point:
         X: 42.02546310424805
         Y: -3.1700310707092285

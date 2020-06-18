@@ -10,7 +10,7 @@ car_width = 2;
 map_resolution = 0.5;
 grid_resolution = 0.5;
 threshold = 0.5;
-max_steering_angle = pi/8;
+max_steering_angle = pi/20;
 max_smoothing_iteration = 0;
 smoothing_margin = 0.5;
 nominal_speed = 1;
@@ -388,10 +388,6 @@ for t_corr = current_time : corridor_dt : current_time + corridor_horizon
     
     ld = corridorPoint + [-width, -width];
     ru = corridorPoint + [width, width];
-
-    if i_msg == 3 && count == 11
-        breakpoint = 1;
-    end
     
     for x_corr = corridorPoint(1) - width : map_resolution : corridorPoint(1) + width
         for y_corr = corridorPoint(2) - width : map_resolution : corridorPoint(2) + width
