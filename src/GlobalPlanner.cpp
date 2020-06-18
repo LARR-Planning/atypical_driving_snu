@@ -256,14 +256,9 @@ bool GlobalPlanner::plan(double t) {
 
     // width allocation
     std::vector<double> box_size;
-    std::vector<Vector2d, aligned_allocator<Vector2d>> leftBoxPoints, rightBoxPoints;
     box_size.resize(midPoints.size());
-    leftBoxPoints.resize(midPoints.size());
-    rightBoxPoints.resize(midPoints.size());
     for(int i_mid = 0; i_mid < midPoints.size(); i_mid++) {
         box_size[i_mid] = 2 * std::min((midPoints[i_mid] - leftBoundaryPoints[i_mid]).norm(), (midPoints[i_mid] - rightBoundaryPoints[i_mid]).norm());
-        leftBoxPoints[i_mid] = leftBoundaryPoints[i_mid];
-        rightBoxPoints[i_mid] = rightBoundaryPoints[i_mid];
     }
 
     // Time allocation
@@ -397,7 +392,7 @@ void GlobalPlanner::laneTreeSearch(int i_tree){
         int i_tree_child = laneTree[i_tree].children[i_child];
         if(laneTree[i_tree].distance < laneTree[i_tree_child].distance + 1
             || (laneTree[i_tree].distance == laneTree[i_tree_child].distance + 1
-                && laneTree[i_tree].total_width > laneTree[i_tree_child].total_width + laneTree[i_tree].width)){
+                && laneTree[i_tree].total_width < laneTree[i_tree_child].total_width + laneTree[i_tree].width)){
             laneTree[i_tree].distance = laneTree[i_tree_child].distance + 1;
             laneTree[i_tree].total_width = laneTree[i_tree_child].total_width + laneTree[i_tree].width;
             laneTree[i_tree].next = i_tree_child;
