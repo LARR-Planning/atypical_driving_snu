@@ -51,7 +51,6 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
 
 //     p_base->parse_tool.display_result();
     p_base->lane_path = (p_base->parse_tool.get_lanepath());
-    // TODO (accurate lane width)
     p_base->lane_path.setWidth(laneWidth);
 
     isLaneReceived =false; // Still false. After applying Tw0, it is true
@@ -65,6 +64,7 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
     pubPath = nh.advertise<nav_msgs::Path>("planning_path",1);
     pubCorridorSeq = nh.advertise<visualization_msgs::MarkerArray>("corridor_seq",1);
     pubObservationMarker = nh.advertise<visualization_msgs::MarkerArray>("observation_queue",1);
+    pubObservationPoseArray = nh.advertise<geometry_msgs::PoseArray>("observation_pose_queue",1);
     pubPredictionArray = nh.advertise<visualization_msgs::MarkerArray>("prediction",1);
     pubCurCmd = nh.advertise<driving_msgs::VehicleCmd>("/vehicle_cmd",1);
     pubMPCTraj = nh.advertise<nav_msgs::Path>("mpc_traj",1);
@@ -77,6 +77,7 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
 
     pubSmoothLane = nh.advertise<visualization_msgs::MarkerArray>("/smooth_lane",1);
     pubTextSlider = nh.advertise<visualization_msgs::Marker>("current_lane",1);
+    pubDetectedObjectsPoseArray = nh.advertise<geometry_msgs::PoseArray>("detected_objects_prediction",1);
 
     // Subscriber
     subCarPoseCov = nh.subscribe("/current_pose",1,&RosWrapper::cbCarPoseCov,this);
@@ -86,7 +87,7 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
     subOccuMap = nh.subscribe("/costmap_node/costmap/costmap",1,&RosWrapper::cbOccuMap,this); //TODO: fix /costmap_node/costmap/costmap to /occupancy_grid
 }
 /**
- * @brief update the fitting model only. It does not directly update the obstaclePath in p_base
+ * @brief update the fitting model and the obstacle path together
  */
 void RosWrapper::updatePredictionModel() {
 
@@ -108,12 +109,15 @@ void RosWrapper::updatePredictionModel() {
     }
 
     // 2. Upload the obstacle prediction over horizon
-
     // Update p_base. the prediction model is being updated in ROS Wrapper
     int nStep  = param.l_param.horizon/param.l_param.tStep; // the division should be integer
     VectorXd tSeq(nStep);
     tSeq.setLinSpaced(nStep,curTime(),curTime()+param.l_param.horizon);
-    p_base->uploadPrediction(tSeq, param.l_param.obstRadiusNominal);
+    // Upload the obstaclePath corresponding to the time
+    if (use_nominal_obstacle_radius)
+        p_base->uploadPrediction(tSeq, param.l_param.obstRadiusNominal);
+    else
+        p_base->uploadPrediction(tSeq);
 }
 
 
@@ -291,10 +295,31 @@ void RosWrapper::prepareROSmsgs() {
 
     // 2. topics which is not obtained from planning thread
     visualization_msgs::MarkerArray observations;
+    geometry_msgs::PoseArray observationPose;
+    observationPose.header.frame_id = SNUFrameId;
+
+    geometry_msgs::PoseArray predictionPoseArray;
+    predictionPoseArray.header.frame_id = SNUFrameId;
+    // Predictor publish
     int nsId = 0;
+    double curTime_ = curTime();
+    VectorXf tEvalPred = VectorXf::LinSpaced(6,curTime_,param.l_param.horizon+curTime_);
+
     for(auto idPredictor : p_base->indexedPredictorSet){
+        // observation
         observations.markers.push_back(get<1>(idPredictor).get_obsrv_marker(SNUFrameId,nsId++));
+        for (auto pose : get<1>(idPredictor).get_obsrv_pose(SNUFrameId).poses){
+            observationPose.poses.push_back(pose);
+        }
+
+        // prediction
+        if (get<1>(idPredictor).is_prediction_available())
+            for (auto pose : get<1>(idPredictor).eval_pose_seq(tEvalPred))
+                predictionPoseArray.poses.push_back(pose);
     }
+
+    pubDetectedObjectsPoseArray.publish(predictionPoseArray);
+    pubObservationPoseArray.publish(observationPose);
 
     ROS_DEBUG("Number of predictor = %d",p_base->indexedPredictorSet.size());
     ROS_DEBUG("last id  = %d",nsId);
@@ -303,24 +328,36 @@ void RosWrapper::prepareROSmsgs() {
 
     obstaclePrediction.markers.clear();
     nsId = 0;
+    // obstacles registered to p_base and fed into local planner
     for(auto obstPath : p_base->getCurObstaclePathArray().obstPathArray){
         // per a obstacle path, make up marker array
-        // TODO shape should be rigorously considered
         visualization_msgs::Marker m_obstacle_rad;
         m_obstacle_rad.header.frame_id = SNUFrameId;
         m_obstacle_rad.pose.orientation.w = 1.0;
-        m_obstacle_rad.color.r = 1.0, m_obstacle_rad.color.a = 0.8;
+        m_obstacle_rad.color.r = 6.0, m_obstacle_rad.color.a = 0.1;
         m_obstacle_rad.type = 3;
         m_obstacle_rad.ns = to_string(nsId);
         int id = 0 ;
         for (auto pnt : obstPath.obstPath){
             m_obstacle_rad.id = id++;
+            // position
             m_obstacle_rad.pose.position.x = pnt.q(0);
             m_obstacle_rad.pose.position.y = pnt.q(1);
             m_obstacle_rad.pose.position.z = p_base->predictorSet[0].getHeight();
-            m_obstacle_rad.scale.x = 2*pow(pnt.Q(0,0),-1/2.0);
-            m_obstacle_rad.scale.y = 2*pow(pnt.Q(1,1),-1/2.0);
-            m_obstacle_rad.scale.z = 0.3;
+
+            // rotation
+            SE3 rot; rot.setIdentity();
+            rot.rotate(AngleAxisd(pnt.theta,Vector3d::UnitZ()));
+            Quaterniond q(rot.rotation());
+
+            m_obstacle_rad.pose.orientation.x  = q.x();
+            m_obstacle_rad.pose.orientation.y  = q.y();
+            m_obstacle_rad.pose.orientation.z  = q.z();
+            m_obstacle_rad.pose.orientation.w  = q.w();
+
+            m_obstacle_rad.scale.x = 2*pnt.r1;
+            m_obstacle_rad.scale.y = 2*pnt.r2;
+            m_obstacle_rad.scale.z = 0.6;
             obstaclePrediction.markers.push_back(m_obstacle_rad);
         }
         nsId++;
@@ -476,55 +513,55 @@ void RosWrapper::cbDetectedObjects(const driving_msgs::DetectedObjectArray &obje
                 continue;
 
 
-            // Convert it into SNU frame
+            // Convert object pose into SNU frame
 
             string obstacleRefFrame = detectedObjectId;
-            tf::StampedTransform Tsr;// SNU frame to the referance frame of obstacle
+
+            geometry_msgs::PoseStamped objectOrig; // pose w.r.t obstacleRefFrame
+            objectOrig.header.frame_id = obstacleRefFrame;
+            objectOrig.pose = object.odom.pose.pose;
+            geometry_msgs::PoseStamped objectSNU; // pose w.r.t SNU frame
 
             try {
-                tf_ls.lookupTransform(SNUFrameId, obstacleRefFrame, ros::Time(0), Tsr);
+                tf_ls.transformPose(SNUFrameId,ros::Time(0),objectOrig,obstacleRefFrame,objectSNU);
+
+                uint id = object.id;
+
+                // Does this id have its predictor?
+                auto predictorOwner = find_if(p_base->indexedPredictorSet.begin(),
+                                              p_base->indexedPredictorSet.end(),bind(comparePredictorId,placeholders::_1,id));
+                // already a predictor owns the id
+                Vector3f updateDimension;
+                if (use_nominal_obstacle_radius){
+                    updateDimension.x() = param.l_param.obstRadiusNominal;
+                    updateDimension.y() = param.l_param.obstRadiusNominal;
+                    updateDimension.z() = param.l_param.obstRadiusNominal;
+                }else{
+                    updateDimension.x() = object.dimensions.x;
+                    updateDimension.y() = object.dimensions.y;
+                    updateDimension.z() = object.dimensions.z;
+                }
+
+                if (predictorOwner != p_base->indexedPredictorSet.end()) {
+                    get<1>(*predictorOwner).update_observation(curTime(), objectSNU.pose,
+                                                               updateDimension);
+                } else {
+                    // no owner found, we create predictor and attach it
+                    auto newPredictor = make_tuple(id, p_base->predictorBase);
+                    get<1>(newPredictor).update_observation(curTime(), objectSNU.pose,
+                                                            updateDimension);
+                    p_base->indexedPredictorSet.push_back(newPredictor);
+                    ROS_INFO("[SNU_PLANNER/RosWrapper] Predictor attached for obstacle id = %d", id);
+                }
+
             }
             catch(tf::TransformException ex){
                 ROS_ERROR("[SNU_PLANNER/RosWrapper] cannot register the object pose. "
-                          "No tf connecting SNU frame with header of object");
+                          "No tf connecting SNU frame with header of object. Callback ignored.");
+
+                return;
             }
 
-            tf::Vector3 pr(object.odom.pose.pose.position.x,object.odom.pose.pose.position.y,0); // translation w.r.t its ref frame
-            tf::Vector3 ps = Tsr*pr; // w.r.t to SNU
-
-            // TODO full pose to be implemented
-            geometry_msgs::Point position;
-            position.x = ps.x();
-            position.y = ps.y();
-
-            uint id = object.id;
-
-            // Does this id have its predictor?
-            auto predictorOwner = find_if(p_base->indexedPredictorSet.begin(),
-                    p_base->indexedPredictorSet.end(),bind(comparePredictorId,placeholders::_1,id));
-            // already a predictor owns the id
-            Vector3f updateDimension;
-            if (use_nominal_obstacle_radius){
-                updateDimension.x() = param.l_param.obstRadiusNominal;
-                updateDimension.y() = param.l_param.obstRadiusNominal;
-                updateDimension.z() = param.l_param.obstRadiusNominal;
-            }else{
-                updateDimension.x() = object.dimensions.x;
-                updateDimension.y() = object.dimensions.y;
-                updateDimension.z() = object.dimensions.z;
-            }
-
-            if (predictorOwner != p_base->indexedPredictorSet.end()) {
-                get<1>(*predictorOwner).update_observation(curTime(), position,
-                        updateDimension);
-            } else {
-                // no owner found, we create predictor and attach it
-                auto newPredictor = make_tuple(id, p_base->predictorBase);
-                get<1>(newPredictor).update_observation(curTime(), position,
-                        updateDimension);
-                p_base->indexedPredictorSet.push_back(newPredictor);
-                ROS_INFO("[SNU_PLANNER/RosWrapper] Predictor attached for obstacle id = %d", id);
-            }
         }
     else
         ROS_INFO("[SNU_PLANNER/RosWrapper] Received object information. But the state of the car is not received");
@@ -900,7 +937,8 @@ void Wrapper::runPlanning() {
 
 
                     // Do planning
-                    isGPSuccess = planGlobal(ros_wrapper_ptr->curTime());
+                    // isGPSuccess = planGlobal(ros_wrapper_ptr->curTime());
+                    isGPSuccess = false;
                     if (isGPSuccess) { // let's call LP
                         ROS_INFO_STREAM("[Wrapper] GP success! planning time for gp: " <<
                                                                                        std::chrono::duration_cast<std::chrono::microseconds>(

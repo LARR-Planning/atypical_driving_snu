@@ -154,7 +154,7 @@ vector<Vector2d, aligned_allocator<Vector2d>> Lane::slicing(const CarState &curC
     for (int i = StartPointIdx ; i < points.size()  ; i++){
         EndPointIdx = i;
         Vector2d point = points[i-1]; // next point
-//        ROS_INFO_STREAM("Included points: "<<point.transpose());
+        ROS_INFO_STREAM("Included points: "<<point.transpose());
         bool isInWindow = (point(0) < windowOrig(0) + w) and
                           (point(0) > windowOrig(0)) and
                           (point(1) < windowOrig(1) + h) and
@@ -449,20 +449,16 @@ vector<Corridor> PlannerBase::getCorridorSeq(double t0, double tf) {
 
 
 /**
- * @breif update obstaclePathArray so that it is prediction from [tPredictionStart,tPredictionStart+ horizon[
+ * @breif update obstaclePathArray so that it is prediction from [tPredictionStart,tPredictionStart+ horizon]
  * @param tSeq_
  * @param rNominal
  */
 void PlannerBase::uploadPrediction(VectorXd tSeq_, double rNominal) {
 
     VectorXf tSeq = tSeq_.cast<float>();
-    // TODO predictor should be multiple
     obstaclePathArray.obstPathArray.clear();
 
-    // ver 1
-    // TODO check the shape
     for(auto idPredictor : indexedPredictorSet){
-
         auto predictor = get<1>(idPredictor);
         //predictor.update_predict(); // this will do nothing if observation is not enough
         if (predictor.is_prediction_available()) {
@@ -472,12 +468,36 @@ void PlannerBase::uploadPrediction(VectorXd tSeq_, double rNominal) {
                 // construct one obstaclePath
                 ObstacleEllipse obstE;
                 obstE.q = Vector2d(obstPose.position.x, obstPose.position.y);
+                SE3 poseSE3 = SE3::Identity();
+                Quaterniond q;
+                q.x() = obstPose.orientation.x;
+                q.y() = obstPose.orientation.y;
+                q.z() = obstPose.orientation.z;
+                q.w() = obstPose.orientation.w;
 
-                // TODO exact tf should be handled / box to elliposid
+                poseSE3.rotate(q);
+
+                Vector3d e1 = poseSE3.rotation().col(0);
+                double theta =atan2(e1(1),e1(0));
+                obstE.theta = theta;
+
                 obstE.Q.setZero();
-                obstE.Q(0, 0) = 1 / pow(predictor.getLastDimensions()(0)/sqrt(2), 2);
-                obstE.Q(1, 1) = 1 / pow(predictor.getLastDimensions()(1)/sqrt(2), 2);
-
+                Matrix2d R;
+                R << cos(theta) , -sin(theta) , sin(theta), cos(theta);
+                double r1,r2;
+                if (rNominal == 0 ) {
+                    r1 = predictor.getLastDimensions()(0) / sqrt(2);
+                    r2 = predictor.getLastDimensions()(1) / sqrt(2);
+                }
+                else{
+                    r1 = rNominal;
+                    r2 = rNominal;
+                }
+                obstE.r1 = r1;
+                obstE.r2 = r2;
+                obstE.Q(0, 0) = 1 / pow(r1, 2);
+                obstE.Q(1, 1) = 1 / pow(r2, 2);
+                obstE.Q = R*obstE.Q*R.transpose();
                 obstPath.obstPath.push_back(obstE);
             }
             obstaclePathArray.obstPathArray.push_back(obstPath);

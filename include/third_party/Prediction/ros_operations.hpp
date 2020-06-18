@@ -15,6 +15,7 @@ namespace DAP{
     geometry_msgs::PoseArray pose_vector_to_pose_array(const vector<geometry_msgs::Pose> pose_vec,string frame_id);
     TransformMatrix pose_to_transform_matrix(const geometry_msgs::Pose & pose);
     geometry_msgs::Pose transform_matrix_to_pose(const TransformMatrix & trans_mat);
+    vector<geometry_msgs::Pose> TXYZQuat_to_pose_vector(const TXYZQuatTraj& traj);
     vector<TransformMatrix> pose_vector_to_transform_matrix_vec(const vector<geometry_msgs::Pose> & pose);
     geometry_msgs::PoseArray transform_matrix_vec_to_pose_array(const vector<TransformMatrix> & transl_mat,string frame_id);    
     TXYZQuatTraj pose_traj_to_TXYZQuat_traj(const Eigen::VectorXf &time_seq, const vector<geometry_msgs::Pose> & pose_vec);

@@ -9,33 +9,50 @@ TargetManager::TargetManager(int queue_size,float z_value,int poly_order):queue_
 
 };
 
-void TargetManager::update_observation(float t,geometry_msgs::Point target_xy,Vector3f dimensions_){
+void TargetManager::update_observation(float t, geometry_msgs::Pose target_pose, Vector3f dimensions_) {
+
     dimensions = dimensions_;
-    observations.push_back(std::make_tuple(t,Vector2f(target_xy.x,target_xy.y)));
+    geometry_msgs::Point position = target_pose.position;
+    geometry_msgs::Quaternion quat = target_pose.orientation;
+
+    Vector6f state; state << position.x,position.y,quat.x,quat.y,quat.z,quat.w;
+    observations.push_back(std::make_tuple(t,state));
     lastObservationTime = t;
+
     if (observations.size() > queue_size)
         observations.pop_front();
-    //obsrv_traj_for_predict_total(0,size_history) = t;
-    //obsrv_traj_for_predict_total(1,size_history) = target_xy.x;
-    //obsrv_traj_for_predict_total(2,size_history) = target_xy.y;
-    //obsrv_traj_for_predict_total(3,size_history) = z_value;
-    size_history ++ ;    
+
+    size_history ++ ;
 }
 
+/**
+ * @brief renew the polynomial models
+ */
 void TargetManager::update_predict(){
     if (observations.size() > queue_size-1){
 
         VectorXf t_vals(observations.size());
         VectorXf x_vals(observations.size());
         VectorXf y_vals(observations.size());
+
+        VectorXf qx_vals(observations.size());
+        VectorXf qy_vals(observations.size());
+        VectorXf qz_vals(observations.size());
+        VectorXf qw_vals(observations.size());
+
         int i =0 ;
         for (auto it = observations.begin() ; it != observations.end() ; it++, i++){
             t_vals(i) = std::get<0>(*it);
             x_vals(i) = std::get<1>(*it)(0);
-            y_vals(i) = std::get<1>(*it)(1);        
+            y_vals(i) = std::get<1>(*it)(1);
+
+            qx_vals(i) = std::get<1>(*it)(2);
+            qy_vals(i) = std::get<1>(*it)(3);
+            qz_vals(i) = std::get<1>(*it)(4);
+            qw_vals(i) = std::get<1>(*it)(5);
         }
 
-        ROS_DEBUG_STREAM("Prediction: ");
+        ROS_DEBUG_STREAM("Observation queue for prediction: ");
         ROS_DEBUG_STREAM("t : ");
         ROS_DEBUG_STREAM(t_vals.transpose());
         ROS_DEBUG_STREAM("x : ");
@@ -46,12 +63,23 @@ void TargetManager::update_predict(){
         fit_coeff_x = polyfit(t_vals,x_vals,poly_order);
         fit_coeff_y = polyfit(t_vals,y_vals,poly_order);   
 
+        fit_coeff_qx  = polyfit(t_vals,qx_vals,poly_order);
+        fit_coeff_qy  = polyfit(t_vals,qy_vals,poly_order);
+        fit_coeff_qz  = polyfit(t_vals,qz_vals,poly_order);
+        fit_coeff_qw  = polyfit(t_vals,qw_vals,poly_order);
+
         int N_pnt = observations.size();
-        obsrv_traj_for_predict = DAP::TXYZTraj(4,N_pnt);
+        obsrv_traj_for_predict = DAP::TXYZQuatTraj(8,N_pnt);
         obsrv_traj_for_predict.block(0,0,1,N_pnt) = t_vals.transpose();
         obsrv_traj_for_predict.block(1,0,1,N_pnt) = x_vals.transpose();
         obsrv_traj_for_predict.block(2,0,1,N_pnt) = y_vals.transpose();
-        obsrv_traj_for_predict.block(3,0,1,N_pnt).array() = z_value;        
+        obsrv_traj_for_predict.block(3,0,1,N_pnt).array() = z_value; // use ref height as z value
+
+        obsrv_traj_for_predict.block(5,0,1,N_pnt) = qx_vals.transpose();
+        obsrv_traj_for_predict.block(6,0,1,N_pnt) = qy_vals.transpose();
+        obsrv_traj_for_predict.block(7,0,1,N_pnt) = qz_vals.transpose();
+        obsrv_traj_for_predict.block(4,0,1,N_pnt) = qw_vals.transpose();
+
         is_predicted = true;     
     }
 }
@@ -62,11 +90,22 @@ geometry_msgs::Pose TargetManager::eval_pose(float t){
     pose.position.x = polyeval(fit_coeff_x,t); 
     pose.position.y = polyeval(fit_coeff_y,t);
     pose.position.z = z_value;
-    
+    Eigen:Quaternionf q;
+    q.x() = polyeval(fit_coeff_qx,t);
+    q.y() = polyeval(fit_coeff_qy,t);
+    q.z() = polyeval(fit_coeff_qz,t);
+    q.w() = polyeval(fit_coeff_qw,t);
+    q.normalize();
+    pose.orientation.x = q.x();
+    pose.orientation.y = q.y();
+    pose.orientation.z = q.z();
+    pose.orientation.w = q.w();
+
+    // Rotation based on the velocity
+    /**
     float vel_x = polyeval_derivative(fit_coeff_x,t);
     float vel_y = polyeval_derivative(fit_coeff_y,t);
-    
-    // rotation 
+
     float theta = atan2(vel_y, vel_x);
     DAP::TransformMatrix mat = DAP::TransformMatrix::Identity(); 
     mat.rotate(Eigen::AngleAxisf(theta,Eigen::Vector3f::UnitZ()));
@@ -75,7 +114,11 @@ geometry_msgs::Pose TargetManager::eval_pose(float t){
     pose.orientation.x = quat.x();
     pose.orientation.y = quat.y();
     pose.orientation.z = quat.z();
-    pose.orientation.w = quat.w();   
+    pose.orientation.w = quat.w();
+     **/
+
+    // Rotation based on interpolation
+
     return pose;
 }
 
@@ -96,7 +139,7 @@ visualization_msgs::Marker TargetManager::get_obsrv_marker(string world_frame_id
     marker.header.frame_id = world_frame_id;
     //    marker = TXYZ_traj_to_pnt_marker(obsrv_traj_for_predict,world_frame_id,1.0);
     if(is_predicted){
-        marker = TXYZ_traj_to_pnt_marker(obsrv_traj_for_predict,world_frame_id,1.0);
+        marker = TXYZ_traj_to_pnt_marker(TXYZQuat_traj_to_TXYZ_traj(obsrv_traj_for_predict),world_frame_id,1.0);
     }else{
         if (not isNoPredictionWarnEmitted) {
             // cout << "[TargetManager] No prediction performed. empty marker will be returned" << endl;
@@ -106,6 +149,15 @@ visualization_msgs::Marker TargetManager::get_obsrv_marker(string world_frame_id
     marker.ns = to_string(ns);
     return marker;
 }; // observation used for the latest prediction update
+
+geometry_msgs::PoseArray TargetManager::get_obsrv_pose(string world_frame_id) {
+    geometry_msgs::PoseArray poseArray;
+    poseArray.header.frame_id = world_frame_id;
+    for (auto pose : TXYZQuat_to_pose_vector(obsrv_traj_for_predict)){
+        poseArray.poses.push_back(pose);
+    }
+    return poseArray;
+}
 
 
 TargetManager::~TargetManager(){

@@ -23,6 +23,7 @@
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
 #include <driving_msgs/DetectedObjectArray.h>
+#include <geometry_msgs/PoseArray.h>
 #include <functional>
 #include <nav_msgs/Path.h>
 
@@ -85,6 +86,7 @@ namespace Planner{
         ros::Publisher pubPath; // publisher for result path
         ros::Publisher pubCorridorSeq; // publisher for current corridor sequence
         ros::Publisher pubObservationMarker; // publisher for observed position for obstacles
+        ros::Publisher pubObservationPoseArray;
         ros::Publisher pubPredictionArray; // publisher for prediction of the target
         ros::Publisher pubCurCmd; // if MPC has been solved, it emits the command
         ros::Publisher pubMPCTraj; // if MPC has been solved, it pulish mpc traj for local planner horizon
@@ -95,6 +97,8 @@ namespace Planner{
         ros::Publisher pubSideLane;
         ros::Publisher pubSmoothLane;
         ros::Publisher pubTextSlider;
+        ros::Publisher pubDetectedObjectsPoseArray;
+
 
         /**
          * Subscriber

@@ -135,11 +135,13 @@ namespace Planner {
             printf("Current car state: x = %f, y = %f, v = %f, theta = %f\n ",x,y,v,theta);
         }
     };
-
+    // (x-q)'Q(x-q) >= 1 : safe region
     struct ObstacleEllipse{
         Matrix<double,2,1> q;
         Matrix2d Q; // diag([1/r1^2 1/r2^2])
-        double theta; // x-axis angle w.r.t x-axis of map
+        double r1;
+        double r2;
+        double theta; // x-axis angle w.r.t x-axis of SNU
     };
 
     struct ObstaclePath{
