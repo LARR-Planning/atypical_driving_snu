@@ -70,8 +70,8 @@ namespace Planner {
         double period;
 
         //ilQR parameters
-        Matrix<double,5,1> state_weight;
-        Matrix<double,5,1> final_weight;
+        Matrix<double,6,1> state_weight;
+        Matrix<double,6,1> final_weight;
         Matrix<double,2,1> input_weight;
     };
 

@@ -12,23 +12,26 @@ namespace symbolic_functions
                 Matrix<double,Nu,1>u_,
                 Matrix<double,Nx,1>Q,
                 Matrix<double,Nu,1>R,
-                Matrix<double,3,1>g,
-                Matrix<double,2,1>obs)
+                Matrix<double,3,1>g
+                )
     {
-        // float x = x_(0,0);
-        // float y = x_(1,0);
-        // float v = x_(2,0);
-        // float del = x_(3,0);
-        // float th = x_(4,0);
-        float a = u_(0,0);
+        //float x = x_(0,0);
+        //float y = x_(1,0);
+        //float v = x_(2,0);
+        //float a = x_(3,0);
+        //float del = x_(4,0);
+        //float th = x_(5,0);
+        
+        float adot = u_(0,0);
         float deldot = u_(1,0);
         // float Q1 = Q(0);
         // float Q2 = Q(1);
-        float R1 = R(0);
-        float R2 = R(1);
+        float R0 = R(0);
+        float R1 = R(1);
+        
         Matrix<double,Nu,1> A0;
-        A0(0,0) = R1*a;
-        A0(1,0) = R2*deldot;
+        A0(0,0) = R0*adot;
+        A0(1,0) = R1*deldot;
         return A0;
     }
 }

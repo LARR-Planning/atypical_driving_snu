@@ -8,31 +8,33 @@
 using namespace Eigen;
 namespace symbolic_functions
 {
-    Matrix<double,Nc,1> con(Matrix<double,Nx,1> x_, Matrix<double,Nu,1>u, Matrix<double, 4, 1> sfc_modified_temp)
+    Matrix<double,Nc,1> con(Matrix<double,Nx,1> x_, Matrix<double,Nu,1>u,
+            Matrix<double,4,1> sfc_modified)
     {
         float x = x_(0,0);
         float y = x_(1,0);
         float v = x_(2,0);
-        float del = x_(3,0);
-        float th = x_(4,0);
+        float a = x_(3,0);
+        float del = x_(4,0);
+        float th = x_(5,0);
 
-        float a = u(0,0);
+        float adot = u(0,0);
         float deldot = u(1,0);
 
         Matrix<double,Nc,1> CON;
-        CON(0,0) = del -steer_min;
-        CON(1,0) = steer_min - del;
-        CON(2,0) = a - acc_min;
-        CON(3,0) = acc_max - a;
-        CON(4,0) = x - (sfc_modified_temp(0,0) + car_width*0.5);
-        CON(5,0) = (sfc_modified_temp(1,0) - car_width*0.5)-x;
-        CON(6,0) = y - (sfc_modified_temp(2,0) + car_width*0.5);
-        CON(7,0) = (sfc_modified_temp(3,0) - car_width*0.5)-y;
+        CON(0,0) = x - (sfc_modified(0,0)-dist_safe);
+        CON(1,0) = (sfc_modified(1,0)+dist_safe)-x;
+        CON(2,0) = y - (sfc_modified(2,0)-dist_safe);
+        CON(3,0) = (sfc_modified(3,0)+dist_safe)-y;
+        CON(4,0) = a - acc_min;
+        CON(5,0) = acc_max - a;
+        CON(6,0) = del - steer_min;
+        CON(7,0) = steer_max - del;
 
-        CON(8,0) = x+car_length*cos(th) - (sfc_modified_temp(0,0) + car_width*0.5);
-        CON(9,0) = (sfc_modified_temp(1,0) - car_width*0.5)-x-car_length*cos(th);
-        CON(10,0) = y+car_length*sin(th) - (sfc_modified_temp(2,0) + car_width*0.5);
-        CON(11,0) = (sfc_modified_temp(3,0) - car_width*0.5)-y-car_length*sin(th);
+        CON(8,0) = adot - jerk_min;
+        CON(9,0) = jerk_max - adot;
+        CON(10,0) = deldot - steer_dot_min;
+        CON(11,0) = steer_dot_max - deldot;
 
 
 

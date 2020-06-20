@@ -29,31 +29,23 @@ LocalPlanner::LocalPlanner(const Planner::ParamLocal &l_param,
     ilqr_param.rhoFactor = 1.6;
     ilqr_param.rhoMax = 1e10;
     ilqr_param.rhoMin = 1e-6;
-    ilqr_param.tolGrads = power(10.0, VectorXd::LinSpaced(4, -4.0, -6.0));
-    ilqr_param.tolCosts = power(10.0, VectorXd::LinSpaced(4, -2.0, -6.0));
-    ilqr_param.tolConsts = power(10.0, VectorXd::LinSpaced(4, -2.0, -6.0));
+    ilqr_param.tolGrads = power(10.0, VectorXd::LinSpaced(5, -4.0, -6.0));
+    ilqr_param.tolCosts = power(10.0, VectorXd::LinSpaced(5, -2.0, -6.0));
+    ilqr_param.tolConsts = power(10.0, VectorXd::LinSpaced(5, -2.0, -6.0));
     ilqr_param.alphas = power(10.0, VectorXd::LinSpaced(5, 0.0, -3.0));
     ilqr_param.maxIter = 1000;
-    ilqr_param.mu = 3.0;
+    ilqr_param.mu = 1.5;
     ilqr_param.lambda = 0.0;
     ilqr_param.phi = 0.1;
-    ilqr_param.verbosity = 0;
+    ilqr_param.verbosity = 1;
     ilqr_param.dmu = 1.2;
     ilqr_param.dphi = 0.8;
 
-    carDefaultShape << 4.0, 0.0,
-                        0.0, 4.0;
-    for(int i = 0; i<N+1;i++)
-    {
-        bodyArray[i]<< 4.0, 0.0, 0.0, 4.0;
-    }
-    state_weight_<< 0.5, 0.5, 0.5 , 0.05 , 0.05;
-    final_weight_<< 0.5, 0.5, 0.5 , 0.05 , 0.05;
-    input_weight_<< 0.2,1.0;
+    state_weight_<< 0.5, 0.5, 0.0, 0.0, 0.0, 0.05;
+    final_weight_<< 0.5, 0.5, 0.0, 0.0, 0.0, 1.0;
+    input_weight_<< 0.005, 0.5;
     isRefUsed = 0;
-    wpts_initial<<p_base->getCarState().x,p_base->getCarState().y;
     cout << "[LocalPlanner] Init." << endl;
-
     
 }
 /**
@@ -69,9 +61,9 @@ void LocalPlanner::updateTrajToBase(){
  * @return
  */
 bool LocalPlanner::isCurTrajFeasible() {
-
     return true;
 }
+/*
 void LocalPlanner::QxFromPrediction(Collection<double,N+1> mpcPredictionHeads)
 {
     Matrix<double,2,2> rotationMatrix;
@@ -83,6 +75,8 @@ void LocalPlanner::QxFromPrediction(Collection<double,N+1> mpcPredictionHeads)
         bodyArray[i] = rotationMatrix * carDefaultShape * rotationMatrix.transpose();
     }
 }
+*/
+/*
 void LocalPlanner::ObstToConstraint() {
     //vector<Vector2d,Eigen::aligned_allocator<Vector2d>> path_temp;
     //vector<Matrix2d,Eigen::aligned_allocator<Matrix2d>> shape_temp;
@@ -125,157 +119,90 @@ void LocalPlanner::ObstToConstraint() {
         //cout << "loop size " <<count_id<< endl;
     }
 }
-
+*/
+/*
+Matrix<double,2,1> LocalPlanner::getLocalGoal(){
+    double SP_EPSILON = 1e-9;
+    int box_index = -1;
+    for(int i = 0; i < p_base->getCorridorSeq().size(); i++){
+        Corridor corridor = p_base->getCorridorSeq().at(i);
+        if(corridor.t_end >= param.horizon){
+            box_index = i;
+            break;
+        }
+    }
+    Corridor lastBox = p_base->getCorridorSeq().at(box_index);
+    int goal_index = -1;
+    for(int i = 0; i < p_base->getSkeletonPath().size(); i++){
+        Point skeletonPoint = p_base->getSkeletonPath().at(i);
+        if(skeletonPoint.x > lastBox.xl - SP_EPSILON
+           && skeletonPoint.y > lastBox.yl - SP_EPSILON
+           && skeletonPoint.x < lastBox.xu + SP_EPSILON
+           && skeletonPoint.y < lastBox.yu + SP_EPSILON)
+        {
+            goal_index = i;
+        }
+        else if(goal_index >= 0){
+            break;
+        }
+    }
+    Matrix<double,2,1> tempLocalGoal;
+    tempLocalGoal<< p_base->getSkeletonPath().at(goal_index).x, p_base->getSkeletonPath().at(goal_index).y;
+    return tempLocalGoal;
+}
+*/
 void LocalPlanner::SfcToOptConstraint(double t){
-    double t_end_;
-    double t_start_  = 0.0;
-    int N_corr = 0;
-    int count1 = 0;
-    int count2 = 0;
-    int count3 = 1;
-    for(auto &s: p_base->getCorridorSeq(t,t+param.horizon)) {
-        if (N_corr < N+1) {
+    //VectorXd time_knots;
+    //time_knots.setLinSpaced(N+1,t,t+param.horizon);
+    vector<double> time_knots;
+    for(int i =0; i<N+1;i++)
+    {
+        time_knots.push_back(t+i*param.tStep);
+    }
 
-            if (count1 * count2 == 0) {
-                box_constraint[count2] = s;
-                count1++;
-                count2++;
-                N_corr++;
-            }
-            t_end_ = s.t_end;
-            if (t_end_ > param.horizon) {
-                for (int i = 0; i < round((param.horizon- t_start_)/param.tStep); i++) {
-                    box_constraint[count2] = s;
-                    count2++;
-                    N_corr++;
-                }
-            }
-            else {
+    vector<Corridor> curCorridorSeq;
+    curCorridorSeq = p_base->expandCorridors(time_knots, 0.5);
+    for(int i = 0; i<N+1;i++)
+    {
+        box_constraint[i]= curCorridorSeq[i];
+    }
+    // box_csontraint[]
 
-                for (int i = 0; i < round((t_end_ - t_start_) / param.tStep); i++) {
-                    box_constraint[count2] = s;
-                    count2++;
-                    N_corr++;
-                }
-                t_start_ = param.tStep * (count2 - 1);
-            }
+
 //            cout<<count3<< " th Corridor"<<endl;
 //            cout<< "xl: "<< s.xl<< "[m] xu: "<< s.xu<< "[m] yl: "<< s.yl<< "[m] yl: "<< s.yu<<"[m]"<<endl;
 //            cout <<"t_start: "<<s.t_start <<"[s] t_end: "<<s.t_end<<"[s]"<<endl;
 //            count3++;
-        }
-    }
 }
  Collection<Corridor,N+1> LocalPlanner::getOptCorridor()
  {
     return box_constraint;
  }
 
- void LocalPlanner::SetLocalWpts()
+ void LocalPlanner::SetLocalWpts(double t)
  {
-    //static int flag_initial_point = 0;
-    Matrix<double,2,1> wpts_temp;
-    Matrix<double,2,1> wpts_temp1;
-    vector<Matrix<double,2,1>> node_list;
-    vector<int> wptsNumber_list;
-    vector<double> t_list;
-
-    //node_list.push_back(wpts_initial);
-    for (auto& ss : p_base->getLanePath().lanes)
+    VectorXd time_knots;
+    time_knots.setLinSpaced(N+1,t,t+param.horizon);
+    vector<Vector2d> pos_ref;
+    
+    Matrix<double,N+1,1> th_ref;
+    // zero th position 
+    pos_ref.push_back(p_base->laneSmooth.evalX(p_base->laneSmooth.points,time_knots[0]));
+    for (int i = 1; i<N+1;i++)
     {
-
-        for(auto &tt: ss.laneCenters)
-        {
-            wpts_temp<<tt.x, tt.y;
-            node_list.push_back(wpts_temp);
-        }
-
+        pos_ref.push_back(p_base->laneSmooth.evalX(p_base->laneSmooth.points,time_knots[i]));
+        th_ref[i-1] =
+            atan2((pos_ref[i][1]-pos_ref[i-1][1]),(pos_ref[i][0]-pos_ref[i-1][0]));
     }
+    th_ref[N] = th_ref[N-1];
 
 
-    double node_distance = 0.0;
-    int number_temp = 0;
-    double t_temp = 0;
-    double t_start_ = 0;
-    wpts_temp = node_list[0];
-    int count = 0;
-    for(int i = 1; i<node_list.size();i++)
+    for (int i = 0;i<N+1;i++)
     {
-        t_list.push_back(t_temp);
-        node_distance = (node_list[i]-node_list[i-1]).norm();
-       t_temp +=node_distance /param.nominal_speed; // divided by 2m/s --> wpts list generation at Global Planner.cpp is opimal;
-
+        local_wpts[i][0] = pos_ref[i][0];
+        local_wpts[i][1] = pos_ref[i][1];
+        local_wpts[i][2] = th_ref[i];
     }
-     Matrix<double,2,1> velNormalized_temp;
-    Matrix<double,3,1> wpts_temp2;
-     vector<Matrix<double,2,1>> wpts_list1;
-     vector<Matrix<double,3,1>> wpts_list2;
-
-    for (int i = 0; i< t_list.size();i++)
-    {
-        if(i == 0)
-        {
-            velNormalized_temp = (node_list[1]-node_list[0]).normalized();
-            wpts_temp1=node_list[0];
-            wpts_temp2(0)=wpts_temp1(0);
-            wpts_temp2(1)=wpts_temp1(1);
-            wpts_temp2(2)=atan2(velNormalized_temp(1),velNormalized_temp(0));
-            count++;
-        }
-        else
-        {
-            for (int j = 0; j < round((t_list[i] - t_start_) / param.tStep); j++) {
-                velNormalized_temp = (node_list[i]-node_list[i-1]).normalized();
-                wpts_temp1 = node_list[i-1] + (t_start_+(j+1)*dt - t_list[i-1])*velNormalized_temp*param.nominal_speed; //multiplied by 2m/s
-                wpts_temp2(0) = wpts_temp1(0);
-                wpts_temp2(1) =wpts_temp1(1);
-                wpts_temp2(2) =atan2(velNormalized_temp(1),velNormalized_temp(0));
-                wpts_list1.push_back(wpts_temp1);
-                wpts_list2.push_back(wpts_temp2);
-                count++;
-            }
-        }
-        t_start_ = param.tStep * (count- 1);
-    }
-
-    Matrix<double,2,1> curr_pos;
-    curr_pos<< p_base->getCarState().x, p_base->getCarState().y;
-    int start_idx = 0;
-    double min_gap = 100000;
-    for(int i = 0; i<wpts_list1.size();i++)
-    {
-        if(min_gap>(curr_pos-wpts_list1[i]).norm())
-        {
-            min_gap = (curr_pos-wpts_list1[i]).norm();
-            start_idx = i;
-        }
-
-    }
-	start_idx ++;
-//    Matrix<double,2,1> direction_my;
-//    Matrix<double,2,1> direction_path;
-//    direction_my<< cos(p_base->getCarState().theta), sin(p_base->getCarState().theta);
-//    direction_path<< p_base->getCarState().x-wpts_list2[start_idx].coeffRef(0,0),
-//            p_base->getCarState().y-wpts_list2[start_idx].coeffRef(1,0);
-//    double flag_changeIdx = (direction_my.array()*direction_path.array()).sum();
-//    while(flag_changeIdx<0)
-//    {
-//        flag_changeIdx = (direction_my.array()*direction_path.array()).sum();
-//        start_idx+=1;
-//    }
-    for(int i = 0; i<N; i++)
-    {
-        if(start_idx+i+1>wpts_list2.size())
-        {
-            local_wpts[i] = wpts_list2[wpts_list2.size()-1];
-        }
-        else
-        {
-            local_wpts[i] = wpts_list2[start_idx+i];
-        }
-    }
-
-//
 //    p_base->getLanePath().lanes[0].laneCenters[0].x;
  }
 
@@ -293,57 +220,31 @@ bool LocalPlannerPlain::plan(double t) {
 //    cout << "[LocalPlanner] Done. " << endl;
 //    cout<< "I am in the Local Planner plan function"<<endl;
      cout<<"---------------------------------"<<endl;
-     Matrix<double,2,1> x_goal_;
-//     x_goal_ = LocalPlanner::getLocalGoal();
-     cout<< "New Local Goal is"<<x_goal_.coeffRef(0,0)<<"and"<<x_goal_.coeffRef(1,0)<<endl;
+//     cout<< "New Local Goal is"<<x_goal_.coeffRef(0,0)<<"and"<<x_goal_.coeffRef(1,0)<<endl;
      cout<<"Current car Speed: "<<p_base->getCarState().v<<" [m/s]"<<endl;
      cout<<"Current x-position: "<<p_base->getCarState().x<< " [m]"<<endl;
      cout<<"Current y-position: "<<p_base->getCarState().y<< " [m]"<<endl;
      cout<<"Current heading angle: "<<p_base->getCarState().theta*180/3.1415926535<< " [deg]"<<endl;
-
      LocalPlanner::SfcToOptConstraint(t); // convert SFC to box constraints
-
-     LocalPlanner::ObstToConstraint();
-     if(p_base->getLanePath().lanes.size()>0)
-     {
-         LocalPlanner::SetLocalWpts();
-//         state_weight_.coeffRef(0,0) = 0.5; //x
-//         state_weight_.coeffRef(1,0) = 0.5; //y
-//         state_weight_.coeffRef(2,0) = 0.5; //v
-//         state_weight_.coeffRef(3,0) = 0.1; //delta
-//         state_weight_.coeffRef(4,0) = 0.01; //theta
-//
-//         final_weight_.coeffRef(0,0) = 0.5; // x
-//         final_weight_.coeffRef(1,0) = 0.5; //y
-//         final_weight_.coeffRef(2,0) = 0.5; //v
-//         final_weight_.coeffRef(3,0) = 0.1; //delta
-//         final_weight_.coeffRef(4,0) = 0.01; // theta
-//
-//         input_weight_.coeffRef(0,0) = 0.05;
-//         input_weight_.coeffRef(1,0) = 0.01;
-         isRefUsed = 1;
-     }
+     LocalPlanner::SetLocalWpts(t);
+    isRefUsed = 1;
 
     // LocalPlanner::SetLocalWpts();
      using namespace Eigen;
 
      //Following codes will be wrapped with another wrapper;
-     std::shared_ptr<Problem> prob = std::make_shared<Problem>(bodyArray, box_constraint, obs_Q, obs_q);
+     std::shared_ptr<Problem> prob = std::make_shared<Problem>(box_constraint);
      // Do not have to be defined every loop
 
      bool noConstraint_ = 0;
      prob->set_state_weight(param.state_weight);
      prob->set_final_weight(param.final_weight);
      prob->set_input_weight(param.input_weight);
-
-     prob->setRear_wheel(false);
+     prob->setRear_wheel(true);
 //     prob->setRear_wheel(param.isRearWheeled);
-
      prob->set_noConstraint(noConstraint_);
      prob->set_refUsed(isRefUsed);
-     prob->set_goal(x_goal_);
      prob->set_ref(local_wpts);
-
 
      static int loop_num = 0;
      std::array<Matrix<double,Nu,1>,N> u0;
@@ -363,103 +264,67 @@ bool LocalPlannerPlain::plan(double t) {
          {
              for(auto &s :u0)
              {
-                 s=(Matrix<double,Nu,1>()<< 0.5,0.0).finished();
+                 s=(Matrix<double,Nu,1>()<< 0.001,0.0).finished();
              }
              x0_new = (Matrix<double,Nx,1>()<<p_base->getCarState().x, p_base->getCarState().y,p_base->getCarState().v,
-                     0.0, p_base->getCarState().theta).finished();
-             cout<<"current x: " <<p_base->getCarState().x<<endl;
-             cout<<"current y: " <<p_base->getCarState().y<<endl;
-             cout<<"current v: " <<p_base->getCarState().v<<endl;
-             cout<<"current theta: " <<p_base->getCarState().theta*180/3.1415926535<<"[deg]"<<endl;
+                     0.0, 0.0, p_base->getCarState().theta).finished();
+             //cout<<"current x: " <<p_base->getCarState().x<<endl;
+             //cout<<"current y: " <<p_base->getCarState().y<<endl;
+             //cout<<"current v: " <<p_base->getCarState().v<<endl;
+             //cout<<"current theta: " <<p_base->getCarState().theta*180/3.1415926535<<"[deg]"<<endl;
              uN_new = u0;
              iLQR<Nx,Nu,N> ilqr_init(*prob, x0_new,uN_new,dt,ilqr_param);
              ilqr_init.solve();
-
 
              //uN_NextInit = ilqr_init.uN_;
              uN_new = ilqr_init.uN_;
              xN_new = ilqr_init.xN_;
              for(int j = 0; j<N;j++)
              {
-                 if(uN_new[j][0]>param.maxAccel)
-                     uN_new[j][0]=param.maxAccel;
-                 if(uN_new[j][0]<param.minAccel)
-                     uN_new[j][0]=param.minAccel;
-                 if(xN_new[j][3]>param.maxSteer)
-                     xN_new[j][3]=param.maxSteer;
-                 if(xN_new[j][3]<-param.maxSteer)
-                     xN_new[j][3]=-param.maxSteer;
+                 if(xN_new[j][3]>param.maxAccel)
+                     xN_new[j][3]=param.maxAccel;
+                 if(xN_new[j][3]<param.minAccel)
+                     xN_new[j][3]=param.minAccel;
+                 if(xN_new[j][4]>param.maxSteer)
+                     xN_new[j][4]=param.maxSteer;
+                 if(xN_new[j][4]<-param.maxSteer)
+                     xN_new[j][4]=-param.maxSteer;
 
              }
-
-
-//            uN_NextInit =uN_new;
+             next_state = xN_new[1];
+             
              for(int j = 0;j<N-1;j++)
              {
                  uN_NextInit[j] = uN_new[j+1];
              }
              uN_NextInit[N-1]= uN_new[N-1];
-//             next_state = xN_new[1];
 
-//             cout<<"-------"<<endl;
-//             for(int j = 0; j<50;j++)
-//             {
-//
-//                 cout<<uN_new[j].coeff(0,0)<<endl;
-//             }
-//             cout<<"So far, new input, from now on, new states"<<endl;
-//             for(int j = 0; j<51;j++)
-//             {
-//                 cout<<"updated new future x-position: "<<xN_new[j].coeff(0,0)<<endl;
-//             }
              loop_num++;
          }
          else
          {
              //  Be executed after initial Loop (loop_num>0)
              x0_new = (Matrix<double,Nx,1>()<<p_base->getCarState().x, p_base->getCarState().y,p_base->getCarState().v,
-                     next_state(3,0), p_base->getCarState().theta).finished();
-//             x0_new = (Matrix<double,Nx,1>()<<next_state(0,0), next_state(1,0),next_state(2,0),
-//                     next_state(3,0), next_state(4,0)).finished();
+                     next_state(3,0),next_state(4,0), p_base->getCarState().theta).finished();
 
-             //             x0_new = (Matrix<double,Nx,1>()<<p_base->getCarState().x, p_base->getCarState().y,p_base->getCarState().v,
-//                     p_base->getCurInput(t).steer_angle_cmd, p_base->getCarState().theta).finished();
              iLQR<Nx,Nu,N> ilqr(*prob, x0_new,uN_NextInit,dt,ilqr_param);
              ilqr.solve();
              uN_new = ilqr.uN_;
              xN_new = ilqr.xN_;
-             next_state = xN_new[1];
-//             cout<<"-------"<<endl;
-//             for(int j = 0; j<50;j++)
-//             {
-//
-//                 cout<<"Accleration of Car"<<uN_new[j].coeff(0,0)<<endl;
-//             }
-//             for(int j = 0; j<51;j++)
-//             {
-//                 cout<<"updated new future x-position: "<<xN_new[j].coeff(0,0)<<" [m]"<<endl;
-//             }
-//             for(int j = 0; j<51;j++)
-//             {
-//                 cout<<"updated new future steering angle "<<xN_new[j].coeff(3,0)*180/3.1415926535<<" [deg]"<<endl;
-//             }
-//             uN_NextInit =uN_new;
-
-
 
              for(int j = 0; j<N;j++)
              {
-                 if(uN_new[j][0]>param.maxAccel)
-                     uN_new[j][0]=param.maxAccel;
-                 if(uN_new[j][0]<param.minAccel)
-                     uN_new[j][0]=param.minAccel;
-                 if(xN_new[j][3]>param.maxSteer)
-                     xN_new[j][3]=param.maxSteer;
-                 if(xN_new[j][3]<-param.maxSteer)
-                     xN_new[j][3]=-param.maxSteer;
+                 if(xN_new[j][3]>param.maxAccel)
+                     xN_new[j][3]=param.maxAccel;
+                 if(xN_new[j][3]<param.minAccel)
+                     xN_new[j][3]=param.minAccel;
+                 if(xN_new[j][4]>param.maxSteer)
+                     xN_new[j][4]=param.maxSteer;
+                 if(xN_new[j][4]<-param.maxSteer)
+                     xN_new[j][4]=-param.maxSteer;
 
              }
-
+             next_state = xN_new[1];
 
              for(int j = 0;j<N-1;j++)
              {
@@ -483,10 +348,10 @@ bool LocalPlannerPlain::plan(double t) {
          carState_temp.x = xN_new[i].coeffRef(0,0);
          carState_temp.y = xN_new[i].coeffRef(1,0);
          carState_temp.v = xN_new[i].coeffRef(2,0);
-         carState_temp.theta = xN_new[i].coeffRef(4,0);
+         carState_temp.theta = xN_new[i].coeffRef(5,0);
 
-         carInput_temp.alpha = uN_new[i].coeffRef(0,0);
-         carInput_temp.delta = xN_new[i].coeffRef(3,0);
+         carInput_temp.alpha = xN_new[i].coeffRef(3,0);
+         carInput_temp.delta = xN_new[i].coeffRef(4,0);
 
          curPlanning.ts.push_back(ts_temp.coeffRef(i,0));
          curPlanning.xs.push_back(carState_temp);
@@ -496,11 +361,6 @@ bool LocalPlannerPlain::plan(double t) {
     //TODO: print out the outcome of the planning
     return true; // change this line properly
 }
-
-
-
-
-
 
 
 /////////////////////////////////
