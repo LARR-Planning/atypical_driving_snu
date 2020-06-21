@@ -971,7 +971,9 @@ void Wrapper::runPlanning() {
                     tCkpL = chrono::steady_clock::now(); // check point time
                     auto tCkp_mpc = chrono::steady_clock::now();
                     ROS_INFO("[Wrapper] begin LP..");
-                    isLPSuccess = planLocal(ros_wrapper_ptr->curTime()); // TODO time ?
+                    // isLPSuccess = planLocal(ros_wrapper_ptr->curTime()); // TODO time ?
+                    isLPSuccess = true;
+
                     didLplanByG = true;
                     if (isLPSuccess)
                         ROS_INFO_STREAM("[Wrapper] LP success! planning time for lp: " <<

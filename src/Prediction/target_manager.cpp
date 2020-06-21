@@ -169,7 +169,7 @@ geometry_msgs::PoseArray TargetManager::get_obsrv_pose(string world_frame_id) {
 
 
 TargetManager::~TargetManager(){
-     cout << "[TargetManager] Destroyed with log file" << endl;
+     //cout << "[TargetManager] Destroyed with log file" << endl;
      string fileName = logFileDir+"/observation_"+ to_string(managerIdx) +  ".txt";
     std::ofstream file(fileName);
     // vec8 = [x,y,qx,qy,qz,qw,dimx,dimy]
