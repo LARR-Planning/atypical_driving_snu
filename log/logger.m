@@ -1,3 +1,33 @@
+%% log 0622 (use this)
+
+data_input = load('log_input.txt');
+data_state = load('log_state.txt');
+
+
+figure(1)
+hold on
+plot(data_state(:,2),data_state(:,3),'k-')
+theta = data_state(:,4);
+xaxis = [cos(theta) sin(theta)];
+dd = 50;
+quiver(data_state(1:dd:end,2),data_state(1:dd:end,3),xaxis(1:dd:end,1),xaxis(1:dd:end,2))
+xlabel('x')
+ylabel('y')
+
+figure(2)
+subplot(2,1,1)
+gg = plot(data_input(:,1),data_input(:,2),'b-','LineWidth',4);
+gg.Color(4) = 0.2;
+hold on
+title('accel history')
+subplot(2,1,2)
+gg = plot(data_input(:,1),data_input(:,3),'c-','LineWidth',4);
+gg.Color(4) = 0.2;
+hold on
+title('steering history')
+
+
+
 %% log corridor information 
 horizon_global = 5;
 accel_lim = [-3.0 1.0];

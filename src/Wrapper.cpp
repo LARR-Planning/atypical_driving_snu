@@ -67,6 +67,7 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
     pubObservationPoseArray = nh.advertise<geometry_msgs::PoseArray>("observation_pose_queue",1);
     pubPredictionArray = nh.advertise<visualization_msgs::MarkerArray>("prediction",1);
     pubCurCmd = nh.advertise<driving_msgs::VehicleCmd>("/vehicle_cmd",1);
+    pubCurCmdDabin = nh.advertise<geometry_msgs::Twist>("/acc_cmd",1);
     pubMPCTraj = nh.advertise<nav_msgs::Path>("mpc_traj",1);
     pubCurPose = nh.advertise<geometry_msgs::PoseStamped>("cur_pose",1);
 
@@ -408,6 +409,9 @@ void RosWrapper::publish() {
         cmd.header.stamp = ros::Time::now();
         cmd.steer_angle_cmd *= (180.0/3.14); // cmd output deg
         pubCurCmd.publish(cmd);
+
+        geometry_msgs::Twist cmdDabin;
+
         pubMPCTraj.publish(MPCTraj);
         p_base->log_state_input(curTime());
     }
@@ -660,7 +664,7 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
 
         // make v
         curState.v = speed; // reverse gear = negative
-        ROS_DEBUG("Current car state (x,y,theta(degree),v(m/s)) : [%f,%f,%f,%f]", curState.x, curState.y,
+        ROS_INFO("Current car state (x,y,theta(degree),v(m/s)) : [%f,%f,%f,%f]", curState.x, curState.y,
                   curState.theta * 180 / M_PI, curState.v);
 
         /**
@@ -807,25 +811,25 @@ void Wrapper::processLane(double tTrigger) {
                                                                       windowHeight,idxSliceStart,idxSliceEnd);
 
         // Move to GP
-        //        double meanCurv = meanCurvature(pathSliced);
-//        double vLaneRef; // referance velocity for the current lane
-//        double vmin = param.g_param.car_speed_min;
-//        double vmax = param.g_param.car_speed_max;
-//        double rho_thres = param.g_param.curvature_thres;
-//
-//        if (meanCurv > rho_thres)
-//            vLaneRef = vmin;
-//        else{
-//            vLaneRef = vmax - (vmax-vmin)/rho_thres*meanCurv;
-//        }
-//
-//
+        double meanCurv = meanCurvature(pathSliced);
+        double vLaneRef; // referance velocity for the current lane
+        double vmin = param.g_param.car_speed_min;
+        double vmax = param.g_param.car_speed_max;
+        double rho_thres = param.g_param.curvature_thres;
+
+        if (meanCurv > rho_thres)
+            vLaneRef = vmin;
+        else{
+            vLaneRef = vmax - (vmax-vmin)/rho_thres*meanCurv;
+        }
+
+
         p_base_shared->mSet[1].lock();
         p_base_shared->laneSliced.points = pathSliced;
         p_base_shared->laneSliced.widths = vector<double>(p_base_shared->laneOrig.widths.begin()+idxSliceStart,p_base_shared->laneOrig.widths.begin()+idxSliceEnd+1);
-//        p_base_shared->laneSpeed = vLaneRef;
-//        p_base_shared->laneCurvature = meanCurv;
-//        ROS_INFO("lane [%f,%f]" ,meanCurv,vLaneRef);
+        p_base_shared->laneSpeed = vLaneRef;
+        p_base_shared->laneCurvature = meanCurv;
+        ROS_INFO("lane [%f,%f]" ,meanCurv,vLaneRef);
         p_base_shared->mSet[1].unlock();
 //
         if (not ros_wrapper_ptr->isLaneSliceLoaded){
@@ -870,7 +874,7 @@ bool Wrapper::planLocal(double tTrigger) {
         updateMPCToBase();
     }
 //    p_base_shared->log_corridor(tTrigger,tTrigger + param.l_param.horizon);
-//    p_base_shared->log_mpc(tTrigger);
+    p_base_shared->log_mpc(tTrigger);
 //    return lpPassed;
     return true;
 }

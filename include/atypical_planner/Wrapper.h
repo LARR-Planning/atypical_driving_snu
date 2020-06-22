@@ -101,6 +101,7 @@ namespace Planner{
         ros::Publisher pubSmoothLane;
         ros::Publisher pubTextSlider;
         ros::Publisher pubDetectedObjectsPoseArray;
+        ros::Publisher pubCurCmdDabin;
 
 
         /**
