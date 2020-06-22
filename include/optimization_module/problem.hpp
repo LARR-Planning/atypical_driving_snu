@@ -24,6 +24,7 @@
 #include <optimization_module/symbolic_functions/conu.hpp>
 #include <optimization_module/symbolic_functions/con_final.hpp>
 #include <optimization_module/symbolic_functions/conx_final.hpp>
+#include <cmath>
 /* YW added*/
 template<typename T, const int size>
 using Collection = std::array<T, size>;
@@ -32,29 +33,20 @@ class Problem : public ProblemDescription<Nx,Nu>
 {
 private:
 
-    Matrix<double,2,1> x_goal_; // Goal : the last point of last corridor
-    Collection<Matrix<double,3,1>,N> x_ref; // Reference Tracking Mode
+    Collection<Matrix<double,3,1>,N+1> x_ref; // Reference Tracking Mode
     int isRefUsed;
-    Collection<Matrix<double,2,2>,N+1>& Qx; // shape matrix, constant in plain_MPC
-
     VectorX final_weight_ = VectorX::Zero(); //Final Cost Weight Factor
     VectorX state_weight_ = VectorX::Zero(); //Running Cost State Weight Factor
     VectorU input_weight_ = VectorU::Zero(); //Running Cost Input Weight Factor
 
-    vector<vector<Matrix2d>>& obs_Q_;
-    vector<vector<Vector2d>>& obs_q_;
     Collection<Planner::Corridor,N+1>& sfc_modified;
     bool noConstraint_ = true;
     bool isRearWheel_;
 
 public:
-    Problem (Collection<Matrix<double,2,2>,N+1>& car_shape,
-             Collection<Planner::Corridor,N+1>& corridor_seq, vector<vector<Matrix2d>>& obs_Q,
-             vector<vector<Vector2d>>& obs_q)
-            : sfc_modified(corridor_seq), Qx(car_shape),  obs_Q_(obs_Q), obs_q_(obs_q)
+    Problem (Collection<Planner::Corridor,N+1>& corridor_seq)
+            : sfc_modified(corridor_seq)
     { }
-    void set_goal( const Matrix<double,2,1> x_goal)
-    { x_goal_ = x_goal; }
 
     void set_input_weight( const VectorU weight )
     { input_weight_ = weight;	}
@@ -65,7 +57,7 @@ public:
     void set_final_weight( const VectorX weight )
     { final_weight_ = weight;	}
 
-    void set_ref(const Collection<Matrix<double,3,1>,N> x_ref_)
+    void set_ref(const Collection<Matrix<double,3,1>,N+1> x_ref_)
     {x_ref = x_ref_;}
 
     void set_refUsed(const int isRefUsed_)
@@ -77,16 +69,7 @@ public:
     void setRear_wheel(const bool isRearWheel)
     { isRearWheel_ = isRearWheel;}
 
-//		void set_constraintype( const int constraintType )
-//		{ constraintType_ = constraintType; }
-    /*
-    void set_obstacle( const Matrix<double,3,1> q,
-                        const Matrix<double,3,3> Q )
-    { 	q_obs.push_back( q );	Q_obs.push_back( Q ); }
 
-    void clear_obstacles()
-    {	q_obs.clear(); Q_obs.clear(); }
-    */
     DynamicsDerivatives<Nx,Nu>
     dynamics(const VectorX x, const VectorU u, const double dt, const ReturnType type)
     {
@@ -119,149 +102,50 @@ public:
     CostDerivatives<Nx,Nu>
     cost(const VectorX x, const VectorU u, const int idx, const ReturnType type)
     {
-//        if(isRefUsed)
-//        {
-        if(obs_q_.size()>0) {
-            if (!std::isnan(u(0))) {
-                // running cost must be computed here
-                CostDerivatives<Nx, Nu> obj;
-                obj.c = symbolic_functions::cost(x, u, state_weight_, input_weight_, x_ref[idx], obs_q_[0][idx]);
-                if (type == WITHOUT_DERIVATIVES)
-                    return obj;
-                obj.cx = symbolic_functions::costx(x, u, state_weight_, input_weight_, x_ref[idx], obs_q_[0][idx]);
-                obj.cu = symbolic_functions::costu(x, u, state_weight_, input_weight_, x_ref[idx], obs_q_[0][idx]);
-                obj.cxx = symbolic_functions::costxx(x, u, state_weight_, input_weight_, x_ref[idx], obs_q_[0][idx]);
-                obj.cxu = MatrixXU::Zero();
-                obj.cuu = symbolic_functions::costuu(x, u, state_weight_, input_weight_, x_ref[idx], obs_q_[0][idx]);
+        if (!std::isnan(u(0))) {
+            // running cost must be computed here
+            CostDerivatives<Nx, Nu> obj;
+            //obj.c = symbolic_functions::cost(x, u, state_weight_, input_weight_, x_ref[idx]);
+            obj.c = symbolic_functions::cost(x, u, state_weight_.array()*std::pow(1.1,1+idx/N),input_weight_, x_ref[idx]);
+            if (type == WITHOUT_DERIVATIVES)
                 return obj;
-            }
-            else
-            {
-                // final cost must be computed here
-                Matrix<double, Nu, 1> u_Zero = Matrix<double, Nu, 1>::Zero();
-                CostDerivatives<Nx, Nu> obj;
-                obj.c = symbolic_functions::cost(x, u_Zero, final_weight_, input_weight_, x_ref[idx-1], obs_q_[0][idx]);
-                if (type == WITHOUT_DERIVATIVES)
-                    return obj;
-                obj.cx = symbolic_functions::costx(x, u_Zero, final_weight_, input_weight_, x_ref[idx-1], obs_q_[0][idx]);
-                obj.cu = VectorU::Zero();
-                obj.cxx = symbolic_functions::costxx(x, u_Zero, final_weight_, input_weight_, x_ref[idx-1], obs_q_[0][idx]);
-                obj.cxu = MatrixXU::Zero();
-                obj.cuu = MatrixUU::Zero();
-                return obj;
-            }
+            //obj.cx = symbolic_functions::costx(x, u, state_weight_, input_weight_, x_ref[idx]);
+			obj.cx = symbolic_functions::costx(x, u, state_weight_.array()*std::pow(1.1,1+idx/N), input_weight_, x_ref[idx]);
+            
+			obj.cu = symbolic_functions::costu(x, u, state_weight_, input_weight_, x_ref[idx]);
+            obj.cxx = symbolic_functions::costxx(x, u, state_weight_.array()*std::pow(1.1,1+idx/N), input_weight_, x_ref[idx]);
+            obj.cxu = MatrixXU::Zero();
+            obj.cuu = symbolic_functions::costuu(x, u, state_weight_, input_weight_, x_ref[idx]);
+            return obj;
         }
         else
         {
-            Matrix<double,2,1> temp_obstacle;
-            temp_obstacle<<10000, 20000;
-            if (!std::isnan(u(0))) {
-                // running cost must be computed here
-                CostDerivatives<Nx, Nu> obj;
-                obj.c = symbolic_functions::cost(x, u, state_weight_, input_weight_, x_ref[idx], temp_obstacle);
-                if (type == WITHOUT_DERIVATIVES)
-                    return obj;
-                obj.cx = symbolic_functions::costx(x, u, state_weight_, input_weight_, x_ref[idx], temp_obstacle);
-                obj.cu = symbolic_functions::costu(x, u, state_weight_, input_weight_, x_ref[idx], temp_obstacle);
-                obj.cxx = symbolic_functions::costxx(x, u, state_weight_, input_weight_, x_ref[idx], temp_obstacle);
-                obj.cxu = MatrixXU::Zero();
-                obj.cuu = symbolic_functions::costuu(x, u, state_weight_, input_weight_, x_ref[idx], temp_obstacle);
+            // final cost must be computed here
+            Matrix<double, Nu, 1> u_Zero = Matrix<double, Nu, 1>::Zero();
+            CostDerivatives<Nx, Nu> obj;
+            obj.c = symbolic_functions::cost(x, u_Zero, final_weight_, input_weight_, x_ref[idx-1]);
+            if (type == WITHOUT_DERIVATIVES)
                 return obj;
-            }
-            else {
-                // final cost must be computed here
-                Matrix<double, Nu, 1> u_Zero = Matrix<double, Nu, 1>::Zero();
-                CostDerivatives<Nx, Nu> obj;
-                obj.c = symbolic_functions::cost(x, u_Zero, final_weight_, input_weight_, x_ref[idx-1], temp_obstacle);
-                if (type == WITHOUT_DERIVATIVES)
-                    return obj;
-                obj.cx = symbolic_functions::costx(x, u_Zero, final_weight_, input_weight_, x_ref[idx-1], temp_obstacle);
-                obj.cu = VectorU::Zero();
-                obj.cxx = symbolic_functions::costxx(x, u_Zero, final_weight_, input_weight_, x_ref[idx-1], temp_obstacle);
-                obj.cxu = MatrixXU::Zero();
-                obj.cuu = MatrixUU::Zero();
-                return obj;
-            }
+            obj.cx = symbolic_functions::costx(x, u_Zero, final_weight_, input_weight_, x_ref[idx-1]);
+            obj.cu = VectorU::Zero();
+            obj.cxx = symbolic_functions::costxx(x, u_Zero, final_weight_, input_weight_, x_ref[idx-1]);
+            obj.cxu = MatrixXU::Zero();
+            obj.cuu = MatrixUU::Zero();
+            return obj;
         }
-  //      }
-//        else
-//        {
-//            if(obs_q_.size()>0) {
-//                if (!std::isnan(u(0))) {
-//                    // running cost must be computed here
-//                    CostDerivatives<Nx, Nu> obj;
-//                    obj.c = symbolic_functions::cost(x, u, state_weight_, input_weight_, x_goal_, obs_q_[0][idx]);
-//                    if (type == WITHOUT_DERIVATIVES)
-//                        return obj;
-//                    obj.cx = symbolic_functions::costx(x, u, state_weight_, input_weight_, x_goal_, obs_q_[0][idx]);
-//                    obj.cu = symbolic_functions::costu(x, u, state_weight_, input_weight_, x_goal_, obs_q_[0][idx]);
-//                    obj.cxx = symbolic_functions::costxx(x, u, state_weight_, input_weight_, x_goal_, obs_q_[0][idx]);
-//                    obj.cxu = MatrixXU::Zero();
-//                    obj.cuu = symbolic_functions::costuu(x, u, state_weight_, input_weight_, x_goal_, obs_q_[0][idx]);
-//                    return obj;
-//                }
-//                else
-//                {
-//                    // final cost must be computed here
-//                    Matrix<double, Nu, 1> u_Zero = Matrix<double, Nu, 1>::Zero();
-//                    CostDerivatives<Nx, Nu> obj;
-//                    obj.c = symbolic_functions::cost(x, u_Zero, final_weight_, input_weight_, x_goal_, obs_q_[0][idx]);
-//                    if (type == WITHOUT_DERIVATIVES)
-//                        return obj;
-//                    obj.cx = symbolic_functions::costx(x, u_Zero, final_weight_, input_weight_, x_goal_, obs_q_[0][idx]);
-//                    obj.cu = VectorU::Zero();
-//                    obj.cxx = symbolic_functions::costxx(x, u_Zero, final_weight_, input_weight_, x_goal_, obs_q_[0][idx]);
-//                    obj.cxu = MatrixXU::Zero();
-//                    obj.cuu = MatrixUU::Zero();
-//                    return obj;
-//                }
-//            }
-//            else
-//            {
-//                Matrix<double,2,1> temp_obstacle;
-//                temp_obstacle<<10000, 20000;
-//                if (!std::isnan(u(0))) {
-//                    // running cost must be computed here
-//                    CostDerivatives<Nx, Nu> obj;
-//                    obj.c = symbolic_functions::cost(x, u, state_weight_, input_weight_, x_goal_, temp_obstacle);
-//                    if (type == WITHOUT_DERIVATIVES)
-//                        return obj;
-//                    obj.cx = symbolic_functions::costx(x, u, state_weight_, input_weight_, x_goal_, temp_obstacle);
-//                    obj.cu = symbolic_functions::costu(x, u, state_weight_, input_weight_, x_goal_, temp_obstacle);
-//                    obj.cxx = symbolic_functions::costxx(x, u, state_weight_, input_weight_, x_goal_, temp_obstacle);
-//                    obj.cxu = MatrixXU::Zero();
-//                    obj.cuu = symbolic_functions::costuu(x, u, state_weight_, input_weight_, x_goal_, temp_obstacle);
-//                    return obj;
-//                }
-//                else {
-//                    // final cost must be computed here
-//                    Matrix<double, Nu, 1> u_Zero = Matrix<double, Nu, 1>::Zero();
-//                    CostDerivatives<Nx, Nu> obj;
-//                    obj.c = symbolic_functions::cost(x, u_Zero, final_weight_, input_weight_, x_goal_, temp_obstacle);
-//                    if (type == WITHOUT_DERIVATIVES)
-//                        return obj;
-//                    obj.cx = symbolic_functions::costx(x, u_Zero, final_weight_, input_weight_, x_goal_, temp_obstacle);
-//                    obj.cu = VectorU::Zero();
-//                    obj.cxx = symbolic_functions::costxx(x, u_Zero, final_weight_, input_weight_, x_goal_, temp_obstacle);
-//                    obj.cxu = MatrixXU::Zero();
-//                    obj.cuu = MatrixUU::Zero();
-//                    return obj;
-//                }
-//            }
-//        }
-
     }
+
+    
     ConstraintDerivatives<Nx,Nu>
     constraint(const VectorX x, const VectorU u, const int idx, const ReturnType type) {
-//        int N_obs = obs_q_.size();
-        Matrix<double, 5, 1> x_ = x.block<5, 1>(0, 0);
+        Matrix<double, 6, 1> x_ = x.block<6, 1>(0, 0);
         Matrix<double, 2, 1> u_ = u.block<2, 1>(0, 0);
         Matrix<double, 4, 1> sfc_modified_temp;
         sfc_modified_temp << sfc_modified[idx].xl,sfc_modified[idx].xu,
                             sfc_modified[idx].yl,sfc_modified[idx].yu; //xl, xu, yl, yu
         if(!std::isnan(u_(0)))
         {
-
+            // Stage Constraints
             ConstraintDerivatives<Nx,Nu> obj(Nc,0);
             obj.con = symbolic_functions::con(x_,u_,sfc_modified_temp);
             if(type == WITHOUT_DERIVATIVES)
@@ -273,13 +157,15 @@ public:
         }
         else
         {
-            Matrix<double,2,1> u_null;
-            ConstraintDerivatives<Nx,Nu> obj(Nc,0);
-            obj.con = symbolic_functions::con_final(x_,u_null,sfc_modified_temp);
+            ConstraintDerivatives<Nx,Nu> obj(Nc-4,0);
+            obj.con = symbolic_functions::con_final(x_,sfc_modified_temp);
             if(type == WITHOUT_DERIVATIVES)
                 return obj;
-            obj.conx = symbolic_functions::conx_final(x_,u_null,sfc_modified_temp);
-            obj.conu = MatrixXU::Zero();
+            obj.conx = symbolic_functions::conx_final(x_,sfc_modified_temp);
+            Matrix<double,Nc-4,Nu> temp_zero;
+            temp_zero.setZero();
+            obj.conu = temp_zero;
+   
             return obj;
         }
     }

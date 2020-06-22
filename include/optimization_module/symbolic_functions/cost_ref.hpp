@@ -12,8 +12,8 @@ namespace symbolic_functions
                 Matrix<double,Nu,1>u_,
                 Matrix<double,Nx,1>Q,
                 Matrix<double,Nu,1>R,
-                Matrix<double,3,1>g,
-                Matrix<double,2,1>obs)
+                Matrix<double,3,1>g
+                )
     {
         float x = x_(0,0);
         float y = x_(1,0);

@@ -30,36 +30,27 @@ namespace Planner {
 
 
     protected:
-        ParamLocal param;
-        iLQRParams ilqr_param;
-           // Planning intermediate outputs
-        MPCResultTraj curPlanning;
+        ParamLocal param; // From yaml file
+        iLQRParams ilqr_param; // iLQR parameters
+        MPCResultTraj curPlanning; //Planning with intermediate outputs
+
         Collection<Matrix<double,2,1>,N> uN_NextInit;
-        Matrix<double,5,1> next_state;
+
+        Matrix<double,Nx,1> next_state;
+		Matrix<double,Nx,1> cur_state;
         // YW added
         Collection<Corridor,N+1> box_constraint;
-        Collection<Matrix<double,2,2>,N+1> bodyArray;
-//        vector<Collection<Matrix<double,2,1>,51>> obs_q; // obstacles' path
-//        vector<Collection<Matrix<double,2,2>,51>> obs_Q; // obstacles' shape matrices.
-        //vector<vector<Vector2d,Eigen::aligned_allocator<Vector2d>>,Eigen::aligned_allocator<vector<Vector2d,Eigen::aligned_allocator<Vector2d>>>> obs_q;
-        //vector<vector<Matrix2d,Eigen::aligned_allocator<Matrix2d>>,Eigen::aligned_allocator<vector<Matrix2d,Eigen::aligned_allocator<Matrix2d>>>> obs_Q;
-        vector<vector<Matrix2d>> obs_Q;
-        vector<vector<Vector2d>> obs_q;
-        //        Collection<Matrix<double,2,1>,51> path_temp; // temp_obstacle path
-//        Collection<Matrix<double,2,2>,51> shape_temp; // temp-obstacle shape
-        Matrix<double,2,2> carDefaultShape;
         // YW added
         void SfcToOptConstraint(double t); // translate sfc into box constraints in optimization
         void ObstToConstraint(); // translate obstacle predictions
-        void SetLocalWpts(); // find closest 50 lane nodes
-        void QxFromPrediction(Collection<double,N+1> mpcPredictionHeads);
-        int isRefUsed;
-        Collection<Matrix<double,3,1>,N> local_wpts;
-        Matrix<double,2,1> wpts_initial;
-        Matrix<double,5,1> state_weight_;
-        Matrix<double,2,1> input_weight_;
-        Matrix<double,5,1> final_weight_;
-
+        void SetLocalWpts(double t); // find closest 50 lane nodes
+        //void QxFromPrediction(Collection<double,N+1> mpcPredictionHeads);        
+		int isRefUsed;
+        Collection<Matrix<double,3,1>,N+1> local_wpts;        
+		//Matrix<double,2,1> wpts_initial;
+        Matrix<double,Nx,1> state_weight_;
+        Matrix<double,Nu,1> input_weight_;
+        Matrix<double,Nx,1> final_weight_;
 
     };
     /**

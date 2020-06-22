@@ -861,14 +861,14 @@ bool Wrapper::planLocal(double tTrigger) {
 
 //
 //    // call global planner
-//    bool lpPassed = lp_ptr->plan(tTrigger); // TODO
-//    // if (not p_base_shared->isGPsolved)
-//    if (not p_base_shared->isLPsolved)
-//        p_base_shared->isLPsolved = lpPassed;
+    bool lpPassed = lp_ptr->plan(tTrigger); // TODO
+//    if (not p_base_shared->isGPsolved)
+    if (not p_base_shared->isLPsolved)
+        p_base_shared->isLPsolved = lpPassed;
 //    // let's log
-//    if (lpPassed) {
-//        updateMPCToBase();
-//    }
+    if (lpPassed) {
+        updateMPCToBase();
+    }
 //    p_base_shared->log_corridor(tTrigger,tTrigger + param.l_param.horizon);
 //    p_base_shared->log_mpc(tTrigger);
 //    return lpPassed;
@@ -973,7 +973,9 @@ void Wrapper::runPlanning() {
                     tCkpL = chrono::steady_clock::now(); // check point time
                     auto tCkp_mpc = chrono::steady_clock::now();
                     ROS_INFO("[Wrapper] begin LP..");
-                    isLPSuccess = planLocal(ros_wrapper_ptr->curTime()); // TODO time ?
+                    // isLPSuccess = planLocal(ros_wrapper_ptr->curTime()); // TODO time ?
+                    isLPSuccess = true;
+
                     didLplanByG = true;
                     if (isLPSuccess)
                         ROS_INFO_STREAM("[Wrapper] LP success! planning time for lp: " <<

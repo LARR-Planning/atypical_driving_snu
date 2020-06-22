@@ -70,8 +70,8 @@ namespace Planner {
         double period;
 
         //ilQR parameters
-        Matrix<double,5,1> state_weight;
-        Matrix<double,5,1> final_weight;
+        Matrix<double,6,1> state_weight;
+        Matrix<double,6,1> final_weight;
         Matrix<double,2,1> input_weight;
     };
 
@@ -235,7 +235,9 @@ namespace Planner {
 
         int n_total_markers = 0;
 
-        Vector2d evalX(const vector<Vector2d, aligned_allocator<Vector2d>>& points, double t);
+        Vector2d evalX(const std::vector<Vector2d, aligned_allocator<Vector2d>>& points_vector, double t);
+        Vector2d evalX(double t);
+        Vector2d evalSidePoint(double t, bool isLeft);
         double evalWidth(double t);
         visualization_msgs::MarkerArray getPoints(const string& frame_id);
     };
