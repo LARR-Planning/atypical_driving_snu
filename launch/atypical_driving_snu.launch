@@ -27,7 +27,7 @@
   <arg name="vehicle_model/is_rear_wheel"     default="false"/>
 
   <arg name="nominal_speed"     default="1.5"/>
-  <arg name="lp_horizon"     default="5"/> <!--preirod = horizon -->
+  <arg name="lp_horizon"     default="10"/> <!--preirod = horizon -->
   <arg name="lp_period"     default="0.1"/> <!--preirod = horizon -->
   <arg name="planning_dt"     default="0.1"/>
 
