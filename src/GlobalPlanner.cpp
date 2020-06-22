@@ -254,6 +254,24 @@ bool GlobalPlanner::plan(double t) {
         }
     }
 
+    // Computing curvature (JBS)
+    double meanCurv = meanCurvature(midPoints);
+    double rho_thres = param.curvature_thres;
+    double vLaneRef;
+    double vmin = param.car_speed_min;
+    double vmax = param.car_speed_max;
+    if (meanCurv > rho_thres)
+        vLaneRef = vmin;
+    else{
+        vLaneRef = vmax - (vmax-vmin)/rho_thres*meanCurv;
+    }
+
+    p_base->mSet[1].lock();
+    p_base->laneSpeed = vLaneRef;
+    p_base->laneCurvature = meanCurv;
+    ROS_INFO("lane [%f,%f]" ,meanCurv,vLaneRef);
+    p_base->mSet[1].unlock();
+
     // width allocation
     std::vector<double> box_size;
     box_size.resize(midPoints.size());

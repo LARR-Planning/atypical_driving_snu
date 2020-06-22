@@ -805,27 +805,29 @@ void Wrapper::processLane(double tTrigger) {
         int idxSliceStart,idxSliceEnd;
         vector<Vector2d, aligned_allocator<Vector2d>> pathSliced = p_base_shared->laneOrig.slicing(curCarState, Vector2d(windowOrigSNU(0),windowOrigSNU(1)), windowWidth,
                                                                       windowHeight,idxSliceStart,idxSliceEnd);
-        double meanCurv = meanCurvature(pathSliced);
-        double vLaneRef; // referance velocity for the current lane
-        double vmin = param.g_param.car_speed_min;
-        double vmax = param.g_param.car_speed_max;
-        double rho_thres = param.g_param.curvature_thres;
 
-        if (meanCurv > rho_thres)
-            vLaneRef = vmin;
-        else{
-            vLaneRef = vmax - (vmax-vmin)/rho_thres*meanCurv;
-        }
-
-
+        // Move to GP
+        //        double meanCurv = meanCurvature(pathSliced);
+//        double vLaneRef; // referance velocity for the current lane
+//        double vmin = param.g_param.car_speed_min;
+//        double vmax = param.g_param.car_speed_max;
+//        double rho_thres = param.g_param.curvature_thres;
+//
+//        if (meanCurv > rho_thres)
+//            vLaneRef = vmin;
+//        else{
+//            vLaneRef = vmax - (vmax-vmin)/rho_thres*meanCurv;
+//        }
+//
+//
         p_base_shared->mSet[1].lock();
         p_base_shared->laneSliced.points = pathSliced;
         p_base_shared->laneSliced.widths = vector<double>(p_base_shared->laneOrig.widths.begin()+idxSliceStart,p_base_shared->laneOrig.widths.begin()+idxSliceEnd+1);
-        p_base_shared->laneSpeed = vLaneRef;
-        p_base_shared->laneCurvature = meanCurv;
-        ROS_INFO("lane [%f,%f]" ,meanCurv,vLaneRef);
+//        p_base_shared->laneSpeed = vLaneRef;
+//        p_base_shared->laneCurvature = meanCurv;
+//        ROS_INFO("lane [%f,%f]" ,meanCurv,vLaneRef);
         p_base_shared->mSet[1].unlock();
-
+//
         if (not ros_wrapper_ptr->isLaneSliceLoaded){
             ros_wrapper_ptr->isLaneSliceLoaded = true;
             ROS_INFO("[SNU_PLANNER] Starting lane slicing! ");
