@@ -295,7 +295,64 @@ Vector2d SmoothLane::evalX(const std::vector<Vector2d, aligned_allocator<Vector2
     }
     else{
         double alpha = (t - ts[i-1]) / (ts[i] - ts[i-1]);
-        return alpha * points_vector[i] + (1 - alpha) * points[i-1];
+        return alpha * points_vector[i] + (1 - alpha) * points_vector[i-1];
+    }
+}
+
+/**
+ * @brief get interpolated smooth lane point when time is t
+ * @param t
+ * @return Vector2d
+ */
+Vector2d SmoothLane::evalX(double t){
+    int i = 0;
+    while(ts[i] < t && i < ts.size()){
+        i++;
+    }
+
+    Vector2d vector;
+    if(i == 0){
+        vector = points[0];
+    }
+    else if(i == ts.size()){
+        vector = points[ts.size()-1];
+    }
+    else{
+        double alpha = (t - ts[i-1]) / (ts[i] - ts[i-1]);
+        vector = alpha * points[i] + (1 - alpha) * points[i-1];
+    }
+}
+
+/**
+ * @brief get interpolated side point when time is t
+ * @param t
+ * @return Vector2d
+ */
+Vector2d SmoothLane::evalSidePoint(double t, bool isLeft) {
+    int i = 0;
+    while(ts[i] < t && i < ts.size()){
+        i++;
+    }
+
+    if(isLeft) {
+        if (i == 0) {
+            return leftBoundaryPoints[0];
+        } else if (i == ts.size()) {
+            return leftBoundaryPoints[ts.size() - 1];
+        } else {
+            double alpha = (t - ts[i - 1]) / (ts[i] - ts[i - 1]);
+            return alpha * leftBoundaryPoints[i] + (1 - alpha) * leftBoundaryPoints[i - 1];
+        }
+    }
+    else{
+        if (i == 0) {
+            return rightBoundaryPoints[0];
+        } else if (i == ts.size()) {
+            return rightBoundaryPoints[ts.size() - 1];
+        } else {
+            double alpha = (t - ts[i - 1]) / (ts[i] - ts[i - 1]);
+            return alpha * rightBoundaryPoints[i] + (1 - alpha) * rightBoundaryPoints[i - 1];
+        }
     }
 }
 
@@ -336,6 +393,11 @@ Corridor PlannerBase::expandCorridor(Vector2d point, Vector2d leftBoundaryPoint,
 
     if(isOccupied(point)){
         ROS_ERROR("[PlannerBase] expandCorridor error, point is occluded by obstacles");
+        for(int i_mid = 0; i_mid < laneSmooth.points.size(); i_mid++) {
+            if (isOccupied(laneSmooth.points[i_mid])) {
+                ROS_ERROR("[PlannerBase] expandCorridor error, midPoint is also occluded by obstacles");
+            }
+        }
         throw -1;
     }
 
@@ -417,9 +479,19 @@ std::vector<Corridor> PlannerBase::expandCorridors(std::vector<double> ts, doubl
     std::vector<Corridor> corridors;
     corridors.resize(ts.size());
     for(int i = 0; i < ts.size(); i++){
-        Vector2d corridor_point = laneSmooth.evalX(laneSmooth.points, ts[i]);
-        Vector2d leftBoundaryPoint = laneSmooth.evalX(laneSmooth.leftBoundaryPoints, ts[i]);
-        Vector2d rightBoundaryPoint = laneSmooth.evalX(laneSmooth.rightBoundaryPoints, ts[i]);
+        Vector2d corridor_point = laneSmooth.evalX(ts[i]);
+        Vector2d leftBoundaryPoint = laneSmooth.evalSidePoint(ts[i], true);
+        Vector2d rightBoundaryPoint = laneSmooth.evalSidePoint(ts[i], false);
+        while(isOccupied(corridor_point)){
+            ROS_WARN("[PlannerBase] heuristic method is used to avoid midpoint collision!");
+            double heuristic_margin = 0.1;
+            if((corridor_point - leftBoundaryPoint).norm() < (corridor_point - rightBoundaryPoint).norm()){
+                corridor_point = corridor_point + heuristic_margin * (rightBoundaryPoint - leftBoundaryPoint).normalized();
+            }
+            else{
+                corridor_point = corridor_point + heuristic_margin * (leftBoundaryPoint - rightBoundaryPoint).normalized();
+            }
+        }
         Corridor corridor = expandCorridor(corridor_point, leftBoundaryPoint, rightBoundaryPoint, laneSmooth.evalWidth(ts[i]), map_resolution);
         corridors.emplace_back(corridor);
     }

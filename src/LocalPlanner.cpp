@@ -190,7 +190,7 @@ void LocalPlanner::SfcToOptConstraint(double t){
     pos_ref.push_back(p_base->laneSmooth.evalX(p_base->laneSmooth.points,time_knots[0]));
     for (int i = 1; i<N+1;i++)
     {
-        pos_ref.push_back(p_base->laneSmooth.evalX(p_base->laneSmooth.points,time_knots[i]));
+        pos_ref.push_back(p_base->laneSmooth.evalX(p_base->laneSmooth.points, time_knots[i]));
         th_ref[i-1] =
             atan2((pos_ref[i][1]-pos_ref[i-1][1]),(pos_ref[i][0]-pos_ref[i-1][0]));
     }
