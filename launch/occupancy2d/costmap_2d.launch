@@ -44,7 +44,7 @@
           - {name: inflation,       type: "costmap_2d::InflationLayer"}
 
         publish_frequency: 10
-        update_frequency: 1
+        update_frequency: 10
         transform_tolerance: 2.0
         origin_x: 0
         origin_y: 0
@@ -53,21 +53,23 @@
         height: 50
         rolling_window: true
         obstacles:
-          obstacle_range: 20.5,
-          track_unkown_space: false,
+          clearing: true,
+          obstacle_range: 40.5,
+          track_unkown_space: true,
           observation_sources: base_scan
           inf_is_valid: true
-          footprint_clearing_enabled: false
+          footprint_clearing_enabled: true,
           base_scan: {
             data_type: PointCloud2,
             sensor_frame: $(arg lidar_frame_id),
             clearing: true,
             marking: true,
+            raytrace_range: 200,
             topic: $(arg pcl_topic),
-            observation_persistance: 15.0,
+            observation_persistance: 10.0,
             obstacle_range: 100,
-            max_obstacle_height: 1.4,
-            min_obstacle_height: 0.08
+            max_obstacle_height: 2.0,
+            min_obstacle_height: 0.1
           }
         voxel:
           publish_voxel_map: true

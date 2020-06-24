@@ -29,14 +29,14 @@ obstacles:
   track_unkown_space: false,
   observation_sources: base_scan
   inf_is_valid: true
-  footprint_clearing_enabled: false
+  footprint_clearing_enabled: fale
   base_scan: {
     data_type: LaserScan,
     sensor_frame: LidarSensor1,
     clearing: true,
     marking: true,
     topic: /scan,
-    observation_persistance: 15.0,
+    observation_persistance: 1.0,
     obstacle_range: 100
   }
 voxel:
