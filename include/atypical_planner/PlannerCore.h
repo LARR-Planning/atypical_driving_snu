@@ -122,6 +122,7 @@ namespace Planner {
         ParamPredictor p_param;
     };
 
+
     /**
      * @brief State feed for MPC
      * @todo Conversion btw ROS messages / covariance
@@ -265,10 +266,12 @@ namespace Planner {
         double laneSpeed; // current speed to be applied to the lane in slice
         double laneCurvature;  // current mean curvature of the slide
 
+        double weight_smooth;
+
         vector<Corridor> corridor_seq;
         Corridor search_range;
         MPCResultTraj mpc_result;
-
+        driving_msgs::VehicleCmd ctrl_history;
         ObstaclePathArray obstaclePathArray;
 
         CarState cur_state;
@@ -310,13 +313,13 @@ namespace Planner {
             pow(getDesiredState().y - cur_state.y,2));
             return (dist < goal_thres);
         }
-
-        driving_msgs::VehicleCmd getCurInput(double t) {
-            driving_msgs::VehicleCmd cmd;
-            cmd.steer_angle_cmd =  mpc_result.evalU(t).delta;
-            cmd.accel_decel_cmd = mpc_result.evalU(t).alpha;
-            return cmd;
-        };
+        driving_msgs::VehicleCmd getCurInput(double t);
+//        driving_msgs::VehicleCmd getCurInput(double t) {
+//            driving_msgs::VehicleCmd cmd;
+//            cmd.steer_angle_cmd =  mpc_result.evalU(t).delta;
+//            cmd.accel_decel_cmd = mpc_result.evalU(t).alpha;
+//            return cmd;
+//        };
         ObstaclePathArray getCurObstaclePathArray() {return obstaclePathArray;};
         vector<Corridor> getCorridorSeq() {return corridor_seq;}; // Returns just all the latest
         vector<Corridor> getCorridorSeq(double t0,double tf ); // start time is set to zero
@@ -352,7 +355,6 @@ namespace Planner {
     protected:
         // Shared resource
         shared_ptr<PlannerBase> p_base; /**< This is the shared resource. Multiple thread will use this data. */
-
     public:
         AbstractPlanner(shared_ptr<PlannerBase> p_base_):p_base(p_base_) {};
         virtual bool plan(double t ) = 0;

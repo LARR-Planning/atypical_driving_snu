@@ -29,6 +29,7 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
     nh.param<string>("lane_csv_file",csv_file,"catkin_ws/src/atypical_driving_snu/keti_pangyo_path3.csv");
     nh.param<double>("lane_width",laneWidth,2.5);
     nh.param<string>("log_file_prefix",p_base_->log_file_name_base,"");
+    nh.param("smooth_weight",p_base->weight_smooth, 1.0);
 
     // Logger reset
     string corridor_logger = p_base_->log_file_name_base;
@@ -135,8 +136,6 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<string>("occu_map_frame_id",octomapGenFrameId,"/map");
     nh.param<string>("base_link_id",baseLinkId,"/base_link");
     nh.param<string>("detected_objects_id",detectedObjectId,"/map");
-
-
 
     // global planner
 

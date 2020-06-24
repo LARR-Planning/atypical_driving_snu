@@ -19,6 +19,7 @@
   <arg name="lidar_frame_id" default = "LidarSensor1"/>
   <arg name ="detected_object_frame_id" default = "map"/>
 
+  <param name = "smooth_weight" value="0.7"/>
 
   <arg name= "lane_width" default="10"/>
   <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/waypoint_airsim.csv"/>

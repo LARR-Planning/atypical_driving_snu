@@ -37,7 +37,7 @@ LocalPlanner::LocalPlanner(const Planner::ParamLocal &l_param,
     ilqr_param.mu = 1.5;
     ilqr_param.lambda = 0.0;
     ilqr_param.phi = 0.1;
-    ilqr_param.verbosity = 1;
+    ilqr_param.verbosity = 0;
     ilqr_param.dmu = 1.2;
     ilqr_param.dphi = 0.8;
 
@@ -264,7 +264,7 @@ bool LocalPlannerPlain::plan(double t) {
          {
              for(auto &s :u0)
              {
-                 s=(Matrix<double,Nu,1>()<< 0.001,0.0).finished();
+                 s=(Matrix<double,Nu,1>()<< 0.01,0.0).finished();
              }
              x0_new = (Matrix<double,Nx,1>()<<p_base->getCarState().x, p_base->getCarState().y,p_base->getCarState().v,
                      0.0, 0.0, p_base->getCarState().theta).finished();
@@ -311,6 +311,10 @@ bool LocalPlannerPlain::plan(double t) {
              ilqr.solve();
              uN_new = ilqr.uN_;
              xN_new = ilqr.xN_;
+	     for(int jj = 0; jj<50;jj++)
+	     {
+	         cout<<"Future "<<jj<<"th Accel input is"<<xN_new[jj][3]<<endl;
+             }
 
              for(int j = 0; j<N;j++)
              {
