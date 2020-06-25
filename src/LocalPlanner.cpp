@@ -313,7 +313,7 @@ bool LocalPlannerPlain::plan(double t) {
              xN_new = ilqr.xN_;
 	     for(int jj = 0; jj<50;jj++)
 	     {
-	         cout<<"Future "<<jj<<"th Accel input is"<<xN_new[jj][3]<<endl;
+	         // cout<<"Future "<<jj<<"th Accel input is"<<xN_new[jj][3]<<endl;
              }
 
              for(int j = 0; j<N;j++)

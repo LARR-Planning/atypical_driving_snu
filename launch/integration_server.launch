@@ -30,6 +30,10 @@
 <arg name="gp_z_min" value = "0.5"/>
 <arg name="gp_z_max" value = "1.0"/>
 
+<arg name = "goal/x" default = "0"/>
+<arg name = "goal/y" default = "0"/>
+
+
 <group ns="atypical_planning_test">
 <rosparam file="$(find atypical_driving)/param/MPC_weight.yaml"/>
 </group>
@@ -40,19 +44,20 @@
 
     <remap from = "/occupancy_grid" to = "/costmap_node/costmap/costmap"/>
 
-
     <param name = "world_frame_id" value="$(arg world_frame_id)" />
     <param name = "snu_frame_id" value="$(arg snu_frame_id)" />
     <param name = "occu_map_frame_id" value="$(arg occu_frame_id)" />
     <param name = "base_link_id" value="$(arg car_base_frame_id)" />
     <param name = "detected_objects_id" value="$(arg detected_object_frame_id)" />
 
-
     <!--Shaping params for nominal_speed selection-->
     <param name = "vmax" value = "3"/> <!--m/s-->
     <param name = "vmin" value = "3"/> <!--m/s-->
     <param name = "curve_thres" value = "0.3"/> <!--m/s-->
 
+    <param name = "goal/x" value = "$(arg goal/x)"/>
+    <param name = "goal/y" value = "$(arg goal/y)"/>
+    <param name = "goal_thres" value = "1.5"/>
 
     <param name = "lane_csv_file" value = "$(arg lane_csv_file)"/>
     <param name = "lane_width" value="$(arg lane_width_nominal)"/>
@@ -86,6 +91,8 @@
     <param name="local_planner/max_steer" value="0.52" />
     <param name="local_planner/max_accel" value="1.5" />
     <param name="local_planner/min_accel" value="-1.5" />
+
+    <param name = "smooth_weight" value="0.7"/>
 
     <param name="predictor/observation_queue" value="10" />
     <param name="predictor/ref_height" value="0.4" />
