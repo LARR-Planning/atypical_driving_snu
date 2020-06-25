@@ -627,10 +627,12 @@ void PlannerBase::log_corridor(double t_cur, double tf) {
 }
 
 void PlannerBase::log_mpc(double t_cur) {
-    string file_name = log_file_name_base + "_mpc.txt";
-    ofstream outfile;
-    outfile.open(file_name,std::ios_base::app);
-    outfile<< mpc_result.getPretty(t_cur) << endl;
+    if (this->isLPsolved){
+        string file_name = log_file_name_base + "_mpc.txt";
+        ofstream outfile;
+        outfile.open(file_name,std::ios_base::app);
+        outfile<< mpc_result.getPretty(t_cur) << endl;
+    }
 }
 
 /**

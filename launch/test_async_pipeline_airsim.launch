@@ -4,8 +4,8 @@
 
 <launch>
   <arg name = "use_sim_time" value = "true"/>
-<!--   <arg name="bagfile"        default="autoDriveIntegration.bag"/> -->
-  <arg name="bagfile"        default="autoDriveAnotherCar2.bag"/>
+  <arg name="bagfile"        default="autoDriveIntegration.bag"/> 
+<!--  <arg name="bagfile"        default="autoDriveAnotherCar2.bag"/> -->
 <!--   <arg name="bagfile"        default="autoDriveTwoBoxes.bag"/> -->
   <arg name = "pcl_topic" default = "/airsim_car_node/PhysXCar/lidar/LidarSensor1"/>
 
@@ -20,7 +20,7 @@
   <arg name="lidar_frame_id" default = "LidarSensor1"/>
   <arg name ="detected_object_frame_id" default = "map"/>
 
-
+  <param name="smooth_weight" value="0.7"/>
   <arg name= "lane_width" default="10"/>
   <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/waypoint_airsim.csv"/>
   <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
@@ -31,13 +31,13 @@
   <arg name="vehicle_model/is_rear_wheel"     default="true"/>
 
   <arg name="nominal_speed"     default="2"/>
-  <arg name="lp_horizon"     default="5"/>
-  <arg name="lp_period"     default="0.1"/>
+  <arg name="lp_horizon"     value="5"/>
+  <arg name="lp_period"     value="0.1"/>
 
   <arg name="gp_horizon"     default="30"/>
   <arg name="gp_period"     default="0.4"/>
 
-  <arg name="planning_dt"     default="0.1"/> <!--?-->
+  <arg name="planning_dt"     value="0.1"/> <!--?-->
 
   <arg name="gp_z_min" value = "0.5"/>
   <arg name="gp_z_max" value = "1.0"/>

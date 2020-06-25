@@ -182,7 +182,7 @@ void LocalPlanner::SfcToOptConstraint(double t){
  void LocalPlanner::SetLocalWpts(double t)
  {
     VectorXd time_knots;
-    time_knots.setLinSpaced(N+1,t,t+param.horizon);
+    time_knots.setLinSpaced(N+1,t,t+N*param.tStep);
     vector<Vector2d> pos_ref;
     
     Matrix<double,N+1,1> th_ref;
@@ -199,6 +199,7 @@ void LocalPlanner::SfcToOptConstraint(double t){
 
     for (int i = 0;i<N+1;i++)
     {
+        cout<<"At time "<< time_knots[i] <<"[s] pos ref x is: "<<pos_ref[i][0]<<" pos ref y is: "<<pos_ref[i][1]<<endl;
         local_wpts[i][0] = pos_ref[i][0];
         local_wpts[i][1] = pos_ref[i][1];
         local_wpts[i][2] = th_ref[i];
@@ -264,7 +265,7 @@ bool LocalPlannerPlain::plan(double t) {
          {
              for(auto &s :u0)
              {
-                 s=(Matrix<double,Nu,1>()<< 0.01,0.0).finished();
+                 s=(Matrix<double,Nu,1>()<< 0.1,0.0).finished();
              }
              x0_new = (Matrix<double,Nx,1>()<<p_base->getCarState().x, p_base->getCarState().y,p_base->getCarState().v,
                      0.0, 0.0, p_base->getCarState().theta).finished();
@@ -273,7 +274,7 @@ bool LocalPlannerPlain::plan(double t) {
              //cout<<"current v: " <<p_base->getCarState().v<<endl;
              //cout<<"current theta: " <<p_base->getCarState().theta*180/3.1415926535<<"[deg]"<<endl;
              uN_new = u0;
-             iLQR<Nx,Nu,N> ilqr_init(*prob, x0_new,uN_new,dt,ilqr_param);
+             iLQR<Nx,Nu,N> ilqr_init(*prob, x0_new,uN_new,param.tStep,ilqr_param);
              ilqr_init.solve();
 
              //uN_NextInit = ilqr_init.uN_;
@@ -299,69 +300,103 @@ bool LocalPlannerPlain::plan(double t) {
              }
              uN_NextInit[N-1]= uN_new[N-1];
 
+             Matrix<double,N,1> ts_temp = VectorXd::LinSpaced(N,0.0,4.9);
+             ts_temp = ts_temp.array()+ t;
+             CarState carState_temp;
+             CarInput carInput_temp;
+
+             curPlanning.ts.clear();
+             curPlanning.xs.clear();
+             curPlanning.us.clear();
+             for(int i = 0 ;i<N; i++) {
+                 carState_temp.x = xN_new[i].coeffRef(0, 0);
+                 carState_temp.y = xN_new[i].coeffRef(1, 0);
+                 carState_temp.v = xN_new[i].coeffRef(2, 0);
+                 carState_temp.theta = xN_new[i].coeffRef(5, 0);
+
+                 carInput_temp.alpha = xN_new[i].coeffRef(3, 0);
+                 carInput_temp.delta = xN_new[i].coeffRef(4, 0);
+
+                 curPlanning.ts.push_back(ts_temp.coeffRef(i, 0));
+                 curPlanning.xs.push_back(carState_temp);
+                 curPlanning.us.push_back(carInput_temp);
+             }
              loop_num++;
          }
          else
          {
+             int flag_unstable = 0;
              //  Be executed after initial Loop (loop_num>0)
              x0_new = (Matrix<double,Nx,1>()<<p_base->getCarState().x, p_base->getCarState().y,p_base->getCarState().v,
-                     next_state(3,0),next_state(4,0), p_base->getCarState().theta).finished();
-
+                     next_state[3],next_state[4], p_base->getCarState().theta).finished();
              iLQR<Nx,Nu,N> ilqr(*prob, x0_new,uN_NextInit,dt,ilqr_param);
              ilqr.solve();
              uN_new = ilqr.uN_;
              xN_new = ilqr.xN_;
-	     for(int jj = 0; jj<50;jj++)
-	     {
-	         cout<<"Future "<<jj<<"th Accel input is"<<xN_new[jj][3]<<endl;
-             }
 
-             for(int j = 0; j<N;j++)
+             for(int jj = 0; jj<50;jj++)
              {
-                 if(xN_new[j][3]>param.maxAccel)
-                     xN_new[j][3]=param.maxAccel;
-                 if(xN_new[j][3]<param.minAccel)
-                     xN_new[j][3]=param.minAccel;
-                 if(xN_new[j][4]>param.maxSteer)
-                     xN_new[j][4]=param.maxSteer;
-                 if(xN_new[j][4]<-param.maxSteer)
-                     xN_new[j][4]=-param.maxSteer;
-
+                 //cout<<"Future "<<jj<<"th Accel input is"<<xN_new[jj][3]<<endl;
+                 if (xN_new[jj][3]>param.maxAccel+0.5 || xN_new[jj][3]<param.minAccel-0.5 || xN_new[jj][4]>param.maxSteer+0.1 || xN_new[jj][4]<-param.maxSteer-0.1)
+                     flag_unstable =1;
              }
-             next_state = xN_new[1];
 
-             for(int j = 0;j<N-1;j++)
+             if (!flag_unstable)
              {
-                 uN_NextInit[j] = uN_new[j+1];
+
+                 for(int j = 0; j<N;j++)
+                 {
+                     if(xN_new[j][3]>param.maxAccel)
+                         xN_new[j][3]=param.maxAccel;
+                     if(xN_new[j][3]<param.minAccel)
+                         xN_new[j][3]=param.minAccel;
+                     if(xN_new[j][4]>param.maxSteer)
+                         xN_new[j][4]=param.maxSteer;
+                     if(xN_new[j][4]<-param.maxSteer)
+                         xN_new[j][4]=-param.maxSteer;
+
+                 }
+                 next_state = xN_new[1];
+
+                 for(int j = 0;j<N-1;j++)
+                 {
+                     uN_NextInit[j] = uN_new[j+1];
+                 }
+                 uN_NextInit[N-1]= uN_new[N-1];
+
+                 Matrix<double,N,1> ts_temp = VectorXd::LinSpaced(N,0.0,4.9);
+                 ts_temp = ts_temp.array()+ t;
+                 CarState carState_temp;
+                 CarInput carInput_temp;
+
+                 curPlanning.ts.clear();
+                 curPlanning.xs.clear();
+                 curPlanning.us.clear();
+                 for(int i = 0 ;i<N; i++) {
+                     carState_temp.x = xN_new[i].coeffRef(0, 0);
+                     carState_temp.y = xN_new[i].coeffRef(1, 0);
+                     carState_temp.v = xN_new[i].coeffRef(2, 0);
+                     carState_temp.theta = xN_new[i].coeffRef(5, 0);
+
+                     carInput_temp.alpha = xN_new[i].coeffRef(3, 0);
+                     carInput_temp.delta = xN_new[i].coeffRef(4, 0);
+
+                     curPlanning.ts.push_back(ts_temp.coeffRef(i, 0));
+                     curPlanning.xs.push_back(carState_temp);
+                     curPlanning.us.push_back(carInput_temp);
+                 }
+
              }
-             uN_NextInit[N-1]= uN_new[N-1];
+             else
+             {
+                uN_NextInit =u0;
+             }
          }
+
      }
 
-     // Update CarState and CarInput into the form designed in PlannerCore header file
-     Matrix<double,N,1> ts_temp = VectorXd::LinSpaced(N,0.0,4.9);
-     ts_temp = ts_temp.array()+ t;
-     CarState carState_temp;
-     CarInput carInput_temp;
-
-     curPlanning.ts.clear();
-     curPlanning.xs.clear();
-     curPlanning.us.clear();
-     for(int i = 0 ;i<N; i++)
-     {
-         carState_temp.x = xN_new[i].coeffRef(0,0);
-         carState_temp.y = xN_new[i].coeffRef(1,0);
-         carState_temp.v = xN_new[i].coeffRef(2,0);
-         carState_temp.theta = xN_new[i].coeffRef(5,0);
-
-         carInput_temp.alpha = xN_new[i].coeffRef(3,0);
-         carInput_temp.delta = xN_new[i].coeffRef(4,0);
-
-         curPlanning.ts.push_back(ts_temp.coeffRef(i,0));
-         curPlanning.xs.push_back(carState_temp);
-         curPlanning.us.push_back(carInput_temp);
-     }
-    //loop_num++;
+         // Update CarState and CarInput into the form designed in PlannerCore header file
+     //loop_num++;
     //TODO: print out the outcome of the planning
     return true; // change this line properly
 }
