@@ -4,6 +4,7 @@
 
 <launch>
   <arg name = "use_sim_time" value = "true"/>
+
   <arg name="bagfile"        default="autoDriveIntegration.bag"/>
 <!--   <arg name="bagfile"        default="autoDriveAnotherCar2.bag"/> -->
 <!--   <arg name="bagfile"        default="autoDriveTwoBoxes.bag"/> -->
@@ -20,7 +21,7 @@
   <arg name="lidar_frame_id" default = "LidarSensor1"/>
   <arg name ="detected_object_frame_id" default = "map"/>
 
-
+  <param name="smooth_weight" value="0.7"/>
   <arg name= "lane_width" default="10"/>
   <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/waypoint_airsim.csv"/>
   <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
@@ -35,7 +36,8 @@
 
   <arg name="nominal_speed"     default="2"/>
 
-  <arg name="planning_dt"     default="0.1"/> <!--?-->
+
+  <arg name="planning_dt"     value="0.1"/> <!--?-->
 
 
   <group ns="atypical_planning_test">

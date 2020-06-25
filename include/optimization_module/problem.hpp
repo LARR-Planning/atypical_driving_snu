@@ -40,12 +40,18 @@ private:
     VectorU input_weight_ = VectorU::Zero(); //Running Cost Input Weight Factor
 
     Collection<Planner::Corridor,N+1>& sfc_modified;
+    Matrix<double,2,2> car_shape;
+
+    vector<vector<Matrix2d>>& obs_Q;
+    vector<vector<Vector2d>>& obs_q;
+
     bool noConstraint_ = true;
     bool isRearWheel_;
 
 public:
-    Problem (Collection<Planner::Corridor,N+1>& corridor_seq)
-            : sfc_modified(corridor_seq)
+    Problem (Collection<Planner::Corridor,N+1>& corridor_seq, vector<vector<Vector2d>>& obs_pos,
+            vector<vector<Matrix2d>>& obs_shape)
+            : sfc_modified(corridor_seq), obs_Q(obs_shape),obs_q(obs_pos)
     { }
 
     void set_input_weight( const VectorU weight )
@@ -53,6 +59,8 @@ public:
 
     void set_state_weight( const VectorX weight )
     { state_weight_ = weight; }
+    void set_car_shape(const Matrix<double,2,2> shape)
+    { car_shape = shape; }
 
     void set_final_weight( const VectorX weight )
     { final_weight_ = weight;	}
@@ -143,30 +151,83 @@ public:
         Matrix<double, 4, 1> sfc_modified_temp;
         sfc_modified_temp << sfc_modified[idx].xl,sfc_modified[idx].xu,
                             sfc_modified[idx].yl,sfc_modified[idx].yu; //xl, xu, yl, yu
-        if(!std::isnan(u_(0)))
-        {
-            // Stage Constraints
-            ConstraintDerivatives<Nx,Nu> obj(Nc,0);
-            obj.con = symbolic_functions::con(x_,u_,sfc_modified_temp);
-            if(type == WITHOUT_DERIVATIVES)
-                return obj;
-            obj.conx = symbolic_functions::conx(x_,u_,sfc_modified_temp);
-            obj.conu = symbolic_functions::conu(x_,u_,sfc_modified_temp);
-            return obj;
 
+        int N_obs = obs_q.size();
+        if(N_obs==0)
+        {
+            if(!std::isnan(u_(0)))
+            {
+                // Stage Constraints
+                ConstraintDerivatives<Nx,Nu> obj(Nc,0);
+                obj.con = symbolic_functions::con(x_,u_,sfc_modified_temp);
+                if(type == WITHOUT_DERIVATIVES)
+                    return obj;
+                obj.conx = symbolic_functions::conx(x_,u_,sfc_modified_temp);
+                obj.conu = symbolic_functions::conu(x_,u_,sfc_modified_temp);
+                return obj;
+
+            }
+            else
+            {
+                ConstraintDerivatives<Nx,Nu> obj(Nc-4,0);
+                obj.con = symbolic_functions::con_final(x_,sfc_modified_temp);
+                if(type == WITHOUT_DERIVATIVES)
+                    return obj;
+                obj.conx = symbolic_functions::conx_final(x_,sfc_modified_temp);
+                Matrix<double,Nc-4,Nu> temp_zero;
+                temp_zero.setZero();
+                obj.conu = temp_zero;
+
+                return obj;
+            }
         }
         else
         {
-            ConstraintDerivatives<Nx,Nu> obj(Nc-4,0);
-            obj.con = symbolic_functions::con_final(x_,sfc_modified_temp);
-            if(type == WITHOUT_DERIVATIVES)
+            Matrix<double,2,2> Q1;
+            Q1 = car_shape;
+            double sqrtTrQ1 = sqrt(Q1.trace());
+
+            if(!std::isnan(u_(0)))
+            {
+                Matrix<double,2,1> q1;
+                q1<<x_(0,0),x_(1,0);
+
+                ConstraintDerivatives<Nx,Nu> obj(Nc+N_obs,0);
+                for(int i = 0; i<N_obs;i++)
+                {
+                    Matrix<double,2,1> q2 = obs_q[i][idx];
+                    Matrix<double,2,2> Q2 = obs_Q[i][idx];
+                    double sqrtTrQ2 = sqrt(Q2.trace());
+
+                    Matrix<double,2,2>  Qsum = (1.0+sqrtTrQ2/sqrtTrQ1)*Q1+(1.0+sqrtTrQ1/sqrtTrQ2)*Q2;
+                    Matrix<double,2,2> invQsum = Qsum.inverse();
+                    obj.con(Nc+i) = (q1-q2).dot(invQsum*(q1-q2))-1.0;
+                    if(type!= WITHOUT_DERIVATIVES)
+                    {
+                        obj.conx.row(Nc+i).block<1,2>(0,0) = 2.0*(invQsum*(q1-q2)).transpose();
+                    }
+                }
+                // Stage Constraints
+                obj.con.block<Nc,1>(0,0) = symbolic_functions::con(x_,u_,sfc_modified_temp);
+                if(type != WITHOUT_DERIVATIVES)
+                {
+                    obj.conx.block<Nc,Nx>(0,0) = symbolic_functions::conx(x_,u_,sfc_modified_temp);
+                    obj.conu.block<Nc,Nu>(0,0) = symbolic_functions::conu(x_,u_,sfc_modified_temp);
+                }
                 return obj;
-            obj.conx = symbolic_functions::conx_final(x_,sfc_modified_temp);
-            Matrix<double,Nc-4,Nu> temp_zero;
-            temp_zero.setZero();
-            obj.conu = temp_zero;
-   
-            return obj;
+            }
+            else
+            {
+                ConstraintDerivatives<Nx,Nu> obj(Nc-4,0);
+                obj.con.block<Nc-4,1>(0,0) = symbolic_functions::con_final(x_,sfc_modified_temp);
+                if(type == WITHOUT_DERIVATIVES)
+                    return obj;
+                obj.conx.block<Nc-4,Nx>(0,0) = symbolic_functions::conx_final(x_,sfc_modified_temp);
+                Matrix<double,Nc-4,Nu> temp_zero;
+                temp_zero.setZero();
+                obj.conu = temp_zero;
+                return obj;
+            }
         }
     }
 };

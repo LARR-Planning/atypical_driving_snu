@@ -323,6 +323,7 @@ Vector2d SmoothLane::evalX(double t){
         double alpha = (t - ts[i-1]) / (ts[i] - ts[i-1]);
         vector = alpha * points[i] + (1 - alpha) * points[i-1];
     }
+    return vector;
 }
 
 /**
@@ -485,7 +486,7 @@ std::vector<Corridor> PlannerBase::expandCorridors(std::vector<double> ts, doubl
         Vector2d leftBoundaryPoint = laneSmooth.evalSidePoint(ts[i], true);
         Vector2d rightBoundaryPoint = laneSmooth.evalSidePoint(ts[i], false);
         while(isOccupied(corridor_point)){
-            ROS_WARN("[PlannerBase] heuristic method is used to avoid midpoint collision!");
+            //ROS_WARN("[PlannerBase] heuristic method is used to avoid midpoint collision!");
             double heuristic_margin = 0.1;
             if((corridor_point - leftBoundaryPoint).norm() < (corridor_point - rightBoundaryPoint).norm()){
                 corridor_point = corridor_point + heuristic_margin * (rightBoundaryPoint - leftBoundaryPoint).normalized();
@@ -495,7 +496,7 @@ std::vector<Corridor> PlannerBase::expandCorridors(std::vector<double> ts, doubl
             }
         }
         Corridor corridor = expandCorridor(corridor_point, leftBoundaryPoint, rightBoundaryPoint, laneSmooth.evalWidth(ts[i]), map_resolution);
-        corridors.emplace_back(corridor);
+        corridors[i] = corridor;
     }
     return corridors;
 }
@@ -630,10 +631,12 @@ void PlannerBase::log_corridor(double t_cur, double tf) {
 }
 
 void PlannerBase::log_mpc(double t_cur) {
-    string file_name = log_file_name_base + "_mpc.txt";
-    ofstream outfile;
-    outfile.open(file_name,std::ios_base::app);
-    outfile<< mpc_result.getPretty(t_cur) << endl;
+    if (this->isLPsolved){
+        string file_name = log_file_name_base + "_mpc.txt";
+        ofstream outfile;
+        outfile.open(file_name,std::ios_base::app);
+        outfile<< mpc_result.getPretty(t_cur) << endl;
+    }
 }
 
 /**
