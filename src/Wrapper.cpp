@@ -161,6 +161,7 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<int>("global_planner/max_smoothing_iteration", param_.g_param.max_smoothing_iteration,5);
     nh.param<double>("global_planner/smoothing_margin", param_.g_param.smoothing_margin,0.5);
     nh.param<double>("global_planner/max_steering_angle", param_.g_param.max_steering_angle, M_PI/6);
+    nh.param<double>("global_planner/width_min", param_.g_param.width_min, 1);
 
     // local planner
     nh.param<double>("local_planner/horizon",param_.l_param.horizon,5);

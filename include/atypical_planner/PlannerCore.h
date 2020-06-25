@@ -102,6 +102,7 @@ namespace Planner {
         int max_smoothing_iteration;
         double smoothing_margin;
         double max_steering_angle;
+        double width_min;
     };
 
     struct ParamPredictor{
@@ -233,6 +234,7 @@ namespace Planner {
         vector<double> box_size;
         vector<Vector2d, aligned_allocator<Vector2d>> leftBoundaryPoints;
         vector<Vector2d, aligned_allocator<Vector2d>> rightBoundaryPoints;
+        bool isBlocked;
 
         int n_total_markers = 0;
 
