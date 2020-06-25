@@ -335,8 +335,8 @@ bool LocalPlannerPlain::plan(double t) {
              for(int jj = 0; jj<50;jj++)
              {
                  //cout<<"Future "<<jj<<"th Accel input is"<<xN_new[jj][3]<<endl;
-                 if (xN_new[jj][3]>param.maxAccel+0.5 || xN_new[jj][3]<param.minAccel-0.5 || xN_new[jj][4]>param.maxSteer+0.1 || xN_new[jj][4]<-param.maxSteer-0.1)
-                     flag_unstable =1;
+                 if (xN_new[jj][3]>param.maxAccel+0.5 || xN_new[jj][3]<param.minAccel-0.5 || xN_new[jj][4]>param.maxSteer+0.15 || xN_new[jj][4]<-param.maxSteer-0.15)
+                     flag_unstable =0;
              }
 
              if (!flag_unstable)
