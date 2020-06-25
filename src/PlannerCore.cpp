@@ -259,10 +259,18 @@ visualization_msgs::MarkerArray SmoothLane::getPoints(const string& frame_id) {
         marker.scale.x = 0.1;
         marker.scale.y = 0.1;
         marker.scale.z = 0.1;
-        marker.color.a = 1;
-        marker.color.r = 1;
-        marker.color.g = 0;
-        marker.color.b = 0;
+        if(isBlocked) {
+            marker.color.a = 1;
+            marker.color.r = 1;
+            marker.color.g = 0;
+            marker.color.b = 0;
+        }
+        else{
+            marker.color.a = 1;
+            marker.color.r = 0;
+            marker.color.g = 1;
+            marker.color.b = 0;
+        }
         markers.markers.emplace_back(marker);
     }
     for(int i = i_marker; i < n_total_markers; i++){

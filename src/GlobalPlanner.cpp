@@ -136,6 +136,7 @@ bool GlobalPlanner::plan(double t) {
     // Update laneTree to find midPoints
     laneTreeSearch(i_tree_start);
     std::vector<int> tail = getMidPointsFromLaneTree(i_tree_start);
+    bool isBlocked = isLaneTreeBlocked(tail.back());
 
 //    std::vector<Vector2d> midPoints, leftPoints, rightPoints;
 //    midPoints.resize(tail.size()+1);
@@ -211,7 +212,7 @@ bool GlobalPlanner::plan(double t) {
 
     int idx_start, idx_end, idx_delta, i_angle = 0;
     Vector2d smoothingPoint;
-    while(i_angle < midAngles.size()-2) {
+    while(i_angle < (int)midAngles.size()-2) {
         double diff = abs(midAngles[i_angle+1] - midAngles[i_angle]);
         if(diff > M_PI) {
             diff = 2 * M_PI - diff;
@@ -294,6 +295,7 @@ bool GlobalPlanner::plan(double t) {
     smoothLane.box_size = box_size;
     smoothLane.leftBoundaryPoints = leftBoundaryPoints;
     smoothLane.rightBoundaryPoints = rightBoundaryPoints;
+    smoothLane.isBlocked = isBlocked;
 
     p_base->mSet[1].lock();
     smoothLane.n_total_markers = p_base->laneSmooth.n_total_markers;
@@ -363,7 +365,8 @@ std::vector<int> GlobalPlanner::findChildren(int idx){
 
         Vector2d child_point = laneTree[i_tree].midPoint;
         Vector2d current_point = laneTree[idx].midPoint;
-        if(!p_base->isOccupied(child_point, current_point)){
+        double child_width = laneTree[i_tree].width;
+        if(!p_base->isOccupied(child_point, current_point) && child_width >= param.width_min){
             double dist = (child_point - current_point).norm();
             if(children.empty()){
                 children.emplace_back(i_tree);
@@ -421,4 +424,8 @@ std::vector<int> GlobalPlanner::getMidPointsFromLaneTree(int i_tree_start){
     }
     tail.emplace_back(i_tree);
     return tail;
+}
+
+bool GlobalPlanner::isLaneTreeBlocked(int last_element_index){
+    return laneTree[last_element_index].id != laneTree[laneTree.size()-1].id;
 }
