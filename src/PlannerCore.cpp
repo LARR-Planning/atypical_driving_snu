@@ -99,6 +99,28 @@ Lane::Lane(const LanePath& lanePath){
     }
 
 }
+/**
+ * @brief cut lane points after goal point
+ */
+void Lane::untilGoal(double goal_x,double goal_y) {
+   // Find the closest point toward goal
+   int idx = 0;
+   Vector2d goal(goal_x,goal_y);
+   double deviationMin = 1e+5;
+   int newLastIndex = 0;
+   for (auto pnt : points){
+        double deviation = (pnt - goal).norm();
+        if (deviation < deviationMin){
+            deviationMin = deviation;
+            newLastIndex = idx;
+        }
+        idx ++;
+   }
+
+    points = vector<Vector2d, aligned_allocator<Vector2d>>(points.begin(),points.begin()+newLastIndex);
+    widths = vector<double>(widths.begin(),widths.begin()+newLastIndex);
+
+}
 
 
 /**
@@ -128,26 +150,6 @@ vector<Vector2d, aligned_allocator<Vector2d>> Lane::slicing(const CarState &curC
         }
     }
     startIdx = StartPointIdx;
-//    //Jungwon: Find closest segment point to current car position
-//    Vector2d current_point(curCarState.x, curCarState.y);
-//    Vector2d a,b,c,pi_min,n;
-//    double dist, dist_min;
-//    a = points[StartPointIdx-1] - current_point;
-//    b = points[StartPointIdx] - current_point;
-//    pi_min = a;
-//    dist_min = a.norm();
-//    dist = b.norm();
-//    if(dist_min > dist){
-//        pi_min = b;
-//        dist_min = dist;
-//    }
-//    n = (b-a).normalized();
-//    c = a - n * a.dot(n);
-//    dist = c.norm();
-//    if((c-a).dot(c-b) < 0 && dist_min > dist){
-//        pi_min = c;
-//    }
-//    pi_min = pi_min + current_point;
 
     // Then, let us select the final index
     int EndPointIdx = StartPointIdx;
@@ -522,6 +524,7 @@ vector<Corridor> PlannerBase::getCorridorSeq(double t0, double tf) {
 driving_msgs::VehicleCmd PlannerBase::getCurInput(double t){
     static int flag = 0;
     double curr_weight = weight_smooth;
+    cout << "weight: " << curr_weight << endl;
     driving_msgs::VehicleCmd cmd;
     if (flag == 0)
     {

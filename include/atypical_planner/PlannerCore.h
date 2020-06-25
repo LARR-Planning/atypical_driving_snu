@@ -184,6 +184,7 @@ namespace Planner {
         vector<double> widths;
         Lane(){};
         Lane(const LanePath& lanePath);
+        void untilGoal(double goal_x,double goal_y);
         vector<Vector2d, aligned_allocator<Vector2d>> slicing(const CarState& curCarState,Vector2d windowOrig,double w, double h , int & startIdx , int & endIdx );
         nav_msgs::Path getPath(string frame_id);
         visualization_msgs::MarkerArray getSidePath(string frame_id);
@@ -255,7 +256,7 @@ namespace Planner {
         // Flag
         bool isGPsolved = false;
         bool isLPsolved = false;
-
+        bool isReached = false;
         // Lane
         parser parse_tool;
         LanePath lane_path; // deprecated (better not to be used in routine source block )
@@ -288,6 +289,8 @@ namespace Planner {
         deque<CarState> desired_state_seq;
 
         double goal_thres;
+        double goal_x;
+        double goal_y;
 
         bool isOccupied(Vector2d queryPoint); // query point frame = SNU
         bool isOccupied(Vector2d queryPoint1, Vector2d queryPoint2); // rayIntersection query point frame = SNU
