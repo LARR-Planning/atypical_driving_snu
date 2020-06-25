@@ -502,7 +502,7 @@ std::vector<Corridor> PlannerBase::expandCorridors(std::vector<double> ts, doubl
             }
         }
         Corridor corridor = expandCorridor(corridor_point, leftBoundaryPoint, rightBoundaryPoint, laneSmooth.evalWidth(ts[i]), map_resolution);
-        corridors.emplace_back(corridor);
+        corridors[i] = corridor;
     }
     return corridors;
 }
