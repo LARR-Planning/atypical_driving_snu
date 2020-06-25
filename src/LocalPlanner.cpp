@@ -158,6 +158,11 @@ void LocalPlanner::SfcToOptConstraint(double t){
 
     vector<Corridor> curCorridorSeq;
     curCorridorSeq = p_base->expandCorridors(time_knots, 0.5);
+     //TODO: test corridors for debugging delete this after debugging - jungwon
+     p_base->mSet[1].lock();
+     p_base->corridor_seq = curCorridorSeq;
+     p_base->mSet[1].unlock();
+
     for(int i = 0; i<N+1;i++)
     {
         box_constraint[i]= curCorridorSeq[i];
@@ -392,6 +397,8 @@ bool LocalPlannerPlain::plan(double t) {
          }
 
      }
+
+
 
          // Update CarState and CarInput into the form designed in PlannerCore header file
      //loop_num++;

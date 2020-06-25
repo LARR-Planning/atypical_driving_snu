@@ -300,14 +300,6 @@ bool GlobalPlanner::plan(double t) {
     p_base->laneSmooth = smoothLane;
     p_base->mSet[1].unlock();
 
-    {
-        //TODO: test corridors for debugging delete this after debugging - jungwon
-        curCorridorSeq = p_base->expandCorridors(ts, 0.5);
-        p_base->mSet[1].lock();
-        p_base->corridor_seq = curCorridorSeq;
-        p_base->mSet[1].unlock();
-    }
-
     return true; // change this line properly
 }
 
