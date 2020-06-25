@@ -524,7 +524,7 @@ vector<Corridor> PlannerBase::getCorridorSeq(double t0, double tf) {
 driving_msgs::VehicleCmd PlannerBase::getCurInput(double t){
     static int flag = 0;
     double curr_weight = weight_smooth;
-    cout << "weight: " << curr_weight << endl;
+//    cout << "weight: " << curr_weight << endl;
     driving_msgs::VehicleCmd cmd;
     if (flag == 0)
     {
