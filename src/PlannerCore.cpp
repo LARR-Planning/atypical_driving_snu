@@ -329,6 +329,7 @@ Vector2d SmoothLane::evalX(double t){
         double alpha = (t - ts[i-1]) / (ts[i] - ts[i-1]);
         vector = alpha * points[i] + (1 - alpha) * points[i-1];
     }
+    return vector;
 }
 
 /**
