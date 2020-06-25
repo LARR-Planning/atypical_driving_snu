@@ -34,6 +34,9 @@ namespace Planner {
         iLQRParams ilqr_param; // iLQR parameters
         MPCResultTraj curPlanning; //Planning with intermediate outputs
 
+        vector<vector<Matrix2d>> obs_Q;
+        vector<vector<Vector2d>> obs_q;
+        Matrix<double,2,2> car_shape;
         Collection<Matrix<double,2,1>,N> uN_NextInit;
 
         Matrix<double,Nx,1> next_state;
