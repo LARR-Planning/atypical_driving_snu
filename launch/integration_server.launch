@@ -83,6 +83,8 @@
     <param name="global_planner/box_max_size" value="30" />
     <param name ="global_planner/max_steering_angle" value = "$(eval 3.14/9)"/>
     <param name ="global_planner/width_min" value = "1.5"/>
+    <param name ="global_planner/width_blocked_min" value = "3"/>
+
 
     <param name="local_planner/horizon" value="$(arg lp_horizon)" />
     <param name="local_planner/period" value="$(arg lp_period)" />

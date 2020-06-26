@@ -103,6 +103,7 @@ namespace Planner {
         double smoothing_margin;
         double max_steering_angle;
         double width_min;
+        double width_blocked_min;
     };
 
     struct ParamPredictor{

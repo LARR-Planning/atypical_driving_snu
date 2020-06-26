@@ -137,6 +137,9 @@ bool GlobalPlanner::plan(double t) {
     laneTreeSearch(i_tree_start);
     std::vector<int> tail = getMidPointsFromLaneTree(i_tree_start);
     bool isBlocked = isLaneTreeBlocked(tail.back());
+    if(isBlocked){
+        tail = cutTail(tail);
+    }
 
 //    std::vector<Vector2d> midPoints, leftPoints, rightPoints;
 //    midPoints.resize(tail.size()+1);
@@ -428,4 +431,23 @@ std::vector<int> GlobalPlanner::getMidPointsFromLaneTree(int i_tree_start){
 
 bool GlobalPlanner::isLaneTreeBlocked(int last_element_index){
     return laneTree[last_element_index].id != laneTree[laneTree.size()-1].id;
+}
+
+std::vector<int> GlobalPlanner::cutTail(const std::vector<int>& tail){
+    int tail_end = tail.size();
+    bool isBlocked = false;
+    for(int i_tail = tail.size()-1; i_tail >= 0; i_tail--){
+        if(laneTree[tail[i_tail]].width < param.width_blocked_min){
+            tail_end = i_tail-1;
+            isBlocked = true;
+        }
+        else if(isBlocked){
+            break;
+        }
+    }
+    if(tail_end < 1){
+        tail_end = 1;
+    }
+
+    return vector<int>(tail.begin(), tail.begin() + tail_end);
 }
