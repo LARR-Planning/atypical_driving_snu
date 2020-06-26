@@ -254,7 +254,7 @@ bool LocalPlannerPlain::plan(double t) {
      std::array<Matrix<double,Nu,1>,N> u0;
      for(auto &s :u0)
      {
-     	s=(Matrix<double,Nu,1>()<< 0.1,0.0).finished();
+     	s=(Matrix<double,Nu,1>()<< 0,0.0).finished();
      }
      Matrix<double,Nx,1> x0_new;
      Collection<Matrix<double,Nu,1>,N> uN_new;
