@@ -149,7 +149,16 @@ vector<Vector2d, aligned_allocator<Vector2d>> Lane::slicing(const CarState &curC
             StartPointIdx = i;
         }
     }
-    startIdx = StartPointIdx;
+//    startIdx = StartPointIdx;
+    startIdx = StartPointIdx - 1; // (jungwon)
+
+    // Find closest point (jungwon)
+    Vector2d current_point = Vector2d(curCarState.x,curCarState.y);
+    Vector2d a = points[StartPointIdx-1] - current_point;
+    Vector2d b = points[StartPointIdx] - current_point;
+    Vector2d n = (b-a).normalized();
+    Vector2d start_point = a - n * a.dot(n) + current_point;
+
 
     // Then, let us select the final index
     int EndPointIdx = StartPointIdx;
@@ -169,11 +178,10 @@ vector<Vector2d, aligned_allocator<Vector2d>> Lane::slicing(const CarState &curC
 
     endIdx = EndPointIdx-1;
 
-//    vector<Vector2d> ret(points.begin()+StartPointIdx,points.begin()+EndPointIdx);
-//    ret.insert(ret.begin(), pi_min);
-//    return ret;
-
-    return vector<Vector2d, aligned_allocator<Vector2d>>(points.begin()+StartPointIdx,points.begin()+EndPointIdx);
+//    return vector<Vector2d, aligned_allocator<Vector2d>>(points.begin()+StartPointIdx,points.begin()+EndPointIdx);
+    vector<Vector2d, aligned_allocator<Vector2d>> ret(points.begin()+StartPointIdx,points.begin()+EndPointIdx);
+    ret.insert(ret.begin(), start_point);
+    return ret;
 }
 
 /**
