@@ -188,7 +188,7 @@ void LocalPlanner::SetSfcIdx(int N_corr)
 
     for(int i =1;i<N_corr;i++)
     {
-        temp_idx = N-round((N-1)/N_corr*i);
+        temp_idx = N-round(N/N_corr*i);
         sfc_idx[temp_idx] = true;
     }
 }
