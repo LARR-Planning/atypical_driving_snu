@@ -25,6 +25,7 @@
 #include <optimization_module/symbolic_functions/con_final.hpp>
 #include <optimization_module/symbolic_functions/conx_final.hpp>
 #include <cmath>
+#include <optimization_module/symbolic_functions/con_exp.hpp>
 /* YW added*/
 template<typename T, const int size>
 using Collection = std::array<T, size>;
@@ -40,6 +41,7 @@ private:
     VectorU input_weight_ = VectorU::Zero(); //Running Cost Input Weight Factor
 
     Collection<Planner::Corridor,N+1>& sfc_modified;
+    Collection<bool,N+1> sfc_idx;
     Matrix<double,2,2> car_shape;
 
     vector<vector<Matrix2d>>& obs_Q;
@@ -67,6 +69,9 @@ public:
 
     void set_ref(const Collection<Matrix<double,3,1>,N+1> x_ref_)
     {x_ref = x_ref_;}
+
+    void set_sfc_idx(const Collection<bool,N+1> sfc_idx_)
+    {sfc_idx = sfc_idx; }
 
     void set_refUsed(const int isRefUsed_)
     {isRefUsed = isRefUsed_;}
@@ -159,7 +164,16 @@ public:
             {
                 // Stage Constraints
                 ConstraintDerivatives<Nx,Nu> obj(Nc,0);
-                obj.con = symbolic_functions::con(x_,u_,sfc_modified_temp);
+                if (sfc_idx[idx])
+                {
+                    obj.con = symbolic_functions::con(x_,u_,sfc_modified_temp);
+                }
+                else
+                {
+                    obj.con = symbolic_functions::con_exp(x_,u_,sfc_modified_temp);
+                }
+
+
                 if(type == WITHOUT_DERIVATIVES)
                     return obj;
                 obj.conx = symbolic_functions::conx(x_,u_,sfc_modified_temp);
@@ -208,7 +222,14 @@ public:
                     }
                 }
                 // Stage Constraints
-                obj.con.block<Nc,1>(0,0) = symbolic_functions::con(x_,u_,sfc_modified_temp);
+                if (sfc_idx[idx])
+                {
+                    obj.con = symbolic_functions::con(x_,u_,sfc_modified_temp);
+                }
+                else
+                {
+                    obj.con = symbolic_functions::con_exp(x_,u_,sfc_modified_temp);
+                }
                 if(type != WITHOUT_DERIVATIVES)
                 {
                     obj.conx.block<Nc,Nx>(0,0) = symbolic_functions::conx(x_,u_,sfc_modified_temp);

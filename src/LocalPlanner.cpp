@@ -46,6 +46,7 @@ LocalPlanner::LocalPlanner(const Planner::ParamLocal &l_param,
     final_weight_<< 0.5, 0.5, 0.0, 0.0, 0.0, 1.0;
     input_weight_<< 0.005, 0.5;
     isRefUsed = 0;
+    N_corr = 5;
     cout << "[LocalPlanner] Init." << endl;
     
 }
@@ -175,6 +176,23 @@ void LocalPlanner::SfcToOptConstraint(double t){
 //            cout <<"t_start: "<<s.t_start <<"[s] t_end: "<<s.t_end<<"[s]"<<endl;
 //            count3++;
 }
+
+void LocalPlanner::SetSfcIdx(int N_corr)
+{
+    int  temp_idx;
+    for (int i =0;i<N_corr+1;i++)
+    {
+        sfc_idx[i] = false;
+    }
+    sfc_idx[N] =true;
+
+    for(int i =1;i<N_corr;i++)
+    {
+        temp_idx = N-round((N-1)/N_corr*i);
+        sfc_idx[temp_idx] = true;
+    }
+}
+
  Collection<Corridor,N+1> LocalPlanner::getOptCorridor()
  {
     return box_constraint;
@@ -228,6 +246,8 @@ bool LocalPlannerPlain::plan(double t) {
      cout<<"Current y-position: "<<p_base->getCarState().y<< " [m]"<<endl;
      cout<<"Current heading angle: "<<p_base->getCarState().theta*180/3.1415926535<< " [deg]"<<endl;
      LocalPlanner::SfcToOptConstraint(t); // convert SFC to box constraints
+     LocalPlanner::SetSfcIdx(N_corr); // choose truly effective SFC
+
      LocalPlanner::SetLocalWpts(t);
      LocalPlanner::ObstToConstraint();
     isRefUsed = 1;
@@ -249,6 +269,7 @@ bool LocalPlannerPlain::plan(double t) {
      prob->set_noConstraint(noConstraint_);
      prob->set_refUsed(isRefUsed);
      prob->set_ref(local_wpts);
+     prob->set_sfc_idx(sfc_idx);
 
      static int loop_num = 0;
      std::array<Matrix<double,Nu,1>,N> u0;

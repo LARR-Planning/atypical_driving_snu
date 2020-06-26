@@ -45,11 +45,16 @@ namespace Planner {
         Collection<Corridor,N+1> box_constraint;
         // YW added
         void SfcToOptConstraint(double t); // translate sfc into box constraints in optimization
+        void SetSfcIdx(int N_corr); // choose sfc idx
         void ObstToConstraint(); // translate obstacle predictions
         void SetLocalWpts(double t); // find closest 50 lane nodes
         //void QxFromPrediction(Collection<double,N+1> mpcPredictionHeads);        
 		int isRefUsed;
-        Collection<Matrix<double,3,1>,N+1> local_wpts;        
+        Collection<Matrix<double,3,1>,N+1> local_wpts;
+
+        Collection<bool,N+1> sfc_idx; //  sfc idx
+        int N_corr;
+
 		//Matrix<double,2,1> wpts_initial;
         Matrix<double,Nx,1> state_weight_;
         Matrix<double,Nu,1> input_weight_;
