@@ -365,7 +365,7 @@ void RosWrapper::prepareROSmsgs() {
             marker.scale.x = p_base->corridor_seq[i].xu - p_base->corridor_seq[i].xl;
             marker.scale.y = p_base->corridor_seq[i].yu - p_base->corridor_seq[i].yl;
             marker.scale.z = 0.1;
-            marker.color.a = 0.1;
+            marker.color.a = 0.02;
             marker.color.r = 0;
             marker.color.g = 1;
             marker.color.b = 0;
