@@ -82,6 +82,8 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
     pubSideLane = nh.advertise<visualization_msgs::MarkerArray>("side_lanes",1);
     pubCurGoal = nh.advertise<geometry_msgs::PointStamped>("global_goal",1);
 
+    pubOurOccu = nh.advertise<nav_msgs::OccupancyGrid>("map_for_planning",1);
+
     pubSmoothLane = nh.advertise<visualization_msgs::MarkerArray>("/smooth_lane",1);
     pubTextSlider = nh.advertise<visualization_msgs::Marker>("current_lane",1);
     pubDetectedObjectsPoseArray = nh.advertise<geometry_msgs::PoseArray>("detected_objects_prediction",1);
@@ -402,7 +404,10 @@ void RosWrapper::publish() {
 
         pubMPCTraj.publish(MPCTraj);
         p_base->log_state_input(curTime());
+    } else{
+        ROS_WARN_THROTTLE(0.2,"MPC failed at current step. cmd won't be published.");
     }
+    pubOurOccu.publish(p_base->localMap);
     pubPath.publish(planningPath);
     pubCorridorSeq.publish(corridorSeq);
 
@@ -680,7 +685,7 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
 
 void RosWrapper::cbOccuMap(const nav_msgs::OccupancyGrid & occuMap) {
 
-    p_base->localMap = occuMap;
+    p_base->localMapBuffer = occuMap;
     ROS_INFO_STREAM_ONCE("[SNU_PLANNER/RosWrapper] Received first occupancy map");
     isLocalMapReceived = true;
 }
@@ -797,7 +802,7 @@ bool Wrapper::processLane(double tTrigger) {
 
         Vector3d windowOrigSNU = p_base_shared -> Tso * Vector3d(windowOrig(0),windowOrig(1),0);
 
-        ROS_INFO("orig window = [%f,%f]",windowOrigSNU(0),windowOrigSNU(1));
+//        ROS_INFO("orig window = [%f,%f]",windowOrigSNU(0),windowOrigSNU(1));
         CarState curCarState = p_base_shared->getCarState(); // SNU frame
         int idxSliceStart,idxSliceEnd;
         vector<Vector2d, aligned_allocator<Vector2d>> pathSliced = p_base_shared->laneOrig.slicing(curCarState, Vector2d(windowOrigSNU(0),windowOrigSNU(1)), windowWidth,
@@ -849,6 +854,8 @@ bool Wrapper::processLane(double tTrigger) {
 
 bool Wrapper::planGlobal(double tTrigger){
     // call global planner
+
+
     bool gpPassed = gp_ptr->plan(tTrigger);
     if (not p_base_shared->isGPsolved)
         p_base_shared->isGPsolved = gpPassed;
@@ -865,20 +872,20 @@ bool Wrapper::planGlobal(double tTrigger){
 
 bool Wrapper::planLocal(double tTrigger) {
 
-//
 //    // call global planner
     bool lpPassed = lp_ptr->plan(tTrigger); // TODO
 //    if (not p_base_shared->isGPsolved)
-    if (not p_base_shared->isLPsolved)
-        p_base_shared->isLPsolved = lpPassed;
+    if((not p_base_shared->isLPsolved) and lpPassed)
+        ROS_INFO("[LocalPlanner] Recovered from failure!");
+    p_base_shared->isLPsolved = lpPassed;
+
 //    // let's log
     if (lpPassed) {
         updateMPCToBase();
     }
 //    p_base_shared->log_corridor(tTrigger,tTrigger + param.l_param.horizon);
     p_base_shared->log_mpc(tTrigger);
-//    return lpPassed;
-    return true;
+    return lpPassed;
 }
 
 
@@ -929,12 +936,13 @@ void Wrapper::runPlanning() {
 
             if (isPlanPossible) {
 
+                p_base_shared->localMap = p_base_shared->localMapBuffer;
                 Vector3d goalXYSNU(p_base_shared->goal_x,p_base_shared->goal_y,0); // goal w.r.t SNu frame
                 goalXYSNU = p_base_shared->Tws.inverse()*goalXYSNU;
                 // Goal checking
                 auto distToGoal = (Vector2d(p_base_shared->cur_state.x,p_base_shared->cur_state.y) -
                         Vector2d(goalXYSNU(0),goalXYSNU(1))).norm();
-                cout << "distance to goal" << distToGoal << endl;
+//                cout << "distance to goal" << distToGoal << endl;
                 if (distToGoal < p_base_shared->goal_thres){
                     printf("=========================================================\n");
                     ROS_INFO("[SNU_PLANNER] Reached goal! exiting");

@@ -102,6 +102,7 @@ namespace Planner{
         ros::Publisher pubTextSlider;
         ros::Publisher pubDetectedObjectsPoseArray;
         ros::Publisher pubCurCmdDabin;
+        ros::Publisher pubOurOccu;
 
 
         /**

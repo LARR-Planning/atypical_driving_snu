@@ -347,6 +347,8 @@ bool LocalPlannerPlain::plan(double t) {
 
              }
 
+
+
              if (!flag_unstable)
              {
 
@@ -396,6 +398,8 @@ bool LocalPlannerPlain::plan(double t) {
              else
              {
                 uN_NextInit =u0;
+
+                ROS_INFO(" Initial guess =  initialized to zero");
                  return false;
              }
          }

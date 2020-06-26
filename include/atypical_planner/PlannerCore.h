@@ -254,6 +254,8 @@ namespace Planner {
     public:
         // Map
         nav_msgs::OccupancyGrid localMap;
+        nav_msgs::OccupancyGrid localMapBuffer;
+
 
         // Flag
         bool isGPsolved = false;
