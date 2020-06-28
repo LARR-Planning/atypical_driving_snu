@@ -132,6 +132,7 @@ bool GlobalPlanner::plan(double t) {
         }
         i_tree_start = i_shortest;
     }
+    laneTree[i_tree_start].midPoint = currentPoint; // Fix start node to reflect currentState
 
     // Update laneTree to find midPoints
     laneTreeSearch(i_tree_start);
@@ -169,7 +170,7 @@ bool GlobalPlanner::plan(double t) {
 
     // Find midAngles
     std::vector<double> midAngles;
-    midAngles.resize(midPoints.size()-1);
+    midAngles.resize((int)midPoints.size()-1);
     double angle;
     for(int i_angle = 0; i_angle < midAngles.size(); i_angle++) {
         delta = midPoints[i_angle+1] - midPoints[i_angle];
@@ -215,6 +216,38 @@ bool GlobalPlanner::plan(double t) {
 
     int idx_start, idx_end, idx_delta, i_angle = 0;
     Vector2d smoothingPoint;
+
+    //initial point smoothing
+    if(midPoints.size() > 1){
+        double diff = abs(midAngles[0] - p_base->cur_state.theta);
+        if(diff > M_PI) {
+            diff = 2 * M_PI - diff;
+        }
+
+        if(diff > param.max_steering_angle) {
+            Vector2d n = (rightPoints[1] - leftPoints[1]).normalized();
+            double heuristic_search_margin = 0.1;
+            Vector2d candidatePoint = leftPoints[1];
+            double minAngleDiff = SP_INFINITY;
+            while((candidatePoint - rightPoints[1]).dot(leftPoints[1] - rightPoints[1]) >= 0){
+                delta = candidatePoint - currentPoint;
+                angle = atan2(delta.y(), delta.x());
+                diff = abs(angle - p_base->cur_state.theta);
+                if(diff > M_PI) {
+                    diff = 2 * M_PI - diff;
+                }
+                if(diff < minAngleDiff){
+                    smoothingPoint = candidatePoint;
+                    minAngleDiff = diff;
+                }
+
+                candidatePoint = candidatePoint + n * heuristic_search_margin;
+            }
+
+            midPoints[1] = smoothingPoint;
+        }
+    }
+
     while(i_angle < (int)midAngles.size()-2) {
         double diff = abs(midAngles[i_angle+1] - midAngles[i_angle]);
         if(diff > M_PI) {
@@ -378,7 +411,7 @@ std::vector<int> GlobalPlanner::findChildren(int idx){
         Vector2d child_point = laneTree[i_tree].midPoint;
         Vector2d current_point = laneTree[idx].midPoint;
         double child_width = laneTree[i_tree].width;
-        if(!p_base->isOccupied(child_point, current_point) && child_width >= param.width_min){
+        if(!p_base->isOccupied(child_point, current_point) && child_width >= param.corridor_width_min){
             double dist = (child_point - current_point).norm();
             if(children.empty()){
                 children.emplace_back(i_tree);
@@ -446,7 +479,7 @@ std::vector<int> GlobalPlanner::cutTail(const std::vector<int>& tail){
     int tail_end = tail.size();
     bool isBlocked = false;
     for(int i_tail = tail.size()-1; i_tail >= 0; i_tail--){
-        if(laneTree[tail[i_tail]].width < param.width_blocked_min){
+        if(laneTree[tail[i_tail]].width < param.corridor_width_blocked_min){
             tail_end = i_tail-1;
             isBlocked = true;
         }

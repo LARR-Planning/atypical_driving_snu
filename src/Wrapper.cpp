@@ -150,26 +150,25 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<double>("vmin",param_.g_param.car_speed_min,1);
     nh.param<double>("curve_thres",param_.g_param.curvature_thres,(3.141592/3.0));
 
-    nh.param<double>("global_planner/horizon",param_.g_param.horizon,15);
+//    nh.param<double>("global_planner/horizon",param_.g_param.horizon,15);
     nh.param<double>("global_planner/period",param_.g_param.period,2);
-
-    nh.param<double>("global_planner/car_width",param_.g_param.car_width,2);
-    nh.param<double>("global_planner/car_z_min",param_.g_param.car_z_min,0.0);
-    nh.param<double>("global_planner/car_z_max",param_.g_param.car_z_max,2.0);
-    nh.param<double>("global_planner/car_acceleration",param_.g_param.car_acceleration,1.0);
-    nh.param<double>("global_planner/world_x_min",param_.g_param.world_x_min,-10);
-    nh.param<double>("global_planner/world_y_min",param_.g_param.world_y_min,-1);
-    nh.param<double>("global_planner/world_x_max",param_.g_param.world_x_max,35);
-    nh.param<double>("global_planner/world_y_max",param_.g_param.world_y_max,80);
+//    nh.param<double>("global_planner/car_width",param_.g_param.car_width,2);
+//    nh.param<double>("global_planner/car_z_min",param_.g_param.car_z_min,0.0);
+//    nh.param<double>("global_planner/car_z_max",param_.g_param.car_z_max,2.0);
+//    nh.param<double>("global_planner/car_acceleration",param_.g_param.car_acceleration,1.0);
+//    nh.param<double>("global_planner/world_x_min",param_.g_param.world_x_min,-10);
+//    nh.param<double>("global_planner/world_y_min",param_.g_param.world_y_min,-1);
+//    nh.param<double>("global_planner/world_x_max",param_.g_param.world_x_max,35);
+//    nh.param<double>("global_planner/world_y_max",param_.g_param.world_y_max,80);
     nh.param<double>("global_planner/grid_resolution",param_.g_param.grid_resolution,0.5);
-    nh.param<double>("global_planner/box_resolution",param_.g_param.box_resolution,0.3);
-    nh.param<double>("global_planner/box_max_size",param_.g_param.box_max_size,10);
-    nh.param<bool>("global_planner/is_world_snu_frame",param_.g_param.is_world_box_snu_frame,false);
-    nh.param<int>("global_planner/max_smoothing_iteration", param_.g_param.max_smoothing_iteration,5);
-    nh.param<double>("global_planner/smoothing_margin", param_.g_param.smoothing_margin,0.5);
+//    nh.param<double>("global_planner/box_resolution",param_.g_param.box_resolution,0.3);
+//    nh.param<double>("global_planner/box_max_size",param_.g_param.box_max_size,10);
+//    nh.param<bool>("global_planner/is_world_snu_frame",param_.g_param.is_world_box_snu_frame,false);
+//    nh.param<int>("global_planner/max_smoothing_iteration", param_.g_param.max_smoothing_iteration,5);
+//    nh.param<double>("global_planner/smoothing_margin", param_.g_param.smoothing_margin,0.5);
     nh.param<double>("global_planner/max_steering_angle", param_.g_param.max_steering_angle, M_PI/6);
-    nh.param<double>("global_planner/width_min", param_.g_param.width_min, 1);
-    nh.param<double>("global_planner/width_blocked_min", param_.g_param.width_blocked_min, 2);
+    nh.param<double>("global_planner/width_min", param_.g_param.corridor_width_min, 1);
+    nh.param<double>("global_planner/width_blocked_min", param_.g_param.corridor_width_blocked_min, 2);
 
     // local planner
     nh.param<double>("local_planner/horizon",param_.l_param.horizon,5);
