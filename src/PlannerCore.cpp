@@ -99,6 +99,28 @@ Lane::Lane(const LanePath& lanePath){
     }
 
 }
+/**
+ * @brief cut lane points after goal point
+ */
+void Lane::untilGoal(double goal_x,double goal_y) {
+   // Find the closest point toward goal
+   int idx = 0;
+   Vector2d goal(goal_x,goal_y);
+   double deviationMin = 1e+5;
+   int newLastIndex = 0;
+   for (auto pnt : points){
+        double deviation = (pnt - goal).norm();
+        if (deviation < deviationMin){
+            deviationMin = deviation;
+            newLastIndex = idx;
+        }
+        idx ++;
+   }
+
+    points = vector<Vector2d, aligned_allocator<Vector2d>>(points.begin(),points.begin()+newLastIndex);
+    widths = vector<double>(widths.begin(),widths.begin()+newLastIndex);
+
+}
 
 
 /**
@@ -127,27 +149,16 @@ vector<Vector2d, aligned_allocator<Vector2d>> Lane::slicing(const CarState &curC
             StartPointIdx = i;
         }
     }
-    startIdx = StartPointIdx;
-//    //Jungwon: Find closest segment point to current car position
-//    Vector2d current_point(curCarState.x, curCarState.y);
-//    Vector2d a,b,c,pi_min,n;
-//    double dist, dist_min;
-//    a = points[StartPointIdx-1] - current_point;
-//    b = points[StartPointIdx] - current_point;
-//    pi_min = a;
-//    dist_min = a.norm();
-//    dist = b.norm();
-//    if(dist_min > dist){
-//        pi_min = b;
-//        dist_min = dist;
-//    }
-//    n = (b-a).normalized();
-//    c = a - n * a.dot(n);
-//    dist = c.norm();
-//    if((c-a).dot(c-b) < 0 && dist_min > dist){
-//        pi_min = c;
-//    }
-//    pi_min = pi_min + current_point;
+//    startIdx = StartPointIdx;
+    startIdx = StartPointIdx - 1; // (jungwon)
+
+    // Find closest point (jungwon)
+    Vector2d current_point = Vector2d(curCarState.x,curCarState.y);
+    Vector2d a = points[StartPointIdx-1] - current_point;
+    Vector2d b = points[StartPointIdx] - current_point;
+    Vector2d n = (b-a).normalized();
+    Vector2d start_point = a - n * a.dot(n) + current_point;
+
 
     // Then, let us select the final index
     int EndPointIdx = StartPointIdx;
@@ -167,11 +178,10 @@ vector<Vector2d, aligned_allocator<Vector2d>> Lane::slicing(const CarState &curC
 
     endIdx = EndPointIdx-1;
 
-//    vector<Vector2d> ret(points.begin()+StartPointIdx,points.begin()+EndPointIdx);
-//    ret.insert(ret.begin(), pi_min);
-//    return ret;
-
-    return vector<Vector2d, aligned_allocator<Vector2d>>(points.begin()+StartPointIdx,points.begin()+EndPointIdx);
+//    return vector<Vector2d, aligned_allocator<Vector2d>>(points.begin()+StartPointIdx,points.begin()+EndPointIdx);
+    vector<Vector2d, aligned_allocator<Vector2d>> ret(points.begin()+StartPointIdx,points.begin()+EndPointIdx);
+    ret.insert(ret.begin(), start_point);
+    return ret;
 }
 
 /**
@@ -257,10 +267,18 @@ visualization_msgs::MarkerArray SmoothLane::getPoints(const string& frame_id) {
         marker.scale.x = 0.1;
         marker.scale.y = 0.1;
         marker.scale.z = 0.1;
-        marker.color.a = 1;
-        marker.color.r = 1;
-        marker.color.g = 0;
-        marker.color.b = 0;
+        if(isBlocked) {
+            marker.color.a = 1;
+            marker.color.r = 1;
+            marker.color.g = 0;
+            marker.color.b = 0;
+        }
+        else{
+            marker.color.a = 1;
+            marker.color.r = 0;
+            marker.color.g = 1;
+            marker.color.b = 0;
+        }
         markers.markers.emplace_back(marker);
     }
     for(int i = i_marker; i < n_total_markers; i++){
@@ -477,6 +495,13 @@ Corridor PlannerBase::expandCorridor(Vector2d point, Vector2d leftBoundaryPoint,
  * @return std::vector<Corridor>
  */
 std::vector<Corridor> PlannerBase::expandCorridors(std::vector<double> ts, double map_resolution){
+//    for(int i_mid = 0; i_mid < laneSmooth.points.size(); i_mid++) {
+//        if (isOccupied(laneSmooth.points[i_mid])) {
+//            ROS_ERROR("midpoint error2");
+//            throw -1;
+//        }
+//    }
+
     std::vector<Corridor> corridors;
     corridors.resize(ts.size());
     for(int i = 0; i < ts.size(); i++){
@@ -493,6 +518,10 @@ std::vector<Corridor> PlannerBase::expandCorridors(std::vector<double> ts, doubl
                 corridor_point = corridor_point + heuristic_margin * (leftBoundaryPoint - rightBoundaryPoint).normalized();
             }
         }
+
+
+//        ROS_WARN("[PlannerBase] while loop terminated! ");
+
         Corridor corridor = expandCorridor(corridor_point, leftBoundaryPoint, rightBoundaryPoint, laneSmooth.evalWidth(ts[i]), map_resolution);
         corridors[i] = corridor;
     }
@@ -522,6 +551,7 @@ vector<Corridor> PlannerBase::getCorridorSeq(double t0, double tf) {
 driving_msgs::VehicleCmd PlannerBase::getCurInput(double t){
     static int flag = 0;
     double curr_weight = weight_smooth;
+//    cout << "weight: " << curr_weight << endl;
     driving_msgs::VehicleCmd cmd;
     if (flag == 0)
     {

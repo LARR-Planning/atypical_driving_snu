@@ -102,6 +102,7 @@ namespace Planner{
         ros::Publisher pubTextSlider;
         ros::Publisher pubDetectedObjectsPoseArray;
         ros::Publisher pubCurCmdDabin;
+        ros::Publisher pubOurOccu;
 
 
         /**
@@ -171,7 +172,7 @@ namespace Planner{
 
 
         // Do two-staged planning
-        void processLane(double tTrigger);
+        bool processLane(double tTrigger);
         bool planGlobal(double tTrigger);
         bool planLocal(double tTrigger);
         void updateCorrToBase(); // update the results of the planners to p_base

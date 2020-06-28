@@ -157,6 +157,7 @@ void LocalPlanner::SfcToOptConstraint(double t){
         time_knots.push_back(t+i*param.tStep);
     }
 
+
     vector<Corridor> curCorridorSeq;
     curCorridorSeq = p_base->expandCorridors(time_knots, 0.5);
      //TODO: test corridors for debugging delete this after debugging - jungwon
@@ -248,8 +249,16 @@ bool LocalPlannerPlain::plan(double t) {
      LocalPlanner::SfcToOptConstraint(t); // convert SFC to box constraints
      LocalPlanner::SetSfcIdx(N_corr); // choose truly effective SFC
 
+
+     cout << "[LocalPlanner] finished constraint conversion.. " << endl;
      LocalPlanner::SetLocalWpts(t);
+
+     cout << "[LocalPlanner] finished ref traj.. " << endl;
      LocalPlanner::ObstToConstraint();
+
+
+     cout << "[LocalPlanner] finished dynamic objects " << endl;
+
     isRefUsed = 1;
 //    cout<<"Number of Obstacle is "<<obs_q.size()<<endl;
     // LocalPlanner::SetLocalWpts();
@@ -273,6 +282,10 @@ bool LocalPlannerPlain::plan(double t) {
 
      static int loop_num = 0;
      std::array<Matrix<double,Nu,1>,N> u0;
+     for(auto &s :u0)
+     {
+     	s=(Matrix<double,Nu,1>()<< 0,0.0).finished();
+     }
      Matrix<double,Nx,1> x0_new;
      Collection<Matrix<double,Nu,1>,N> uN_new;
      Collection<Matrix<double,Nx,1>,N+1> xN_new;
@@ -287,10 +300,7 @@ bool LocalPlannerPlain::plan(double t) {
      else{
          if(loop_num == 0)
          {
-             for(auto &s :u0)
-             {
-                 s=(Matrix<double,Nu,1>()<< 0.1,0.0).finished();
-             }
+
              x0_new = (Matrix<double,Nx,1>()<<p_base->getCarState().x, p_base->getCarState().y,p_base->getCarState().v,
                      0.0, 0.0, p_base->getCarState().theta).finished();
              //cout<<"current x: " <<p_base->getCarState().x<<endl;
@@ -346,6 +356,7 @@ bool LocalPlannerPlain::plan(double t) {
                  curPlanning.us.push_back(carInput_temp);
              }
              loop_num++;
+             return true;
          }
          else
          {
@@ -361,9 +372,12 @@ bool LocalPlannerPlain::plan(double t) {
              for(int jj = 0; jj<50;jj++)
              {
                  //cout<<"Future "<<jj<<"th Accel input is"<<xN_new[jj][3]<<endl;
-                 if (xN_new[jj][3]>param.maxAccel+0.5 || xN_new[jj][3]<param.minAccel-0.5 || xN_new[jj][4]>param.maxSteer+0.15 || xN_new[jj][4]<-param.maxSteer-0.15)
-                     flag_unstable =0;
+                 if (xN_new[jj][4]>param.maxSteer+0.5 || xN_new[jj][4]<-param.maxSteer-0.5)
+                     flag_unstable =1;
+
              }
+
+
 
              if (!flag_unstable)
              {
@@ -409,11 +423,14 @@ bool LocalPlannerPlain::plan(double t) {
                      curPlanning.xs.push_back(carState_temp);
                      curPlanning.us.push_back(carInput_temp);
                  }
-
+                return true;
              }
              else
              {
                 uN_NextInit =u0;
+
+                ROS_INFO(" Initial guess =  initialized to zero");
+                 return false;
              }
          }
 
@@ -424,7 +441,6 @@ bool LocalPlannerPlain::plan(double t) {
          // Update CarState and CarInput into the form designed in PlannerCore header file
      //loop_num++;
     //TODO: print out the outcome of the planning
-    return true; // change this line properly
 }
 
 

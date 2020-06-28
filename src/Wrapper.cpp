@@ -30,6 +30,11 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
     nh.param<double>("lane_width",laneWidth,2.5);
     nh.param<string>("log_file_prefix",p_base_->log_file_name_base,"");
     nh.param("smooth_weight",p_base->weight_smooth, 1.0);
+    cout <<"sm" << p_base->weight_smooth << endl;
+    nh.param("goal/x",p_base->goal_x,0.0);
+    nh.param("goal/y",p_base->goal_y,0.0);
+
+    ROS_INFO("[RosWrapper] final goal in world frame = [%f, %f]",p_base->goal_x,p_base->goal_y );
 
     // Logger reset
     string corridor_logger = p_base_->log_file_name_base;
@@ -76,6 +81,8 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
     pubSlicedLane = nh.advertise<nav_msgs::Path>("lane_sliced",1);
     pubSideLane = nh.advertise<visualization_msgs::MarkerArray>("side_lanes",1);
     pubCurGoal = nh.advertise<geometry_msgs::PointStamped>("global_goal",1);
+
+    pubOurOccu = nh.advertise<nav_msgs::OccupancyGrid>("map_for_planning",1);
 
     pubSmoothLane = nh.advertise<visualization_msgs::MarkerArray>("/smooth_lane",1);
     pubTextSlider = nh.advertise<visualization_msgs::Marker>("current_lane",1);
@@ -161,6 +168,8 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<int>("global_planner/max_smoothing_iteration", param_.g_param.max_smoothing_iteration,5);
     nh.param<double>("global_planner/smoothing_margin", param_.g_param.smoothing_margin,0.5);
     nh.param<double>("global_planner/max_steering_angle", param_.g_param.max_steering_angle, M_PI/6);
+    nh.param<double>("global_planner/width_min", param_.g_param.width_min, 1);
+    nh.param<double>("global_planner/width_blocked_min", param_.g_param.width_blocked_min, 2);
 
     // local planner
     nh.param<double>("local_planner/horizon",param_.l_param.horizon,5);
@@ -205,23 +214,6 @@ void RosWrapper::updateParam(Param &param_) {
     ROS_INFO("[SNU_PLANNER/RosWrapper] Initialized clock with ROS time %f",ros::Time::now().toSec());
     t0 = ros::Time::now().toSec();
 
-
-    vector<double> target_waypoint_x;
-    vector<double> target_waypoint_y;
-
-    bool hasSeqGoal = nh.getParam("target_waypoint/x",target_waypoint_x);
-    nh.getParam("target_waypoint/y",target_waypoint_y);
-    if (hasSeqGoal) {
-        for (int i = 0; i < target_waypoint_x.size(); i++) {
-            ROS_INFO("[SNU_PLANNER/RosWrapper] received global goal [%f,%f] (in global frame)",
-                     target_waypoint_x[i], target_waypoint_y[i]);
-            p_base->desired_state_seq.push_back(CarState{target_waypoint_x[i],target_waypoint_y[i],0,0});
-        }
-    }
-    else{
-        ROS_ERROR("[SNU_PLANNER/RosWrapper] no goal sequence given");
-        return;
-    }
 
     param = param_;
 }
@@ -272,9 +264,9 @@ void RosWrapper::prepareROSmsgs() {
 
     // Current goal
     geometry_msgs::PointStamped curGoal;
-    curGoal.header.frame_id = SNUFrameId;
-    curGoal.point.x = p_base->getDesiredState().x;
-    curGoal.point.y = p_base->getDesiredState().y;
+    curGoal.header.frame_id = worldFrameId;
+    curGoal.point.x = p_base->goal_x;
+    curGoal.point.y = p_base->goal_y;
     pubCurGoal.publish(curGoal);
     p_base->cur_pose.header.frame_id = SNUFrameId;
     pubCurPose.publish(p_base->getCurPose());
@@ -376,7 +368,7 @@ void RosWrapper::prepareROSmsgs() {
             marker.scale.x = p_base->corridor_seq[i].xu - p_base->corridor_seq[i].xl;
             marker.scale.y = p_base->corridor_seq[i].yu - p_base->corridor_seq[i].yl;
             marker.scale.z = 0.1;
-            marker.color.a = 0.1;
+            marker.color.a = 0.02;
             marker.color.r = 0;
             marker.color.g = 1;
             marker.color.b = 0;
@@ -413,7 +405,10 @@ void RosWrapper::publish() {
 
         pubMPCTraj.publish(MPCTraj);
         p_base->log_state_input(curTime());
+    } else{
+        ROS_WARN_THROTTLE(0.2,"MPC failed at current step. cmd won't be published.");
     }
+    pubOurOccu.publish(p_base->localMap);
     pubPath.publish(planningPath);
     pubCorridorSeq.publish(corridorSeq);
 
@@ -436,6 +431,11 @@ void RosWrapper::runROS() {
         ros::Rate lr(50);
 
         while(ros::ok()){
+
+            if (p_base->isReached){
+                ROS_INFO("[RosWrapper] got reach signal. Exising ROS wrapper.");
+                return ;
+            }
             updatePredictionModel();
             prepareROSmsgs(); // you may trigger this only under some conditions
             publish();
@@ -567,7 +567,7 @@ void RosWrapper::cbDetectedObjects(const driving_msgs::DetectedObjectArray &obje
 
         }
     else
-        ROS_INFO("[SNU_PLANNER/RosWrapper] Received object information. But the state of the car is not received");
+        ROS_WARN_THROTTLE(2,"[SNU_PLANNER/RosWrapper] Received object information. But the state of the car is not received");
 }
 
 
@@ -605,23 +605,25 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
 
         // If ref frame was set, then transform the laneNode
         if (isLaneRawReceived){
+            Vector3d goalXYSNU(p_base->goal_x,p_base->goal_y,0); // goal w.r.t SNu frame
+            goalXYSNU = p_base->Tws.inverse()*goalXYSNU;
+
             auto lane_w = p_base->getLanePath(); // w.r.t world frame
             lane_w.applyTransform(p_base->Tws.inverse());
             p_base->setLanePath(lane_w); // w.r.t SNU frame
             ROS_INFO("[SNU_PLANNER/RosWrapper] Lane-path transform completed!");
             p_base->laneOrig = Lane(lane_w); // should be applied transform
-            isLaneReceived = true;
+//            p_base->laneOrig.untilGoal(goalXYSNU(0),goalXYSNU(1)); // we keep only until the goal point
+
+            if (p_base->laneOrig.points.size())
+            isLaneReceived = true ;
+            else{
+                isLaneReceived = false;
+                ROS_ERROR("Lane has no points. Maybe final goal position is not valid");
+            }
+
         }else{
             ROS_ERROR("Tried transforming Lane raw in the pose callback. But no lane exsiting");
-        }
-
-        // Convert the global goal to local goal
-        for (auto &goal  : p_base->desired_state_seq){
-            Vector4d xb(goal.x,goal.y,0,1);
-            Vector4d xa = p_base->Tws.inverse()*xb;
-            goal.x = xa(0);
-            goal.y = xa(1);
-            ROS_INFO("[SNU_PLANNER/RosWrapper] received global goal [%f,%f] (in SNU frame)",goal.x,goal.y);
         }
         isGoalReceived = true;
     }
@@ -663,7 +665,7 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
 
         // make v
         curState.v = speed; // reverse gear = negative
-        ROS_INFO("Current car state (x,y,theta(degree),v(m/s)) : [%f,%f,%f,%f]", curState.x, curState.y,
+        ROS_DEBUG("Current car state (x,y,theta(degree),v(m/s)) : [%f,%f,%f,%f]", curState.x, curState.y,
                   curState.theta * 180 / M_PI, curState.v);
 
         /**
@@ -684,7 +686,7 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
 
 void RosWrapper::cbOccuMap(const nav_msgs::OccupancyGrid & occuMap) {
 
-    p_base->localMap = occuMap;
+    p_base->localMapBuffer = occuMap;
     ROS_INFO_STREAM_ONCE("[SNU_PLANNER/RosWrapper] Received first occupancy map");
     isLocalMapReceived = true;
 }
@@ -698,7 +700,6 @@ void RosWrapper::cbCarSpeed(const std_msgs::Float64& speed_) {
 /**
  * @brief update the observation for obstacles
  * @param obstPose
- * @todo we might have to include the geometry shape in the future...
  */
 void RosWrapper::cbObstacles(const geometry_msgs::PoseStamped& obstPose) {
 
@@ -790,10 +791,9 @@ void Wrapper::run(){
  * @param tTrigger
  * @todo Jungwon
  */
-void Wrapper::processLane(double tTrigger) {
+bool Wrapper::processLane(double tTrigger) {
 
     if (ros_wrapper_ptr->isLocalMapReceived) {
-
 
         // Occupancy map frame = octomapGenFrameId
         auto curOccupancyGrid = p_base_shared->localMap;
@@ -803,19 +803,28 @@ void Wrapper::processLane(double tTrigger) {
 
         Vector3d windowOrigSNU = p_base_shared -> Tso * Vector3d(windowOrig(0),windowOrig(1),0);
 
-        ROS_INFO("orig window = [%f,%f]",windowOrigSNU(0),windowOrigSNU(1));
+//        ROS_INFO("orig window = [%f,%f]",windowOrigSNU(0),windowOrigSNU(1));
         CarState curCarState = p_base_shared->getCarState(); // SNU frame
         int idxSliceStart,idxSliceEnd;
         vector<Vector2d, aligned_allocator<Vector2d>> pathSliced = p_base_shared->laneOrig.slicing(curCarState, Vector2d(windowOrigSNU(0),windowOrigSNU(1)), windowWidth,
                                                                       windowHeight,idxSliceStart,idxSliceEnd);
 
         // Move to GP
+        if (pathSliced.size() < 3){
+
+            ROS_WARN("[Wrapper] No slicing left. processLane returns false");
+            return false;
+
+        }
+
+
+
         double meanCurv = meanCurvature(pathSliced);
         double vLaneRef; // referance velocity for the current lane
         double vmin = param.g_param.car_speed_min;
         double vmax = param.g_param.car_speed_max;
         double rho_thres = param.g_param.curvature_thres;
-
+        // ref speed determined
         if (meanCurv > rho_thres)
             vLaneRef = vmin;
         else{
@@ -835,17 +844,19 @@ void Wrapper::processLane(double tTrigger) {
             ros_wrapper_ptr->isLaneSliceLoaded = true;
             ROS_INFO("[SNU_PLANNER] Starting lane slicing! ");
         }
+        return true;
 
-
-    }else{
-        ROS_WARN_THROTTLE(2,"[SNU_PLANNER/Wrapper] Lane cannot be processed. No occupancy map received");
-
+    }else {
+        ROS_WARN_THROTTLE(2, "[SNU_PLANNER/Wrapper] Lane cannot be processed. No occupancy map received");
+        return false;
     }
 
 }
 
 bool Wrapper::planGlobal(double tTrigger){
     // call global planner
+
+
     bool gpPassed = gp_ptr->plan(tTrigger);
     if (not p_base_shared->isGPsolved)
         p_base_shared->isGPsolved = gpPassed;
@@ -862,20 +873,20 @@ bool Wrapper::planGlobal(double tTrigger){
 
 bool Wrapper::planLocal(double tTrigger) {
 
-//
 //    // call global planner
     bool lpPassed = lp_ptr->plan(tTrigger); // TODO
 //    if (not p_base_shared->isGPsolved)
-    if (not p_base_shared->isLPsolved)
-        p_base_shared->isLPsolved = lpPassed;
+    if((not p_base_shared->isLPsolved) and lpPassed)
+        ROS_INFO("[LocalPlanner] Recovered from failure!");
+    p_base_shared->isLPsolved = lpPassed;
+
 //    // let's log
     if (lpPassed) {
         updateMPCToBase();
     }
 //    p_base_shared->log_corridor(tTrigger,tTrigger + param.l_param.horizon);
     p_base_shared->log_mpc(tTrigger);
-//    return lpPassed;
-    return true;
+    return lpPassed;
 }
 
 
@@ -910,100 +921,84 @@ void Wrapper::runPlanning() {
     bool doLPlan = true; // turn on if we have started the class
     bool didLplanByG = false; // Lp already done in GP loop
     bool isPlanPossible = false;
+    bool isLaneSuccess = false;
     bool isGPSuccess = false;
     bool isLPSuccess = false;
     bool isAllGoalReach = false;
 
+
+
+
     while (ros::ok()){
-        isAllGoalReach = p_base_shared->desired_state_seq.empty();
-        if (isAllGoalReach){ // all goal was acheived
-            ROS_INFO_ONCE("[Wrapper] All goal reched!");
-            // idling (TODO)
-        }
-        else {
-            // 1. monitor states
-            ROS_DEBUG("[Wrapper] goal : [%f,%f] / cur position : [%f,%f]",
-                      p_base_shared->getDesiredState().x, p_base_shared->getDesiredState().y,
-                      p_base_shared->getCarState().x, p_base_shared->getCarState().y);
-
-
 
             // 2. Check the condition for planning
             isPlanPossible = ros_wrapper_ptr->isAllInputReceived();
             didLplanByG = false;
 
             if (isPlanPossible) {
+
+                p_base_shared->localMap = p_base_shared->localMapBuffer;
+                Vector3d goalXYSNU(p_base_shared->goal_x,p_base_shared->goal_y,0); // goal w.r.t SNu frame
+                goalXYSNU = p_base_shared->Tws.inverse()*goalXYSNU;
+                // Goal checking
+                auto distToGoal = (Vector2d(p_base_shared->cur_state.x,p_base_shared->cur_state.y) -
+                        Vector2d(goalXYSNU(0),goalXYSNU(1))).norm();
+//                cout << "distance to goal" << distToGoal << endl;
+                if (distToGoal < p_base_shared->goal_thres){
+                    printf("=========================================================\n");
+                    ROS_INFO("[SNU_PLANNER] Reached goal! exiting");
+                    p_base_shared->isReached = true;
+                    return ;
+                }
+
+
+
                 ROS_INFO_ONCE("[Wrapper] start planning!");
                 // 3. Do planning (GP->LP) or LP only
                 if (doGPlan) { // G plan
+
                     tCkpG = chrono::steady_clock::now(); // check point time
-                    ROS_INFO("[Wrapper] begin GP..");
-
                     // Lane processing
-                    processLane(ros_wrapper_ptr->curTime());
+                    isLaneSuccess = processLane(ros_wrapper_ptr->curTime());
+                    if (isLaneSuccess){
+                        ROS_INFO("[Wrapper] lane extracted!");
+                        ROS_INFO("[Wrapper] begin GP..");
+                        isGPSuccess = planGlobal(ros_wrapper_ptr->curTime());
 
-
-                    // Do planning
-                    isGPSuccess = planGlobal(ros_wrapper_ptr->curTime());
-//                    isGPSuccess = false;
-                    if (isGPSuccess) { // let's call LP
-                        ROS_INFO_STREAM("[Wrapper] GP success! planning time for gp: " <<
-                                                                                       std::chrono::duration_cast<std::chrono::microseconds>(
-                                                                                               chrono::steady_clock::now() -
-                                                                                               tCkpG).count() * 0.001
-                                                                                       << "ms");
-                        ROS_INFO("[Wrapper] begin LP..");
-
-                        auto tCkp_mpc = chrono::steady_clock::now();
-                        isLPSuccess = planLocal(ros_wrapper_ptr->curTime()); // TODO time ?
-                        didLplanByG = true;
-                        if (isLPSuccess)
-                            ROS_INFO_STREAM("[Wrapper] LP success! planning time for lp: " <<
+                        if (isGPSuccess) { // let's call LP
+                            ROS_INFO_STREAM("[Wrapper] GP success! planning time for gp: " <<
                                                                                            std::chrono::duration_cast<std::chrono::microseconds>(
                                                                                                    chrono::steady_clock::now() -
-                                                                                                   tCkp_mpc).count() *
-                                                                                           0.001
+                                                                                                   tCkpG).count() * 0.001
                                                                                            << "ms");
-                        else
-                            ROS_INFO_STREAM("[Wrapper] LP failed.");
-                    } else
-                        ROS_INFO_STREAM("[Wrapper] GP failed.");
+                            ROS_INFO("[Wrapper] begin LP..");
+
+                            auto tCkp_mpc = chrono::steady_clock::now();
+                            isLPSuccess = planLocal(ros_wrapper_ptr->curTime()); // TODO time ?
+                            if (isLPSuccess)
+                                ROS_INFO_STREAM("[Wrapper] LP success! planning time for lp: " <<
+                                                                                               std::chrono::duration_cast<std::chrono::microseconds>(
+                                                                                                       chrono::steady_clock::now() -
+                                                                                                       tCkp_mpc).count() *
+                                                                                               0.001
+                                                                                               << "ms");
+                            else // LP failed
+                                ROS_INFO_STREAM("[Wrapper] LP failed.");
+                        } else // GP failed
+                            ROS_INFO_STREAM("[Wrapper] GP failed.");
+
+                    }else{ // Lane failed
+                        ROS_WARN("[Wrapper] lane extraction failed..");
+                    }
+//                    isGPSuccess = false;
                 } // G plan ended
-
-                // L plan
-                if (doLPlan and (not didLplanByG) and
-                    p_base_shared->isGPsolved) { // trigger at every LP period only if it was not called in GP loop
-                    tCkpL = chrono::steady_clock::now(); // check point time
-                    auto tCkp_mpc = chrono::steady_clock::now();
-                    ROS_INFO("[Wrapper] begin LP..");
-                    // isLPSuccess = planLocal(ros_wrapper_ptr->curTime()); // TODO time ?
-                    isLPSuccess = true;
-
-                    didLplanByG = true;
-                    if (isLPSuccess)
-                        ROS_INFO_STREAM("[Wrapper] LP success! planning time for lp: " <<
-                                                                                       std::chrono::duration_cast<std::chrono::microseconds>(
-                                                                                               chrono::steady_clock::now() -
-                                                                                               tCkp_mpc).count() * 0.001
-                                                                                       << "ms");
-                    else
-                        ROS_INFO_STREAM("[Wrapper] LP failed.");
-                } // L plan ended
-
                 doGPlan = (chrono::steady_clock::now() - tCkpG > std::chrono::duration<double>(param.g_param.period));
-                doLPlan = (chrono::steady_clock::now() - tCkpL > std::chrono::duration<double>(param.l_param.period));
 
             } else { // planning cannot be started
                 ROS_WARN_THROTTLE(2,
                                   "[Wrapper] waiting planning input subscriptions.. (message print out every 2 sec)");
             }
-        }
-        if (p_base_shared->isGoalReach()) {
-            ROS_INFO("[Wrapper] goal : [%f,%f] reached",
-                      p_base_shared->getDesiredState().x, p_base_shared->getDesiredState().y);
-            p_base_shared->desired_state_seq.pop_front();
-        }
-        ros::Rate(30).sleep();
+        ros::Rate(50).sleep();
     }
 }
 

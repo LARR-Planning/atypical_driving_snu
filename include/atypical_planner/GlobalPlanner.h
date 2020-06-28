@@ -36,6 +36,8 @@ namespace Planner{
         std::vector<int> findChildren(int idx);
         void laneTreeSearch(int idx);
         std::vector<int> getMidPointsFromLaneTree(int i_tree_start);
+        bool isLaneTreeBlocked(int last_element_index);
+        std::vector<int> cutTail(const std::vector<int>& tail);
     };
 
 }
