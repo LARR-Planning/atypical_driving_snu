@@ -262,6 +262,7 @@ namespace Planner {
         bool isGPsolved = false;
         bool isLPsolved = false;
         bool isReached = false;
+        bool isLPPassed = false;
         // Lane
         parser parse_tool;
         LanePath lane_path; // deprecated (better not to be used in routine source block )

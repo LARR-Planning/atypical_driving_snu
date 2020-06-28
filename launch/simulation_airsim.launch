@@ -37,7 +37,7 @@
   <arg name="gp_horizon"     default="30"/>
   <arg name="gp_period"     default="0.4"/>
 
-  <arg name="planning_dt"     default="0.1"/> <!--?-->
+  <arg name="planning_d/planning_dt"     default="0.1"/> <!--?-->
 
   <arg name="gp_z_min" value = "0.5"/>
   <arg name="gp_z_max" value = "1.0"/>
@@ -59,7 +59,7 @@
          <arg name = "lidar_frame_id" value = "$(arg lidar_frame_id)"/>
          <arg name = "pcl_topic" value = "$(arg pcl_topic)"/>
          <arg name = "cost_map_min_z" value = "0.1"/>
-         <arg name = "cost_map_max_z" value = "2.0"/>
+         <arg name = "cost_map_max_z" value = "1.0"/>
      </include>
 
 

@@ -7,6 +7,8 @@ data_state = load('log_state.txt');
 figure(1)
 hold on
 plot(data_state(:,2),data_state(:,3),'k-')
+% comet(data_state(:,2),data_state(:,3))
+
 theta = data_state(:,4);
 xaxis = [cos(theta) sin(theta)];
 dd = 50;

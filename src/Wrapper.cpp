@@ -360,6 +360,7 @@ void RosWrapper::prepareROSmsgs() {
             visualization_msgs::Marker marker;
             marker.header.frame_id = SNUFrameId;
             marker.id = i;
+            marker.ns = std::to_string(i);
             marker.type = visualization_msgs::Marker::CUBE;
             marker.action = visualization_msgs::Marker::ADD;
             marker.pose.position.x = (p_base->corridor_seq[i].xl + p_base->corridor_seq[i].xu)/2;
@@ -368,7 +369,7 @@ void RosWrapper::prepareROSmsgs() {
             marker.scale.x = p_base->corridor_seq[i].xu - p_base->corridor_seq[i].xl;
             marker.scale.y = p_base->corridor_seq[i].yu - p_base->corridor_seq[i].yl;
             marker.scale.z = 0.1;
-            marker.color.a = 0.02;
+            marker.color.a = 0.1;
             marker.color.r = 0;
             marker.color.g = 1;
             marker.color.b = 0;
@@ -396,6 +397,8 @@ void RosWrapper::publish() {
 
     // 1. Actuation command
     if (p_base->isLPsolved) {
+
+        if (p_base->isLPPassed){
         auto cmd = p_base->getCurInput(curTime());
         cmd.header.stamp = ros::Time::now();
         cmd.steer_angle_cmd *= (180.0/3.14); // cmd output deg
@@ -405,8 +408,17 @@ void RosWrapper::publish() {
 
         pubMPCTraj.publish(MPCTraj);
         p_base->log_state_input(curTime());
-    } else{
-        ROS_WARN_THROTTLE(0.2,"MPC failed at current step. cmd won't be published.");
+        }
+        else{
+        ROS_WARN_THROTTLE(0.2,"MPC failed at current step. cmd will be zero.");
+
+        driving_msgs::VehicleCmd cmd;
+        cmd.accel_decel_cmd = 0 ;
+        cmd.steer_angle_cmd = 0;
+        cmd.header.stamp = ros::Time::now();
+        pubCurCmd.publish(cmd);
+        pubMPCTraj.publish(MPCTraj);
+        p_base->log_state_input(curTime());}
     }
     pubOurOccu.publish(p_base->localMap);
     pubPath.publish(planningPath);
@@ -876,14 +888,25 @@ bool Wrapper::planLocal(double tTrigger) {
 //    // call global planner
     bool lpPassed = lp_ptr->plan(tTrigger); // TODO
 //    if (not p_base_shared->isGPsolved)
-    if((not p_base_shared->isLPsolved) and lpPassed)
+    if((not p_base_shared->isLPsolved) and lpPassed) {
+        p_base_shared->isLPsolved = true;
+        ROS_INFO("[LocalPlanner] First sovled! ");
+
+    }
+    if ((not p_base_shared->isLPPassed) and lpPassed){
+
         ROS_INFO("[LocalPlanner] Recovered from failure!");
-    p_base_shared->isLPsolved = lpPassed;
+
+    }
+
+    p_base_shared->isLPPassed = lpPassed;
 
 //    // let's log
-    if (lpPassed) {
+//    if (lpPassed) {
+    if (p_base_shared->isLPsolved)
+
         updateMPCToBase();
-    }
+//    }
 //    p_base_shared->log_corridor(tTrigger,tTrigger + param.l_param.horizon);
     p_base_shared->log_mpc(tTrigger);
     return lpPassed;

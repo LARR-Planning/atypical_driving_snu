@@ -158,16 +158,12 @@ void LocalPlanner::SfcToOptConstraint(double t){
     }
 
 
-    vector<Corridor> curCorridorSeq;
-    curCorridorSeq = p_base->expandCorridors(time_knots, 0.5);
-     //TODO: test corridors for debugging delete this after debugging - jungwon
-     p_base->mSet[1].lock();
-     p_base->corridor_seq = curCorridorSeq;
-     p_base->mSet[1].unlock();
+    vector<Corridor> queriedCorridors;
+     queriedCorridors = p_base->expandCorridors(time_knots, 0.5);
 
     for(int i = 0; i<N+1;i++)
     {
-        box_constraint[i]= curCorridorSeq[i];
+        box_constraint[i]= queriedCorridors[i];
     }
     // box_csontraint[]
 
@@ -176,7 +172,22 @@ void LocalPlanner::SfcToOptConstraint(double t){
 //            cout<< "xl: "<< s.xl<< "[m] xu: "<< s.xu<< "[m] yl: "<< s.yl<< "[m] yl: "<< s.yu<<"[m]"<<endl;
 //            cout <<"t_start: "<<s.t_start <<"[s] t_end: "<<s.t_end<<"[s]"<<endl;
 //            count3++;
-}
+
+     LocalPlanner::SetSfcIdx(N_corr); // choose truly effective SFC
+
+     //TODO: test corridors for debugging delete this after debugging - jungwon
+     vector<Corridor> effectiveCorridors;
+     for(int i_corr = 0; i_corr < N+1; i_corr++){
+         if(sfc_idx[i_corr]){
+             effectiveCorridors.emplace_back(queriedCorridors[i_corr]);
+         }
+     }
+
+     p_base->mSet[1].lock();
+     p_base->corridor_seq = effectiveCorridors;
+     p_base->mSet[1].unlock();
+
+ }
 
 void LocalPlanner::SetSfcIdx(int N_corr)
 {
@@ -247,8 +258,6 @@ bool LocalPlannerPlain::plan(double t) {
      cout<<"Current y-position: "<<p_base->getCarState().y<< " [m]"<<endl;
      cout<<"Current heading angle: "<<p_base->getCarState().theta*180/3.1415926535<< " [deg]"<<endl;
      LocalPlanner::SfcToOptConstraint(t); // convert SFC to box constraints
-     LocalPlanner::SetSfcIdx(N_corr); // choose truly effective SFC
-
 
      cout << "[LocalPlanner] finished constraint conversion.. " << endl;
      LocalPlanner::SetLocalWpts(t);
