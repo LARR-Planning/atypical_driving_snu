@@ -156,6 +156,7 @@ void LocalPlanner::SfcToOptConstraint(double t){
         time_knots.push_back(t+i*param.tStep);
     }
 
+
     vector<Corridor> curCorridorSeq;
     curCorridorSeq = p_base->expandCorridors(time_knots, 0.5);
      //TODO: test corridors for debugging delete this after debugging - jungwon
@@ -228,8 +229,16 @@ bool LocalPlannerPlain::plan(double t) {
      cout<<"Current y-position: "<<p_base->getCarState().y<< " [m]"<<endl;
      cout<<"Current heading angle: "<<p_base->getCarState().theta*180/3.1415926535<< " [deg]"<<endl;
      LocalPlanner::SfcToOptConstraint(t); // convert SFC to box constraints
+
+     cout << "[LocalPlanner] finished constraint conversion.. " << endl;
      LocalPlanner::SetLocalWpts(t);
+
+     cout << "[LocalPlanner] finished ref traj.. " << endl;
      LocalPlanner::ObstToConstraint();
+
+
+     cout << "[LocalPlanner] finished dynamic objects " << endl;
+
     isRefUsed = 1;
 //    cout<<"Number of Obstacle is "<<obs_q.size()<<endl;
     // LocalPlanner::SetLocalWpts();

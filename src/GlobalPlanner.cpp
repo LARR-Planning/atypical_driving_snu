@@ -258,6 +258,15 @@ bool GlobalPlanner::plan(double t) {
         }
     }
 
+//    //TODO: debug code, delete this
+//    for(int i_mid = 0; i_mid < midPoints.size(); i_mid++) {
+//        if (p_base->isOccupied(midPoints[i_mid])) {
+//            ROS_ERROR("midpoint error1");
+//            throw -1;
+//        }
+//    }
+
+
 //    // Computing curvature (JBS)
 //    double meanCurv = meanCurvature(midPoints);
 //    double rho_thres = param.curvature_thres;

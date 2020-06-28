@@ -7,7 +7,8 @@
 <launch>
 
   <arg name = "use_sim_time" value = "true"/>
-  <arg name= "bagfile"        default="200518-SNU-1_result.bag"/>
+<!--   <arg name= "bagfile"        default="200518-SNU-1_result.bag"/> -->
+  <arg name= "bagfile"        default="200625_snu_3_result.bag"/>
 
   <param name="use_sim_time" value="$(arg use_sim_time)"/>
 
@@ -24,7 +25,7 @@
 
 
   <arg name = "lane_width" default="9"/>
-  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/waypoint.csv"/>
+  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/waypoint_keti0626.csv"/>
   <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
   <arg name = "waypoints" default="$(find atypical_driving)/param/goal_keti.yaml"/>
   <arg name="vehicle_model/ly"            default="2.7"/> <!-- for the dynamics -->
@@ -45,8 +46,8 @@
   <arg name="gp_z_max" value = "0.5"/>
 
 
-  <arg name = "goal/x"  default = "332290.48"/> <!--in world frame -->
-  <arg name = "goal/y" default = "4138471.49"/> <!--in world frame -->
+  <arg name = "goal/x"  default = "332268.53"/> <!--in world frame -->
+  <arg name = "goal/y" default = "4138453.75"/> <!--in world frame -->
 
   <group ns="atypical_planning_test">
     <rosparam file="$(find atypical_driving)/param/MPC_weight.yaml"/>

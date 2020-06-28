@@ -495,6 +495,13 @@ Corridor PlannerBase::expandCorridor(Vector2d point, Vector2d leftBoundaryPoint,
  * @return std::vector<Corridor>
  */
 std::vector<Corridor> PlannerBase::expandCorridors(std::vector<double> ts, double map_resolution){
+//    for(int i_mid = 0; i_mid < laneSmooth.points.size(); i_mid++) {
+//        if (isOccupied(laneSmooth.points[i_mid])) {
+//            ROS_ERROR("midpoint error2");
+//            throw -1;
+//        }
+//    }
+
     std::vector<Corridor> corridors;
     corridors.resize(ts.size());
     for(int i = 0; i < ts.size(); i++){
@@ -511,6 +518,10 @@ std::vector<Corridor> PlannerBase::expandCorridors(std::vector<double> ts, doubl
                 corridor_point = corridor_point + heuristic_margin * (leftBoundaryPoint - rightBoundaryPoint).normalized();
             }
         }
+
+
+//        ROS_WARN("[PlannerBase] while loop terminated! ");
+
         Corridor corridor = expandCorridor(corridor_point, leftBoundaryPoint, rightBoundaryPoint, laneSmooth.evalWidth(ts[i]), map_resolution);
         corridors[i] = corridor;
     }
