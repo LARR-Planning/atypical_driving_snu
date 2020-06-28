@@ -2,6 +2,7 @@
 
 data_input = load('log_input.txt');
 data_state = load('log_state.txt');
+data_mpc = load('log_mpc.txt');
 
 
 figure(1)
@@ -27,6 +28,45 @@ gg = plot(data_input(:,1),data_input(:,3),'c-','LineWidth',4);
 gg.Color(4) = 0.2;
 hold on
 title('steering history')
+%%
+figure(3)
+Ndata = size(data_mpc,1)/5;
+
+for n = 1:Ndata
+    ts = data_mpc((n-1)*5+1,2:end);
+    xs = data_mpc((n-1)*5+2,2:end);
+    ys = data_mpc((n-1)*5+3,2:end);
+    as = data_mpc((n-1)*5+4,2:end);
+    dels = data_mpc((n-1)*5+5,2:end);
+    
+    subplot(4,2,1)
+    plot(ts,xs)
+    title('x[m]')
+
+    subplot(4,2,3)
+    plot(ts,ys)
+    title('y[m]')
+
+    subplot(4,2,5)
+    hold on 
+    yline(-3,'r-','LineWidth',2)
+    yline(1,'r-','LineWidth',2)
+    plot(ts,as)
+    title('a[m/s^2]')
+    hold off
+
+    subplot(4,2,7)
+    plot(ts,dels*180/pi)
+    title('angle[degree]')
+    
+    subplot(4,2,[2 4 6 8])
+    plot(xs,ys,'r-')
+    title(strcat('id = ',num2str(n)))
+    pause(1e-3)    
+end
+
+
+
 
 
 

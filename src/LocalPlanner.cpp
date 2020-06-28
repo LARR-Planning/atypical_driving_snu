@@ -192,7 +192,7 @@ void LocalPlanner::SfcToOptConstraint(double t){
 void LocalPlanner::SetSfcIdx(int N_corr)
 {
     int  temp_idx;
-    for (int i =0;i<N_corr+1;i++)
+    for (int i =0;i<N+1;i++)
     {
         sfc_idx[i] = false;
     }
@@ -437,6 +437,33 @@ bool LocalPlannerPlain::plan(double t) {
              else
              {
                 uN_NextInit =u0;
+
+
+
+                 Matrix<double,N,1> ts_temp = VectorXd::LinSpaced(N,0.0,4.9);
+                 ts_temp = ts_temp.array()+ t;
+                 CarState carState_temp;
+                 CarInput carInput_temp;
+
+                 curPlanning.ts.clear();
+                 curPlanning.xs.clear();
+                 curPlanning.us.clear();
+                 for(int i = 0 ;i<N; i++) {
+                     carState_temp.x = xN_new[i].coeffRef(0, 0);
+                     carState_temp.y = xN_new[i].coeffRef(1, 0);
+                     carState_temp.v = xN_new[i].coeffRef(2, 0);
+                     carState_temp.theta = xN_new[i].coeffRef(5, 0);
+
+                     carInput_temp.alpha = xN_new[i].coeffRef(3, 0);
+                     carInput_temp.delta = xN_new[i].coeffRef(4, 0);
+
+                     curPlanning.ts.push_back(ts_temp.coeffRef(i, 0));
+                     curPlanning.xs.push_back(carState_temp);
+                     curPlanning.us.push_back(carInput_temp);
+                 }
+
+
+
 
                 ROS_INFO(" Initial guess =  initialized to zero");
                  return false;
