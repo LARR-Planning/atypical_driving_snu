@@ -508,14 +508,20 @@ std::vector<Corridor> PlannerBase::expandCorridors(std::vector<double> ts, doubl
         Vector2d corridor_point = laneSmooth.evalX(ts[i]);
         Vector2d leftBoundaryPoint = laneSmooth.evalSidePoint(ts[i], true);
         Vector2d rightBoundaryPoint = laneSmooth.evalSidePoint(ts[i], false);
-        while(isOccupied(corridor_point)){
+        if(isOccupied(corridor_point)){
             //ROS_WARN("[PlannerBase] heuristic method is used to avoid midpoint collision!");
             double heuristic_margin = 0.1;
             if((corridor_point - leftBoundaryPoint).norm() < (corridor_point - rightBoundaryPoint).norm()){
-                corridor_point = corridor_point + heuristic_margin * (rightBoundaryPoint - leftBoundaryPoint).normalized();
+                while(isOccupied(corridor_point)) {
+                    corridor_point =
+                            corridor_point + heuristic_margin * (rightBoundaryPoint - leftBoundaryPoint).normalized();
+                }
             }
             else{
-                corridor_point = corridor_point + heuristic_margin * (leftBoundaryPoint - rightBoundaryPoint).normalized();
+                while(isOccupied(corridor_point)) {
+                    corridor_point =
+                            corridor_point + heuristic_margin * (leftBoundaryPoint - rightBoundaryPoint).normalized();
+                }
             }
         }
 
