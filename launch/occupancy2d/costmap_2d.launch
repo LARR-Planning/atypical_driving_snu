@@ -68,7 +68,7 @@
             marking: true,
             raytrace_range: 200,
             topic: $(arg pcl_topic),
-            observation_persistance: 10.0,
+            observation_persistance: 1.0,
             obstacle_range: 100,
             max_obstacle_height: $(arg cost_map_max_z),
             min_obstacle_height: $(arg cost_map_min_z)

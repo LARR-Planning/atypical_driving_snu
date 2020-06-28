@@ -343,7 +343,7 @@ bool LocalPlannerPlain::plan(double t) {
              }
              uN_NextInit[N-1]= uN_new[N-1];
 
-             Matrix<double,N,1> ts_temp = VectorXd::LinSpaced(N,0.0,4.9);
+             Matrix<double,N,1> ts_temp = VectorXd::LinSpaced(N,0.0,param.horizon-param.tStep);
              ts_temp = ts_temp.array()+ t;
              CarState carState_temp;
              CarInput carInput_temp;
@@ -411,7 +411,7 @@ bool LocalPlannerPlain::plan(double t) {
                  }
                  uN_NextInit[N-1]= uN_new[N-1];
 
-                 Matrix<double,N,1> ts_temp = VectorXd::LinSpaced(N,0.0,4.9);
+                 Matrix<double,N,1> ts_temp = VectorXd::LinSpaced(N,0.0,param.horizon-param.tStep);
                  ts_temp = ts_temp.array()+ t;
                  CarState carState_temp;
                  CarInput carInput_temp;

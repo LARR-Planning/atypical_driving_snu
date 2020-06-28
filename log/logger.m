@@ -48,21 +48,19 @@ for n = 1:Ndata
     title('y[m]')
 
     subplot(4,2,5)
-    hold on 
-    yline(-3,'r-','LineWidth',2)
-    yline(1,'r-','LineWidth',2)
+
     plot(ts,as)
     title('a[m/s^2]')
-    hold off
 
     subplot(4,2,7)
     plot(ts,dels*180/pi)
     title('angle[degree]')
     
     subplot(4,2,[2 4 6 8])
-    plot(xs,ys,'r-')
+    plot(xs,ys,'r-',data_state(:,2),data_state(:,3),'k-')
+    axis equal
     title(strcat('id = ',num2str(n)))
-    pause(1e-3)    
+    pause(1e-2)    
 end
 
 

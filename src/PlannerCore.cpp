@@ -446,45 +446,47 @@ Corridor PlannerBase::expandCorridor(Vector2d point, Vector2d leftBoundaryPoint,
         }
     }
 
-//    epsilon = 0.001;
-//    double angle_margin = M_PI/8;
-//    if(leftBoundaryPoint.x() > corridor.xl + epsilon && leftBoundaryPoint.x() < corridor.xu - epsilon
-//       && leftBoundaryPoint.y() > corridor.yl + epsilon && leftBoundaryPoint.y() < corridor.yu - epsilon)
-//    {
-//        float angle = atan2(leftBoundaryPoint.y() - point.y(), leftBoundaryPoint.x() - point.x());
-//        if(angle > - M_PI/4 - angle_margin - epsilon && angle < M_PI/4 + angle_margin+ epsilon){
-//            corridor.xu = leftBoundaryPoint.x();
-//        }
-//        else if(angle > 3*M_PI/4 - angle_margin - epsilon || angle < -3*M_PI/4 + angle_margin + epsilon){
-//            corridor.xl = leftBoundaryPoint.x();
-//        }
-//
-//        if(angle > M_PI/4 - angle_margin - epsilon && angle < 3*M_PI/4 + angle_margin + epsilon){
-//            corridor.yu = leftBoundaryPoint.y();
-//        }
-//        else if(angle > -3*M_PI/4 - angle_margin - epsilon && angle < - M_PI/4 + angle_margin + epsilon){
-//            corridor.yl = leftBoundaryPoint.y();
-//        }
-//    }
-//
-//    if(rightBoundaryPoint.x() > corridor.xl + epsilon && rightBoundaryPoint.x() < corridor.xu - epsilon
-//       && rightBoundaryPoint.y() > corridor.yl + epsilon && rightBoundaryPoint.y() < corridor.yu - epsilon)
-//    {
-//        float angle = atan2(rightBoundaryPoint.y() - point.y(), rightBoundaryPoint.x() - point.x());
-//        if(angle > - M_PI/4 - angle_margin - epsilon && angle < M_PI/4 + angle_margin+ epsilon){
-//            corridor.xu = rightBoundaryPoint.x();
-//        }
-//        else if(angle > 3*M_PI/4 - angle_margin - epsilon || angle < -3*M_PI/4 + angle_margin + epsilon){
-//            corridor.xl = rightBoundaryPoint.x();
-//        }
-//
-//        if(angle > M_PI/4 - angle_margin - epsilon && angle < 3*M_PI/4 + angle_margin + epsilon){
-//            corridor.yu = rightBoundaryPoint.y();
-//        }
-//        else if(angle > -3*M_PI/4 - angle_margin - epsilon && angle < - M_PI/4 + angle_margin + epsilon){
-//            corridor.yl = rightBoundaryPoint.y();
-//        }
-//    }
+
+    //TODO: consider all boundary points!!
+    epsilon = 0.001;
+    double angle_margin = M_PI/8;
+    if(leftBoundaryPoint.x() > corridor.xl + epsilon && leftBoundaryPoint.x() < corridor.xu - epsilon
+       && leftBoundaryPoint.y() > corridor.yl + epsilon && leftBoundaryPoint.y() < corridor.yu - epsilon)
+    {
+        float angle = atan2(leftBoundaryPoint.y() - point.y(), leftBoundaryPoint.x() - point.x());
+        if(angle > - M_PI/4 - angle_margin - epsilon && angle < M_PI/4 + angle_margin+ epsilon){
+            corridor.xu = leftBoundaryPoint.x();
+        }
+        else if(angle > 3*M_PI/4 - angle_margin - epsilon || angle < -3*M_PI/4 + angle_margin + epsilon){
+            corridor.xl = leftBoundaryPoint.x();
+        }
+
+        if(angle > M_PI/4 - angle_margin - epsilon && angle < 3*M_PI/4 + angle_margin + epsilon){
+            corridor.yu = leftBoundaryPoint.y();
+        }
+        else if(angle > -3*M_PI/4 - angle_margin - epsilon && angle < - M_PI/4 + angle_margin + epsilon){
+            corridor.yl = leftBoundaryPoint.y();
+        }
+    }
+
+    if(rightBoundaryPoint.x() > corridor.xl + epsilon && rightBoundaryPoint.x() < corridor.xu - epsilon
+       && rightBoundaryPoint.y() > corridor.yl + epsilon && rightBoundaryPoint.y() < corridor.yu - epsilon)
+    {
+        float angle = atan2(rightBoundaryPoint.y() - point.y(), rightBoundaryPoint.x() - point.x());
+        if(angle > - M_PI/4 - angle_margin - epsilon && angle < M_PI/4 + angle_margin+ epsilon){
+            corridor.xu = rightBoundaryPoint.x();
+        }
+        else if(angle > 3*M_PI/4 - angle_margin - epsilon || angle < -3*M_PI/4 + angle_margin + epsilon){
+            corridor.xl = rightBoundaryPoint.x();
+        }
+
+        if(angle > M_PI/4 - angle_margin - epsilon && angle < 3*M_PI/4 + angle_margin + epsilon){
+            corridor.yu = rightBoundaryPoint.y();
+        }
+        else if(angle > -3*M_PI/4 - angle_margin - epsilon && angle < - M_PI/4 + angle_margin + epsilon){
+            corridor.yl = rightBoundaryPoint.y();
+        }
+    }
 
     return corridor;
 }

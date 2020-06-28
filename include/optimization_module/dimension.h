@@ -1,7 +1,7 @@
 #ifndef DIMENSION_H
 #define DIMENSION_H
 
-const int N = 50;
+const int N = 50; // tunning
 const int Nx = 6;
 const int Nu = 2;
 const double dt = 0.1;

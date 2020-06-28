@@ -87,13 +87,12 @@
 
 
     <param name="local_planner/horizon" value="$(arg lp_horizon)" />
-    <param name="local_planner/period" value="$(arg lp_period)" />
 
     <param name="local_planner/ts" value="$(arg planning_dt)" />
-    <param name="local_planner/car_longtitude" value="$(arg vehicle_model/ly)" />
+
     <param name="local_planner/max_steer" value="0.52" />
-    <param name="local_planner/max_accel" value="1.5" />
-    <param name="local_planner/min_accel" value="-1.5" />
+    <param name="local_planner/max_accel" value="1" />
+    <param name="local_planner/min_accel" value="-3" />
 
     <param name = "smooth_weight" value="0.7"/>
 
