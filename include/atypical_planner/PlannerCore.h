@@ -79,31 +79,31 @@ namespace Planner {
      * @brief Parameters for global planner
      */
     struct ParamGlobal {
-        double horizon;
-        double car_width;
-        double car_z_min;
-        double car_z_max;
+//        double horizon;
+//        double car_width;
+//        double car_z_min;
+//        double car_z_max;
         // by JBS
         double car_speed_max;
         double car_speed_min;
         double curvature_thres;
 
-        double car_acceleration;
-        double world_x_min;
-        double world_y_min;
-        double world_x_max;
-        double world_y_max;
+//        double car_acceleration;
+//        double world_x_min;
+//        double world_y_min;
+//        double world_x_max;
+//        double world_y_max;
         double grid_resolution;
-        double box_resolution;
-        double box_max_size;
-        bool has_wall;
-        bool is_world_box_snu_frame;
+//        double box_resolution;
+//        double box_max_size;
+//        bool has_wall;
+//        bool is_world_box_snu_frame;
         double period;
-        int max_smoothing_iteration;
-        double smoothing_margin;
+//        int max_smoothing_iteration;
+//        double smoothing_margin;
         double max_steering_angle;
-        double width_min;
-        double width_blocked_min;
+        double corridor_width_min;
+        double corridor_width_blocked_min;
     };
 
     struct ParamPredictor{

@@ -378,7 +378,7 @@ std::vector<int> GlobalPlanner::findChildren(int idx){
         Vector2d child_point = laneTree[i_tree].midPoint;
         Vector2d current_point = laneTree[idx].midPoint;
         double child_width = laneTree[i_tree].width;
-        if(!p_base->isOccupied(child_point, current_point) && child_width >= param.width_min){
+        if(!p_base->isOccupied(child_point, current_point) && child_width >= param.corridor_width_min){
             double dist = (child_point - current_point).norm();
             if(children.empty()){
                 children.emplace_back(i_tree);
@@ -446,7 +446,7 @@ std::vector<int> GlobalPlanner::cutTail(const std::vector<int>& tail){
     int tail_end = tail.size();
     bool isBlocked = false;
     for(int i_tail = tail.size()-1; i_tail >= 0; i_tail--){
-        if(laneTree[tail[i_tail]].width < param.width_blocked_min){
+        if(laneTree[tail[i_tail]].width < param.corridor_width_blocked_min){
             tail_end = i_tail-1;
             isBlocked = true;
         }
