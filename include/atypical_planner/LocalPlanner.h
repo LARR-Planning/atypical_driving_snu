@@ -53,7 +53,7 @@ namespace Planner {
         Collection<Matrix<double,3,1>,N+1> local_wpts;
 
         Collection<bool,N+1> sfc_idx; //  sfc idx
-        int N_corr;
+
 
 		//Matrix<double,2,1> wpts_initial;
         Matrix<double,Nx,1> state_weight_;

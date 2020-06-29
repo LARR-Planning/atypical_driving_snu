@@ -182,6 +182,7 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<double>("local_planner/max_accel",param_.l_param.maxAccel,3);
     nh.param<double>("local_planner/min_accel",param_.l_param.minAccel,-1);
     nh.param<double>("local_planner/car_speed",param_.l_param.nominal_speed,2.0);
+    nh.param<int>("local_planner/N_corr",param_.l_param.N_corr,51);
 
 
     Parameter ilqr_weight;

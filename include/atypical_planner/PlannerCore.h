@@ -69,6 +69,7 @@ namespace Planner {
         double nominal_speed;
         bool isRearWheeled;
         double period;
+        int N_corr;
 
         //ilQR parameters
         Matrix<double,6,1> state_weight;

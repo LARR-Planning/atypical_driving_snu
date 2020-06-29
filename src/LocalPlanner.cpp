@@ -46,7 +46,6 @@ LocalPlanner::LocalPlanner(const Planner::ParamLocal &l_param,
     final_weight_<< 0.5, 0.5, 0.0, 0.0, 0.0, 1.0;
     input_weight_<< 0.005, 0.5;
     isRefUsed = 0;
-    N_corr = 5;
     cout << "[LocalPlanner] Init." << endl;
     
 }
@@ -173,7 +172,7 @@ void LocalPlanner::SfcToOptConstraint(double t){
 //            cout <<"t_start: "<<s.t_start <<"[s] t_end: "<<s.t_end<<"[s]"<<endl;
 //            count3++;
 
-     LocalPlanner::SetSfcIdx(N_corr); // choose truly effective SFC
+     LocalPlanner::SetSfcIdx(param.N_corr); // choose truly effective SFC
 
      //TODO: test corridors for debugging delete this after debugging - jungwon
      vector<Corridor> effectiveCorridors;
