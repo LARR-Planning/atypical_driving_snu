@@ -95,6 +95,9 @@
     <param name="local_planner/min_accel" value="-3" />
 
     <param name = "smooth_weight" value="0.7"/>
+    <param name = "moving_horizon" value="10"/>
+    <param name = "isUseMovingAverage" value="false"/>
+
 
     <param name="predictor/observation_queue" value="10" />
     <param name="predictor/ref_height" value="0.4" />

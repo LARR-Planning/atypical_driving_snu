@@ -29,6 +29,8 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
     nh.param<string>("lane_csv_file",csv_file,"catkin_ws/src/atypical_driving_snu/keti_pangyo_path3.csv");
     nh.param<double>("lane_width",laneWidth,2.5);
     nh.param<string>("log_file_prefix",p_base_->log_file_name_base,"");
+    nh.param("isUseMovingAverage", p_base->isUseMovingAverage,false);
+    nh.param("smooth_horizon",p_base->smooth_horizon, 4);
     nh.param("smooth_weight",p_base->weight_smooth, 1.0);
     cout <<"sm" << p_base->weight_smooth << endl;
     nh.param("goal/x",p_base->goal_x,0.0);
