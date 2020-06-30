@@ -1,0 +1,10 @@
+<launch>
+    <param name = "/use_sim_time" value = "true"/>
+    <arg name= "bagfile"        default="200625_snu_4_result.bag"/>
+
+    <!--1. Data feeder-->
+    <node pkg="rosbag" type="play" name="rosbag_record_diag" args="--clock --loop $(find atypical_driving)/worlds/$(arg bagfile)" >
+        <remap from="/tf" to="/tf_keti"/>
+    </node>
+     <include file = "$(find atypical_driving)/launch/atypical_driving_snu.launch"/>
+</launch>

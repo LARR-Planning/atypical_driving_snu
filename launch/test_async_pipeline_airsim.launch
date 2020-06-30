@@ -22,23 +22,13 @@
   <arg name="lidar_frame_id" default = "LidarSensor1"/>
   <arg name ="detected_object_frame_id" default = "map"/>
 
-  <param name="smooth_weight" value="0.7"/>
   <arg name= "lane_width" default="10"/>
   <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/waypoint_airsim.csv"/>
   <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
-  <arg name = "waypoints" default="$(find atypical_driving)/param/goal_airsim.yaml"/>
 
   <arg name = "goal/x"  default = "30"/> <!--in world frame -->
   <arg name = "goal/y" default = "73"/> <!--in world frame -->
 
-  <arg name="vehicle_model/ly"            default="2.7"/> <!-- for the dynamics -->
-  <arg name="vehicle_model/lx"            default="2"/> <!-- for safe margin -->
-  <arg name="vehicle_model/is_rear_wheel"     default="true"/>
-
-  <arg name="nominal_speed"     default="2"/>
-
-
-  <arg name="planning_dt"     value="0.1"/> <!--?-->
 
 
   <group ns="atypical_planning_test">
@@ -74,8 +64,6 @@
         <param name = "obstacle_radius_y" value="0.5"/>
     </node>
 
-
-
     <!--3. server-->
     <include file = "$(find atypical_driving)/launch/integration_server.launch" >
         <arg name = "world_frame_id" value = "$(arg world_frame_id)"/>
@@ -86,9 +74,13 @@
         <arg name = "lidar_frame_id" value = "$(arg lidar_frame_id)"/>
         <arg name = "lane_csv_file" value = "$(arg lane_csv_file)"/>
 
+        <arg name = "lane_width_nominal" value = "$(arg lane_width)"/>
         <arg name = "goal/x" value = "$(arg goal/x)"/>
         <arg name = "goal/y" value = "$(arg goal/y)"/>
 
+        <arg name = "period"  value= "1"/>
+        <arg name = "horizon"  value= "5"/> <!--Also change dimension.h-->
+        <arg name="planning_dt" value="0.1"/>
     </include>
 
 

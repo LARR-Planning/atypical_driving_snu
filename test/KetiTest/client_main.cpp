@@ -69,17 +69,17 @@ int main(int argc,char** argv) {
     nh.param("rejection_radius",rejectionRadius,0.1);
 
     ros::Subscriber subCarPoseCov = nh.subscribe("/current_pose_keti",1,cbCarPoseCov);
-    ros::Subscriber subPCL = nh.subscribe("/velodyne_points_keti",1,cbPcl);
-    ros::Publisher pubCarPoseCov = nh.advertise<geometry_msgs::PoseWithCovariance>("/current_pose",1);
+    ros::Subscriber subPCL = nh.subscribe("/velodyne_points",1,cbPcl);
+//    ros::Publisher pubCarPoseCov = nh.advertise<geometry_msgs::PoseWithCovariance>("/current_pose",1);
     ros::Publisher pubKetiClock = nh.advertise<rosgraph_msgs::Clock>("/clock",1);
-    ros::Publisher pubPcl= nh.advertise<sensor_msgs::PointCloud2>("/velodyne_points",1);
+    ros::Publisher pubPcl= nh.advertise<sensor_msgs::PointCloud2>("/velodyne_points_snu",1);
 
     cloud_filtered = static_cast<boost::shared_ptr<PointCloud<PointXYZ>>>(new PointCloud<PointXYZ>);
     cloud_ptr = static_cast<boost::shared_ptr<PointCloud<PointXYZ>>>(new PointCloud<PointXYZ>);
     ros::Rate rate(40);
     while(ros::ok()){
         if (isPoseReceieved) {
-            pubCarPoseCov.publish(curState);
+//            pubCarPoseCov.publish(curState);
         }
         if (isClockReceived)
             pubPcl.publish(pclIn);

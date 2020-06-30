@@ -1,164 +1,108 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!--
-    test_with_virtual_environment.launch
--->
-
 <launch>
 
-  <!-- Arguments Start -->
-  <arg name="snu_frame_id" default="SNU"/>
-  <arg name="octomap_frame_id" default="SNU"/>
-  <arg name="world_frame_id" default="map"/>
+  <arg name = "bagfile" default= ""/>
+  <arg name = "use_sim_time" default= "true"/>
 
-  <arg name="lane_width" default="10"/>
-  <arg name = "lane_csv_file" default = "$(find atypical_driving)/seoul_park_interpolated_waypoint.csv"/>
+  <arg name = "pcl_topic" default = "/velodyne_points_snu"/>
+    <!-- Arguments Start -->
+  <arg name ="snu_frame_id" default="SNU"/>
+  <arg name ="occu_frame_id" default="SNU"/>
+  <arg name ="world_frame_id" default="map"/>
+  <arg name ="car_base_frame_id" default="/car_base_link"/>
+  <arg name ="lidar_frame_id" default = "velodyne"/>
+  <arg name ="detected_object_frame_id" default = "velodyne"/>
+
+  <arg name = "lane_width" default="9"/>
+  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/waypoint_keti0626.csv"/>
   <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
-  <arg name = "waypoints" default="$(find atypical_driving)/param/goal_keti.yaml"/>
 
-  <arg name="is_world_snu_frame" value="true"/> <!-- If this is true, the world bound = SNU -->
-  <!--  Arguments for integration with KETI-->
+  <arg name = "goal/x"  default = "332268.53"/> <!--in world frame -->
+  <arg name = "goal/y" default = "4138453.75"/> <!--in world frame -->
 
-  <arg name="vehicle_model/ly"            default="2.7"/> <!-- for the dynamics -->
-  <arg name="vehicle_model/lx"            default="2"/> <!-- for safe margin -->
-  <arg name="vehicle_model/steer_max"     default="0.52"/>
-  <arg name="vehicle_model/accel_max"     default="1"/>
-  <arg name="vehicle_model/accel_min"     default="-3"/>
-  <arg name="vehicle_model/is_rear_wheel"     default="false"/>
 
-  <arg name="nominal_speed"     default="1.5"/>
-  <arg name="lp_horizon"     default="10"/> <!--preirod = horizon -->
-  <arg name="lp_period"     default="0.1"/> <!--preirod = horizon -->
-  <arg name="planning_dt"     default="0.1"/>
-
-  <arg name="gp_horizon"     default="30"/>
-  <arg name="gp_period"     default="0.3"/>
-
-  <arg name="goal_thres"     default="1"/>
-
-  <arg  name="obstacle_radius" value="0.8" />
-
-  <arg name="gp_z_min" value = "-0.5"/>
-  <arg name="gp_z_max" value = "0.2"/>
+    <arg name = "period" default= "0.5"/>
+    <arg name = "horizon"  default= "5"/> <!--Also change dimension.h-->
+    <arg name="planning_dt" default="0.1"/>
 
   <group ns="atypical_planning_test">
     <rosparam file="$(find atypical_driving)/param/MPC_weight.yaml"/>
   </group>
 
-  <!-- Node start-->
 
-<!--  &lt;!&ndash;1. Data feeder&ndash;&gt;-->
-<!--  <node pkg="rosbag" type="play" name="rosbag_record_diag" args="&#45;&#45;loop $(find atypical_driving)/worlds/$(arg bagfile)" >-->
-<!--    <remap from="/current_pose_cov" to="/current_pose"/>-->
-<!--    <remap from="/velodyne_points" to="/velodyne_points_keti"/>-->
-<!--    <remap from="/tf" to="/tf_keti"/>-->
-
-<!--  </node>-->
-  <!--2. snu_car_tf to velodyne_tf -->
-
-<!--  <node pkg="tf" type="static_transform_publisher" name="link2lidar"-->
-<!--        args="0 0 0 0 0 0   base_link car_base_link  100"/>-->
-
-
-
-  <node pkg="tf" type="static_transform_publisher" name="link2lidar"
-        args="-2.4 0 0.2 0 0 0   car_base_link velodyne 100"/>
-
-  <!--3. client-->
-  <node pkg="atypical_driving" type="keti_client" name="atypical_driving_client" output="screen">
-    <param name="rejection_radius" value="1.6"/>
-    <remap from="/current_pose" to="current_pose_non" />
-	<remap from="/velodyne_points_keti" to = "/velodyne_points"/>
-	<remap from="/velodyne_points" to = "/velodyne_points_filter"/>
-
-  </node>
-
-  <!--4. octomap generator -->
-  <node pkg="octomap_server" type="octomap_server_node" name="octomap_server" output="screen" >
-    <param name="resolution"                 value="0.5" />
-    <param name="frame_id"                   value="$(arg snu_frame_id)" />
-    <param name="height_map"                 value="true"/>
-    <param name="track_changes" value="true"/>
-    <param name="sensor_model/max_range" value="40.0" />
-    <param name="sensor_model/min_range" value="3.0" />
-
-    <!--Should be carefully chosen -->
-    <param name="pointcloud_min_z" value="-2.5" />
-    <!--        <param name="pointcloud_max_z" value="-0.0" />-->
-    <param name="occupancy_min_z" value="-2.4" />
-
-    <param name="color/r"                    value="0.2" />
-    <param name="color/g"                    value="0.2" />
-    <param name="color/b"                    value="0.2" />
-    <param name="color/a"                    value="0.2" />
-
-    <param name="sensor_model/miss" value="0.1" />
-    <param name="sensor_model/hit" value="0.97" />
-
-    <param name="sensor_model/min" value="0.4" />
-    <param name="sensor_model/max" value="0.7" />
-
-    <remap from="cloud_in" to="/velodyne_points_filter"/>
-    <remap from="octomap_binary" to="/atypical_planning_test/local_map"/>
-  </node>
-  <!--5. server -->
-
-  <node pkg="atypical_driving" type="integration_server" name="atypical_planning_test" output="screen">
-<!--    <remap from ="/vehicle_cmd" to = "/vehicle_cmd_none"/>-->
-      <remap from ="/vehicle_cmd" to = "/vehicle_cmd_snu"/>
-      <remap from="/current_pose" to = "/current_pose_cov"/>
-
-    <param name = "goal_thres" value = "$(arg goal_thres)" />
-
-    <param name = "world_frame_id" value="$(arg world_frame_id)" />
-    <param name = "snu_frame_id" value="$(arg snu_frame_id)" />
-    <param name = "octomap_gen_frame_id" value="$(arg octomap_frame_id)" /> <!-- The frame id of octomap map or SNU-->
-
-    <param name = "lane_csv_file" value = "$(arg lane_csv_file)"/>
-    <param name = "lane_width" value="$(arg lane_width)"/>
-    <param name = "log_file_prefix" value = "$(arg log_file_prefix)" />
-
-    <rosparam command="load" file="$(arg waypoints)" />
+    <!--  1. OccupancyGrid  -->
+     <include file = "$(find atypical_driving)/launch/occupancy2d/costmap_2d.launch">
+         <arg name = "play_bag" value = "false"/>
+         <arg name = "bagfile" value="$(arg bagfile)"/>
+         <arg name = "use_sim_time" value="$(arg use_sim_time)"/>
+         <arg name = "rviz" value = "false"/>
+         <arg name = "occupancy_frame_id" value = "$(arg occu_frame_id)"/>
+         <arg name = "lidar_frame_id" value = "$(arg lidar_frame_id)"/>
+         <arg name = "pcl_topic" value = "$(arg pcl_topic)"/>
+         <arg name = "cost_map_min_z" value = "-0.5"/>
+         <arg name = "cost_map_max_z" value = "0.6"/>
+     </include>
 
 
-    <param name = "global_planner/is_world_snu_frame" value="$(arg is_world_snu_frame)"/>
-    <param name="global_planner/horizon" value="$(arg gp_horizon)" />
-    <param name="global_planner/period" value="$(arg gp_period)" />
+    <!--2. snu_car_tf to velodyne_tf -->
+    <node pkg="tf" type="static_transform_publisher" name="link2lidar" args="0 0 0.2 0 0 0  $(arg car_base_frame_id) $(arg lidar_frame_id) 100"/>
 
-    <param name="global_planner/car_width" value="$(arg vehicle_model/lx)" />
-    <param name="global_planner/car_z_min" value="$(arg gp_z_min)" />
-    <param name="global_planner/car_z_max" value="$(arg gp_z_max)" />
+    <!--3. client-->
+    <node pkg="atypical_driving" type="keti_client" name="atypical_driving_client" output="screen">
+        <param name="rejection_radius" value="1.6"/>
+    </node>
 
-    <param name="global_planner/car_speed" value="$(arg nominal_speed)" />
-    <param name="global_planner/car_acceleration" value="0.5"/>
-    <param name="global_planner/world_x_min" value="-100" />
-    <param name="global_planner/world_y_min" value="-100" />
-    <param name="global_planner/world_x_max" value="100" />
-    <param name="global_planner/world_y_max" value="100" />
-    <param name="global_planner/grid_resolution" value="0.5" />
-    <param name="global_planner/box_resolution" value="0.3" />
-    <param name="global_planner/box_max_size" value="20" />
+    <!--3. server-->
+    <node pkg="atypical_driving" type="integration_server" name="atypical_planning_test" output="screen">
+
+        <remap from = "/occupancy_grid" to = "/costmap_node/costmap/costmap"/>
+        <remap from = "/current_pose" to = "/current_pose_cov"/>
+        <remap from = "/vehicle_cmd" to = "/vehicle_cmd_snu"/>
+
+        <param name = "world_frame_id" value="$(arg world_frame_id)" />
+        <param name = "snu_frame_id" value="$(arg snu_frame_id)" />
+        <param name = "occu_map_frame_id" value="$(arg occu_frame_id)" />
+        <param name = "base_link_id" value="$(arg car_base_frame_id)" />
+        <param name = "detected_objects_id" value="$(arg detected_object_frame_id)" />
+
+        <!--Shaping params for nominal_speed selection-->
+        <param name = "vmax" value = "3"/> <!--m/s-->
+        <param name = "vmin" value = "1.0"/> <!--m/s-->
+        <param name = "curve_thres" value = "0.3"/> <!--m/s-->
+
+        <param name = "goal/x" value = "$(arg goal/x)"/>
+        <param name = "goal/y" value = "$(arg goal/y)"/>
+        <param name = "goal_thres" value = "1.5"/>
+
+        <param name = "lane_csv_file" value = "$(arg lane_csv_file)"/>
+        <param name = "lane_width" value="$(arg lane_width)"/>
+        <param name = "log_file_prefix" value = "$(arg log_file_prefix)" />
 
 
-    <param name="local_planner/horizon" value="$(arg lp_horizon)" />
-    <param name="local_planner/period" value="$(arg lp_period)" />
+        <param name="global_planner/period" value="$(arg period)" />
+        <param name="global_planner/grid_resolution" value="0.3" />
+        <param name ="global_planner/max_steering_angle" value = "$(eval 3.14/9)"/>
+        <param name ="global_planner/width_min" value = "1.5"/>
+        <param name ="global_planner/width_blocked_min" value = "3"/>
 
-    <param name="local_planner/obstacle_radius_nominal" value="$(arg obstacle_radius)" />
-    <param name="local_planner/ts" value="$(arg planning_dt)" />
-    <param name="local_planner/car_longtitude" value="2.7" />
-    <param name="local_planner/max_steer" value="0.52" />
-    <param name="local_planner/max_accel" value="1" />
-    <param name="local_planner/min_accel" value="-3.0" />
+        <param name="local_planner/horizon" value="$(arg horizon)" />
+        <param name="local_planner/ts" value="$(arg planning_dt)" />
+        <param name="local_planner/max_steer" value="0.52" />
+        <param name="local_planner/max_accel" value="1" />
+        <param name="local_planner/min_accel" value="-3" />
+        <param name="local_planner/N_corr" value="5" />
 
-    <param name="predictor/observation_queue" value="4" />
-    <param name="predictor/ref_height" value="0.4" />
+        <param name = "smooth_weight" value="0.7"/>
+        <param name = "moving_horizon" value="100"/>
+        <param name = "isUseMovingAverage" value="false"/>
 
-
-  </node>
-
+        <param name="predictor/observation_queue" value="10" />
+        <param name="predictor/ref_height" value="0.4" />
+        <param name="predictor/log_dir" value="$(find atypical_driving)/log/predictor" />
+    </node>
 
   <node pkg="rviz" type="rviz" name="rviz" args="-d $(find atypical_driving)/launch/rviz_config/config.rviz" output="log" />
 
 
-  <!-- Nodes End -->
 </launch>

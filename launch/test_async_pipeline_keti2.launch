@@ -1,18 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- 
-    test_with_virtual_environment.launch
--->
-
 <launch>
 
   <arg name = "use_sim_time" value = "true"/>
 <!--   <arg name= "bagfile"        default="200518-SNU-1_result.bag"/> -->
-  <arg name= "bagfile"        default="200625_snu_3_result.bag"/>
+  <arg name= "bagfile"        default="200625_snu_4_result.bag"/>
 
   <param name="use_sim_time" value="$(arg use_sim_time)"/>
 
-  <arg name = "pcl_topic" default = "/velodyne_points"/>
+  <arg name = "pcl_topic" default = "/velodyne_points_snu"/>
 
     <!-- Arguments Start -->
   <arg name ="snu_frame_id" default="SNU"/>
@@ -22,28 +18,9 @@
   <arg name ="lidar_frame_id" default = "velodyne"/>
   <arg name ="detected_object_frame_id" default = "velodyne"/>
 
-
-
   <arg name = "lane_width" default="9"/>
   <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/waypoint_keti0626.csv"/>
   <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
-  <arg name = "waypoints" default="$(find atypical_driving)/param/goal_keti.yaml"/>
-  <arg name="vehicle_model/ly"            default="2.7"/> <!-- for the dynamics -->
-  <arg name="vehicle_model/lx"            default="2"/> <!-- for safe margin -->
-  <arg name="vehicle_model/steer_max"     default="0.52"/>
-  <arg name="vehicle_model/accel_max"     default="1"/>
-  <arg name="vehicle_model/accel_min"     default="-3"/>
-  <arg name="vehicle_model/is_rear_wheel"     default="false"/>
-  <arg name="nominal_speed"     default="2.1"/>
-  <arg name="lp_horizon"     default="5"/> <!--preirod = horizon -->
-  <arg name="lp_period"     default="0.1"/> <!--preirod = horizon -->
-  <arg name="planning_dt"     default="0.1"/>
-  <arg name="gp_horizon"     default="20"/>
-  <arg name="gp_period"     default="0.3"/>
-  <arg name="goal_thres"     default="1"/>
-  <arg  name="obstacle_radius" value="0.8" />
-  <arg name="gp_z_min" value = "0.0"/>
-  <arg name="gp_z_max" value = "0.5"/>
 
 
   <arg name = "goal/x"  default = "332268.53"/> <!--in world frame -->
@@ -55,25 +32,23 @@
 
   <!-- Node start-->
 
-
-<!--   OccupancyGrid  -->
- <include file = "$(find atypical_driving)/launch/occupancy2d/costmap_2d.launch">
-     <arg name = "play_bag" value = "false"/>
-     <arg name = "bagfile" value="$(arg bagfile)"/>
-     <arg name = "use_sim_time" value="$(arg use_sim_time)"/>
-     <arg name = "rviz" value = "false"/>
-     <arg name = "occupancy_frame_id" value = "$(arg occu_frame_id)"/>
-     <arg name = "lidar_frame_id" value = "$(arg lidar_frame_id)"/>
-     <arg name = "pcl_topic" value = "$(arg pcl_topic)"/>
-     <arg name = "cost_map_min_z" value = "-0.5"/>
-     <arg name = "cost_map_max_z" value = "0.6"/>
- </include>
+    <!--   OccupancyGrid  -->
+     <include file = "$(find atypical_driving)/launch/occupancy2d/costmap_2d.launch">
+         <arg name = "play_bag" value = "false"/>
+         <arg name = "bagfile" value="$(arg bagfile)"/>
+         <arg name = "use_sim_time" value="$(arg use_sim_time)"/>
+         <arg name = "rviz" value = "false"/>
+         <arg name = "occupancy_frame_id" value = "$(arg occu_frame_id)"/>
+         <arg name = "lidar_frame_id" value = "$(arg lidar_frame_id)"/>
+         <arg name = "pcl_topic" value = "$(arg pcl_topic)"/>
+         <arg name = "cost_map_min_z" value = "-0.5"/>
+         <arg name = "cost_map_max_z" value = "0.6"/>
+     </include>
 
 
     <!--1. Data feeder-->
     <node pkg="rosbag" type="play" name="rosbag_record_diag" args="--clock --loop $(find atypical_driving)/worlds/$(arg bagfile)" >
         <remap from="/current_pose_cov" to="/current_pose"/>
-        <remap from="/velodyne_points" to="/velodyne_points_keti"/>
         <remap from="/tf" to="/tf_keti"/>
     </node>
     <!--2. snu_car_tf to velodyne_tf -->
@@ -82,7 +57,6 @@
     <!--3. client-->
     <node pkg="atypical_driving" type="keti_client" name="atypical_driving_client" output="screen">
         <param name="rejection_radius" value="1.6"/>
-		<remap from="/current_pose" to="current_pose_non" />
     </node>
 
 
@@ -94,10 +68,16 @@
         <arg name = "car_base_frame_id" value = "$(arg car_base_frame_id)"/>
         <arg name = "lidar_frame_id" value = "$(arg lidar_frame_id)"/>
         <arg name = "detected_object_frame_id" value = "$(arg detected_object_frame_id)"/>
+
+        <arg name = "lane_width_nominal" value = "$(arg lane_width)"/>
         <arg name = "lane_csv_file" value = "$(arg lane_csv_file)"/>
 
-         <arg name = "goal/x" value = "$(arg goal/x)"/>
-         <arg name = "goal/y" value = "$(arg goal/y)"/>
+        <arg name = "goal/x" value = "$(arg goal/x)"/>
+        <arg name = "goal/y" value = "$(arg goal/y)"/>
+
+        <arg name = "period"  value= "0.5"/>
+        <arg name = "horizon"  value= "5"/> <!--Also change dimension.h-->
+        <arg name="planning_dt" value="0.1"/>
 
     </include>
 

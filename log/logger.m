@@ -38,7 +38,11 @@ for n = 1:Ndata
     ys = data_mpc((n-1)*5+3,2:end);
     as = data_mpc((n-1)*5+4,2:end);
     dels = data_mpc((n-1)*5+5,2:end);
-    
+    amax = ones(1,length(ts))*1;
+    amin = -ones(1,length(ts))*3;
+    delmax = ones(1,length(ts))*30;
+    delmin = -ones(1,length(ts))*30;
+
     subplot(4,2,1)
     plot(ts,xs)
     title('x[m]')
@@ -48,12 +52,11 @@ for n = 1:Ndata
     title('y[m]')
 
     subplot(4,2,5)
-
-    plot(ts,as)
+    plot(ts,as,ts,amax,'r--',ts,amin,'r--')
     title('a[m/s^2]')
-
+    
     subplot(4,2,7)
-    plot(ts,dels*180/pi)
+    plot(ts,dels*180/pi,ts,delmax,'r--',ts,delmin,'r--')
     title('angle[degree]')
     
     subplot(4,2,[2 4 6 8])
