@@ -6,6 +6,7 @@
 #define ATYPICAL_DRIVING_PLANNERBASE_H
 
 #include <vector>
+#include <queue>
 #include <memory>
 #include <mutex>
 #include <thread>
@@ -68,6 +69,7 @@ namespace Planner {
         double nominal_speed;
         bool isRearWheeled;
         double period;
+        int N_corr;
 
         //ilQR parameters
         Matrix<double,6,1> state_weight;
@@ -273,12 +275,15 @@ namespace Planner {
         double laneSpeed; // current speed to be applied to the lane in slice
         double laneCurvature;  // current mean curvature of the slide
 
-        double weight_smooth;
+        bool isUseMovingAverage; // true: Moving average, false: exponential sum
+        double weight_smooth; // exponential weight smoothing
+        int smooth_horizon; // moving average smoothing
 
         vector<Corridor> corridor_seq;
         Corridor search_range;
         MPCResultTraj mpc_result;
-        driving_msgs::VehicleCmd ctrl_history;
+        driving_msgs::VehicleCmd ctrl_previous;
+        queue<driving_msgs::VehicleCmd> ctrl_history;
         ObstaclePathArray obstaclePathArray;
 
         CarState cur_state;

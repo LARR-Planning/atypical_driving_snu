@@ -29,6 +29,8 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
     nh.param<string>("lane_csv_file",csv_file,"catkin_ws/src/atypical_driving_snu/keti_pangyo_path3.csv");
     nh.param<double>("lane_width",laneWidth,2.5);
     nh.param<string>("log_file_prefix",p_base_->log_file_name_base,"");
+    nh.param("isUseMovingAverage", p_base->isUseMovingAverage,false);
+    nh.param("smooth_horizon",p_base->smooth_horizon, 4);
     nh.param("smooth_weight",p_base->weight_smooth, 1.0);
     cout <<"sm" << p_base->weight_smooth << endl;
     nh.param("goal/x",p_base->goal_x,0.0);
@@ -180,6 +182,7 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<double>("local_planner/max_accel",param_.l_param.maxAccel,3);
     nh.param<double>("local_planner/min_accel",param_.l_param.minAccel,-1);
     nh.param<double>("local_planner/car_speed",param_.l_param.nominal_speed,2.0);
+    nh.param<int>("local_planner/N_corr",param_.l_param.N_corr,51);
 
 
     Parameter ilqr_weight;
