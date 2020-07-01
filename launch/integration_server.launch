@@ -62,6 +62,7 @@
     <param name="local_planner/max_accel" value="1" />
     <param name="local_planner/min_accel" value="-3" />
     <param name="local_planner/N_corr" value="5" />
+    <param name="local_planner/isRearWheel" value="false"/>
 
     <param name = "smooth_weight" value="0.7"/>
     <param name = "moving_horizon" value="100"/>

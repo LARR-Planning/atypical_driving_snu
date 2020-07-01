@@ -280,9 +280,9 @@ bool LocalPlannerPlain::plan(double t) {
      prob->set_state_weight(param.state_weight);
      prob->set_final_weight(param.final_weight);
      prob->set_input_weight(param.input_weight);
-     prob->setRear_wheel(true);
+//     prob->setRear_wheel(true);
      prob->set_car_shape(car_shape);
-//     prob->setRear_wheel(param.isRearWheeled);
+     prob->setRear_wheel(param.isRearWheeled);
      prob->set_noConstraint(noConstraint_);
      prob->set_refUsed(isRefUsed);
      prob->set_ref(local_wpts);

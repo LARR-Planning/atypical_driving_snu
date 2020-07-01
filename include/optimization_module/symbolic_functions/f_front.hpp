@@ -13,9 +13,10 @@ namespace symbolic_functions
         float x = x_(0,0);
         float y = x_(1,0);
         float v = x_(2,0);
-        float del = x_(3,0);
-        float th = x_(4,0);
-        float a = u(0,0);
+        float a = x_(3,0);
+        float del = x_(4,0);
+        float th = x_(5,0);
+        float adot = u(0,0);
         float deldot = u(1,0);
         Matrix<double,Nx,1> dyn;
         dyn.setZero();
@@ -23,8 +24,9 @@ namespace symbolic_functions
         dyn(0,0) = v * std::cos(th)*cos(del);
         dyn(1,0) = v * std::sin(th)*cos(del);
         dyn(2,0) = a;
-        dyn(3,0) = deldot;
-        dyn(4,0) = v * std::sin(del)*invL;
+        dyn(3,0) = adot;
+        dyn(4,0) = deldot;
+        dyn(5,0) = v * std::sin(del)*invL;
         
         return dyn;
 
