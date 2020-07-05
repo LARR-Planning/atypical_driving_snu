@@ -28,7 +28,7 @@ gg = plot(data_input(:,1),data_input(:,3),'c-','LineWidth',4);
 gg.Color(4) = 0.2;
 hold on
 title('steering history')
-%%
+%% mpc RHP 
 figure(3)
 Ndata = size(data_mpc,1)/5;
 
@@ -67,7 +67,29 @@ for n = 1:Ndata
 end
 
 
-
+%% future offset mpc vs current 
+figure(4)
+Ndata = size(data_mpc,1)/5;
+futureStride = 10;
+tMPC = [];
+xMPC = [];
+yMPC = [];
+for n = 1:Ndata
+    t = data_mpc((n-1)*5+1,2+futureStride);
+    x = data_mpc((n-1)*5+2,2+futureStride);
+    y = data_mpc((n-1)*5+3,2+futureStride);    
+    tMPC = [tMPC t];
+    xMPC = [xMPC x];
+    yMPC = [yMPC y];
+end
+subplot(2,1,1)
+hold on
+plot(tMPC,xMPC,'r-')
+plot(data_state(:,1),data_state(:,2),'k-')
+subplot(2,1,2)
+hold on 
+plot(tMPC,yMPC,'r-')
+plot(data_state(:,1),data_state(:,3),'k-')
 
 
 
