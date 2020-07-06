@@ -3,7 +3,7 @@
 <launch>
 
   <arg name = "bagfile" default= ""/>
-  <arg name = "use_sim_time" default= "true"/>
+  <arg name = "use_sim_time" default= "false"/>
 
   <arg name = "pcl_topic" default = "/velodyne_points_snu"/>
     <!-- Arguments Start -->
@@ -15,14 +15,14 @@
   <arg name ="detected_object_frame_id" default = "velodyne"/>
 
   <arg name = "lane_width" default="9"/>
-  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/waypoint_keti0626.csv"/>
+  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/interpolated_waypoint_parking_lot8.csv"/>
   <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
 
-  <arg name = "goal/x"  default = "332268.53"/> <!--in world frame -->
-  <arg name = "goal/y" default = "4138453.75"/> <!--in world frame -->
+  <arg name = "goal/x"  default = "332267.24"/> <!--in world frame -->
+  <arg name = "goal/y" default = "4138451.04"/> <!--in world frame -->
 
 
-    <arg name = "period" default= "0.1"/>
+    <arg name = "period" default= "0.5"/>
     <arg name = "horizon"  default= "5"/> <!--Also change dimension.h-->
     <arg name="planning_dt" default="0.1"/>
 
@@ -67,7 +67,7 @@
         <param name = "detected_objects_id" value="$(arg detected_object_frame_id)" />
 
         <!--Shaping params for nominal_speed selection-->
-        <param name = "vmax" value = "3"/> <!--m/s-->
+        <param name = "vmax" value = "2"/> <!--m/s-->
         <param name = "vmin" value = "1.0"/> <!--m/s-->
         <param name = "curve_thres" value = "0.3"/> <!--m/s-->
 
@@ -82,9 +82,9 @@
 
         <param name="global_planner/period" value="$(arg period)" />
         <param name="global_planner/grid_resolution" value="0.3" />
-        <param name ="global_planner/max_steering_angle" value = "$(eval 3.14/9)"/>
-        <param name ="global_planner/width_min" value = "1.5"/>
-        <param name ="global_planner/width_blocked_min" value = "3"/>
+        <param name ="global_planner/max_steering_angle" value = "$(eval 3.14/12)"/>
+        <param name ="global_planner/width_min" value = "4.0"/>
+        <param name ="global_planner/width_blocked_min" value = "7"/>
 
         <param name="local_planner/horizon" value="$(arg horizon)" />
         <param name="local_planner/ts" value="$(arg planning_dt)" />
@@ -93,7 +93,7 @@
         <param name="local_planner/min_accel" value="-3" />
         <param name="local_planner/N_corr" value="5" />
 
-        <param name = "smooth_weight" value="0.7"/>
+        <param name = "smooth_weight" value="0.5"/>
         <param name = "moving_horizon" value="100"/>
         <param name = "isUseMovingAverage" value="false"/>
 

@@ -57,7 +57,7 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
     // Get lane information
     p_base->parse_tool.get_Coorddata(csv_file); // This parse only the center information
 
-//     p_base->parse_tool.display_result();
+     p_base->parse_tool.display_result();
     p_base->lane_path = (p_base->parse_tool.get_lanepath());
     p_base->lane_path.setWidth(laneWidth);
 
