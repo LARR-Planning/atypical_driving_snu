@@ -950,6 +950,9 @@ void Wrapper::runPlanning() {
             if (isPlanPossible) {
 
                 p_base_shared->localMap = p_base_shared->localMapBuffer;
+
+
+
                 Vector3d goalXYSNU(p_base_shared->goal_x,p_base_shared->goal_y,0); // goal w.r.t SNu frame
                 goalXYSNU = p_base_shared->Tws.inverse()*goalXYSNU;
                 // Goal checking

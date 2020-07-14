@@ -55,9 +55,11 @@ bool GlobalPlanner::plan(double t) {
             }
 
             // check occupancy of side points and construct laneTree
+            // JBS
+            bool isInObject = false;
             int start_idx = -1;
             for(int k_side = 0; k_side < laneGridPoints.size(); k_side++){
-                if(!p_base->isOccupied(laneGridPoints[k_side])){
+                if(!p_base->isOccupied(laneGridPoints[k_side],isInObject)){
                     if(start_idx == -1){
                         start_idx = k_side;
                     }
@@ -104,6 +106,9 @@ bool GlobalPlanner::plan(double t) {
 
 
     // Find start node of laneTree
+
+
+    bool isInObject = false;
     int i_tree_start = -1;
     double dist, dist_start = SP_INFINITY;
     for(int i_tree = 0; i_tree < laneTree.size(); i_tree++) {
@@ -111,7 +116,7 @@ bool GlobalPlanner::plan(double t) {
             break;
         }
         dist = (laneTree[i_tree].midPoint - currentPoint).norm();
-        if(!p_base->isOccupied(laneTree[i_tree].midPoint, currentPoint)){
+        if(!p_base->isOccupied(laneTree[i_tree].midPoint, currentPoint,isInObject)){
             if (i_tree_start == -1 || dist < dist_start) {
                 i_tree_start = i_tree;
                 dist_start = dist;
@@ -280,8 +285,9 @@ bool GlobalPlanner::plan(double t) {
     }
 
     // Super heuristic
+
     for(int i_mid = 0; i_mid < midPoints.size(); i_mid++) {
-        if (p_base->isOccupied(midPoints[i_mid])) {
+        if (p_base->isOccupied(midPoints[i_mid],isInObject)) {
             if((midPoints[i_mid] - leftPoints[i_mid]).norm() < (midPoints[i_mid] - rightPoints[i_mid]).norm()){
                 midPoints[i_mid] = leftPoints[i_mid];
             }
@@ -410,8 +416,11 @@ std::vector<int> GlobalPlanner::findChildren(int idx){
 
         Vector2d child_point = laneTree[i_tree].midPoint;
         Vector2d current_point = laneTree[idx].midPoint;
+        // JBS
+        bool isInObject = false;
+
         double child_width = laneTree[i_tree].width;
-        if(!p_base->isOccupied(child_point, current_point) && child_width >= param.corridor_width_min){
+        if(!p_base->isOccupied(child_point, current_point,isInObject) && child_width >= param.corridor_width_min){
             double dist = (child_point - current_point).norm();
             if(children.empty()){
                 children.emplace_back(i_tree);

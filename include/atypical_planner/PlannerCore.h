@@ -303,8 +303,8 @@ namespace Planner {
         double goal_x;
         double goal_y;
 
-        bool isOccupied(Vector2d queryPoint); // query point frame = SNU
-        bool isOccupied(Vector2d queryPoint1, Vector2d queryPoint2); // rayIntersection query point frame = SNU
+        bool isOccupied(Vector2d queryPoint,bool & isObject); // query point frame = SNU
+        bool isOccupied(Vector2d queryPoint1, Vector2d queryPoint2,bool& isObject); // rayIntersection query point frame = SNU
 
         // Corridor generation
         Corridor expandCorridor(Vector2d point, Vector2d leftBoundaryPoint, Vector2d rightBoundaryPoint, double max_box_size, double map_resolution);
