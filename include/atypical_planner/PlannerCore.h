@@ -217,6 +217,7 @@ namespace Planner {
         Vector2d leftBoundaryPoint;
         Vector2d leftPoint;
         Vector2d midPoint;
+        Vector2d lanePoint;
         Vector2d rightPoint;
         Vector2d rightBoundaryPoint;
         vector<int> children;
