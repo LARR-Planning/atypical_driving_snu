@@ -267,11 +267,17 @@ visualization_msgs::MarkerArray SmoothLane::getPoints(const string& frame_id) {
         marker.scale.x = 0.1;
         marker.scale.y = 0.1;
         marker.scale.z = 0.1;
-        if(isBlocked) {
+        if(isBlocked and not isBlockedByDynamicObs) {
             marker.color.a = 1;
             marker.color.r = 1;
             marker.color.g = 0;
             marker.color.b = 0;
+        }
+        else if(isBlocked and isBlockedByDynamicObs){
+            marker.color.a = 1;
+            marker.color.r = 1;
+            marker.color.g = 0;
+            marker.color.b = 1;
         }
         else{
             marker.color.a = 1;

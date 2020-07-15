@@ -149,6 +149,7 @@ bool GlobalPlanner::plan(double t) {
     laneTreeSearch(i_tree_start);
     std::vector<int> tail = getMidPointsFromLaneTree(i_tree_start);
     bool isBlocked = isLaneTreeBlocked(tail.back());
+    bool isBlockedByDynamicObs = isLaneTreeBlockedByDynamicObs(tail.back());
     if(isBlocked){
         tail = cutTail(tail);
     }
@@ -199,14 +200,14 @@ bool GlobalPlanner::plan(double t) {
 
     // line smoothing except first point
     i_smooth = 1;
-    int window = 20; //TODO: parameterization
+    int window = param.smoothing_range;
     while(i_smooth < midPoints.size()) {
         double bias = (midPoints[i_smooth] - lanePoints[i_smooth]).norm();
-        if (bias > 1.0) {  //TODO: parameterization
+        if (bias > param.smoothing_cliff_bias) {
             //Forward search
             int i_forward = i_smooth + 1;
             while (i_forward < std::min(i_smooth + window, (int) midPoints.size() - 1)) {
-                if ((midPoints[i_forward] - lanePoints[i_forward]).norm() < bias / 2) { //TODO: parameterization
+                if ((midPoints[i_forward] - lanePoints[i_forward]).norm() < bias * param.smoothing_cliff_ratio) {
                     i_forward++;
                 } else {
                     i_forward--;
@@ -228,7 +229,7 @@ bool GlobalPlanner::plan(double t) {
             //backward search
             int i_backward = i_smooth - 1;
             while (i_backward > std::max(i_smooth - window, 0)) {
-                if ((midPoints[i_backward] - lanePoints[i_backward]).norm() < bias / 2) { //TODO: parameterization
+                if ((midPoints[i_backward] - lanePoints[i_backward]).norm() < bias * param.smoothing_cliff_ratio) {
                     i_backward--;
                 } else {
                     i_backward++;
@@ -405,6 +406,7 @@ bool GlobalPlanner::plan(double t) {
     smoothLane.leftBoundaryPoints = leftBoundaryPoints;
     smoothLane.rightBoundaryPoints = rightBoundaryPoints;
     smoothLane.isBlocked = isBlocked;
+    smoothLane.isBlockedByDynamicObs = isBlockedByDynamicObs;
 
     p_base->mSet[1].lock();
     smoothLane.n_total_markers = p_base->laneSmooth.n_total_markers;
@@ -544,6 +546,23 @@ std::vector<int> GlobalPlanner::getMidPointsFromLaneTree(int i_tree_start){
 
 bool GlobalPlanner::isLaneTreeBlocked(int last_element_index){
     return laneTree[last_element_index].id != laneTree[laneTree.size()-1].id;
+}
+
+bool GlobalPlanner::isLaneTreeBlockedByDynamicObs(int last_element_index){
+    for(int i_tree = last_element_index + 1; i_tree < laneTree.size(); i_tree++){
+        if(laneTree[i_tree].id == laneTree[last_element_index].id){
+            continue;
+        }
+        else if(laneTree[i_tree].id == laneTree[last_element_index].id + 1){
+            if(laneTree[i_tree].isNearObject){
+                return true;
+            }
+        }
+        else{
+            break;
+        }
+    }
+    return false;
 }
 
 std::vector<int> GlobalPlanner::cutTail(const std::vector<int>& tail) const{
