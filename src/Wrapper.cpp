@@ -155,8 +155,10 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<double>("global_planner/period",param_.g_param.period,2);
     nh.param<double>("global_planner/grid_resolution",param_.g_param.grid_resolution,0.5);
     nh.param<double>("global_planner/max_steering_angle", param_.g_param.max_steering_angle, M_PI/6);
-    nh.param<double>("global_planner/width_min", param_.g_param.corridor_width_min, 1);
-    nh.param<double>("global_planner/width_blocked_min", param_.g_param.corridor_width_blocked_min, 2);
+    nh.param<double>("global_planner/corridor_width_min", param_.g_param.corridor_width_min, 1);
+    nh.param<double>("global_planner/corridor_width_dynamic_min", param_.g_param.corridor_width_dynamic_min, 3);
+    nh.param<double>("global_planner/safe_distance", param_.g_param.safe_distance, 4);
+
 
     // local planner
     nh.param<double>("local_planner/horizon",param_.l_param.horizon,5);

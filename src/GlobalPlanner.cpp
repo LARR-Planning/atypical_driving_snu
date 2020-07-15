@@ -55,15 +55,21 @@ bool GlobalPlanner::plan(double t) {
             }
 
             // check occupancy of side points and construct laneTree
-            // JBS
-            bool isInObject = false;
+            bool isNearObject = false;
+            for(int k_side = 0; k_side < laneGridPoints.size(); k_side++) {
+                if(p_base->isObject(laneGridPoints[k_side])){
+                    isNearObject = true;
+                    break;
+                }
+            }
+
             int start_idx = -1;
             for(int k_side = 0; k_side < laneGridPoints.size(); k_side++){
-                if(!p_base->isOccupied(laneGridPoints[k_side],isInObject)){
+                if(not p_base->isOccupied(laneGridPoints[k_side])){
                     if(start_idx == -1){
-                        start_idx = k_side;
+                        start_idx = k_side; //not occupied, start idx not initialized -> initialize start index
                     }
-                    if(k_side == laneGridPoints.size()-1){
+                    if(k_side == laneGridPoints.size() - 1){ // not occupied, laneGrid ended -> add element to tree
                         mid_point = (laneGridPoints[k_side] + laneGridPoints[start_idx])/2;
                         LaneTreeElement laneTreeElement;
                         laneTreeElement.id = i_grid;
@@ -74,10 +80,11 @@ bool GlobalPlanner::plan(double t) {
                         laneTreeElement.rightPoint = laneGridPoints[start_idx];
                         laneTreeElement.rightBoundaryPoint = laneGridPoints[0];
                         laneTreeElement.width = (laneGridPoints[k_side] - laneGridPoints[start_idx]).norm();
+                        laneTreeElement.isNearObject = isNearObject;
                         laneTree.emplace_back(laneTreeElement);
                     }
                 }
-                else if(start_idx > -1){
+                else if(start_idx > -1){ //occupied, start idx initialized -> add element to tree
                     mid_point = (laneGridPoints[k_side-1] + laneGridPoints[start_idx])/2;
                     LaneTreeElement laneTreeElement;
                     laneTreeElement.id = i_grid;
@@ -88,14 +95,14 @@ bool GlobalPlanner::plan(double t) {
                     laneTreeElement.rightPoint = laneGridPoints[start_idx];
                     laneTreeElement.rightBoundaryPoint = laneGridPoints[0];
                     laneTreeElement.width = (laneGridPoints[k_side-1] - laneGridPoints[start_idx]).norm();
+                    laneTreeElement.isNearObject = isNearObject;
                     laneTree.emplace_back(laneTreeElement);
                     start_idx = -1;
                 }
-                else{
+                else{ //occupied, start idx not initialized -> do nothing
                     start_idx = -1;
                 }
             }
-
             i_grid++;
             current_length += param.grid_resolution;
         }
@@ -106,7 +113,6 @@ bool GlobalPlanner::plan(double t) {
         laneTree[i_tree].children = findChildren(i_tree);
     }
 
-
     // Find start node of laneTree
     bool isInObject = false;
     int i_tree_start = -1;
@@ -116,7 +122,7 @@ bool GlobalPlanner::plan(double t) {
             break;
         }
         dist = (laneTree[i_tree].midPoint - currentPoint).norm();
-        if(!p_base->isOccupied(laneTree[i_tree].midPoint, currentPoint,isInObject)){
+        if(not p_base->isOccupied(laneTree[i_tree].midPoint, currentPoint)){
             if (i_tree_start == -1 || dist < dist_start) {
                 i_tree_start = i_tree;
                 dist_start = dist;
@@ -145,6 +151,12 @@ bool GlobalPlanner::plan(double t) {
     bool isBlocked = isLaneTreeBlocked(tail.back());
     if(isBlocked){
         tail = cutTail(tail);
+    }
+    else{
+        ROS_WARN_STREAM("Not blocked, obstaclePathArray size:" << p_base->obstaclePathArray.obstPathArray.size());
+        for(int i = 0; i < p_base->obstaclePathArray.obstPathArray.size(); i++){
+            ROS_WARN_STREAM("Not blocked, obstacle position: (" << p_base->obstaclePathArray.obstPathArray[i].obstPath[0].q(0) << ", " << p_base->obstaclePathArray.obstPathArray[i].obstPath[0].q(1) << ")");
+        }
     }
 
     std::vector<Vector2d, aligned_allocator<Vector2d>> midPoints, lanePoints, leftPoints, rightPoints, leftBoundaryPoints, rightBoundaryPoints;
@@ -255,8 +267,8 @@ bool GlobalPlanner::plan(double t) {
     }
 
     // If midPoints are out of bounds, then push them into bounds
-    for (int i_mid = 0; i_mid < midPoints.size(); i_mid++) { //TODO: fix range
-        if (p_base->isOccupied(midPoints[i_mid], isInObject)) {
+    for (int i_mid = 0; i_mid < midPoints.size(); i_mid++) {
+        if (p_base->isOccupied(midPoints[i_mid])) {
             if ((midPoints[i_mid] - leftPoints[i_mid]).norm() <
                 (midPoints[i_mid] - rightPoints[i_mid]).norm()) {
                 midPoints[i_mid] = leftPoints[i_mid];
@@ -313,7 +325,7 @@ bool GlobalPlanner::plan(double t) {
     }
     // If midPoints are out of bounds, then push them into bounds
     for(int i_mid = 0; i_mid < midPoints.size(); i_mid++) {
-        if (p_base->isOccupied(midPoints[i_mid],isInObject)) {
+        if (p_base->isOccupied(midPoints[i_mid])) {
             if((midPoints[i_mid] - leftPoints[i_mid]).norm() < (midPoints[i_mid] - rightPoints[i_mid]).norm()){
                 midPoints[i_mid] = leftPoints[i_mid];
             }
@@ -460,13 +472,17 @@ std::vector<int> GlobalPlanner::findChildren(int idx){
             break;
         }
 
-        Vector2d child_point = laneTree[i_tree].midPoint;
         Vector2d current_point = laneTree[idx].midPoint;
-        // JBS
-        bool isInObject = false;
-
+        Vector2d child_point = laneTree[i_tree].midPoint;
         double child_width = laneTree[i_tree].width;
-        if(!p_base->isOccupied(child_point, current_point,isInObject) && child_width >= param.corridor_width_min){
+        double corridor_width_min;
+        if(laneTree[i_tree].isNearObject) { //if child is near object, change corridor_width_min
+            corridor_width_min = param.corridor_width_dynamic_min;
+        }
+        else{
+            corridor_width_min = param.corridor_width_min;
+        }
+        if(!p_base->isOccupied(child_point, current_point) and child_width >= corridor_width_min){
             double dist = (child_point - current_point).norm();
             if(children.empty()){
                 children.emplace_back(i_tree);
@@ -495,7 +511,7 @@ void GlobalPlanner::laneTreeSearch(int i_tree){
 
     // update all children
     for(int i_child = 0; i_child < laneTree[i_tree].children.size(); i_child++){
-        if(!laneTree[i_tree].visited) {
+        if(not laneTree[i_tree].visited) {
             laneTreeSearch(laneTree[i_tree].children[i_child]);
         }
     }
@@ -530,18 +546,8 @@ bool GlobalPlanner::isLaneTreeBlocked(int last_element_index){
     return laneTree[last_element_index].id != laneTree[laneTree.size()-1].id;
 }
 
-std::vector<int> GlobalPlanner::cutTail(const std::vector<int>& tail){
-    int tail_end = tail.size();
-    bool isBlocked = false;
-    for(int i_tail = tail.size()-1; i_tail >= 0; i_tail--){
-        if(laneTree[tail[i_tail]].width < param.corridor_width_blocked_min){
-            tail_end = i_tail-1;
-            isBlocked = true;
-        }
-        else if(isBlocked){
-            break;
-        }
-    }
+std::vector<int> GlobalPlanner::cutTail(const std::vector<int>& tail) const{
+    int tail_end = (int)tail.size() - 1 - static_cast<int>((param.safe_distance + SP_EPSILON)/param.grid_resolution);
     if(tail_end < 1){
         tail_end = 1;
     }

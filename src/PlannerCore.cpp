@@ -409,11 +409,10 @@ Corridor PlannerBase::expandCorridor(Vector2d point, Vector2d leftBoundaryPoint,
     corridor.yl = point.y() - max_box_size/2;
     corridor.xu = point.x() + max_box_size/2;
     corridor.yu = point.y() + max_box_size/2;
-    bool isInObject = false; // JBS
-    if(isOccupied(point,isInObject)){
+    if(isOccupied(point)){
         ROS_ERROR("[PlannerBase] expandCorridor error, point is occluded by obstacles");
         for(int i_mid = 0; i_mid < laneSmooth.points.size(); i_mid++) {
-            if (isOccupied(laneSmooth.points[i_mid],isInObject)) {
+            if (isOccupied(laneSmooth.points[i_mid])) {
                 ROS_ERROR("[PlannerBase] expandCorridor error, midPoint is also occluded by obstacles");
             }
         }
@@ -426,7 +425,7 @@ Corridor PlannerBase::expandCorridor(Vector2d point, Vector2d leftBoundaryPoint,
             Vector2d check_point(x, y);
             if(check_point.x() > corridor.xl - epsilon && check_point.x() < corridor.xu + epsilon
                && check_point.y() > corridor.yl - epsilon && check_point.y() < corridor.yu + epsilon
-               && isOccupied(check_point,isInObject))
+               && isOccupied(check_point))
             {
                 float angle = atan2(check_point.y() - point.y(), check_point.x() - point.x());
                 if(angle > - M_PI/4 - epsilon && angle < M_PI/4 + epsilon){
@@ -506,30 +505,26 @@ std::vector<Corridor> PlannerBase::expandCorridors(std::vector<double> ts, doubl
 
     std::vector<Corridor> corridors;
     corridors.resize(ts.size());
-    bool isInObject = false;
-
     for(int i = 0; i < ts.size(); i++){
         Vector2d corridor_point = laneSmooth.evalX(ts[i]);
         Vector2d leftBoundaryPoint = laneSmooth.evalSidePoint(ts[i], true);
         Vector2d rightBoundaryPoint = laneSmooth.evalSidePoint(ts[i], false);
-        if(isOccupied(corridor_point,isInObject)){
+        if(isOccupied(corridor_point)){
             //ROS_WARN("[PlannerBase] heuristic method is used to avoid midpoint collision!");
             double heuristic_margin = 0.1;
             if((corridor_point - leftBoundaryPoint).norm() < (corridor_point - rightBoundaryPoint).norm()){
-                while(isOccupied(corridor_point,isInObject)) {
+                while(isOccupied(corridor_point)) {
                     corridor_point =
                             corridor_point + heuristic_margin * (rightBoundaryPoint - leftBoundaryPoint).normalized();
                 }
             }
             else{
-                while(isOccupied(corridor_point,isInObject)) {
+                while(isOccupied(corridor_point)) {
                     corridor_point =
                             corridor_point + heuristic_margin * (leftBoundaryPoint - rightBoundaryPoint).normalized();
                 }
             }
         }
-
-
 //        ROS_WARN("[PlannerBase] while loop terminated! ");
 
         Corridor corridor = expandCorridor(corridor_point, leftBoundaryPoint, rightBoundaryPoint, laneSmooth.evalWidth(ts[i]), map_resolution);
@@ -710,31 +705,15 @@ void PlannerBase::log_mpc(double t_cur) {
  * @param isObject  insert true if it is within the obstacle path array
  * @return true if occupied
  */
-bool PlannerBase::isOccupied(Vector2d queryPoint,bool& isObject) {
+bool PlannerBase::isOccupied(Vector2d queryPoint) {
     geometry_msgs::Point queryPoint3;
     queryPoint3.x = queryPoint(0);
     queryPoint3.y = queryPoint(1);
     queryPoint3.z = 0;
-    isObject = false; // initialize
-
 
     if (!occupancy_grid_utils::withinBounds(localMap.info,queryPoint3)){
 //        ROS_WARN("querying point [%f,%f]  is out of bound of occupancy map ", queryPoint3.x,queryPoint3.y );
         return false;
-    }
-
-    unsigned long nInspection = 3;
-    for (auto obstPath : obstaclePathArray.obstPathArray){
-        for (int i = 0 ; i < min(nInspection,obstPath.obstPath.size()) ; i ++ ){
-            ObstacleEllipse obst = obstPath.obstPath[i];
-            if (((obst.q - queryPoint).transpose()*obst.Q*(obst.q - queryPoint))(0) < 1 ) {
-                isObject = true;
-                ROS_WARN("Query point collided with object");
-                break;
-            }
-        }
-        if (isObject)
-            break;
     }
 
     occupancy_grid_utils::index_t idx = occupancy_grid_utils::pointIndex(localMap.info,queryPoint3);
@@ -742,7 +721,33 @@ bool PlannerBase::isOccupied(Vector2d queryPoint,bool& isObject) {
     return (localMap.data[idx] > OCCUPANCY);
 }
 
-bool PlannerBase::isOccupied(Vector2d queryPoint1, Vector2d queryPoint2,bool & isObject) {
+/**
+ * @brief Verify whether queryPoint is object
+ * @param queryPoint frame = SNU
+ * @return true if queryPoint is within the obstacle path array
+ */
+bool PlannerBase::isObject(const Vector2d& queryPoint){
+    unsigned long nInspection = 3;
+    for (auto obstPath : obstaclePathArray.obstPathArray){
+        for (int i = 0 ; i < min(nInspection, obstPath.obstPath.size()) ; i ++ ){
+            ObstacleEllipse obst = obstPath.obstPath[i];
+            if (((obst.q - queryPoint).transpose()*obst.Q*(obst.q - queryPoint))(0) < 1.5) {
+                ROS_WARN("Query point collided with object");
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+/**
+ * @brief Get occpuancy of the line segment (queryPoint1 to queryPoint2)
+ * @param queryPoint1 frame = SNU
+ * @param queryPoint2 frame = SNU
+ * @param isObject  insert true if it is within the obstacle path array
+ * @return true if occupied
+ */
+bool PlannerBase::isOccupied(Vector2d queryPoint1, Vector2d queryPoint2) {
     geometry_msgs::Point p1;
     p1.x = queryPoint1(0);
     p1.y = queryPoint1(1);
@@ -759,22 +764,22 @@ bool PlannerBase::isOccupied(Vector2d queryPoint1, Vector2d queryPoint2,bool & i
     while(iter != range.second){
         occupancy_grid_utils::Cell cell = *iter;
 
-        // added by JBS to check object collision
-        geometry_msgs::Point p = occupancy_grid_utils::cellCenter(localMap.info,cell);
-        Vector2d queryPoint(p.x,p.y);
-        unsigned long nInspection = 3;
-        for (auto obstPath : obstaclePathArray.obstPathArray){
-            for (int i = 0 ; i < min(nInspection,obstPath.obstPath.size()) ; i ++ ){
-                ObstacleEllipse obst = obstPath.obstPath[i];
-                if (((obst.q - queryPoint).transpose()*obst.Q*(obst.q - queryPoint))(0) < 1 ) {
-                    isObject = true;
-                    ROS_WARN("Query point collided with object");
-                    break;
-                }
-            }
-            if (isObject)
-                break;
-        }
+//        // added by JBS to check object collision
+//        geometry_msgs::Point p = occupancy_grid_utils::cellCenter(localMap.info,cell);
+//        Vector2d queryPoint(p.x,p.y);
+//        unsigned long nInspection = 3;
+//        for (auto obstPath : obstaclePathArray.obstPathArray){
+//            for (int i = 0 ; i < min(nInspection,obstPath.obstPath.size()) ; i ++ ){
+//                ObstacleEllipse obst = obstPath.obstPath[i];
+//                if (((obst.q - queryPoint).transpose()*obst.Q*(obst.q - queryPoint))(0) < 1 ) {
+//                    isObject = true;
+//                    ROS_WARN("Query point collided with object");
+//                    break;
+//                }
+//            }
+//            if (isObject)
+//                break;
+//        }
 
         occupancy_grid_utils::index_t idx = occupancy_grid_utils::cellIndex(localMap.info, cell);
         if(localMap.data[idx] > OCCUPANCY){
