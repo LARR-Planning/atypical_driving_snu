@@ -4,7 +4,7 @@
 
   <arg name = "use_sim_time" value = "true"/>
 <!--   <arg name= "bagfile"        default="200518-SNU-1_result.bag"/> -->
-  <arg name= "bagfile"        default="200625_snu_2_result.bag"/>
+  <arg name= "bagfile"        default="200518-SNU-5_result.bag"/>
 
   <param name="use_sim_time" value="$(arg use_sim_time)"/>
 
@@ -19,7 +19,7 @@
   <arg name ="detected_object_frame_id" default = "velodyne"/>
 
   <arg name = "lane_width" default="9"/>
-  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/waypoint_keti0626.csv"/>
+  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/interpolated_waypoint_parking_lot8.csv"/>
   <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
 
 
