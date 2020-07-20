@@ -26,12 +26,12 @@ namespace symbolic_functions
         // float a = u_(0,0);
         // float deldot = u_(1,0);
         
-        float Q0 = Q(0);
-        float Q1 = Q(1);
-        float Q2 = Q(2);
-        float Q3 = Q(3);
-        float Q4 = Q(4);
-        float Q5 = Q(5);
+        float Q0 = Q(0); //x
+        float Q1 = Q(1); //y
+        float Q2 = Q(2); //v
+        float Q3 = Q(3); //a
+        float Q4 = Q(4); //del
+        float Q5 = Q(5); //theta
 
         // float R1 = R(0);
         // float R2 = R(1);
@@ -41,6 +41,7 @@ namespace symbolic_functions
         A0.setZero();
         A0(0,0) = Q0;
         A0(1,1) = Q1;
+        A0(3,3) = Q3;
         A0(4,4) = Q4;
         A0(5,5) = Q5;
         return A0;

@@ -50,9 +50,9 @@
         transform_tolerance: 2.0
         origin_x: 0
         origin_y: 0
-        width: 50
+        width: 100
         resolution: 0.5
-        height: 50
+        height: 100
         rolling_window: true
         obstacles:
           clearing: true,
@@ -73,6 +73,8 @@
             max_obstacle_height: $(arg cost_map_max_z),
             min_obstacle_height: $(arg cost_map_min_z)
           }
+        inflation:
+          inflation_radius: 0.55
         voxel:
           publish_voxel_map: true
     </rosparam>

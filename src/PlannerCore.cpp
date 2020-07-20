@@ -267,11 +267,17 @@ visualization_msgs::MarkerArray SmoothLane::getPoints(const string& frame_id) {
         marker.scale.x = 0.1;
         marker.scale.y = 0.1;
         marker.scale.z = 0.1;
-        if(isBlocked) {
+        if(isBlocked and not isBlockedByDynamicObs) {
             marker.color.a = 1;
             marker.color.r = 1;
             marker.color.g = 0;
             marker.color.b = 0;
+        }
+        else if(isBlocked and isBlockedByDynamicObs){
+            marker.color.a = 1;
+            marker.color.r = 1;
+            marker.color.g = 0;
+            marker.color.b = 1;
         }
         else{
             marker.color.a = 1;
@@ -409,7 +415,6 @@ Corridor PlannerBase::expandCorridor(Vector2d point, Vector2d leftBoundaryPoint,
     corridor.yl = point.y() - max_box_size/2;
     corridor.xu = point.x() + max_box_size/2;
     corridor.yu = point.y() + max_box_size/2;
-
     if(isOccupied(point)){
         ROS_ERROR("[PlannerBase] expandCorridor error, point is occluded by obstacles");
         for(int i_mid = 0; i_mid < laneSmooth.points.size(); i_mid++) {
@@ -526,8 +531,6 @@ std::vector<Corridor> PlannerBase::expandCorridors(std::vector<double> ts, doubl
                 }
             }
         }
-
-
 //        ROS_WARN("[PlannerBase] while loop terminated! ");
 
         Corridor corridor = expandCorridor(corridor_point, leftBoundaryPoint, rightBoundaryPoint, laneSmooth.evalWidth(ts[i]), map_resolution);
@@ -705,6 +708,7 @@ void PlannerBase::log_mpc(double t_cur) {
 /**
  * @brief Get occpuancy
  * @param queryPoint frame = SNU
+ * @param isObject  insert true if it is within the obstacle path array
  * @return true if occupied
  */
 bool PlannerBase::isOccupied(Vector2d queryPoint) {
@@ -718,12 +722,37 @@ bool PlannerBase::isOccupied(Vector2d queryPoint) {
         return false;
     }
 
-
     occupancy_grid_utils::index_t idx = occupancy_grid_utils::pointIndex(localMap.info,queryPoint3);
 
     return (localMap.data[idx] > OCCUPANCY);
 }
 
+/**
+ * @brief Verify whether queryPoint is object
+ * @param queryPoint frame = SNU
+ * @return true if queryPoint is within the obstacle path array
+ */
+bool PlannerBase::isObject(const Vector2d& queryPoint){
+    unsigned long nInspection = 3;
+    for (auto obstPath : obstaclePathArray.obstPathArray){
+        for (int i = 0 ; i < min(nInspection, obstPath.obstPath.size()) ; i ++ ){
+            ObstacleEllipse obst = obstPath.obstPath[i];
+            if (((obst.q - queryPoint).transpose()*obst.Q*(obst.q - queryPoint))(0) < 1.5) {
+                ROS_WARN("Query point collided with object");
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+/**
+ * @brief Get occpuancy of the line segment (queryPoint1 to queryPoint2)
+ * @param queryPoint1 frame = SNU
+ * @param queryPoint2 frame = SNU
+ * @param isObject  insert true if it is within the obstacle path array
+ * @return true if occupied
+ */
 bool PlannerBase::isOccupied(Vector2d queryPoint1, Vector2d queryPoint2) {
     geometry_msgs::Point p1;
     p1.x = queryPoint1(0);
@@ -740,6 +769,24 @@ bool PlannerBase::isOccupied(Vector2d queryPoint1, Vector2d queryPoint2) {
     auto iter = range.first;
     while(iter != range.second){
         occupancy_grid_utils::Cell cell = *iter;
+
+//        // added by JBS to check object collision
+//        geometry_msgs::Point p = occupancy_grid_utils::cellCenter(localMap.info,cell);
+//        Vector2d queryPoint(p.x,p.y);
+//        unsigned long nInspection = 3;
+//        for (auto obstPath : obstaclePathArray.obstPathArray){
+//            for (int i = 0 ; i < min(nInspection,obstPath.obstPath.size()) ; i ++ ){
+//                ObstacleEllipse obst = obstPath.obstPath[i];
+//                if (((obst.q - queryPoint).transpose()*obst.Q*(obst.q - queryPoint))(0) < 1 ) {
+//                    isObject = true;
+//                    ROS_WARN("Query point collided with object");
+//                    break;
+//                }
+//            }
+//            if (isObject)
+//                break;
+//        }
+
         occupancy_grid_utils::index_t idx = occupancy_grid_utils::cellIndex(localMap.info, cell);
         if(localMap.data[idx] > OCCUPANCY){
             return true;

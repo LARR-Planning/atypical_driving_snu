@@ -6,18 +6,19 @@ using namespace Eigen;
 
 const double car_width = 0.0;
 const double car_length = 0.0;
-const double invL = 0.37037;
-const double dist_safe = 0.5; // plus: relaxation(expand corridor), minus: more restrictive (shrink corridor)
+//const double invL = 0.37037; //keti car
+const double invL = 0.431; // airsim car
+const double dist_safe = 0.1; // plus: relaxation(expand corridor), minus: more restrictive (shrink corridor)
 const double dist_minus = 100; // invalidate safe corridor
 const double inv_dist_safe = 0.1;
 const double steer_min = -0.52; //-30 deg
 const double steer_max = 0.52; // 30 deg
 const double acc_min = -3;
 const double acc_max = 1;
-const double jerk_min = -10;
-const double jerk_max = 10;
-const double steer_dot_min = -5;
-const double steer_dot_max = 5;
+const double jerk_min = -5;
+const double jerk_max = 5;
+const double steer_dot_min = -2;
+const double steer_dot_max = 2;
 
 
 

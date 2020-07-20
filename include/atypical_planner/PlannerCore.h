@@ -103,9 +103,13 @@ namespace Planner {
         double period;
 //        int max_smoothing_iteration;
 //        double smoothing_margin;
+        int smoothing_range;
+        double smoothing_cliff_bias;
+        double smoothing_cliff_ratio;
         double max_steering_angle;
         double corridor_width_min;
-        double corridor_width_blocked_min;
+        double corridor_width_dynamic_min;
+        double safe_distance;
     };
 
     struct ParamPredictor{
@@ -217,8 +221,10 @@ namespace Planner {
         Vector2d leftBoundaryPoint;
         Vector2d leftPoint;
         Vector2d midPoint;
+        Vector2d lanePoint;
         Vector2d rightPoint;
         Vector2d rightBoundaryPoint;
+        bool isNearObject;
         vector<int> children;
 
         int distance;
@@ -239,6 +245,7 @@ namespace Planner {
         vector<Vector2d, aligned_allocator<Vector2d>> leftBoundaryPoints;
         vector<Vector2d, aligned_allocator<Vector2d>> rightBoundaryPoints;
         bool isBlocked;
+        bool isBlockedByDynamicObs;
 
         int n_total_markers = 0;
 
@@ -305,6 +312,9 @@ namespace Planner {
 
         bool isOccupied(Vector2d queryPoint); // query point frame = SNU
         bool isOccupied(Vector2d queryPoint1, Vector2d queryPoint2); // rayIntersection query point frame = SNU
+
+        bool isObject(const Vector2d& queryPoint); // query point frame = SNU
+
 
         // Corridor generation
         Corridor expandCorridor(Vector2d point, Vector2d leftBoundaryPoint, Vector2d rightBoundaryPoint, double max_box_size, double map_resolution);

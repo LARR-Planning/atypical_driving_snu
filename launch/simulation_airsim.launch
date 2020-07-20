@@ -31,8 +31,8 @@
   <arg name="vehicle_model/is_rear_wheel"     default="true"/>
 
   <arg name="nominal_speed"     default="2"/>
-  <arg name="lp_horizon"     default="10"/>
-  <arg name="lp_period"     default="0.1"/>
+  <arg name="lp_horizon"     default="5"/>
+  <arg name="lp_period"     default="0.05"/>
 
   <arg name="gp_horizon"     default="30"/>
   <arg name="gp_period"     default="0.4"/>
@@ -42,7 +42,7 @@
   <arg name="gp_z_min" value = "0.5"/>
   <arg name="gp_z_max" value = "1.0"/>
 
-  <arg name = "goal/x"  default = "30"/> <!--in world frame -->
+  <arg name = "goal/x"  default = "60"/> <!--in world frame -->
   <arg name = "goal/y" default = "73"/> <!--in world frame -->
 
   <group ns="atypical_planning_test">

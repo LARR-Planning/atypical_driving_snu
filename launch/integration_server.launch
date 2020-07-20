@@ -13,8 +13,8 @@
 <arg name = "waypoints" default="$(find atypical_driving)/param/goal_airsim.yaml"/>
 
 <arg name = "horizon" default = "5"/>
-<arg name = "period" default = "1"/>
-<arg name="planning_dt"     default="0.1"/> <!--?-->
+<arg name = "period" default = "0.05"/>
+<arg name="planning_dt"     default="0.05"/> <!--?-->
 
 <arg name = "goal/x" default = "0"/>
 <arg name = "goal/y" default = "0"/>
@@ -52,9 +52,13 @@
 
     <param name="global_planner/period" value="$(arg period)" />
     <param name="global_planner/grid_resolution" value="0.3" />
-    <param name ="global_planner/max_steering_angle" value = "$(eval 3.14/9)"/>
-    <param name ="global_planner/width_min" value = "1.5"/>
-    <param name ="global_planner/width_blocked_min" value = "3"/>
+    <param name="global_planner/smoothing_range" value="20" />
+    <param name="global_planner/smoothing_cliff_bias" value="1.0" />
+    <param name="global_planner/smoothing_cliff_ratio" value="0.5"/>
+    <param name="global_planner/max_steering_angle" value = "$(eval 3.14/20)"/>
+    <param name="global_planner/corridor_width_min" value = "1.5"/>
+    <param name="global_planner/corridor_width_dynamic_min" value = "8"/>
+    <param name="global_planner/safe_distance" value = "4"/>
 
     <param name="local_planner/horizon" value="$(arg horizon)" />
     <param name="local_planner/ts" value="$(arg planning_dt)" />
@@ -62,7 +66,7 @@
     <param name="local_planner/max_accel" value="1" />
     <param name="local_planner/min_accel" value="-3" />
     <param name="local_planner/N_corr" value="5" />
-    <param name="local_planner/isRearWheel" value="false"/>
+    <param name="local_planner/isRearWheel" value="true"/>
 
     <param name = "smooth_weight" value="0.7"/>
     <param name = "moving_horizon" value="100"/>
