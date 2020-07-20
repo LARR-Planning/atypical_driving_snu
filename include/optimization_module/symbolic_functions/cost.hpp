@@ -36,7 +36,7 @@ namespace symbolic_functions
         float R1 = R(1);
 
         //float dist = std::sqrt((x-obs(0))*(x-obs(0))+(y-obs(1))*(y-obs(1)));
-        double cost_value = 0.5*Q0*(x-g(0))*(x-g(0)) + 0.5*Q1*(y-g(1))*(y-g(1))
+        double cost_value = 0.5*Q0*(x-g(0))*(x-g(0)) + 0.5*Q1*(y-g(1))*(y-g(1))+0.5*Q3*a*a+
                 +0.5*Q4*del*del + 0.5*Q5*(th-g(2))*(th-g(2)) + 0.5*R0*adot*adot + 0.5*R1*deldot*deldot;
         return cost_value;
     }

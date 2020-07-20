@@ -13,8 +13,8 @@
 <arg name = "waypoints" default="$(find atypical_driving)/param/goal_airsim.yaml"/>
 
 <arg name = "horizon" default = "5"/>
-<arg name = "period" default = "1"/>
-<arg name="planning_dt"     default="0.1"/> <!--?-->
+<arg name = "period" default = "0.05"/>
+<arg name="planning_dt"     default="0.05"/> <!--?-->
 
 <arg name = "goal/x" default = "0"/>
 <arg name = "goal/y" default = "0"/>
@@ -66,7 +66,7 @@
     <param name="local_planner/max_accel" value="1" />
     <param name="local_planner/min_accel" value="-3" />
     <param name="local_planner/N_corr" value="5" />
-    <param name="local_planner/isRearWheel" value="false"/>
+    <param name="local_planner/isRearWheel" value="true"/>
 
     <param name = "smooth_weight" value="0.7"/>
     <param name = "moving_horizon" value="100"/>
