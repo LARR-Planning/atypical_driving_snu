@@ -99,7 +99,7 @@ void LocalPlanner::ObstToConstraint() {
         Vector2d car_pos;
         car_pos<< p_base->getCarState().x, p_base->getCarState().y;
         for (auto s : p_base->getCurObstaclePathArray().obstPathArray) {
-            if((s.obstPath[0].q - car_pos).norm()<30)
+            if((s.obstPath[0].q - car_pos).norm()<param.dynObstRange)
             {
                 for (int i = 0; i < N; i++)
                 {
@@ -289,6 +289,7 @@ bool LocalPlannerPlain::plan(double t) {
      prob->set_sfc_idx(sfc_idx);
 
      static int loop_num = 0;
+     cout<<"loop_num in Local Planner"<<loop_num<<endl;
      std::array<Matrix<double,Nu,1>,N> u0;
      for(auto &s :u0)
      {
@@ -460,10 +461,7 @@ bool LocalPlannerPlain::plan(double t) {
                      curPlanning.xs.push_back(carState_temp);
                      curPlanning.us.push_back(carInput_temp);
                  }
-
-
-
-
+                 
                 ROS_INFO(" Initial guess =  initialized to zero");
                  return false;
              }

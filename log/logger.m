@@ -6,6 +6,7 @@ data_mpc = load('log_mpc.txt');
 
 
 figure(1)
+
 hold on
 plot(data_state(:,2),data_state(:,3),'k-')
 % comet(data_state(:,2),data_state(:,3))
