@@ -264,9 +264,9 @@ visualization_msgs::MarkerArray SmoothLane::getPoints(const string& frame_id) {
         marker.pose.position.x = point(0);
         marker.pose.position.y = point(1);
         marker.pose.position.z = 0;
-        marker.scale.x = 0.1;
-        marker.scale.y = 0.1;
-        marker.scale.z = 0.1;
+        marker.scale.x = 0.2;
+        marker.scale.y = 0.2;
+        marker.scale.z = 0.2;
         if(isBlocked and not isBlockedByDynamicObs) {
             marker.color.a = 1;
             marker.color.r = 1;
@@ -275,9 +275,9 @@ visualization_msgs::MarkerArray SmoothLane::getPoints(const string& frame_id) {
         }
         else if(isBlocked and isBlockedByDynamicObs){
             marker.color.a = 1;
-            marker.color.r = 1;
-            marker.color.g = 0;
-            marker.color.b = 1;
+            marker.color.r = 128.0/255.0;
+            marker.color.g = 64.0/255.0;
+            marker.color.b = 128.0/255.0;
         }
         else{
             marker.color.a = 1;
@@ -620,53 +620,62 @@ driving_msgs::VehicleCmd PlannerBase::getCurInput(double t){
 void PlannerBase::uploadPrediction(VectorXd tSeq_, double rNominal) {
 
     VectorXf tSeq = tSeq_.cast<float>();
-    obstaclePathArray.obstPathArray.clear();
+//    printf("[DEBUG_JBS] obstpath clearing start\n");
+    ObstaclePathArray obstaclePathArrayBuffer;
 
-    for(auto idPredictor : indexedPredictorSet){
-        auto predictor = get<1>(idPredictor);
-        //predictor.update_predict(); // this will do nothing if observation is not enough
-        if (predictor.is_prediction_available()) {
-            vector<geometry_msgs::Pose> obstFuturePose = predictor.eval_pose_seq(tSeq);
-            ObstaclePath obstPath;
-            for (auto obstPose : obstFuturePose) {
-                // construct one obstaclePath
-                ObstacleEllipse obstE;
-                obstE.q = Vector2d(obstPose.position.x, obstPose.position.y);
-                SE3 poseSE3 = SE3::Identity();
-                Quaterniond q;
-                q.x() = obstPose.orientation.x;
-                q.y() = obstPose.orientation.y;
-                q.z() = obstPose.orientation.z;
-                q.w() = obstPose.orientation.w;
+//        obstaclePathArray.obstPathArray.clear();
 
-                poseSE3.rotate(q);
+        for (auto idPredictor : indexedPredictorSet) {
+            auto predictor = get<1>(idPredictor);
+            //predictor.update_predict(); // this will do nothing if observation is not enough
+            if (predictor.is_prediction_available()) {
+                vector<geometry_msgs::Pose> obstFuturePose = predictor.eval_pose_seq(tSeq);
+                ObstaclePath obstPath;
+                for (auto obstPose : obstFuturePose) {
+                    // construct one obstaclePath
+                    ObstacleEllipse obstE;
+                    obstE.q = Vector2d(obstPose.position.x, obstPose.position.y);
+                    SE3 poseSE3 = SE3::Identity();
+                    Quaterniond q;
+                    q.x() = obstPose.orientation.x;
+                    q.y() = obstPose.orientation.y;
+                    q.z() = obstPose.orientation.z;
+                    q.w() = obstPose.orientation.w;
 
-                Vector3d e1 = poseSE3.rotation().col(0);
-                double theta =atan2(e1(1),e1(0));
-                obstE.theta = theta;
+                    poseSE3.rotate(q);
 
-                obstE.Q.setZero();
-                Matrix2d R;
-                R << cos(theta) , -sin(theta) , sin(theta), cos(theta);
-                double r1,r2;
-                if (rNominal == 0 ) {
-                    r1 = predictor.getLastDimensions()(0) / sqrt(2);
-                    r2 = predictor.getLastDimensions()(1) / sqrt(2);
+                    Vector3d e1 = poseSE3.rotation().col(0);
+                    double theta = atan2(e1(1), e1(0));
+                    obstE.theta = theta;
+
+                    obstE.Q.setZero();
+                    Matrix2d R;
+                    R << cos(theta), -sin(theta), sin(theta), cos(theta);
+                    double r1, r2;
+                    if (rNominal == 0) {
+                        r1 = predictor.getLastDimensions()(0) / sqrt(2);
+                        r2 = predictor.getLastDimensions()(1) / sqrt(2);
+                    } else {
+                        r1 = rNominal;
+                        r2 = rNominal;
+                    }
+                    obstE.r1 = r1;
+                    obstE.r2 = r2;
+                    obstE.Q(0, 0) = 1 / pow(r1, 2);
+                    obstE.Q(1, 1) = 1 / pow(r2, 2);
+                    obstE.Q = R * obstE.Q * R.transpose();
+                    obstPath.obstPath.push_back(obstE);
                 }
-                else{
-                    r1 = rNominal;
-                    r2 = rNominal;
-                }
-                obstE.r1 = r1;
-                obstE.r2 = r2;
-                obstE.Q(0, 0) = 1 / pow(r1, 2);
-                obstE.Q(1, 1) = 1 / pow(r2, 2);
-                obstE.Q = R*obstE.Q*R.transpose();
-                obstPath.obstPath.push_back(obstE);
+                obstaclePathArrayBuffer.obstPathArray.push_back(obstPath);
             }
-            obstaclePathArray.obstPathArray.push_back(obstPath);
         }
-    }
+
+//    if (mSet[0].try_lock()  ) {
+        obstaclePathArray = obstaclePathArrayBuffer;
+//        mSet[0].unlock();
+//    }
+
+//    printf("[DEBUG_JBS] obstpath pushing finished \n");
 
 
 }
@@ -734,16 +743,30 @@ bool PlannerBase::isOccupied(Vector2d queryPoint) {
  */
 bool PlannerBase::isObject(const Vector2d& queryPoint){
     unsigned long nInspection = 3;
-    for (auto obstPath : obstaclePathArray.obstPathArray){
-        for (int i = 0 ; i < min(nInspection, obstPath.obstPath.size()) ; i ++ ){
-            ObstacleEllipse obst = obstPath.obstPath[i];
-            if (((obst.q - queryPoint).transpose()*obst.Q*(obst.q - queryPoint))(0) < 1.5) {
-                ROS_WARN("Query point collided with object");
-                return true;
+
+//    printf("[DEBUG_JBS] planner base querying start (number of obst = %d ) \n",obstaclePathArray.obstPathArray.size());
+
+//    mSet[0].lock();
+        for (auto obstPath : obstaclePathArray.obstPathArray) {
+            for (int i = 0; i < min(nInspection, obstPath.obstPath.size()); i++) {
+                ObstacleEllipse obst = obstPath.obstPath[i];
+                if (((obst.q - queryPoint).transpose() * obst.Q * (obst.q - queryPoint))(0) < 1.5) {
+//                    ROS_WARN("Query point collided with object");
+
+
+//                printf("[DEBUG_JBS] planner base querying end \n");
+
+//                    mSet[0].unlock();
+                    return true;
+                }
             }
         }
-    }
-    return false;
+
+//    printf("[DEBUG_JBS] planner base querying end \n");
+
+//    mSet[0].unlock();
+
+        return false;
 }
 
 /**
