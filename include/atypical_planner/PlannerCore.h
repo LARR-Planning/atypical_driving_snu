@@ -309,7 +309,9 @@ namespace Planner {
         double goal_thres;
         double goal_x;
         double goal_y;
+        int flag = 0;
 
+        int count_iter =0;
         bool isOccupied(Vector2d queryPoint); // query point frame = SNU
         bool isOccupied(Vector2d queryPoint1, Vector2d queryPoint2); // rayIntersection query point frame = SNU
 

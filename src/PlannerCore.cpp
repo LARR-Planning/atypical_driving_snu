@@ -560,9 +560,10 @@ vector<Corridor> PlannerBase::getCorridorSeq(double t0, double tf) {
     return slicedCorridor;
 }
 driving_msgs::VehicleCmd PlannerBase::getCurInput(double t){
-    static int flag = 0;
     double curr_weight = weight_smooth;
-    static int count_iter =0;
+//    static int flag = 0;
+//    double curr_weight = weight_smooth;
+//    static int count_iter =0;
 //    cout << "weight: " << curr_weight << endl;
     driving_msgs::VehicleCmd cmd;
     if(!isUseMovingAverage)
@@ -614,6 +615,7 @@ driving_msgs::VehicleCmd PlannerBase::getCurInput(double t){
         }
         else
         {
+            //cout<<"flag plot"<<flag<<endl;
             ctrl_history[count_iter].steer_angle_cmd = mpc_result.evalU(t).delta;
             ctrl_history[count_iter].accel_decel_cmd = mpc_result.evalU(t).alpha;
             cmd.steer_angle_cmd = 0.0;
@@ -626,11 +628,12 @@ driving_msgs::VehicleCmd PlannerBase::getCurInput(double t){
             cmd.steer_angle_cmd = cmd.steer_angle_cmd/double(smooth_horizon);
             cmd.accel_decel_cmd = cmd.accel_decel_cmd/double(smooth_horizon);
             count_iter++;
-            if(count_iter % smooth_horizon ==0)
+            if(count_iter == smooth_horizon)
             {
                 count_iter = 0;
             }
             //cout<<"count_iter is "<< count_iter << endl;
+            //cout<<"smooth_horizon plot::"<<smooth_horizon<<endl;
             return cmd;
 //            cmd.steer_angle_cmd = 1/double(smooth_horizon)*(mpc_result.evalU(t).delta-ctrl_history.front().steer_angle_cmd) + ctrl_previous.steer_angle_cmd;
 //            cmd.accel_decel_cmd = 1/double(smooth_horizon)*(mpc_result.evalU(t).alpha-ctrl_history.front().accel_decel_cmd) + ctrl_previous.accel_decel_cmd;

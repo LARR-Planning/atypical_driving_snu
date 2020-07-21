@@ -66,12 +66,12 @@
     <param name="local_planner/max_accel" value="1" />
     <param name="local_planner/min_accel" value="-3" />
     <param name="local_planner/N_corr" value="5" />
-    <param name="local_planner/isRearWheel" value="false"/>
+    <param name="local_planner/isRearWheel" value="true"/>
     <param name="local_planner/dyn_obst_range" value="30.0"/>    
 
     <param name = "smooth_weight" value="0.7"/>
     <param name = "moving_horizon" value="10"/>
-    <param name = "isUseMovingAverage" value="true"/>
+    <param name = "isUseMovingAverage" value="false"/>
 
     <param name="predictor/observation_queue" value="10" />
     <param name="predictor/ref_height" value="0.4" />
