@@ -23,7 +23,7 @@
   <arg name ="detected_object_frame_id" default = "map"/>
 
   <arg name= "lane_width" default="10"/>
-  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/waypoint_airsim.csv"/>
+  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/waypoint_airsim_new.csv"/>
   <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
 
   <arg name = "goal/x"  default = "30"/> <!--in world frame -->
