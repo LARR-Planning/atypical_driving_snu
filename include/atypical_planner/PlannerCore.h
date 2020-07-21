@@ -290,7 +290,7 @@ namespace Planner {
         Corridor search_range;
         MPCResultTraj mpc_result;
         driving_msgs::VehicleCmd ctrl_previous;
-        queue<driving_msgs::VehicleCmd> ctrl_history;
+        vector<driving_msgs::VehicleCmd> ctrl_history;
         ObstaclePathArray obstaclePathArray;
 
         CarState cur_state;

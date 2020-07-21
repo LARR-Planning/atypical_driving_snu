@@ -58,7 +58,7 @@
     <param name="global_planner/max_steering_angle" value = "$(eval 3.14/20)"/>
     <param name="global_planner/corridor_width_min" value = "1.5"/>
     <param name="global_planner/corridor_width_dynamic_min" value = "8"/>
-    <param name="global_planner/safe_distance" value = "4"/>
+    <param name="global_planner/safe_distance" value = "5"/>
 
     <param name="local_planner/horizon" value="$(arg horizon)" />
     <param name="local_planner/ts" value="$(arg planning_dt)" />
@@ -66,12 +66,12 @@
     <param name="local_planner/max_accel" value="1" />
     <param name="local_planner/min_accel" value="-3" />
     <param name="local_planner/N_corr" value="5" />
-    <param name="local_planner/isRearWheel" value="true"/>
+    <param name="local_planner/isRearWheel" value="false"/>
     <param name="local_planner/dyn_obst_range" value="30.0"/>    
 
     <param name = "smooth_weight" value="0.7"/>
-    <param name = "moving_horizon" value="100"/>
-    <param name = "isUseMovingAverage" value="false"/>
+    <param name = "moving_horizon" value="10"/>
+    <param name = "isUseMovingAverage" value="true"/>
 
     <param name="predictor/observation_queue" value="10" />
     <param name="predictor/ref_height" value="0.4" />

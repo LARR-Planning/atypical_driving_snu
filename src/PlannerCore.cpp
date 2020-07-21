@@ -562,6 +562,7 @@ vector<Corridor> PlannerBase::getCorridorSeq(double t0, double tf) {
 driving_msgs::VehicleCmd PlannerBase::getCurInput(double t){
     static int flag = 0;
     double curr_weight = weight_smooth;
+    static int count_iter =0;
 //    cout << "weight: " << curr_weight << endl;
     driving_msgs::VehicleCmd cmd;
     if(!isUseMovingAverage)
@@ -588,22 +589,56 @@ driving_msgs::VehicleCmd PlannerBase::getCurInput(double t){
     {
         if(flag<smooth_horizon)
         {
-            cmd.steer_angle_cmd = mpc_result.evalU(t).delta;
-            cmd.accel_decel_cmd = mpc_result.evalU(t).alpha;
-            ctrl_previous.steer_angle_cmd = cmd.steer_angle_cmd;
-            ctrl_previous.accel_decel_cmd = cmd.accel_decel_cmd;
-            ctrl_history.push(cmd);
-            return cmd;
+            if(flag == 0)
+            {
+                cmd.steer_angle_cmd =  mpc_result.evalU(t).delta;
+                cmd.accel_decel_cmd = mpc_result.evalU(t).alpha;
+                ctrl_history.push_back(cmd);
+                flag++;
+                return cmd;
+            }
+            else
+            {
+                cmd.steer_angle_cmd = curr_weight*mpc_result.evalU(t).delta +(1-curr_weight)*ctrl_previous.steer_angle_cmd;
+                cmd.accel_decel_cmd = curr_weight*mpc_result.evalU(t).alpha +(1-curr_weight)*ctrl_previous.accel_decel_cmd;
+                ctrl_history.push_back(cmd);
+                flag++;
+                return cmd;
+            }
+//
+//            cmd.steer_angle_cmd = mpc_result.evalU(t).delta;
+//            cmd.accel_decel_cmd = mpc_result.evalU(t).alpha;
+//            ctrl_history.push_back(cmd);
+//	    flag++;
+//            return cmd;
         }
         else
         {
-            cmd.steer_angle_cmd = 1/double(smooth_horizon)*(mpc_result.evalU(t).delta-ctrl_history.front().steer_angle_cmd) + ctrl_previous.steer_angle_cmd;
-            cmd.accel_decel_cmd = 1/double(smooth_horizon)*(mpc_result.evalU(t).alpha-ctrl_history.front().accel_decel_cmd) + ctrl_previous.accel_decel_cmd;
-            ctrl_previous.steer_angle_cmd = cmd.steer_angle_cmd;
-            ctrl_previous.accel_decel_cmd = cmd.accel_decel_cmd;
-            ctrl_history.push(cmd);
-            ctrl_history.pop();
+            ctrl_history[count_iter].steer_angle_cmd = mpc_result.evalU(t).delta;
+            ctrl_history[count_iter].accel_decel_cmd = mpc_result.evalU(t).alpha;
+            cmd.steer_angle_cmd = 0.0;
+            cmd.accel_decel_cmd = 0.0;
+            for(int i = 0; i<smooth_horizon;i++)
+            {
+                cmd.steer_angle_cmd += ctrl_history[i].steer_angle_cmd;
+                cmd.accel_decel_cmd += ctrl_history[i].accel_decel_cmd;
+            }
+            cmd.steer_angle_cmd = cmd.steer_angle_cmd/double(smooth_horizon);
+            cmd.accel_decel_cmd = cmd.accel_decel_cmd/double(smooth_horizon);
+            count_iter++;
+            if(count_iter % smooth_horizon ==0)
+            {
+                count_iter = 0;
+            }
+            //cout<<"count_iter is "<< count_iter << endl;
             return cmd;
+//            cmd.steer_angle_cmd = 1/double(smooth_horizon)*(mpc_result.evalU(t).delta-ctrl_history.front().steer_angle_cmd) + ctrl_previous.steer_angle_cmd;
+//            cmd.accel_decel_cmd = 1/double(smooth_horizon)*(mpc_result.evalU(t).alpha-ctrl_history.front().accel_decel_cmd) + ctrl_previous.accel_decel_cmd;
+//            ctrl_previous.steer_angle_cmd = cmd.steer_angle_cmd;
+//            ctrl_previous.accel_decel_cmd = cmd.accel_decel_cmd;
+//            ctrl_history.push_back(cmd);
+//            ctrl_history.pop();
+//            return cmd;
         }
 
 
