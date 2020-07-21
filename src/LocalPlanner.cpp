@@ -461,10 +461,7 @@ bool LocalPlannerPlain::plan(double t) {
                      curPlanning.xs.push_back(carState_temp);
                      curPlanning.us.push_back(carInput_temp);
                  }
-
-
-
-
+                 
                 ROS_INFO(" Initial guess =  initialized to zero");
                  return false;
              }
