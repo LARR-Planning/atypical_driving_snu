@@ -118,7 +118,7 @@ public:
         if (!std::isnan(u(0))) {
             // running cost must be computed here
             CostDerivatives<Nx, Nu> obj;
-            if(idx>20)
+            if(idx>1)
             {
                 //obj.c = symbolic_functions::cost(x, u, state_weight_, input_weight_, x_ref[idx]);
                 obj.c = symbolic_functions::cost(x, u, state_weight_.array()*std::pow(1.2,1+idx/N),input_weight_, x_ref[idx]);

@@ -31,6 +31,7 @@ Panels:
         - /Path5
         - /PointCloud23
         - /Map2
+        - /MarkerArray9
       Splitter Ratio: 0.38962963223457336
     Tree Height: 728
   - Class: rviz/Selection
@@ -51,7 +52,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: PointCloud2
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -159,9 +160,7 @@ Visualization Manager:
       Marker Topic: /atypical_planning_test/prediction
       Name: MarkerArray
       Namespaces:
-        0: true
-        1: true
-        2: true
+        {}
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -589,6 +588,22 @@ Visualization Manager:
       Unreliable: false
       Use Timestamp: false
       Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /atypical_planning_test/observation_queue
+      Name: MarkerArray
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /atypical_planning_test/prediction
+      Name: MarkerArray
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 0; 0; 0
@@ -617,7 +632,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 55.533607482910156
+      Distance: 97.86918640136719
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1

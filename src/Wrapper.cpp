@@ -175,7 +175,7 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<double>("local_planner/car_speed",param_.l_param.nominal_speed,2.0);
     nh.param<int>("local_planner/N_corr",param_.l_param.N_corr,51);
     nh.param<bool>("local_planner/isRearWheel",param_.l_param.isRearWheeled,true);
-
+    nh.param<double>("local_planner/dyn_obst_range",param_.l_param.dynObstRange,30.0);
 
     Parameter ilqr_weight;
     param_.l_param.final_weight = ilqr_weight.setting.final_weight;
@@ -990,7 +990,7 @@ void Wrapper::runPlanning() {
                                                                                            std::chrono::duration_cast<std::chrono::microseconds>(
                                                                                                    chrono::steady_clock::now() -
                                                                                                    tCkpG).count() * 0.001
-                                                                                           << "ms");
+                                                    << "ms");
                             ROS_INFO("[Wrapper] begin LP..");
 
                             auto tCkp_mpc = chrono::steady_clock::now();

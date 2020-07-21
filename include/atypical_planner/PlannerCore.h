@@ -70,7 +70,7 @@ namespace Planner {
         bool isRearWheeled;
         double period;
         int N_corr;
-
+	double dynObstRange;
         //ilQR parameters
         Matrix<double,6,1> state_weight;
         Matrix<double,6,1> final_weight;

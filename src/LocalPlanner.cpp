@@ -29,10 +29,10 @@ LocalPlanner::LocalPlanner(const Planner::ParamLocal &l_param,
     ilqr_param.rhoFactor = 1.6;
     ilqr_param.rhoMax = 1e10;
     ilqr_param.rhoMin = 1e-6;
-    ilqr_param.tolGrads = power(10.0, VectorXd::LinSpaced(5, -4.0, -6.0));
-    ilqr_param.tolCosts = power(10.0, VectorXd::LinSpaced(5, -2.0, -6.0));
-    ilqr_param.tolConsts = power(10.0, VectorXd::LinSpaced(5, -2.0, -6.0));
-    ilqr_param.alphas = power(10.0, VectorXd::LinSpaced(5, 0.0, -3.0));
+    ilqr_param.tolGrads = power(10.0, VectorXd::LinSpaced(6, -4.0, -6.0));
+    ilqr_param.tolCosts = power(10.0, VectorXd::LinSpaced(6, -2.0, -6.0));
+    ilqr_param.tolConsts = power(10.0, VectorXd::LinSpaced(6, -2.0, -6.0));
+    ilqr_param.alphas = power(10.0, VectorXd::LinSpaced(6, 0.0, -3.0));
     ilqr_param.maxIter = 1000;
     ilqr_param.mu = 1.5;
     ilqr_param.lambda = 0.0;
@@ -99,7 +99,7 @@ void LocalPlanner::ObstToConstraint() {
         Vector2d car_pos;
         car_pos<< p_base->getCarState().x, p_base->getCarState().y;
         for (auto s : p_base->getCurObstaclePathArray().obstPathArray) {
-            if((s.obstPath[0].q - car_pos).norm()<30)
+            if((s.obstPath[0].q - car_pos).norm()<param.dynObstRange)
             {
                 for (int i = 0; i < N; i++)
                 {
