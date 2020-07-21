@@ -9,7 +9,6 @@ parser::parser()
     LanePath_.lanes.clear();
 }
 
-
 void parser::get_Coorddata(string Xfilename)
 {   
     //string cur_path = experimental::filesystem::current_path();
@@ -41,16 +40,10 @@ void parser::get_Coorddata(string Xfilename)
 
         infile.close();
         vector<geometry_msgs::Point> coord_vec;
+        shared_ptr<LaneNode> node (new LaneNode);
+
         for(int i=0; i<xdata.size(); i++)
         {   
-            shared_ptr<LaneNode> node (new LaneNode);
-            //Update
-            if((i+1)%number ==0)
-            {   
-                node->laneCenters = coord_vec;
-                LanePath_.lanes.push_back(*node);
-                coord_vec.clear();
-            }
             
             //Make i-th Node's coordinate
             double X = xdata.at(i).at(0);
@@ -62,6 +55,13 @@ void parser::get_Coorddata(string Xfilename)
             coord_vec.push_back(coord1);
             
             // node = LanePath_.at(i);
+            //Update
+            if((i+1)%number ==0 || (i+1)==xdata.size())
+            {   
+                node->laneCenters = coord_vec;
+                LanePath_.lanes.push_back(*node);
+                coord_vec.clear();
+            }
         }
     }
 
@@ -71,6 +71,7 @@ void parser::get_Coorddata(string Xfilename)
         std::cerr << e.what() << '\n';
     }
 }
+
 
 void parser::display_result()
 {
