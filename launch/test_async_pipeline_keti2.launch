@@ -75,7 +75,7 @@
         <arg name = "goal/x" value = "$(arg goal/x)"/>
         <arg name = "goal/y" value = "$(arg goal/y)"/>
 
-        <arg name = "period"  value= "0.5"/>
+        <arg name = "period"  value= "0.05"/>
         <arg name = "horizon"  value= "5"/> <!--Also change dimension.h-->
         <arg name="planning_dt" value="0.05"/>
 

@@ -371,7 +371,7 @@ bool LocalPlannerPlain::plan(double t) {
              int flag_unstable = 0;
              //  Be executed after initial Loop (loop_num>0)
              x0_new = (Matrix<double,Nx,1>()<<p_base->getCarState().x, p_base->getCarState().y,p_base->getCarState().v,
-                     next_state[3],next_state[4], p_base->getCarState().theta).finished();
+                     next_state[3], next_state[4], p_base->getCarState().theta).finished();
              iLQR<Nx,Nu,N> ilqr(*prob, x0_new,uN_NextInit,dt,ilqr_param);
              ilqr.solve();
              uN_new = ilqr.uN_;
