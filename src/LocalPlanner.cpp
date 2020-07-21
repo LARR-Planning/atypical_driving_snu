@@ -377,7 +377,7 @@ bool LocalPlannerPlain::plan(double t) {
              uN_new = ilqr.uN_;
              xN_new = ilqr.xN_;
 
-             for(int jj = 0; jj<50;jj++)
+             for(int jj = 0; jj<N;jj++)
              {
                  //cout<<"Future "<<jj<<"th Accel input is"<<xN_new[jj][3]<<endl;
                  if (xN_new[jj][4]>param.maxSteer+0.5 || xN_new[jj][4]<-param.maxSteer-0.5)
