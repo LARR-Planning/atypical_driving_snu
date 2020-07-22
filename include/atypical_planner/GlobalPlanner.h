@@ -17,6 +17,7 @@ namespace Planner{
         std::vector<std::vector<int>> grid;
         std::array<double, 4> world_box_transformed;
         std::vector<LaneTreeElement> laneTree;
+        std::vector<LaneTreeElement> laneTreePath;
         bool isFeasible;
 
         // Planning intermediate outputs
@@ -36,9 +37,10 @@ namespace Planner{
         std::vector<int> findChildren(int idx);
         void laneTreeSearch(int idx);
         std::vector<int> getMidPointsFromLaneTree(int i_tree_start);
-        bool isLaneTreeBlocked(int last_element_index);
-        bool isLaneTreeBlockedByDynamicObs(int last_element_index);
-        std::vector<int> cutTail(const std::vector<int>& tail) const;
+        int findLaneTreePathTail(bool& isBlocked, bool& isBlockedByObject);
+//        bool isLaneTreeBlocked(int last_element_index);
+//        bool isLaneTreeBlockedByDynamicObs(int last_element_index);
+//        std::vector<int> cutTail(const std::vector<int>& tail) const;
     };
 
 }

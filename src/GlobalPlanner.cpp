@@ -30,6 +30,7 @@ bool GlobalPlanner::isCurTrajFeasible() {
 bool GlobalPlanner::plan(double t) {
     // Generate LaneTree
     laneTree.clear();
+    laneTreePath.clear();
     Vector2d currentPoint(p_base->cur_state.x, p_base->cur_state.y);
     double lane_length, lane_angle, current_length, alpha;
     Vector2d delta, left_point, mid_point, right_point;
@@ -57,7 +58,7 @@ bool GlobalPlanner::plan(double t) {
             // check occupancy of side points and construct laneTree
             bool isNearObject = false;
             for(int k_side = 0; k_side < laneGridPoints.size(); k_side++) {
-                if(p_base->isObject(laneGridPoints[k_side])){
+                if(p_base->isObject(laneGridPoints[k_side])){ //TODO: Too conservative!!
                     isNearObject = true;
                     break;
                 }
@@ -114,7 +115,6 @@ bool GlobalPlanner::plan(double t) {
     }
 
     // Find start node of laneTree
-    bool isInObject = false;
     int i_tree_start = -1;
     double dist, dist_start = SP_INFINITY;
     for(int i_tree = 0; i_tree < laneTree.size(); i_tree++) {
@@ -148,66 +148,25 @@ bool GlobalPlanner::plan(double t) {
     // Update laneTree to find midPoints
     laneTreeSearch(i_tree_start);
     std::vector<int> tail = getMidPointsFromLaneTree(i_tree_start);
-    bool isBlocked = isLaneTreeBlocked(tail.back());
-    bool isBlockedByDynamicObs = isLaneTreeBlockedByDynamicObs(tail.back());
-    if(isBlocked){
-        tail = cutTail(tail);
-    }
-    else{
-        ROS_WARN_STREAM("Not blocked, obstaclePathArray size:" << p_base->obstaclePathArray.obstPathArray.size());
-        for(int i = 0; i < p_base->obstaclePathArray.obstPathArray.size(); i++){
-            ROS_WARN_STREAM("Not blocked, obstacle position: (" << p_base->obstaclePathArray.obstPathArray[i].obstPath[0].q(0) << ", " << p_base->obstaclePathArray.obstPathArray[i].obstPath[0].q(1) << ")");
-        }
-    }
-
-    std::vector<Vector2d, aligned_allocator<Vector2d>> midPoints, lanePoints, leftPoints, rightPoints, leftBoundaryPoints, rightBoundaryPoints;
-    midPoints.resize(tail.size());
-    lanePoints.resize(tail.size());
-    leftPoints.resize(tail.size());
-    rightPoints.resize(tail.size());
-    leftBoundaryPoints.resize(tail.size());
-    rightBoundaryPoints.resize(tail.size());
-
+    laneTreePath.resize(tail.size());
     for(int i_tail = 0; i_tail < tail.size(); i_tail++){
-        midPoints[i_tail] = laneTree[tail[i_tail]].midPoint;
-        lanePoints[i_tail] = laneTree[tail[i_tail]].lanePoint;
-        leftPoints[i_tail] = laneTree[tail[i_tail]].leftPoint;
-        rightPoints[i_tail] = laneTree[tail[i_tail]].rightPoint;
-        leftBoundaryPoints[i_tail] = laneTree[tail[i_tail]].leftBoundaryPoint;
-        rightBoundaryPoints[i_tail] = laneTree[tail[i_tail]].rightBoundaryPoint;
+        laneTreePath[i_tail] = laneTree[tail[i_tail]];
     }
 
-
-    ///////////////
-    // Smoothing //
-    ///////////////
+    // Smoothing
     int idx_start, idx_end, idx_delta, i_smooth;
     Vector2d smoothingPoint;
-
-//    //Smoothing using moving average - first point isolation problem
-//    int max_window_size = 30; //TODO: parameterization
-//    for(int i_smooth = 1; i_smooth < midPoints.size(); i_smooth++){
-//        int idx_window_min = std::max(i_smooth - max_window_size/2, 0);
-//        int idx_window_max = std::min(i_smooth + max_window_size/2, (int)midPoints.size() - 1);
-//        int window_size = idx_window_max - idx_window_min + 1;
-//        Vector2d smoothingPoint(0, 0);
-//        for(int i_window = idx_window_min; i_window <= idx_window_max; i_window++){
-//            smoothingPoint = smoothingPoint + midPoints[i_window];
-//        }
-//        smoothingPoint = smoothingPoint/window_size;
-//        midPoints[i_smooth] = smoothingPoint;
-//    }
 
     // line smoothing except first point
     i_smooth = 1;
     int window = param.smoothing_range;
-    while(i_smooth < midPoints.size()) {
-        double bias = (midPoints[i_smooth] - lanePoints[i_smooth]).norm();
+    while(i_smooth < laneTreePath.size()) {
+        double bias = (laneTreePath[i_smooth].midPoint - laneTreePath[i_smooth].lanePoint).norm();
         if (bias > param.smoothing_cliff_bias) {
             //Forward search
             int i_forward = i_smooth + 1;
-            while (i_forward < std::min(i_smooth + window, (int) midPoints.size() - 1)) {
-                if ((midPoints[i_forward] - lanePoints[i_forward]).norm() < bias * param.smoothing_cliff_ratio) {
+            while (i_forward < std::min(i_smooth + window, (int) laneTreePath.size() - 1)) {
+                if ((laneTreePath[i_forward].midPoint - laneTreePath[i_forward].lanePoint).norm() < bias * param.smoothing_cliff_ratio) {
                     i_forward++;
                 } else {
                     i_forward--;
@@ -221,15 +180,15 @@ bool GlobalPlanner::plan(double t) {
 
                 for (int j_smooth = 1; j_smooth < idx_delta; j_smooth++) {
                     alpha = static_cast<double>(j_smooth) / static_cast<double>(idx_delta);
-                    smoothingPoint = (1 - alpha) * midPoints[idx_start] + alpha * midPoints[idx_end];
-                    midPoints[idx_start + j_smooth] = smoothingPoint;
+                    smoothingPoint = (1 - alpha) * laneTreePath[idx_start].midPoint + alpha * laneTreePath[idx_end].midPoint;
+                    laneTreePath[idx_start + j_smooth].midPoint = smoothingPoint;
                 }
             }
 
             //backward search
             int i_backward = i_smooth - 1;
             while (i_backward > std::max(i_smooth - window, 0)) {
-                if ((midPoints[i_backward] - lanePoints[i_backward]).norm() < bias * param.smoothing_cliff_ratio) {
+                if ((laneTreePath[i_backward].midPoint - laneTreePath[i_backward].lanePoint).norm() < bias * param.smoothing_cliff_ratio) {
                     i_backward--;
                 } else {
                     i_backward++;
@@ -243,8 +202,8 @@ bool GlobalPlanner::plan(double t) {
 
                 for (int j_smooth = 1; j_smooth < idx_delta; j_smooth++) {
                     alpha = static_cast<double>(j_smooth) / static_cast<double>(idx_delta);
-                    smoothingPoint = (1 - alpha) * midPoints[idx_start] + alpha * midPoints[idx_end];
-                    midPoints[idx_start + j_smooth] = smoothingPoint;
+                    smoothingPoint = (1 - alpha) * laneTreePath[idx_start].midPoint + alpha * laneTreePath[idx_end].midPoint;
+                    laneTreePath[idx_start + j_smooth].midPoint = smoothingPoint;
                 }
             }
         }
@@ -254,7 +213,7 @@ bool GlobalPlanner::plan(double t) {
     // lane smoothing at first point
     i_smooth = 0;
     //Forward search
-    int i_forward = std::min(i_smooth + window, (int) midPoints.size() - 1);
+    int i_forward = std::min(i_smooth + window, (int) laneTreePath.size() - 1);
     if (i_forward - i_smooth > 1) {
         idx_start = i_smooth;
         idx_end = i_forward;
@@ -262,19 +221,19 @@ bool GlobalPlanner::plan(double t) {
 
         for (int j_smooth = 1; j_smooth < idx_delta; j_smooth++) {
             alpha = static_cast<double>(j_smooth) / static_cast<double>(idx_delta);
-            smoothingPoint = (1 - alpha) * midPoints[idx_start] + alpha * midPoints[idx_end];
-            midPoints[idx_start + j_smooth] = smoothingPoint;
+            smoothingPoint = (1 - alpha) * laneTreePath[idx_start].midPoint + alpha * laneTreePath[idx_end].midPoint;
+            laneTreePath[idx_start + j_smooth].midPoint = smoothingPoint;
         }
     }
 
     // If midPoints are out of bounds, then push them into bounds
-    for (int i_mid = 0; i_mid < midPoints.size(); i_mid++) {
-        if (p_base->isOccupied(midPoints[i_mid])) {
-            if ((midPoints[i_mid] - leftPoints[i_mid]).norm() <
-                (midPoints[i_mid] - rightPoints[i_mid]).norm()) {
-                midPoints[i_mid] = leftPoints[i_mid];
+    for (int i_mid = 0; i_mid < laneTreePath.size(); i_mid++) {
+        if (p_base->isOccupied(laneTreePath[i_mid].midPoint)) {
+            if ((laneTreePath[i_mid].midPoint - laneTreePath[i_mid].leftPoint).norm() <
+                (laneTreePath[i_mid].midPoint - laneTreePath[i_mid].rightPoint).norm()) {
+                laneTreePath[i_mid].midPoint = laneTreePath[i_mid].leftPoint;
             } else {
-                midPoints[i_mid] = rightPoints[i_mid];
+                laneTreePath[i_mid].midPoint = laneTreePath[i_mid].rightPoint;
             }
         }
     }
@@ -282,10 +241,10 @@ bool GlobalPlanner::plan(double t) {
     // Smoothing using max steering angle - original method
     // Find midAngles
     std::vector<double> midAngles;
-    midAngles.resize((int)midPoints.size()-1);
+    midAngles.resize((int)laneTreePath.size()-1);
     double angle;
     for(int i_angle = 0; i_angle < midAngles.size(); i_angle++) {
-        delta = midPoints[i_angle+1] - midPoints[i_angle];
+        delta = laneTreePath[i_angle+1].midPoint - laneTreePath[i_angle].midPoint;
         angle = atan2(delta.y(), delta.x());
         if(angle < 0) {
             angle = angle + 2 * M_PI;
@@ -302,16 +261,16 @@ bool GlobalPlanner::plan(double t) {
 
         if(diff > param.max_steering_angle) {
             idx_start = i_smooth;
-            idx_end = min(i_smooth+2, (int)midPoints.size());
+            idx_end = min(i_smooth+2, (int)laneTreePath.size());
             idx_delta = idx_end - idx_start;
 
             for(int j_smooth = 1; j_smooth < idx_delta; j_smooth++) {
                 alpha = static_cast<double>(j_smooth)/static_cast<double>(idx_delta);
-                smoothingPoint = (1-alpha) * midPoints[idx_start] + alpha * midPoints[idx_end];
-                midPoints[idx_start+j_smooth] = smoothingPoint;
+                smoothingPoint = (1-alpha) * laneTreePath[idx_start].midPoint + alpha * laneTreePath[idx_end].midPoint;
+                laneTreePath[idx_start+j_smooth].midPoint = smoothingPoint;
             }
             for(int j_smooth = 0; j_smooth < idx_delta; j_smooth++) {
-                delta = midPoints[idx_start+j_smooth+1] - midPoints[idx_start+j_smooth];
+                delta = laneTreePath[idx_start+j_smooth+1].midPoint - laneTreePath[idx_start+j_smooth].midPoint;
                 angle = atan2(delta.y(), delta.x());
                 if(angle < 0){
                     angle = angle + 2 * M_PI;
@@ -325,44 +284,16 @@ bool GlobalPlanner::plan(double t) {
         }
     }
     // If midPoints are out of bounds, then push them into bounds
-    for(int i_mid = 0; i_mid < midPoints.size(); i_mid++) {
-        if (p_base->isOccupied(midPoints[i_mid])) {
-            if((midPoints[i_mid] - leftPoints[i_mid]).norm() < (midPoints[i_mid] - rightPoints[i_mid]).norm()){
-                midPoints[i_mid] = leftPoints[i_mid];
+    for(int i_mid = 0; i_mid < laneTreePath.size(); i_mid++) {
+        if (p_base->isOccupied(laneTreePath[i_mid].midPoint)) {
+            if((laneTreePath[i_mid].midPoint - laneTreePath[i_mid].leftPoint).norm() < (laneTreePath[i_mid].midPoint - laneTreePath[i_mid].rightPoint).norm()){
+                laneTreePath[i_mid].midPoint = laneTreePath[i_mid].leftPoint;
             }
             else{
-                midPoints[i_mid] = rightPoints[i_mid];
+                laneTreePath[i_mid].midPoint = laneTreePath[i_mid].rightPoint;
             }
         }
     }
-
-//    // Smoothing without max steering angle
-//    for(int iter_smooth = 0; iter_smooth < 1; iter_smooth++) { //TODO: parameterization
-//        i_smooth = 0;
-//        while (i_smooth < (int) midPoints.size() - 2) {
-//            idx_start = i_smooth;
-//            idx_end = i_smooth + 2;
-//            idx_delta = idx_end - idx_start;
-//
-//            for (int j_smooth = 1; j_smooth < idx_delta; j_smooth++) {
-//                alpha = static_cast<double>(j_smooth) / static_cast<double>(idx_delta);
-//                smoothingPoint = (1 - alpha) * midPoints[idx_start] + alpha * midPoints[idx_end];
-//                midPoints[idx_start + j_smooth] = smoothingPoint;
-//            }
-//            i_smooth++;
-//        }
-//        // If midPoints are out of bounds, then push them into bounds
-//        for (int i_mid = 0; i_mid < midPoints.size(); i_mid++) {
-//            if (p_base->isOccupied(midPoints[i_mid], isInObject)) {
-//                if ((midPoints[i_mid] - leftPoints[i_mid]).norm() < (midPoints[i_mid] - rightPoints[i_mid]).norm()) {
-//                    midPoints[i_mid] = leftPoints[i_mid];
-//                } else {
-//                    midPoints[i_mid] = rightPoints[i_mid];
-//                }
-//            }
-//        }
-//    }
-
 
 
 //    // Computing curvature (JBS)
@@ -383,20 +314,43 @@ bool GlobalPlanner::plan(double t) {
 //    ROS_INFO("lane [%f,%f]" ,meanCurv,vLaneRef);
 //    p_base->mSet[1].unlock();
 
+    // check width and cut tail
+    bool isBlocked = false;
+    bool isBlockedByObject = false;
+    int tail_end = findLaneTreePathTail(isBlocked, isBlockedByObject);
+    if(not isBlocked){
+        ROS_WARN_STREAM("[GlobalPlanner] Not blocked, obstaclePathArray size:" << p_base->obstaclePathArray.obstPathArray.size());
+        for(int i = 0; i < p_base->obstaclePathArray.obstPathArray.size(); i++){
+            ROS_WARN_STREAM("[GlobalPlanner] Not blocked, obstacle position: (" << p_base->obstaclePathArray.obstPathArray[i].obstPath[0].q(0) << ", " << p_base->obstaclePathArray.obstPathArray[i].obstPath[0].q(1) << ")");
+        }
+    }
+
     // width allocation
     std::vector<double> box_size;
-    box_size.resize(midPoints.size());
-    for(int i_mid = 0; i_mid < midPoints.size(); i_mid++) {
-        box_size[i_mid] = 2 * std::min((midPoints[i_mid] - leftBoundaryPoints[i_mid]).norm(), (midPoints[i_mid] - rightBoundaryPoints[i_mid]).norm());
+    box_size.resize(tail_end);
+    for(int i_mid = 0; i_mid < tail_end; i_mid++) {
+        box_size[i_mid] = 2 * std::min((laneTreePath[i_mid].midPoint - laneTreePath[i_mid].leftBoundaryPoint).norm(),
+                                       (laneTreePath[i_mid].midPoint - laneTreePath[i_mid].rightBoundaryPoint).norm());
     }
 
     // Time allocation
     double nominal_speed = p_base->laneSpeed;
     std::vector<double> ts;
-    ts.resize(midPoints.size());
-    ts[0] = t + (midPoints[0] - currentPoint).norm() / nominal_speed;
-    for(int i_mid = 1; i_mid < midPoints.size(); i_mid++){
-        ts[i_mid] = ts[i_mid-1] + (midPoints[i_mid] - midPoints[i_mid-1]).norm() / nominal_speed;
+    ts.resize(tail_end);
+    ts[0] = t + (laneTreePath[0].midPoint - currentPoint).norm() / nominal_speed;
+    for(int i_mid = 1; i_mid < tail_end; i_mid++){
+        ts[i_mid] = ts[i_mid-1] + (laneTreePath[i_mid].midPoint - laneTreePath[i_mid-1].midPoint).norm() / nominal_speed;
+    }
+
+    // reformat
+    std::vector<Vector2d, aligned_allocator<Vector2d>> midPoints, leftBoundaryPoints, rightBoundaryPoints;
+    midPoints.resize(tail_end);
+    leftBoundaryPoints.resize(tail_end);
+    rightBoundaryPoints.resize(tail_end);
+    for(int i_tail = 0; i_tail < tail_end; i_tail++){
+        midPoints[i_tail] = laneTreePath[i_tail].midPoint;
+        leftBoundaryPoints[i_tail] = laneTreePath[i_tail].leftBoundaryPoint;
+        rightBoundaryPoints[i_tail] = laneTreePath[i_tail].rightBoundaryPoint;
     }
 
     SmoothLane smoothLane;
@@ -406,7 +360,7 @@ bool GlobalPlanner::plan(double t) {
     smoothLane.leftBoundaryPoints = leftBoundaryPoints;
     smoothLane.rightBoundaryPoints = rightBoundaryPoints;
     smoothLane.isBlocked = isBlocked;
-    smoothLane.isBlockedByDynamicObs = isBlockedByDynamicObs;
+    smoothLane.isBlockedByObject = isBlockedByObject;
 
     p_base->mSet[1].lock();
     smoothLane.n_total_markers = p_base->laneSmooth.n_total_markers;
@@ -476,15 +430,16 @@ std::vector<int> GlobalPlanner::findChildren(int idx){
 
         Vector2d current_point = laneTree[idx].midPoint;
         Vector2d child_point = laneTree[i_tree].midPoint;
-        double child_width = laneTree[i_tree].width;
-        double corridor_width_min;
-        if(laneTree[i_tree].isNearObject) { //if child is near object, change corridor_width_min
-            corridor_width_min = param.corridor_width_dynamic_min;
-        }
-        else{
-            corridor_width_min = param.corridor_width_min;
-        }
-        if(!p_base->isOccupied(child_point, current_point) and child_width >= corridor_width_min){
+//        double child_width = laneTree[i_tree].width;
+//        double corridor_width_min;
+//        if(laneTree[i_tree].isNearObject) { //if child is near object, change corridor_width_min
+//            corridor_width_min = param.corridor_width_dynamic_min; //TODO: delete this
+//        }
+//        else{
+//            corridor_width_min = param.corridor_width_min;
+//        }
+//        if(!p_base->isOccupied(child_point, current_point) and child_width >= corridor_width_min){
+        if(!p_base->isOccupied(child_point, current_point)){
             double dist = (child_point - current_point).norm();
             if(children.empty()){
                 children.emplace_back(i_tree);
@@ -544,32 +499,68 @@ std::vector<int> GlobalPlanner::getMidPointsFromLaneTree(int i_tree_start){
     return tail;
 }
 
-bool GlobalPlanner::isLaneTreeBlocked(int last_element_index){
-    return laneTree[last_element_index].id != laneTree[laneTree.size()-1].id;
-}
-
-bool GlobalPlanner::isLaneTreeBlockedByDynamicObs(int last_element_index){
-    for(int i_tree = last_element_index + 1; i_tree < laneTree.size(); i_tree++){
-        if(laneTree[i_tree].id == laneTree[last_element_index].id){
-            continue;
-        }
-        else if(laneTree[i_tree].id == laneTree[last_element_index].id + 1){
-            if(laneTree[i_tree].isNearObject){
-                return true;
-            }
+int GlobalPlanner::findLaneTreePathTail(bool& isBlocked, bool& isBlockedByObject){
+    isBlocked = false;
+    isBlockedByObject = false;
+    int tail_end = (int)laneTreePath.size() - 1;
+    double corridor_width_min;
+    for(int i_tree = 0; i_tree < laneTreePath.size(); i_tree++){
+        if(laneTreePath[i_tree].isNearObject) {
+            corridor_width_min = param.corridor_width_dynamic_min;
         }
         else{
+            corridor_width_min = param.corridor_width_min;
+        }
+
+        if(laneTreePath[i_tree].width < corridor_width_min){
+            ROS_WARN("[GlobalPlanner] lanePath blocked");
+            tail_end = std::max(i_tree - 1, 1);
+            isBlocked = true;
+            if(laneTreePath[i_tree].isNearObject) {
+                ROS_WARN("[GlobalPlanner] lanePath blocked by dynamic obstacle");
+                isBlockedByObject = true;
+            }
             break;
         }
     }
-    return false;
-}
 
-std::vector<int> GlobalPlanner::cutTail(const std::vector<int>& tail) const{
-    int tail_end = (int)tail.size() - 1 - static_cast<int>((param.safe_distance + SP_EPSILON)/param.grid_resolution);
-    if(tail_end < 1){
-        tail_end = 1;
+    //safe distance
+    if(isBlocked){
+        tail_end = tail_end - static_cast<int>((param.safe_distance + SP_EPSILON)/param.grid_resolution);
+        if(tail_end < 1){
+            tail_end = 1;
+        }
     }
 
-    return vector<int>(tail.begin(), tail.begin() + tail_end);
+    return tail_end;
 }
+
+//bool GlobalPlanner::isLaneTreeBlocked(int last_element_index){
+//    return laneTree[last_element_index].id != laneTree[laneTree.size()-1].id;
+//}
+//
+//bool GlobalPlanner::isLaneTreeBlockedByDynamicObs(int last_element_index){
+//    for(int i_tree = last_element_index + 1; i_tree < laneTree.size(); i_tree++){
+//        if(laneTree[i_tree].id == laneTree[last_element_index].id){
+//            continue;
+//        }
+//        else if(laneTree[i_tree].id == laneTree[last_element_index].id + 1){
+//            if(laneTree[i_tree].isNearObject){
+//                return true;
+//            }
+//        }
+//        else{
+//            break;
+//        }
+//    }
+//    return false;
+//}
+
+//std::vector<int> GlobalPlanner::cutTail(const std::vector<int>& tail) const{
+//    int tail_end = (int)tail.size() - 1 - static_cast<int>((param.safe_distance + SP_EPSILON)/param.grid_resolution);
+//    if(tail_end < 1){
+//        tail_end = 1;
+//    }
+//
+//    return vector<int>(tail.begin(), tail.begin() + tail_end);
+//}
