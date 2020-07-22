@@ -12,7 +12,7 @@ namespace symbolic_functions
                 Matrix<double,Nu,1>u_,
                 Matrix<double,Nx,1>Q,
                 Matrix<double,Nu,1>R,
-                Matrix<double,4,1>g
+                Matrix<double,5,1>g
                 )
     {
         float x = x_(0,0);
@@ -36,8 +36,8 @@ namespace symbolic_functions
         float R1 = R(1);
 
         //float dist = std::sqrt((x-obs(0))*(x-obs(0))+(y-obs(1))*(y-obs(1)));
-        double cost_value = 0.5*Q0*(x-g(0))*(x-g(0)) + 0.5*Q1*(y-g(1))*(y-g(1))+0.5*Q3*a*a+
-                +0.5*Q4*(del-g(3))*(del-g(3))+0.5*Q5*(th-g(2))*(th-g(2)) + 0.5*R0*adot*adot + 0.5*R1*deldot*deldot;
+        double cost_value = 0.5*Q0*(x-g(0))*(x-g(0)) + 0.5*Q1*(y-g(1))*(y-g(1))+0.5*Q3*(a-g(3))*(a-g(3))
+                +0.5*Q4*(del-g(4))*(del-g(4))+0.5*Q5*(th-g(2))*(th-g(2)) + 0.5*R0*adot*adot + 0.5*R1*deldot*deldot;
         return cost_value;
     }
 }

@@ -271,6 +271,7 @@ void LocalPlanner::SetSfcIdx(int N_corr)
         for(int i = 0;i<N+1;i++)
         {
             local_wpts[i][3] = 0.0;
+            local_wpts[i][4] = 0.0;
         }
         flag_first++;
     }
@@ -278,9 +279,11 @@ void LocalPlanner::SetSfcIdx(int N_corr)
     {
         for(int i =0;i<N;i++)
         {
-            local_wpts[i][3] = curPlanning.us[i].delta;
+            local_wpts[i][3] = curPlanning.us[i].alpha;
+            local_wpts[i][4] = curPlanning.us[i].delta;
         }
         local_wpts[N][3] = local_wpts[N-1][3];
+        local_wpts[N][4] = local_wpts[N-1][4];
     }
 
 
