@@ -14,7 +14,7 @@ namespace symbolic_functions
                 Matrix<double,Nu,1>u_,
                 Matrix<double,Nx,1>Q,
                 Matrix<double,Nu,1>R,
-                Matrix<double,3,1>g
+                Matrix<double,4,1>g
                 )
     {
         float x = x_(0,0);
@@ -42,7 +42,7 @@ namespace symbolic_functions
         A0(0,0) = Q0*(x-g(0));
         A0(1,0) = Q1*(y-g(1));
         A0(3,0) = Q3*a;
-        A0(4,0) = Q4*del;
+        A0(4,0) = Q4*(del-g(3));
         A0(5,0) = Q5*(th-g(2));
         return A0;
  
