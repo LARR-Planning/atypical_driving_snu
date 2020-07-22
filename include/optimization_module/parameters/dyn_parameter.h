@@ -17,8 +17,8 @@ const double acc_min = -3;
 const double acc_max = 1;
 const double jerk_min = -2;
 const double jerk_max = 2;
-const double steer_dot_min = -2;
-const double steer_dot_max = 2;
+const double steer_dot_min = -1.5;
+const double steer_dot_max = 1.5;
 
 
 
