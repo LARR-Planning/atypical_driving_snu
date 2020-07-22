@@ -30,7 +30,7 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
     nh.param<double>("lane_width",laneWidth,2.5);
     nh.param<string>("log_file_prefix",p_base_->log_file_name_base,"");
     nh.param("isUseMovingAverage", p_base->isUseMovingAverage,false);
-    nh.param("smooth_horizon",p_base->smooth_horizon, 4);
+    nh.param("moving_horizon",p_base->smooth_horizon, 4);
     nh.param("smooth_weight",p_base->weight_smooth, 1.0);
     cout <<"sm" << p_base->weight_smooth << endl;
     nh.param("goal/x",p_base->goal_x,0.0);
@@ -175,7 +175,7 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<double>("local_planner/car_speed",param_.l_param.nominal_speed,2.0);
     nh.param<int>("local_planner/N_corr",param_.l_param.N_corr,51);
     nh.param<bool>("local_planner/isRearWheel",param_.l_param.isRearWheeled,true);
-
+    nh.param<double>("local_planner/dyn_obst_range",param_.l_param.dynObstRange,30.0);
 
     Parameter ilqr_weight;
     param_.l_param.final_weight = ilqr_weight.setting.final_weight;
@@ -990,7 +990,7 @@ void Wrapper::runPlanning() {
                                                                                            std::chrono::duration_cast<std::chrono::microseconds>(
                                                                                                    chrono::steady_clock::now() -
                                                                                                    tCkpG).count() * 0.001
-                                                                                           << "ms");
+                                                    << "ms");
                             ROS_INFO("[Wrapper] begin LP..");
 
                             auto tCkp_mpc = chrono::steady_clock::now();

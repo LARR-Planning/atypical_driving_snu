@@ -99,7 +99,7 @@ void LocalPlanner::ObstToConstraint() {
         Vector2d car_pos;
         car_pos<< p_base->getCarState().x, p_base->getCarState().y;
         for (auto s : p_base->getCurObstaclePathArray().obstPathArray) {
-            if((s.obstPath[0].q - car_pos).norm()<30)
+            if((s.obstPath[0].q - car_pos).norm()<param.dynObstRange)
             {
                 for (int i = 0; i < N; i++)
                 {
@@ -218,12 +218,42 @@ void LocalPlanner::SetSfcIdx(int N_corr)
     Matrix<double,N+1,1> th_ref;
     // zero th position 
     pos_ref.push_back(p_base->laneSmooth.evalX(p_base->laneSmooth.points,time_knots[0]));
+    double direction_diff;
     for (int i = 1; i<N+1;i++)
     {
         pos_ref.push_back(p_base->laneSmooth.evalX(p_base->laneSmooth.points, time_knots[i]));
-        th_ref[i-1] =
-            atan2((pos_ref[i][1]-pos_ref[i-1][1]),(pos_ref[i][0]-pos_ref[i-1][0]));
+        if(abs(pos_ref[i][1]-pos_ref[i-1][1])<0.0001&&abs(pos_ref[i][0]-pos_ref[i-1][0])<0.0001)
+        {
+
+            th_ref[i-1] = th_ref[i-2];
+//            if(abs(p_base->getCarState().theta-th_ref[i-1])>3.1415826535)
+            if(p_base->getCarState().theta>0.5 && abs(p_base->getCarState().theta-th_ref[i-1])>4.5)
+            {
+                th_ref[i-1]+= 3.14159265*2;
+            }
+            else if (p_base->getCarState().theta<-0.5 && abs(p_base->getCarState().theta-th_ref[i-1])>4.5)
+            {
+                th_ref[i-1]-= 3.14159265*2;
+            }
+
+
+        }
+        else
+        {
+            th_ref[i-1] =
+                    atan2((pos_ref[i][1]-pos_ref[i-1][1]),(pos_ref[i][0]-pos_ref[i-1][0]));
+            if(p_base->getCarState().theta>0.5 && abs(p_base->getCarState().theta-th_ref[i-1])>4.5)
+            {
+                th_ref[i-1]+= 3.14159265*2;
+            }
+            else if (p_base->getCarState().theta<-0.5 && abs(p_base->getCarState().theta-th_ref[i-1])>4.5)
+            {
+                th_ref[i-1]-= 3.14159265*2;
+            }
+        }
+
     }
+
     th_ref[N] = th_ref[N-1];
 
 
@@ -233,7 +263,9 @@ void LocalPlanner::SetSfcIdx(int N_corr)
         local_wpts[i][0] = pos_ref[i][0];
         local_wpts[i][1] = pos_ref[i][1];
         local_wpts[i][2] = th_ref[i];
+        cout<<"refrence angle list"<<i<<"th"<<local_wpts[i][2]<<endl;
     }
+    cout<<"my_heading angle is:"<<p_base->getCarState().theta<<endl;
 //    p_base->getLanePath().lanes[0].laneCenters[0].x;
  }
 
@@ -289,6 +321,7 @@ bool LocalPlannerPlain::plan(double t) {
      prob->set_sfc_idx(sfc_idx);
 
      static int loop_num = 0;
+     cout<<"loop_num in Local Planner"<<loop_num<<endl;
      std::array<Matrix<double,Nu,1>,N> u0;
      for(auto &s :u0)
      {
@@ -355,7 +388,7 @@ bool LocalPlannerPlain::plan(double t) {
                  carState_temp.y = xN_new[i].coeffRef(1, 0);
                  carState_temp.v = xN_new[i].coeffRef(2, 0);
                  carState_temp.theta = xN_new[i].coeffRef(5, 0);
-
+                 //cout<<"MPC Future Heading Angle"<<i<<"th: "<< carState_temp.theta<<endl;
                  carInput_temp.alpha = xN_new[i].coeffRef(3, 0);
                  carInput_temp.delta = xN_new[i].coeffRef(4, 0);
 
@@ -377,10 +410,10 @@ bool LocalPlannerPlain::plan(double t) {
              uN_new = ilqr.uN_;
              xN_new = ilqr.xN_;
 
-             for(int jj = 0; jj<50;jj++)
+             for(int jj = 0; jj<N;jj++)
              {
                  //cout<<"Future "<<jj<<"th Accel input is"<<xN_new[jj][3]<<endl;
-                 if (xN_new[jj][4]>param.maxSteer+0.5 || xN_new[jj][4]<-param.maxSteer-0.5)
+                 if (xN_new[jj][4]>param.maxSteer+0.5 || xN_new[jj][4]<-param.maxSteer-0.5||xN_new[jj][3]>param.maxAccel+0.5||xN_new[jj][3]<param.minAccel-0.5)
                      flag_unstable =1;
 
              }
@@ -423,7 +456,7 @@ bool LocalPlannerPlain::plan(double t) {
                      carState_temp.y = xN_new[i].coeffRef(1, 0);
                      carState_temp.v = xN_new[i].coeffRef(2, 0);
                      carState_temp.theta = xN_new[i].coeffRef(5, 0);
-
+                     //cout<<"MPC Future Heading Angle"<<i<<"th: "<< carState_temp.theta<<endl;
                      carInput_temp.alpha = xN_new[i].coeffRef(3, 0);
                      carInput_temp.delta = xN_new[i].coeffRef(4, 0);
 
@@ -460,10 +493,7 @@ bool LocalPlannerPlain::plan(double t) {
                      curPlanning.xs.push_back(carState_temp);
                      curPlanning.us.push_back(carInput_temp);
                  }
-
-
-
-
+                 
                 ROS_INFO(" Initial guess =  initialized to zero");
                  return false;
              }

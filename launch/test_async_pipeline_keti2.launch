@@ -110,7 +110,7 @@
 
         <arg name = "period"  value= "0.05"/>
         <arg name = "horizon"  value= "5"/> <!--Also change dimension.h-->
-        <arg name="planning_dt" value="0.05"/>
+        <arg name="planning_dt" value="0.1"/>
 
     </include>
 

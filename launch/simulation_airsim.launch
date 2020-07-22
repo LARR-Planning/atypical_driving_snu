@@ -19,7 +19,6 @@
   <arg name="lidar_frame_id" default = "LidarSensor1"/>
   <arg name ="detected_object_frame_id" default = "map"/>
 
-  <param name = "smooth_weight" value="0.7"/>
 
   <arg name= "lane_width" default="10"/>
   <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/waypoint_airsim.csv"/>
@@ -32,7 +31,7 @@
 
   <arg name="nominal_speed"     default="2"/>
   <arg name="lp_horizon"     default="5"/>
-  <arg name="lp_period"     default="0.05"/>
+  <arg name="lp_period"     default="0.1"/>
 
   <arg name="gp_horizon"     default="30"/>
   <arg name="gp_period"     default="0.4"/>
@@ -42,8 +41,8 @@
   <arg name="gp_z_min" value = "0.5"/>
   <arg name="gp_z_max" value = "1.0"/>
 
-  <arg name = "goal/x"  default = "60"/> <!--in world frame -->
-  <arg name = "goal/y" default = "73"/> <!--in world frame -->
+  <arg name = "goal/x"  default = "12"/> <!--in world frame -->
+  <arg name = "goal/y" default = "0"/> <!--in world frame -->
 
   <group ns="atypical_planning_test">
     <rosparam file="$(find atypical_driving)/param/MPC_weight.yaml"/>
