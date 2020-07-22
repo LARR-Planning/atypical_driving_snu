@@ -245,7 +245,7 @@ namespace Planner {
         vector<Vector2d, aligned_allocator<Vector2d>> leftBoundaryPoints;
         vector<Vector2d, aligned_allocator<Vector2d>> rightBoundaryPoints;
         bool isBlocked;
-        bool isBlockedByDynamicObs;
+        bool isBlockedByObject;
 
         int n_total_markers = 0;
 
