@@ -50,6 +50,40 @@
   </group>
 
 
+
+
+    <!-- run pointcloud_to_laserscan node -->
+    <node pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node" name="pointcloud_to_laserscan">
+
+        <remap from="cloud_in" to="$(arg pcl_topic)"/>
+<!--        <remap from="cloud_in" to="/octomap_point_cloud_centers"/>--> -->
+
+        <remap from="scan" to="/scan"/>
+        <rosparam>
+            target_frame:  LidarSensor1 # Leave disabled to output scan in pointcloud frame
+            transform_tolerance: 0.01
+            min_height: -0.5
+            max_height: 0.2
+
+            angle_min: -3.1408 # -M_PI/2
+            angle_max: 3.1408 # M_PI/2
+            angle_increment: 0.0027 # M_PI/360.0
+            scan_time: 0.0333
+            range_min: 0.0
+            range_max: 200.0
+            use_inf: true
+            inf_epsilon: 100.0
+
+            # Concurrency level, affects number of pointclouds queued for processing and number of threads used
+            # 0 : Detect number of cores
+            # 1 : Single threaded
+            # 2->inf : Parallelism level
+            concurrency_level: 1
+        </rosparam>
+
+    </node>
+
+
     <!--   OccupancyGrid  -->
      <include file = "$(find atypical_driving)/launch/occupancy2d/costmap_2d.launch">
          <arg name = "play_bag" value = "false"/>
@@ -57,22 +91,18 @@
          <arg name = "rviz" value = "false"/>
          <arg name = "occupancy_frame_id" value = "$(arg occu_frame_id)"/>
          <arg name = "lidar_frame_id" value = "$(arg lidar_frame_id)"/>
-         <arg name = "pcl_topic" value = "$(arg pcl_topic)"/>
-         <arg name = "cost_map_min_z" value = "0.2"/>
-         <arg name = "cost_map_max_z" value = "1.0"/>
+         <arg name = "cost_map_min_z" value = "-10"/>
+         <arg name = "cost_map_max_z" value = "10"/>
      </include>
 
 
 <!-- Node start-->
-
 
     <!--2. client-->
     <node pkg="atypical_driving" type="integration_client" name="atypical_driving_client" output="screen">
         <param name = "obstacle_radius_x" value="1.0"/>
         <param name = "obstacle_radius_y" value="0.5"/>
     </node>
-
-
 
     <!--3. server-->
     <include file = "$(find atypical_driving)/launch/integration_server.launch" >
