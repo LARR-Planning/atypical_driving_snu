@@ -263,9 +263,9 @@ void LocalPlanner::SetSfcIdx(int N_corr)
         local_wpts[i][0] = pos_ref[i][0];
         local_wpts[i][1] = pos_ref[i][1];
         local_wpts[i][2] = th_ref[i];
-        cout<<"refrence angle list"<<i<<"th"<<local_wpts[i][2]<<endl;
+//        cout<<"reference angle list"<<i<<"th"<<local_wpts[i][2]<<endl;
     }
-    cout<<"my_heading angle is:"<<p_base->getCarState().theta<<endl;
+//    cout<<"my_heading angle is:"<<p_base->getCarState().theta<<endl;
 //    p_base->getLanePath().lanes[0].laneCenters[0].x;
  }
 

@@ -159,10 +159,10 @@ bool GlobalPlanner::plan(double t) {
 
     // line smoothing except first point
     i_smooth = 1;
-    int window = param.smoothing_range;
+    int window = static_cast<int>((param.smoothing_distance + SP_EPSILON)/param.grid_resolution);
     while(i_smooth < laneTreePath.size()) {
         double bias = (laneTreePath[i_smooth].midPoint - laneTreePath[i_smooth].lanePoint).norm();
-        if (bias > param.smoothing_cliff_bias) {
+        if (bias > param.smoothing_cliff_min_bias) {
             //Forward search
             int i_forward = i_smooth + 1;
             while (i_forward < std::min(i_smooth + window, (int) laneTreePath.size() - 1)) {
@@ -212,13 +212,12 @@ bool GlobalPlanner::plan(double t) {
 
     // lane smoothing at first point
     i_smooth = 0;
-    //Forward search
+    window = static_cast<int>((param.start_smoothing_distance + SP_EPSILON)/param.grid_resolution);
     int i_forward = std::min(i_smooth + window, (int) laneTreePath.size() - 1);
     if (i_forward - i_smooth > 1) {
         idx_start = i_smooth;
         idx_end = i_forward;
         idx_delta = idx_end - idx_start;
-
         for (int j_smooth = 1; j_smooth < idx_delta; j_smooth++) {
             alpha = static_cast<double>(j_smooth) / static_cast<double>(idx_delta);
             smoothingPoint = (1 - alpha) * laneTreePath[idx_start].midPoint + alpha * laneTreePath[idx_end].midPoint;
