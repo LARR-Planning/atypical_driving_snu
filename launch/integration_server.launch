@@ -70,8 +70,8 @@
     <param name="local_planner/dyn_obst_range" value="30.0"/>    
 
     <param name = "smooth_weight" value="0.7"/>
-    <param name = "moving_horizon" value="20"/>
-    <param name = "isUseMovingAverage" value="true"/>
+    <param name = "moving_horizon" value="5"/>
+    <param name = "isUseMovingAverage" value="false"/>
 
     <param name="predictor/observation_queue" value="10" />
     <param name="predictor/ref_height" value="0.4" />
