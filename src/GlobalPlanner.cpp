@@ -210,17 +210,25 @@ bool GlobalPlanner::plan(double t) {
         i_smooth++;
     }
 
-    // lane smoothing at first point
-    i_smooth = 0;
+    // lane smoothing at first point with Bernstein Polynomial
     window = static_cast<int>((param.start_smoothing_distance + SP_EPSILON)/param.grid_resolution);
+    i_smooth = 0;
     int i_forward = std::min(i_smooth + window, (int) laneTreePath.size() - 1);
+    int n = 3;
+    std::vector<Vector2d, aligned_allocator<Vector2d>> controlPoints;
+    controlPoints.resize(4);
+    controlPoints[0] = laneTreePath[i_smooth].midPoint;
+    controlPoints[1] = laneTreePath[i_smooth].midPoint + Vector2d(cos(p_base->cur_state.theta), sin(p_base->cur_state.theta)) * (p_base->cur_state.v/n);
+    controlPoints[2] = laneTreePath[i_forward].midPoint - (p_base->laneSliced.points[1] - p_base->laneSliced.points[0]).normalized() * (p_base->laneSpeed/n);
+    controlPoints[3] = laneTreePath[i_forward].midPoint;
+
     if (i_forward - i_smooth > 1) {
         idx_start = i_smooth;
         idx_end = i_forward;
         idx_delta = idx_end - idx_start;
         for (int j_smooth = 1; j_smooth < idx_delta; j_smooth++) {
             alpha = static_cast<double>(j_smooth) / static_cast<double>(idx_delta);
-            smoothingPoint = (1 - alpha) * laneTreePath[idx_start].midPoint + alpha * laneTreePath[idx_end].midPoint;
+            smoothingPoint = getPointFromControlPoints(controlPoints, alpha);
             laneTreePath[idx_start + j_smooth].midPoint = smoothingPoint;
         }
     }
@@ -563,3 +571,40 @@ int GlobalPlanner::findLaneTreePathTail(bool& isBlocked, bool& isBlockedByObject
 //
 //    return vector<int>(tail.begin(), tail.begin() + tail_end);
 //}
+
+int GlobalPlanner::nChoosek(int n, int k){
+    if(k > n) return 0;
+    if(k * 2 > n) k = n-k;
+    if(k == 0) return 1;
+
+    int result = n;
+    for(int i = 2; i <= k; i++){
+        result *= (n-i+1);
+        result /= i;
+    }
+    return result;
+}
+
+double GlobalPlanner::getBernsteinBasis(int n, int i, double t_normalized){
+    return nChoosek(n, i) * pow(t_normalized, i) * pow(1-t_normalized, n - i);
+}
+
+Vector2d GlobalPlanner::getPointFromControlPoints(std::vector<Vector2d, aligned_allocator<Vector2d>> control_points, double t_normalized){
+    Vector2d point;
+    double t = t_normalized;
+    if(t < 0 - SP_EPSILON || t > 1 + SP_EPSILON){
+        ROS_ERROR("[GlobalPlanner] Input of getPointFromControlPoints is out of bound");
+        throw -1;
+    }
+
+    int n_ctrl = (int)control_points.size() - 1;
+    double x = 0, y = 0;
+    for(int i = 0; i < n_ctrl + 1; i++){
+        double b_i_n = getBernsteinBasis(n_ctrl, i, t_normalized);
+        x += control_points[i].x() * b_i_n;
+        y += control_points[i].y() * b_i_n;
+    }
+
+    point = Vector2d(x, y);
+    return point;
+}
