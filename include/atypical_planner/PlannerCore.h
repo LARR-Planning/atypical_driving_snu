@@ -103,9 +103,10 @@ namespace Planner {
         double period;
 //        int max_smoothing_iteration;
 //        double smoothing_margin;
-        int smoothing_range;
-        double smoothing_cliff_bias;
+        double smoothing_distance;
+        double smoothing_cliff_min_bias;
         double smoothing_cliff_ratio;
+        double start_smoothing_distance;
         double max_steering_angle;
         double corridor_width_min;
         double corridor_width_dynamic_min;

@@ -38,9 +38,9 @@ namespace Planner{
         void laneTreeSearch(int idx);
         std::vector<int> getMidPointsFromLaneTree(int i_tree_start);
         int findLaneTreePathTail(bool& isBlocked, bool& isBlockedByObject);
-//        bool isLaneTreeBlocked(int last_element_index);
-//        bool isLaneTreeBlockedByDynamicObs(int last_element_index);
-//        std::vector<int> cutTail(const std::vector<int>& tail) const;
+        int nChoosek(int n, int k);
+        double getBernsteinBasis(int n, int i, double t_normalized);
+        Vector2d getPointFromControlPoints(std::vector<Vector2d, aligned_allocator<Vector2d>> control_points, double t_normalized);
     };
 
 }
