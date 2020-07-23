@@ -10,7 +10,6 @@
 
   <param name="use_sim_time" value="$(arg use_sim_time)"/>
 
-
 <!-- Arguments Start -->
   <arg name="snu_frame_id" default="SNU"/>
   <arg name="occu_frame_id" default="SNU"/>
