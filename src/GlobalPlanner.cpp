@@ -56,17 +56,44 @@ bool GlobalPlanner::plan(double t) {
             }
 
             // check occupancy of side points and construct laneTree
-            bool isNearObject = false;
+            std::vector<int> gridPointStates;
+            gridPointStates.resize(laneGridPoints.size());
             for(int k_side = 0; k_side < laneGridPoints.size(); k_side++) {
-                if(p_base->isObject(laneGridPoints[k_side])){ //TODO: Too conservative!!
-                    isNearObject = true;
-                    break;
+                if(p_base->isObject(laneGridPoints[k_side])){
+                    gridPointStates[k_side] = 2;
+                }
+                else if(p_base->isOccupied(laneGridPoints[k_side])){
+                    gridPointStates[k_side] = 1;
+                }
+                else{
+                    gridPointStates[k_side] = 0;
+                }
+            }
+
+            for(int k_side = 0; k_side < laneGridPoints.size(); k_side++) {
+                if(gridPointStates[k_side] == 2) {
+                    for(int k_expand = k_side - 1; k_expand > -1; k_expand--){
+                        if(gridPointStates[k_expand] > 0) {
+                            gridPointStates[k_expand] = 2;
+                        }
+                        else {
+                            break;
+                        }
+                    }
+                    for(int k_expand = k_side + 1; k_expand < laneGridPoints.size(); k_expand++){
+                        if(gridPointStates[k_expand] > 0) {
+                            gridPointStates[k_expand] = 2;
+                        }
+                        else {
+                            break;
+                        }
+                    }
                 }
             }
 
             int start_idx = -1;
             for(int k_side = 0; k_side < laneGridPoints.size(); k_side++){
-                if(not p_base->isOccupied(laneGridPoints[k_side])){
+                if(gridPointStates[k_side] == 0){
                     if(start_idx == -1){
                         start_idx = k_side; //not occupied, start idx not initialized -> initialize start index
                     }
@@ -81,8 +108,25 @@ bool GlobalPlanner::plan(double t) {
                         laneTreeElement.rightPoint = laneGridPoints[start_idx];
                         laneTreeElement.rightBoundaryPoint = laneGridPoints[0];
                         laneTreeElement.width = (laneGridPoints[k_side] - laneGridPoints[start_idx]).norm();
-                        laneTreeElement.isNearObject = isNearObject;
+                        if(start_idx > 0){
+                            laneTreeElement.isNearObject = (gridPointStates[start_idx - 1] == 2);
+                        }
+                        else{
+                            laneTreeElement.isNearObject = false;
+                        }
                         laneTree.emplace_back(laneTreeElement);
+//                        if(debug) {
+//                            ROS_WARN_STREAM("segment at (" << laneTreeElement.leftPoint.x() << ","
+//                                                           << laneTreeElement.leftPoint.y() << ") to ("
+//                                                           << laneTreeElement.rightPoint.x() << ","
+//                                                           << laneTreeElement.rightPoint.y() << ")");
+//                            if(laneTreeElement.isNearObject){
+//                                ROS_WARN_STREAM("Near object");
+//                            }
+//                            else{
+//                                ROS_WARN_STREAM("Not near object");
+//                            }
+//                        }
                     }
                 }
                 else if(start_idx > -1){ //occupied, start idx initialized -> add element to tree
@@ -96,9 +140,26 @@ bool GlobalPlanner::plan(double t) {
                     laneTreeElement.rightPoint = laneGridPoints[start_idx];
                     laneTreeElement.rightBoundaryPoint = laneGridPoints[0];
                     laneTreeElement.width = (laneGridPoints[k_side-1] - laneGridPoints[start_idx]).norm();
-                    laneTreeElement.isNearObject = isNearObject;
+                    if(gridPointStates[k_side] == 2 or (start_idx > 0 and gridPointStates[start_idx - 1] == 2)){
+                        laneTreeElement.isNearObject = true;
+                    }
+                    else{
+                        laneTreeElement.isNearObject = false;
+                    }
                     laneTree.emplace_back(laneTreeElement);
                     start_idx = -1;
+//                    if(debug) {
+//                        ROS_WARN_STREAM("segment at (" << laneTreeElement.leftPoint.x() << ","
+//                                                       << laneTreeElement.leftPoint.y() << ") to ("
+//                                                       << laneTreeElement.rightPoint.x() << ","
+//                                                       << laneTreeElement.rightPoint.y() << ")");
+//                        if(laneTreeElement.isNearObject){
+//                            ROS_WARN_STREAM("Near object");
+//                        }
+//                        else{
+//                            ROS_WARN_STREAM("Not near object");
+//                        }
+//                    }
                 }
                 else{ //occupied, start idx not initialized -> do nothing
                     start_idx = -1;
@@ -159,10 +220,10 @@ bool GlobalPlanner::plan(double t) {
 
     // line smoothing except first point
     i_smooth = 1;
-    int window = param.smoothing_range;
+    int window = static_cast<int>((param.smoothing_distance + SP_EPSILON)/param.grid_resolution);
     while(i_smooth < laneTreePath.size()) {
         double bias = (laneTreePath[i_smooth].midPoint - laneTreePath[i_smooth].lanePoint).norm();
-        if (bias > param.smoothing_cliff_bias) {
+        if (bias > param.smoothing_cliff_min_bias) {
             //Forward search
             int i_forward = i_smooth + 1;
             while (i_forward < std::min(i_smooth + window, (int) laneTreePath.size() - 1)) {
@@ -210,18 +271,25 @@ bool GlobalPlanner::plan(double t) {
         i_smooth++;
     }
 
-    // lane smoothing at first point
+    // lane smoothing at first point with Bernstein Polynomial
+    window = static_cast<int>((param.start_smoothing_distance + SP_EPSILON)/param.grid_resolution);
     i_smooth = 0;
-    //Forward search
     int i_forward = std::min(i_smooth + window, (int) laneTreePath.size() - 1);
+    int n = 3;
+    std::vector<Vector2d, aligned_allocator<Vector2d>> controlPoints;
+    controlPoints.resize(4);
+    controlPoints[0] = laneTreePath[i_smooth].midPoint;
+    controlPoints[1] = laneTreePath[i_smooth].midPoint + Vector2d(cos(p_base->cur_state.theta), sin(p_base->cur_state.theta)) * (p_base->cur_state.v/n);
+    controlPoints[2] = laneTreePath[i_forward].midPoint - (p_base->laneSliced.points[1] - p_base->laneSliced.points[0]).normalized() * (p_base->laneSpeed/n);
+    controlPoints[3] = laneTreePath[i_forward].midPoint;
+
     if (i_forward - i_smooth > 1) {
         idx_start = i_smooth;
         idx_end = i_forward;
         idx_delta = idx_end - idx_start;
-
         for (int j_smooth = 1; j_smooth < idx_delta; j_smooth++) {
             alpha = static_cast<double>(j_smooth) / static_cast<double>(idx_delta);
-            smoothingPoint = (1 - alpha) * laneTreePath[idx_start].midPoint + alpha * laneTreePath[idx_end].midPoint;
+            smoothingPoint = getPointFromControlPoints(controlPoints, alpha);
             laneTreePath[idx_start + j_smooth].midPoint = smoothingPoint;
         }
     }
@@ -564,3 +632,40 @@ int GlobalPlanner::findLaneTreePathTail(bool& isBlocked, bool& isBlockedByObject
 //
 //    return vector<int>(tail.begin(), tail.begin() + tail_end);
 //}
+
+int GlobalPlanner::nChoosek(int n, int k){
+    if(k > n) return 0;
+    if(k * 2 > n) k = n-k;
+    if(k == 0) return 1;
+
+    int result = n;
+    for(int i = 2; i <= k; i++){
+        result *= (n-i+1);
+        result /= i;
+    }
+    return result;
+}
+
+double GlobalPlanner::getBernsteinBasis(int n, int i, double t_normalized){
+    return nChoosek(n, i) * pow(t_normalized, i) * pow(1-t_normalized, n - i);
+}
+
+Vector2d GlobalPlanner::getPointFromControlPoints(std::vector<Vector2d, aligned_allocator<Vector2d>> control_points, double t_normalized){
+    Vector2d point;
+    double t = t_normalized;
+    if(t < 0 - SP_EPSILON || t > 1 + SP_EPSILON){
+        ROS_ERROR("[GlobalPlanner] Input of getPointFromControlPoints is out of bound");
+        throw -1;
+    }
+
+    int n_ctrl = (int)control_points.size() - 1;
+    double x = 0, y = 0;
+    for(int i = 0; i < n_ctrl + 1; i++){
+        double b_i_n = getBernsteinBasis(n_ctrl, i, t_normalized);
+        x += control_points[i].x() * b_i_n;
+        y += control_points[i].y() * b_i_n;
+    }
+
+    point = Vector2d(x, y);
+    return point;
+}
