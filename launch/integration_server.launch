@@ -58,8 +58,8 @@
     <param name="global_planner/max_steering_angle" value = "$(eval 3.14/20)"/>
     <param name="global_planner/start_smoothing_distance" value="5" />
     <param name="global_planner/corridor_width_min" value = "1.5"/>
-    <param name="global_planner/corridor_width_dynamic_min" value = "8"/>
-    <param name="global_planner/safe_distance" value = "5"/>
+    <param name="global_planner/corridor_width_dynamic_min" value = "4"/>
+    <param name="global_planner/safe_distance" value = "6"/>
 
     <param name="local_planner/horizon" value="$(arg horizon)" />
     <param name="local_planner/ts" value="$(arg planning_dt)" />

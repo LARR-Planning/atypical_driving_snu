@@ -56,17 +56,44 @@ bool GlobalPlanner::plan(double t) {
             }
 
             // check occupancy of side points and construct laneTree
-            bool isNearObject = false;
+            std::vector<int> gridPointStates;
+            gridPointStates.resize(laneGridPoints.size());
             for(int k_side = 0; k_side < laneGridPoints.size(); k_side++) {
-                if(p_base->isObject(laneGridPoints[k_side])){ //TODO: Too conservative!!
-                    isNearObject = true;
-                    break;
+                if(p_base->isObject(laneGridPoints[k_side])){
+                    gridPointStates[k_side] = 2;
+                }
+                else if(p_base->isOccupied(laneGridPoints[k_side])){
+                    gridPointStates[k_side] = 1;
+                }
+                else{
+                    gridPointStates[k_side] = 0;
+                }
+            }
+
+            for(int k_side = 0; k_side < laneGridPoints.size(); k_side++) {
+                if(gridPointStates[k_side] == 2) {
+                    for(int k_expand = k_side - 1; k_expand > -1; k_expand--){
+                        if(gridPointStates[k_expand] > 0) {
+                            gridPointStates[k_expand] = 2;
+                        }
+                        else {
+                            break;
+                        }
+                    }
+                    for(int k_expand = k_side + 1; k_expand < laneGridPoints.size(); k_expand++){
+                        if(gridPointStates[k_expand] > 0) {
+                            gridPointStates[k_expand] = 2;
+                        }
+                        else {
+                            break;
+                        }
+                    }
                 }
             }
 
             int start_idx = -1;
             for(int k_side = 0; k_side < laneGridPoints.size(); k_side++){
-                if(not p_base->isOccupied(laneGridPoints[k_side])){
+                if(gridPointStates[k_side] == 0){
                     if(start_idx == -1){
                         start_idx = k_side; //not occupied, start idx not initialized -> initialize start index
                     }
@@ -81,8 +108,25 @@ bool GlobalPlanner::plan(double t) {
                         laneTreeElement.rightPoint = laneGridPoints[start_idx];
                         laneTreeElement.rightBoundaryPoint = laneGridPoints[0];
                         laneTreeElement.width = (laneGridPoints[k_side] - laneGridPoints[start_idx]).norm();
-                        laneTreeElement.isNearObject = isNearObject;
+                        if(start_idx > 0){
+                            laneTreeElement.isNearObject = (gridPointStates[start_idx - 1] == 2);
+                        }
+                        else{
+                            laneTreeElement.isNearObject = false;
+                        }
                         laneTree.emplace_back(laneTreeElement);
+//                        if(debug) {
+//                            ROS_WARN_STREAM("segment at (" << laneTreeElement.leftPoint.x() << ","
+//                                                           << laneTreeElement.leftPoint.y() << ") to ("
+//                                                           << laneTreeElement.rightPoint.x() << ","
+//                                                           << laneTreeElement.rightPoint.y() << ")");
+//                            if(laneTreeElement.isNearObject){
+//                                ROS_WARN_STREAM("Near object");
+//                            }
+//                            else{
+//                                ROS_WARN_STREAM("Not near object");
+//                            }
+//                        }
                     }
                 }
                 else if(start_idx > -1){ //occupied, start idx initialized -> add element to tree
@@ -96,9 +140,26 @@ bool GlobalPlanner::plan(double t) {
                     laneTreeElement.rightPoint = laneGridPoints[start_idx];
                     laneTreeElement.rightBoundaryPoint = laneGridPoints[0];
                     laneTreeElement.width = (laneGridPoints[k_side-1] - laneGridPoints[start_idx]).norm();
-                    laneTreeElement.isNearObject = isNearObject;
+                    if(gridPointStates[k_side] == 2 or (start_idx > 0 and gridPointStates[start_idx - 1] == 2)){
+                        laneTreeElement.isNearObject = true;
+                    }
+                    else{
+                        laneTreeElement.isNearObject = false;
+                    }
                     laneTree.emplace_back(laneTreeElement);
                     start_idx = -1;
+//                    if(debug) {
+//                        ROS_WARN_STREAM("segment at (" << laneTreeElement.leftPoint.x() << ","
+//                                                       << laneTreeElement.leftPoint.y() << ") to ("
+//                                                       << laneTreeElement.rightPoint.x() << ","
+//                                                       << laneTreeElement.rightPoint.y() << ")");
+//                        if(laneTreeElement.isNearObject){
+//                            ROS_WARN_STREAM("Near object");
+//                        }
+//                        else{
+//                            ROS_WARN_STREAM("Not near object");
+//                        }
+//                    }
                 }
                 else{ //occupied, start idx not initialized -> do nothing
                     start_idx = -1;

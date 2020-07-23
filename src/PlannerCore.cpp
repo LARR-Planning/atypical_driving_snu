@@ -788,7 +788,7 @@ bool PlannerBase::isObject(const Vector2d& queryPoint){
         for (auto obstPath : obstaclePathArray.obstPathArray) {
             for (int i = 0; i < min(nInspection, obstPath.obstPath.size()); i++) {
                 ObstacleEllipse obst = obstPath.obstPath[i];
-                if (((obst.q - queryPoint).transpose() * obst.Q * (obst.q - queryPoint))(0) < 1.5) {
+                if (((obst.q - queryPoint).transpose() * obst.Q * (obst.q - queryPoint))(0) < 1) {
 //                    ROS_WARN("Query point collided with object");
 
 
