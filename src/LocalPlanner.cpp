@@ -211,6 +211,7 @@ void LocalPlanner::SetSfcIdx(int N_corr)
 
  void LocalPlanner::SetLocalWpts(double t)
  {
+    static int flag_first = 0;
     VectorXd time_knots;
     time_knots.setLinSpaced(N+1,t,t+N*param.tStep);
     vector<Vector2d> pos_ref;
@@ -263,9 +264,35 @@ void LocalPlanner::SetSfcIdx(int N_corr)
         local_wpts[i][0] = pos_ref[i][0];
         local_wpts[i][1] = pos_ref[i][1];
         local_wpts[i][2] = th_ref[i];
-//        cout<<"reference angle list"<<i<<"th"<<local_wpts[i][2]<<endl;
+
+        //cout<<"refrence angle list"<<i<<"th"<<local_wpts[i][2]<<endl;
     }
-//    cout<<"my_heading angle is:"<<p_base->getCarState().theta<<endl;
+    if (!flag_first)
+    {
+        for(int i = 0;i<N+1;i++)
+        {
+            local_wpts[i][3] = 0.0;
+            local_wpts[i][4] = 0.0;
+        }
+        flag_first++;
+    }
+    else
+    {
+        for(int i =0;i<N;i++)
+        {
+            local_wpts[i][3] = curPlanning.us[i].alpha;
+            local_wpts[i][4] = curPlanning.us[i].delta;
+        }
+        local_wpts[N][3] = local_wpts[N-1][3];
+        local_wpts[N][4] = local_wpts[N-1][4];
+    }
+
+
+
+
+
+    //cout<<"my_heading angle is:"<<p_base->getCarState().theta<<endl;
+
 //    p_base->getLanePath().lanes[0].laneCenters[0].x;
  }
 

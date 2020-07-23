@@ -50,7 +50,7 @@ namespace Planner {
         void SetLocalWpts(double t); // find closest 50 lane nodes
         //void QxFromPrediction(Collection<double,N+1> mpcPredictionHeads);        
 		int isRefUsed;
-        Collection<Matrix<double,3,1>,N+1> local_wpts;
+        Collection<Matrix<double,5,1>,N+1> local_wpts;
 
         Collection<bool,N+1> sfc_idx; //  sfc idx
 

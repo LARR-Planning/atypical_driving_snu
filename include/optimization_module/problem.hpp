@@ -34,7 +34,7 @@ class Problem : public ProblemDescription<Nx,Nu>
 {
 private:
 
-    Collection<Matrix<double,3,1>,N+1> x_ref; // Reference Tracking Mode
+    Collection<Matrix<double,5,1>,N+1> x_ref; // Reference Tracking Mode
     int isRefUsed;
     VectorX final_weight_ = VectorX::Zero(); //Final Cost Weight Factor
     VectorX state_weight_ = VectorX::Zero(); //Running Cost State Weight Factor
@@ -67,7 +67,7 @@ public:
     void set_final_weight( const VectorX weight )
     { final_weight_ = weight;	}
 
-    void set_ref(const Collection<Matrix<double,3,1>,N+1> x_ref_)
+    void set_ref(const Collection<Matrix<double,5,1>,N+1> x_ref_)
     {x_ref = x_ref_;}
 
     void set_sfc_idx(const Collection<bool,N+1> sfc_idx_)
@@ -126,7 +126,6 @@ public:
                     return obj;
                 //obj.cx = symbolic_functions::costx(x, u, state_weight_, input_weight_, x_ref[idx]);
                 obj.cx = symbolic_functions::costx(x, u, state_weight_.array()*std::pow(1.1,1+idx/N), input_weight_, x_ref[idx]);
-
                 obj.cu = symbolic_functions::costu(x, u, state_weight_, input_weight_, x_ref[idx]);
                 obj.cxx = symbolic_functions::costxx(x, u, state_weight_.array()*std::pow(1.1,1+idx/N), input_weight_, x_ref[idx]);
                 obj.cxu = MatrixXU::Zero();
