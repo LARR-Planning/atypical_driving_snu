@@ -45,7 +45,7 @@
           - {name: obstacles,       type: "costmap_2d::ObstacleLayer"}
           - {name: inflation,       type: "costmap_2d::InflationLayer"}
 
-        publish_frequency: 10
+        publish_frequency: 20
         update_frequency: 10
         transform_tolerance: 2.0
         origin_x: 0
@@ -74,7 +74,7 @@
             inf_is_valid: true
           }
         inflation:
-          inflation_radius: 0.35
+          inflation_radius: 0.75
         voxel:
           publish_voxel_map: true
     </rosparam>

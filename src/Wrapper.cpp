@@ -95,7 +95,8 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
     subCarSpeed = nh.subscribe("/current_speed",1,&RosWrapper::cbCarSpeed,this);
     //subExampleObstaclePose = nh.subscribe("obstacle_pose",1,&RosWrapper::cbObstacles,this);
     subDetectedObjects= nh.subscribe("/detected_objects",1,&RosWrapper::cbDetectedObjects,this);
-    subOccuMap = nh.subscribe("/costmap_node/costmap/costmap",1,&RosWrapper::cbOccuMap,this); //TODO: fix /costmap_node/costmap/costmap to /occupancy_grid
+    subOccuMap = nh.subscribe("/costmap_node/costmap/costmap",100,&RosWrapper::cbOccuMap,this); //TODO: fix /costmap_node/costmap/costmap to /occupancy_grid
+    subOccuUpdate = nh.subscribe("/costmap_node/costmap/costmap_updates",100,&RosWrapper::cbOccuUpdate,this); //TODO: fix /costmap_node/costmap/costmap to /occupancy_grid
 }
 /**
  * @brief update the fitting model and the obstacle path together
@@ -415,6 +416,11 @@ void RosWrapper::publish() {
         p_base->log_state_input(curTime());}
     }
     pubOurOccu.publish(p_base->localMap);
+    int sum = 0 ;
+    for (int i = 0 ; i < p_base->localMap.info.width*p_base->localMap.info.height; i ++){
+        sum += p_base->localMap.data[i];
+    }
+//    ROS_WARN_STREAM("[SNU_PLANNER/RosWrapper] publishing occupancy map: size =  " <<  sum << " " <<isLocalMapReceived);
     pubPath.publish(planningPath);
     pubCorridorSeq.publish(corridorSeq);
 
@@ -693,9 +699,22 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
 void RosWrapper::cbOccuMap(const nav_msgs::OccupancyGrid & occuMap) {
 
     p_base->localMapBuffer = occuMap;
-    ROS_INFO_STREAM_ONCE("[SNU_PLANNER/RosWrapper] Received first occupancy map");
+//    ROS_INFO_STREAM_ONCE("[SNU_PLANNER/RosWrapper] Received first occupancy map");
+//    ROS_WARN_STREAM("[SNU_PLANNER/RosWrapper] Received occupancy map [t diff since last update = " << (ros::Time::now().toSec()-sibalBeforeOccu)  );
     isLocalMapReceived = true;
+    sibalBeforeOccu = ros::Time::now().toSec();
 }
+
+void RosWrapper::cbOccuUpdate(const map_msgs::OccupancyGridUpdateConstPtr &msg) {
+    cout << "update callback!!" <<endl;
+    int index = 0;
+    for(int y=msg->y; y< msg->y+msg->height; y++){
+        for(int x=msg->x; x< msg->x+msg->width; x++){
+            p_base->localMapBuffer.data[ y*p_base->localMapBuffer.info.width + x ] = msg->data[ index++ ];
+        }
+    }
+}
+
 
 void RosWrapper::cbCarSpeed(const std_msgs::Float64& speed_) {
     // Incoming data is km/h
@@ -923,12 +942,14 @@ void Wrapper::updateMPCToBase() {
 //    ROS_INFO( "[Wrapper] p_base updated. Unlocking.\n ");
 }
 
+
+
 /**
  * @brief Engage the while loop of planners
  */
 void Wrapper::runPlanning() {
 
-//    ROS_INFO( "[Wrapper] Assuming planning is updated at every 0.5 sec.\n"); // TODO
+    ROS_INFO_ONCE( "[Wrapper] planning thread started !!!!\n"); // TODO
     // initial stuffs
     double Tp = 4.0; // sec
     auto tCkpG = chrono::steady_clock::now(); // check point time
@@ -944,18 +965,17 @@ void Wrapper::runPlanning() {
     bool isAllGoalReach = false;
 
 
-
-
     while (ros::ok()){
 
-            // 2. Check the condition for planning
+        p_base_shared->localMap = p_base_shared->localMapBuffer;
+        // 2. Check the condition for planning
             isPlanPossible = ros_wrapper_ptr->isAllInputReceived();
             didLplanByG = false;
 
             if (isPlanPossible) {
 
-                p_base_shared->localMap = p_base_shared->localMapBuffer;
 
+//                ROS_WARN_STREAM("[SNU_PLANNER/RosWrapper] updated occupancy map");
 
 
                 Vector3d goalXYSNU(p_base_shared->goal_x,p_base_shared->goal_y,0); // goal w.r.t SNu frame
@@ -1002,8 +1022,20 @@ void Wrapper::runPlanning() {
                                                                                                        tCkp_mpc).count() *
                                                                                                0.001
                                                                                                << "ms");
-                            else // LP failed
+                            else { // LP failed
                                 ROS_INFO_STREAM("[Wrapper] LP failed.");
+                                ROS_INFO_STREAM("[Wrapper] LP failed! planning time for lp: " <<
+                                                                                               std::chrono::duration_cast<std::chrono::microseconds>(
+                                                                                                       chrono::steady_clock::now() -
+                                                                                                       tCkp_mpc).count() *
+                                                                                               0.001
+                                                                                               << "ms");
+
+
+
+
+
+                            }
                         } else // GP failed
                             ROS_INFO_STREAM("[Wrapper] GP failed.");
 
@@ -1018,7 +1050,9 @@ void Wrapper::runPlanning() {
                 ROS_WARN_THROTTLE(2,
                                   "[Wrapper] waiting planning input subscriptions.. (message print out every 2 sec)");
             }
-        ros::Rate(50).sleep();
+
+        ros::spinOnce();
+        ros::Rate(100).sleep();
     }
 }
 

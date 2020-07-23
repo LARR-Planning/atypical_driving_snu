@@ -26,6 +26,7 @@
 #include <geometry_msgs/PoseArray.h>
 #include <functional>
 #include <nav_msgs/Path.h>
+#include <map_msgs/OccupancyGridUpdate.h>
 
 namespace Planner{
 
@@ -54,7 +55,7 @@ namespace Planner{
         bool use_nominal_obstacle_radius = false;
 
 
-
+        double sibalBeforeOccu  = 0;
 
         /**
          * Parameters
@@ -113,6 +114,7 @@ namespace Planner{
         ros::Subscriber subExampleObstaclePose; //
         ros::Subscriber subDetectedObjects;
         ros::Subscriber subOccuMap; // occupancy grid
+        ros::Subscriber subOccuUpdate; // sibal
 
         /**
          * Callback functions
@@ -121,6 +123,7 @@ namespace Planner{
         void cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr);
         void cbCarSpeed(const std_msgs::Float64& speed);
         void cbOccuMap(const nav_msgs::OccupancyGrid& occuMap);
+        void cbOccuUpdate(const map_msgs::OccupancyGridUpdateConstPtr& msg );
 
         void cbObstacles(const geometry_msgs::PoseStamped& obstPose);
         void cbDetectedObjects(const driving_msgs::DetectedObjectArray& objectsArray);
@@ -164,6 +167,10 @@ namespace Planner{
         thread threadPlanner;
         thread threadRosWrapper;
 
+
+        ros::NodeHandle nh; // due to map (JBS....)
+
+
         Param param; /**< global and local planner parameters  */
 
         LocalPlanner* lp_ptr; /**< local planner */
@@ -179,6 +186,8 @@ namespace Planner{
         void updateMPCToBase(); // update the results of the planners to p_base
         void updatePrediction();
         void runPlanning(); // planning thread.
+
+
     public:
         Wrapper();
         void run();

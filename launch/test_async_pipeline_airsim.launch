@@ -7,7 +7,7 @@
 
 <!--   <arg name="bagfile"        default="autoDriveFinalFail.bag"/> -->
 <!--   <arg name="bagfile"        default="autoDriveIntegration.bag"/> -->
-  <arg name="bagfile"        default="autoDriveAnotherCar.bag"/>
+  <arg name="bagfile"        default="autoDriveFinalScenarioFail.bag"/>
 <!--   <arg name="bagfile"        default="autoDriveTwoBoxes.bag"/> -->
   <arg name = "pcl_topic" default = "/airsim_car_node/PhysXCar/lidar/LidarSensor1"/>
 
@@ -96,6 +96,7 @@
     <node pkg="atypical_driving" type="integration_client" name="atypical_driving_client" output="screen">
         <param name = "obstacle_radius_x" value="1.0"/>
         <param name = "obstacle_radius_y" value="0.5"/>
+        <remap from = "/detected_objects" to = "/detected_objects_none"/>
     </node>
 
     <!--3. server-->
