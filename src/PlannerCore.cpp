@@ -780,13 +780,13 @@ bool PlannerBase::isOccupied(Vector2d queryPoint) {
  * @return true if queryPoint is within the obstacle path array
  */
 bool PlannerBase::isObject(const Vector2d& queryPoint){
-    unsigned long nInspection = 3;
+    unsigned long nInspection = 5;
 
 //    printf("[DEBUG_JBS] planner base querying start (number of obst = %d ) \n",obstaclePathArray.obstPathArray.size());
 
 //    mSet[0].lock();
         for (auto obstPath : obstaclePathArray.obstPathArray) {
-            for (int i = 0; i < min(nInspection, obstPath.obstPath.size()); i++) {
+            for (int i = 0; i < obstPath.obstPath.size(); i += static_cast<int>((obstPath.obstPath.size()-1)/nInspection)) {
                 ObstacleEllipse obst = obstPath.obstPath[i];
                 if (((obst.q - queryPoint).transpose() * obst.Q * (obst.q - queryPoint))(0) < 1) {
 //                    ROS_WARN("Query point collided with object");
