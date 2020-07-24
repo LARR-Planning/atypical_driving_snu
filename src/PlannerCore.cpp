@@ -662,8 +662,11 @@ void PlannerBase::uploadPrediction(VectorXd tSeq_, double rNominal) {
     ObstaclePathArray obstaclePathArrayBuffer;
 
 //        obstaclePathArray.obstPathArray.clear();
+        mSet[0].lock();
+        auto predictorSetBuffer = indexedPredictorSet ;
+        mSet[0].unlock();
 
-        for (auto idPredictor : indexedPredictorSet) {
+    for (auto idPredictor : predictorSetBuffer) {
             auto predictor = get<1>(idPredictor);
             //predictor.update_predict(); // this will do nothing if observation is not enough
             if (predictor.is_prediction_available()) {

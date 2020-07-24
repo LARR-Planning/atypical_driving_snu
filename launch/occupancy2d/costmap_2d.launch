@@ -45,30 +45,31 @@
           - {name: obstacles,       type: "costmap_2d::ObstacleLayer"}
           - {name: inflation,       type: "costmap_2d::InflationLayer"}
 
-        publish_frequency: 20
-        update_frequency: 10
+        publish_frequency: 50
+        update_frequency: 50
         transform_tolerance: 2.0
         origin_x: 0
         origin_y: 0
-        width: 100
-        resolution: 0.5
-        height: 100
+        width: 80
+        resolution: 0.8
+        height: 80
         rolling_window: true
         inf_is_valid: true,
-        observation_persistance: 0.0,
+        observation_persistance: 100.0,
         track_unknown_space: false,
         obstacles:
-          clearing: true,
+          track_unknown_space: false,
           obstacle_range: 100,
           observation_sources: base_scan
           footprint_clearing_enabled: true,
           base_scan: {
+            clearing: false,
             data_type: LaserScan,
             sensor_frame: $(arg lidar_frame_id),
             clearing: true,
             marking: true,
             raytrace_range: 200,
-            observation_persistance: 100.0,
+            observation_persistance: 1000.0,
             topic: $(arg scan_topic),
             obstacle_range: 100,
             inf_is_valid: true

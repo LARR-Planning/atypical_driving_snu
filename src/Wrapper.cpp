@@ -103,6 +103,8 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
  */
 void RosWrapper::updatePredictionModel() {
 
+
+    p_base->mSet[0].lock();
     // 1. Update the fitting model
     for (auto it = p_base->indexedPredictorSet.begin();
             it !=  p_base->indexedPredictorSet.end();it++){
@@ -119,7 +121,8 @@ void RosWrapper::updatePredictionModel() {
         get<1>(*it).update_predict();
 
     }
-
+    p_base->mSet[0].unlock();
+    // 1. Update the fitting model
     // 2. Upload the obstacle prediction over horizon
     // Update p_base. the prediction model is being updated in ROS Wrapper
     int nStep  = param.l_param.horizon/param.l_param.tStep; // the division should be integer
