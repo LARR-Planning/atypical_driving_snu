@@ -101,10 +101,9 @@
         <arg name = "car_base_frame_id" value = "$(arg car_base_frame_id)"/>
         <arg name = "lidar_frame_id" value = "$(arg lidar_frame_id)"/>
         <arg name = "detected_object_frame_id" value = "$(arg detected_object_frame_id)"/>
-
         <arg name = "lane_width_nominal" value = "$(arg lane_width)"/>
         <arg name = "lane_csv_file" value = "$(arg lane_csv_file)"/>
-
+        <arg name = "isRearWheelDriven" value ="false"/>
         <arg name = "goal/x" value = "$(arg goal/x)"/>
         <arg name = "goal/y" value = "$(arg goal/y)"/>
 

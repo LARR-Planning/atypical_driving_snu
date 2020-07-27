@@ -16,6 +16,7 @@
 <arg name = "period" default = "0.1"/>
 <arg name="planning_dt"     default="0.1"/> <!--?-->
 
+<arg name ="isRearWheelDriven"    default="false"/>
 <arg name = "goal/x" default = "0"/>
 <arg name = "goal/y" default = "0"/>
 
@@ -67,7 +68,7 @@
     <param name="local_planner/max_accel" value="1" />
     <param name="local_planner/min_accel" value="-3" />
     <param name="local_planner/N_corr" value="5" />
-    <param name="local_planner/isRearWheel" value="true"/>
+    <param name="local_planner/isRearWheel" value="$(arg isRearWheelDriven)"/>
     <param name="local_planner/dyn_obst_range" value="30.0"/>    
 
     <param name = "smooth_weight" value="0.7"/>

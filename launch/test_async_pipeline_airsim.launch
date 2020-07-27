@@ -113,6 +113,7 @@
         <arg name = "goal/x" value = "$(arg goal/x)"/>
         <arg name = "goal/y" value = "$(arg goal/y)"/>
 
+        <arg name = "isRearWheelDriven" value="true"/>
         <arg name = "period"  value= "0.1"/>
         <arg name = "horizon"  value= "5"/> <!--Also change dimension.h-->
         <arg name="planning_dt" value="0.1"/>
