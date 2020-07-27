@@ -225,8 +225,15 @@ void LocalPlanner::SetSfcIdx(int N_corr)
         pos_ref.push_back(p_base->laneSmooth.evalX(p_base->laneSmooth.points, time_knots[i]));
         if(abs(pos_ref[i][1]-pos_ref[i-1][1])<0.0001&&abs(pos_ref[i][0]-pos_ref[i-1][0])<0.0001)
         {
+			if (i ==1)
+			{
+				th_ref[i-1] == p_base->getCarState().theta;
+			}
+			else
+			{
+            	th_ref[i-1] = th_ref[i-2];
+			}
 
-            th_ref[i-1] = th_ref[i-2];
 //            if(abs(p_base->getCarState().theta-th_ref[i-1])>3.1415826535)
             if(p_base->getCarState().theta>0.5 && abs(p_base->getCarState().theta-th_ref[i-1])>4.5)
             {
