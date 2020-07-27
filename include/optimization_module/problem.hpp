@@ -243,11 +243,11 @@ public:
                 // Stage Constraints
                 if (sfc_idx[idx])
                 {
-                    obj.con = symbolic_functions::con(x_,u_,sfc_modified_temp);
+                    obj.con.block<Nc,1>(0,0) = symbolic_functions::con(x_,u_,sfc_modified_temp);
                 }
                 else
                 {
-                    obj.con = symbolic_functions::con_exp(x_,u_,sfc_modified_temp);
+                    obj.con.block<Nc,1>(0,0) = symbolic_functions::con_exp(x_,u_,sfc_modified_temp);
                 }
                 if(type != WITHOUT_DERIVATIVES)
                 {
