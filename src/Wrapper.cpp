@@ -122,6 +122,7 @@ void RosWrapper::updatePredictionModel() {
 
     }
     p_base->mSet[0].unlock();
+//    cout <<"current predictor size = " << p_base->indexedPredictorSet.size() << endl;
     // 1. Update the fitting model
     // 2. Upload the obstacle prediction over horizon
     // Update p_base. the prediction model is being updated in ROS Wrapper
@@ -295,6 +296,7 @@ void RosWrapper::prepareROSmsgs() {
     double curTime_ = curTime();
     VectorXf tEvalPred = VectorXf::LinSpaced(6,curTime_,param.l_param.horizon+curTime_);
 
+//    cout <<"current predictor size in prepare = " << p_base->indexedPredictorSet.size() << endl;
     for(auto idPredictor : p_base->indexedPredictorSet){
         // observation
         observations.markers.push_back(get<1>(idPredictor).get_obsrv_marker(SNUFrameId,nsId++));
@@ -333,7 +335,8 @@ void RosWrapper::prepareROSmsgs() {
             // position
             m_obstacle_rad.pose.position.x = pnt.q(0);
             m_obstacle_rad.pose.position.y = pnt.q(1);
-            m_obstacle_rad.pose.position.z = p_base->predictorSet[0].getHeight();
+//            m_obstacle_rad.pose.position.z = p_base->predictorSet[0].getHeight();
+            m_obstacle_rad.pose.position.z = 0.1;
 
             // rotation
             SE3 rot; rot.setIdentity();
@@ -710,7 +713,7 @@ void RosWrapper::cbOccuMap(const nav_msgs::OccupancyGrid & occuMap) {
 }
 
 void RosWrapper::cbOccuUpdate(const map_msgs::OccupancyGridUpdateConstPtr &msg) {
-    cout << "update callback!!" <<endl;
+//    cout << "update callback!!" <<endl;
     int index = 0;
     for(int y=msg->y; y< msg->y+msg->height; y++){
         for(int x=msg->x; x< msg->x+msg->width; x++){

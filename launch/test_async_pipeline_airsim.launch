@@ -49,12 +49,12 @@
             min_height: -0.5
             max_height: 0.5
 
-            angle_min: -3.1408 # -M_PI/2
-            angle_max: 3.1408 # M_PI/2
-            angle_increment: 0.0027 # M_PI/360.0
-            scan_time: 0.0333
+            angle_min: -2.1408 # -M_PI/2
+            angle_max: 2.1408 # M_PI/2
+            angle_increment: 0.027 # M_PI/360.0
+            scan_time: 0.33
             range_min: 0.0
-            range_max: 200.0
+            range_max: 100.0
             use_inf: true
             inf_epsilon: 100.0
 
@@ -62,7 +62,7 @@
             # 0 : Detect number of cores
             # 1 : Single threaded
             # 2->inf : Parallelism level
-            concurrency_level: 1
+            concurrency_level: 2
         </rosparam>
 
     </node>

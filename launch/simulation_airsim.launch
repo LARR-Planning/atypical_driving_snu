@@ -24,30 +24,12 @@
   <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
   <arg name = "waypoints" default="$(find atypical_driving)/param/goal_airsim.yaml"/>
 
-  <arg name="vehicle_model/ly"            default="2.7"/> <!-- for the dynamics -->
-  <arg name="vehicle_model/lx"            default="2"/> <!-- for safe margin -->
-  <arg name="vehicle_model/is_rear_wheel"     default="true"/>
-
-  <arg name="nominal_speed"     default="2"/>
-  <arg name="lp_horizon"     default="5"/>
-  <arg name="lp_period"     default="0.1"/>
-
-  <arg name="gp_horizon"     default="30"/>
-  <arg name="gp_period"     default="0.4"/>
-
-  <arg name="planning_d/planning_dt"     default="0.1"/> <!--?-->
-
-  <arg name="gp_z_min" value = "0.5"/>
-  <arg name="gp_z_max" value = "1.0"/>
-
   <arg name = "goal/x"  default = "12"/> <!--in world frame -->
   <arg name = "goal/y" default = "0"/> <!--in world frame -->
 
   <group ns="atypical_planning_test">
     <rosparam file="$(find atypical_driving)/param/MPC_weight.yaml"/>
   </group>
-
-
 
 
     <!-- run pointcloud_to_laserscan node -->
@@ -68,7 +50,7 @@
             angle_increment: 0.0027 # M_PI/360.0
             scan_time: 0.0333
             range_min: 0.0
-            range_max: 200.0
+            range_max: 100.0
             use_inf: true
             inf_epsilon: 100.0
 

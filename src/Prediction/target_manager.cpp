@@ -39,6 +39,7 @@ void TargetManager::update_observation(float t, geometry_msgs::Pose target_pose,
 void TargetManager::update_predict(){
     if (observations.size() > queue_size-1){
 
+//        ROS_INFO("step0");
         VectorXf t_vals(observations.size());
         VectorXf x_vals(observations.size());
         VectorXf y_vals(observations.size());
@@ -67,7 +68,7 @@ void TargetManager::update_predict(){
         ROS_DEBUG_STREAM(x_vals.transpose()) ;
         ROS_DEBUG_STREAM("y : ") ;
         ROS_DEBUG_STREAM(y_vals.transpose());
-
+//        ROS_INFO("step1");
         fit_coeff_x = polyfit(t_vals,x_vals,poly_order);
         fit_coeff_y = polyfit(t_vals,y_vals,poly_order);   
 
@@ -88,7 +89,10 @@ void TargetManager::update_predict(){
         obsrv_traj_for_predict.block(7,0,1,N_pnt) = qz_vals.transpose();
         obsrv_traj_for_predict.block(4,0,1,N_pnt) = qw_vals.transpose();
 
-        is_predicted = true;     
+        is_predicted = true;
+
+//        ROS_INFO("step2");
+
     }
 }
 // x dir = velocity 
@@ -170,16 +174,16 @@ geometry_msgs::PoseArray TargetManager::get_obsrv_pose(string world_frame_id) {
 
 TargetManager::~TargetManager(){
      //cout << "[TargetManager] Destroyed with log file" << endl;
-     string fileName = logFileDir+"/observation_"+ to_string(managerIdx) +  ".txt";
-    std::ofstream file(fileName);
-    // vec8 = [x,y,qx,qy,qz,qw,dimx,dimy]
-    if(file.is_open()){
-        for (auto vec8 : observationHistory){
-            file << vec8.transpose() << endl;
-        }
-    }
-    else{
-        cerr<< fileName << " was not opened" << endl;
-    }
-    file.close();
+//     string fileName = logFileDir+"/observation_"+ to_string(managerIdx) +  ".txt";
+//    std::ofstream file(fileName);
+//    // vec8 = [x,y,qx,qy,qz,qw,dimx,dimy]
+//    if(file.is_open()){
+//        for (auto vec8 : observationHistory){
+//            file << vec8.transpose() << endl;
+//        }
+//    }
+//    else{
+//        cerr<< fileName << " was not opened" << endl;
+//    }
+//    file.close();
 }
