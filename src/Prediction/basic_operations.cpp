@@ -104,8 +104,13 @@ Eigen::VectorXf DAP::polyfit(Eigen::VectorXf xvals, Eigen::VectorXf yvals,int or
         }
     }
 
-  auto Q = (A).householderQr();
-  auto result = Q.solve(yvals);
+  Eigen::HouseholderQR<Eigen::MatrixXf> Q = (A).householderQr();
+  Eigen::VectorXf result = Q.solve(yvals);
+
+//
+//auto Q = (A).householderQr();
+//auto result = Q.solve(yvals);
+
   return result;
 }
 

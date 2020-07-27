@@ -810,7 +810,8 @@ Wrapper::Wrapper() : p_base_shared(make_shared<PlannerBase>()) {
  */
 void Wrapper::run(){
     // Create thread
-    threadPlanner = thread(&Wrapper::runPlanning,this); cout << "Thread for planners has been created" << endl;
+    threadPlanner = thread(&Wrapper::runPlanning,this)
+            ; cout << "Thread for planners has been created" << endl;
     threadRosWrapper = thread(&RosWrapper::runROS,ros_wrapper_ptr); cout <<  "Thread for ros-wrapper has been created" << endl;
 
     // join and exit

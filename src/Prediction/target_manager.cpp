@@ -37,20 +37,23 @@ void TargetManager::update_observation(float t, geometry_msgs::Pose target_pose,
  * @brief renew the polynomial models
  */
 void TargetManager::update_predict(){
-    if (observations.size() > queue_size-1){
+
+    list<tuple<float,Vector6f>> observationsBuffer = observations;
+
+    if (observationsBuffer.size() > queue_size-1){
 
 //        ROS_INFO("step0");
-        VectorXf t_vals(observations.size());
-        VectorXf x_vals(observations.size());
-        VectorXf y_vals(observations.size());
+        VectorXf t_vals(observationsBuffer.size());
+        VectorXf x_vals(observationsBuffer.size());
+        VectorXf y_vals(observationsBuffer.size());
 
-        VectorXf qx_vals(observations.size());
-        VectorXf qy_vals(observations.size());
-        VectorXf qz_vals(observations.size());
-        VectorXf qw_vals(observations.size());
+        VectorXf qx_vals(observationsBuffer.size());
+        VectorXf qy_vals(observationsBuffer.size());
+        VectorXf qz_vals(observationsBuffer.size());
+        VectorXf qw_vals(observationsBuffer.size());
 
         int i =0 ;
-        for (auto it = observations.begin() ; it != observations.end() ; it++, i++){
+        for (list<tuple<float,Vector6f>>::iterator it = observationsBuffer.begin() ; it != observationsBuffer.end() ; it++, i++){
             t_vals(i) = std::get<0>(*it);
             x_vals(i) = std::get<1>(*it)(0);
             y_vals(i) = std::get<1>(*it)(1);
@@ -77,7 +80,7 @@ void TargetManager::update_predict(){
         fit_coeff_qz  = polyfit(t_vals,qz_vals,poly_order);
         fit_coeff_qw  = polyfit(t_vals,qw_vals,poly_order);
 
-        int N_pnt = observations.size();
+        int N_pnt = observationsBuffer.size();
         obsrv_traj_for_predict = DAP::TXYZQuatTraj(8,N_pnt);
         obsrv_traj_for_predict.block(0,0,1,N_pnt) = t_vals.transpose();
         obsrv_traj_for_predict.block(1,0,1,N_pnt) = x_vals.transpose();
