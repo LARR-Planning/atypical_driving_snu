@@ -121,13 +121,13 @@ public:
             if(idx>5)
             {
                 //obj.c = symbolic_functions::cost(x, u, state_weight_, input_weight_, x_ref[idx]);
-                obj.c = symbolic_functions::cost(x, u, state_weight_.array()*std::pow(1.1,1+idx/N),input_weight_, x_ref[idx]);
+                obj.c = symbolic_functions::cost(x, u, state_weight_.array()*std::pow(1.0,1+idx/N),input_weight_, x_ref[idx]);
                 if (type == WITHOUT_DERIVATIVES)
                     return obj;
                 //obj.cx = symbolic_functions::costx(x, u, state_weight_, input_weight_, x_ref[idx]);
-                obj.cx = symbolic_functions::costx(x, u, state_weight_.array()*std::pow(1.1,1+idx/N), input_weight_, x_ref[idx]);
+                obj.cx = symbolic_functions::costx(x, u, state_weight_.array()*std::pow(1.0,1+idx/N), input_weight_, x_ref[idx]);
                 obj.cu = symbolic_functions::costu(x, u, state_weight_, input_weight_, x_ref[idx]);
-                obj.cxx = symbolic_functions::costxx(x, u, state_weight_.array()*std::pow(1.1,1+idx/N), input_weight_, x_ref[idx]);
+                obj.cxx = symbolic_functions::costxx(x, u, state_weight_.array()*std::pow(1.0,1+idx/N), input_weight_, x_ref[idx]);
                 obj.cxu = MatrixXU::Zero();
                 obj.cuu = symbolic_functions::costuu(x, u, state_weight_, input_weight_, x_ref[idx]);
                 return obj;

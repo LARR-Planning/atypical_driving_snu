@@ -37,65 +37,116 @@ void TargetManager::update_observation(float t, geometry_msgs::Pose target_pose,
  * @brief renew the polynomial models
  */
 void TargetManager::update_predict(){
-
-    list<tuple<float,Vector6f>> observationsBuffer = observations;
-
-    if (observationsBuffer.size() > queue_size-1){
-
-//        ROS_INFO("step0");
-        VectorXf t_vals(observationsBuffer.size());
-        VectorXf x_vals(observationsBuffer.size());
-        VectorXf y_vals(observationsBuffer.size());
-
-        VectorXf qx_vals(observationsBuffer.size());
-        VectorXf qy_vals(observationsBuffer.size());
-        VectorXf qz_vals(observationsBuffer.size());
-        VectorXf qw_vals(observationsBuffer.size());
-
-        int i =0 ;
-        for (list<tuple<float,Vector6f>>::iterator it = observationsBuffer.begin() ; it != observationsBuffer.end() ; it++, i++){
-            t_vals(i) = std::get<0>(*it);
-            x_vals(i) = std::get<1>(*it)(0);
-            y_vals(i) = std::get<1>(*it)(1);
-
-            qx_vals(i) = std::get<1>(*it)(2);
-            qy_vals(i) = std::get<1>(*it)(3);
-            qz_vals(i) = std::get<1>(*it)(4);
-            qw_vals(i) = std::get<1>(*it)(5);
-        }
-
-        ROS_DEBUG_STREAM("Observation queue for prediction: ");
-        ROS_DEBUG_STREAM("t : ");
-        ROS_DEBUG_STREAM(t_vals.transpose());
-        ROS_DEBUG_STREAM("x : ");
-        ROS_DEBUG_STREAM(x_vals.transpose()) ;
-        ROS_DEBUG_STREAM("y : ") ;
-        ROS_DEBUG_STREAM(y_vals.transpose());
-//        ROS_INFO("step1");
-        fit_coeff_x = polyfit(t_vals,x_vals,poly_order);
-        fit_coeff_y = polyfit(t_vals,y_vals,poly_order);   
-
-        fit_coeff_qx  = polyfit(t_vals,qx_vals,poly_order);
-        fit_coeff_qy  = polyfit(t_vals,qy_vals,poly_order);
-        fit_coeff_qz  = polyfit(t_vals,qz_vals,poly_order);
-        fit_coeff_qw  = polyfit(t_vals,qw_vals,poly_order);
-
-        int N_pnt = observationsBuffer.size();
-        obsrv_traj_for_predict = DAP::TXYZQuatTraj(8,N_pnt);
-        obsrv_traj_for_predict.block(0,0,1,N_pnt) = t_vals.transpose();
-        obsrv_traj_for_predict.block(1,0,1,N_pnt) = x_vals.transpose();
-        obsrv_traj_for_predict.block(2,0,1,N_pnt) = y_vals.transpose();
-        obsrv_traj_for_predict.block(3,0,1,N_pnt).array() = z_value; // use ref height as z value
-
-        obsrv_traj_for_predict.block(5,0,1,N_pnt) = qx_vals.transpose();
-        obsrv_traj_for_predict.block(6,0,1,N_pnt) = qy_vals.transpose();
-        obsrv_traj_for_predict.block(7,0,1,N_pnt) = qz_vals.transpose();
-        obsrv_traj_for_predict.block(4,0,1,N_pnt) = qw_vals.transpose();
-
-        is_predicted = true;
+//    if (observations.size() > queue_size-1){
+////        ROS_INFO("step0");
+//        VectorXf t_vals(observations.size());
+//        VectorXf x_vals(observations.size());
+//        VectorXf y_vals(observations.size());
+//
+//        VectorXf qx_vals(observations.size());
+//        VectorXf qy_vals(observations.size());
+//        VectorXf qz_vals(observations.size());
+//        VectorXf qw_vals(observations.size());
+//
+//        int i =0 ;
+//        for (list<tuple<float,Vector6f>>::iterator it = observations.begin() ; it != observations.end() ; it++, i++){
+//            t_vals(i) = std::get<0>(*it);
+//            x_vals(i) = std::get<1>(*it)(0);
+//            y_vals(i) = std::get<1>(*it)(1);
+//
+//            qx_vals(i) = std::get<1>(*it)(2);
+//            qy_vals(i) = std::get<1>(*it)(3);
+//            qz_vals(i) = std::get<1>(*it)(4);
+//            qw_vals(i) = std::get<1>(*it)(5);
+//        }
+//
+//        ROS_DEBUG_STREAM("Observation queue for prediction: ");
+//        ROS_DEBUG_STREAM("t : ");
+//        ROS_DEBUG_STREAM(t_vals.transpose());
+//        ROS_DEBUG_STREAM("x : ");
+//        ROS_DEBUG_STREAM(x_vals.transpose()) ;
+//        ROS_DEBUG_STREAM("y : ") ;
+//        ROS_DEBUG_STREAM(y_vals.transpose());
+////        ROS_INFO("step1");
+//        fit_coeff_x = polyfit(t_vals,x_vals,poly_order);
+//        fit_coeff_y = polyfit(t_vals,y_vals,poly_order);
+//
+//        fit_coeff_qx  = polyfit(t_vals,qx_vals,poly_order);
+//        fit_coeff_qy  = polyfit(t_vals,qy_vals,poly_order);
+//        fit_coeff_qz  = polyfit(t_vals,qz_vals,poly_order);
+//        fit_coeff_qw  = polyfit(t_vals,qw_vals,poly_order);
+//
+//        int N_pnt = observations.size();
+//        obsrv_traj_for_predict = DAP::TXYZQuatTraj(8,N_pnt);
+//        obsrv_traj_for_predict.block(0,0,1,N_pnt) = t_vals.transpose();
+//        obsrv_traj_for_predict.block(1,0,1,N_pnt) = x_vals.transpose();
+//        obsrv_traj_for_predict.block(2,0,1,N_pnt) = y_vals.transpose();
+//        obsrv_traj_for_predict.block(3,0,1,N_pnt).array() = z_value; // use ref height as z value
+//
+//        obsrv_traj_for_predict.block(5,0,1,N_pnt) = qx_vals.transpose();
+//        obsrv_traj_for_predict.block(6,0,1,N_pnt) = qy_vals.transpose();
+//        obsrv_traj_for_predict.block(7,0,1,N_pnt) = qz_vals.transpose();
+//        obsrv_traj_for_predict.block(4,0,1,N_pnt) = qw_vals.transpose();
+//
+//        is_predicted = true;
 
 //        ROS_INFO("step2");
+//
+    list<tuple<float,Vector6f>> observationsBuffer = observations;
+    if (observationsBuffer.size() > queue_size-1){
+//        ROS_INFO("step0");
+            VectorXf t_vals(observationsBuffer.size());
+            VectorXf x_vals(observationsBuffer.size());
+            VectorXf y_vals(observationsBuffer.size());
 
+            VectorXf qx_vals(observationsBuffer.size());
+            VectorXf qy_vals(observationsBuffer.size());
+            VectorXf qz_vals(observationsBuffer.size());
+            VectorXf qw_vals(observationsBuffer.size());
+
+            int i =0 ;
+            for (list<tuple<float,Vector6f>>::iterator it = observationsBuffer.begin() ; it != observationsBuffer.end() ; it++, i++){
+                t_vals(i) = std::get<0>(*it);
+                x_vals(i) = std::get<1>(*it)(0);
+                y_vals(i) = std::get<1>(*it)(1);
+
+                qx_vals(i) = std::get<1>(*it)(2);
+                qy_vals(i) = std::get<1>(*it)(3);
+                qz_vals(i) = std::get<1>(*it)(4);
+                qw_vals(i) = std::get<1>(*it)(5);
+            }
+
+            ROS_DEBUG_STREAM("Observation queue for prediction: ");
+            ROS_DEBUG_STREAM("t : ");
+            ROS_DEBUG_STREAM(t_vals.transpose());
+            ROS_DEBUG_STREAM("x : ");
+            ROS_DEBUG_STREAM(x_vals.transpose()) ;
+            ROS_DEBUG_STREAM("y : ") ;
+            ROS_DEBUG_STREAM(y_vals.transpose());
+//        ROS_INFO("step1");
+            fit_coeff_x = polyfit(t_vals,x_vals,poly_order);
+            fit_coeff_y = polyfit(t_vals,y_vals,poly_order);
+
+            fit_coeff_qx  = polyfit(t_vals,qx_vals,poly_order);
+            fit_coeff_qy  = polyfit(t_vals,qy_vals,poly_order);
+            fit_coeff_qz  = polyfit(t_vals,qz_vals,poly_order);
+            fit_coeff_qw  = polyfit(t_vals,qw_vals,poly_order);
+
+            int N_pnt = observationsBuffer.size();
+            obsrv_traj_for_predict = DAP::TXYZQuatTraj(8,N_pnt);
+            obsrv_traj_for_predict.block(0,0,1,N_pnt) = t_vals.transpose();
+            obsrv_traj_for_predict.block(1,0,1,N_pnt) = x_vals.transpose();
+            obsrv_traj_for_predict.block(2,0,1,N_pnt) = y_vals.transpose();
+            obsrv_traj_for_predict.block(3,0,1,N_pnt).array() = z_value; // use ref height as z value
+
+            obsrv_traj_for_predict.block(5,0,1,N_pnt) = qx_vals.transpose();
+            obsrv_traj_for_predict.block(6,0,1,N_pnt) = qy_vals.transpose();
+            obsrv_traj_for_predict.block(7,0,1,N_pnt) = qz_vals.transpose();
+            obsrv_traj_for_predict.block(4,0,1,N_pnt) = qw_vals.transpose();
+
+            is_predicted = true;
+
+//        ROS_INFO("step2");
     }
 }
 // x dir = velocity 

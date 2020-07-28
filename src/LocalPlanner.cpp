@@ -85,9 +85,9 @@ void LocalPlanner::ObstToConstraint() {
 //    shape_temp.clear();
 //    path_temp.clear();
     //Collection<Matrix<double,2,2>,51> shape_temp;
-    if (obs_q.size())
+    if (!obs_q.empty())
         obs_q.clear();
-    if (obs_Q.size())
+    if (!obs_Q.empty())
         obs_Q.clear();
 //    obs_Q.resize(1);
 //    obs_q.resize(1);
@@ -98,16 +98,16 @@ void LocalPlanner::ObstToConstraint() {
         int count_id = 0;
         Vector2d car_pos;
         car_pos<< p_base->getCarState().x, p_base->getCarState().y;
-        for (auto s : p_base->getCurObstaclePathArray().obstPathArray) {
-            if((s.obstPath[0].q - car_pos).norm()<param.dynObstRange)
+        for (int j = 0; j < p_base->getCurObstaclePathArray().obstPathArray.size(); j++) {
+            if((p_base->getCurObstaclePathArray().obstPathArray[j].obstPath[0].q - car_pos).norm()<param.dynObstRange)
             {
                 for (int i = 0; i < N; i++)
                 {
-                    path_temp.push_back(s.obstPath[i].q);
-                    shape_temp.push_back(s.obstPath[i].Q.inverse());
+                    path_temp.push_back(p_base->getCurObstaclePathArray().obstPathArray[j].obstPath[i].q);
+                    shape_temp.push_back(p_base->getCurObstaclePathArray().obstPathArray[j].obstPath[i].Q.inverse());
                 }
-                path_temp.push_back(s.obstPath[N-1].q);
-                shape_temp.push_back(s.obstPath[N-1].Q.inverse());
+                path_temp.push_back(p_base->getCurObstaclePathArray().obstPathArray[j].obstPath[N-1].q);
+                shape_temp.push_back(p_base->getCurObstaclePathArray().obstPathArray[j].obstPath[N-1].Q.inverse());
                 obs_Q.push_back(shape_temp);
                 obs_q.push_back(path_temp);
             }
@@ -357,9 +357,9 @@ bool LocalPlannerPlain::plan(double t) {
      static int loop_num = 0;
      cout<<"loop_num in Local Planner"<<loop_num<<endl;
      std::array<Matrix<double,Nu,1>,N> u0;
-     for(auto &s :u0)
+     for(int i = 0; i < N; i++)
      {
-     	s=(Matrix<double,Nu,1>()<< 0,0.0).finished();
+     	u0[i] = (Matrix<double,Nu,1>()<< 0,0.0).finished();
      }
      Matrix<double,Nx,1> x0_new;
      Collection<Matrix<double,Nu,1>,N> uN_new;
@@ -447,7 +447,7 @@ bool LocalPlannerPlain::plan(double t) {
              for(int jj = 0; jj<N;jj++)
              {
                  //cout<<"Future "<<jj<<"th Accel input is"<<xN_new[jj][3]<<endl;
-                 if (xN_new[jj][4]>param.maxSteer+0.5 || xN_new[jj][4]<-param.maxSteer-0.5||xN_new[jj][3]>param.maxAccel+0.5||xN_new[jj][3]<param.minAccel-0.5)
+                 if (xN_new[jj][4]>param.maxSteer+0.5 || xN_new[jj][4]<-param.maxSteer-0.5)
                      flag_unstable =1;
 
              }

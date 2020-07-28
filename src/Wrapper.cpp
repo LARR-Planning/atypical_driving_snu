@@ -106,7 +106,7 @@ void RosWrapper::updatePredictionModel() {
 
     p_base->mSet[0].lock();
     // 1. Update the fitting model
-    for (auto it = p_base->indexedPredictorSet.begin();
+    for (list<Predictor::IndexedPredictor>::iterator it = p_base->indexedPredictorSet.begin();
             it !=  p_base->indexedPredictorSet.end();it++){
         // First, check whether the observation has expired
         double tCur = curTime();
@@ -122,6 +122,8 @@ void RosWrapper::updatePredictionModel() {
 
     }
     p_base->mSet[0].unlock();
+
+
 //    cout <<"current predictor size = " << p_base->indexedPredictorSet.size() << endl;
     // 1. Update the fitting model
     // 2. Upload the obstacle prediction over horizon

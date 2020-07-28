@@ -162,9 +162,7 @@ Visualization Manager:
       Marker Topic: /atypical_planning_test/prediction
       Name: MarkerArray
       Namespaces:
-        0: true
-        1: true
-        2: true
+        {}
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -189,7 +187,11 @@ Visualization Manager:
         All Enabled: false
         SNU:
           Value: true
+        base_link:
+          Value: true
         car_base_link:
+          Value: true
+        eth_cam_2:
           Value: true
         map:
           Value: true
@@ -206,6 +208,9 @@ Visualization Manager:
             car_base_link:
               velodyne:
                 {}
+          base_link:
+            eth_cam_2:
+              {}
       Update Interval: 0
       Value: true
     - Class: rviz/MarkerArray
@@ -677,16 +682,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 112.4850082397461
+      Distance: 28.40030288696289
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 31.760948181152344
-        Y: -12.782572746276855
-        Z: 33.207855224609375
+        X: 16.456130981445312
+        Y: -5.9169721603393555
+        Z: 33.19255065917969
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
@@ -713,5 +718,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 927
-  X: 67
+  X: 993
   Y: 27

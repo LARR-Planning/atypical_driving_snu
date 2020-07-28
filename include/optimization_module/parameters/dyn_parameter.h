@@ -6,8 +6,8 @@ using namespace Eigen;
 
 const double car_width = 0.0;
 const double car_length = 0.0;
-//const double invL = 0.37037; //keti car
-const double invL = 0.431; // airsim car
+const double invL = 0.37037; //keti car
+//const double invL = 0.431; // airsim car
 const double dist_safe = 0.0; // plus: relaxation(expand corridor), minus: more restrictive (shrink corridor)
 const double dist_minus = 100; // invalidate safe corridor
 const double inv_dist_safe = 0.1;

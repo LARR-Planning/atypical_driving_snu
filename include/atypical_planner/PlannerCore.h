@@ -153,6 +153,7 @@ namespace Planner {
         double r1;
         double r2;
         double theta; // x-axis angle w.r.t x-axis of SNU
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     };
 
     struct ObstaclePath{
