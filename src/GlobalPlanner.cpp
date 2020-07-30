@@ -402,12 +402,33 @@ bool GlobalPlanner::plan(double t) {
     }
 
     // Time allocation
+    double nominal_acceleration = 0.5; //TODO: parameterization
     double nominal_speed = p_base->laneSpeed;
+    double total_length = 0;
+    for(int i_mid = 1; i_mid < tail_end; i_mid++){
+        total_length += (laneTreePath[i_mid].midPoint - laneTreePath[i_mid-1].midPoint).norm();
+    }
+
     std::vector<double> ts;
     ts.resize(tail_end);
-    ts[0] = t + (laneTreePath[0].midPoint - currentPoint).norm() / nominal_speed;
+    ts[0] = t;
+
+    double alloc_acceleration, delta_length;
+    double initial_speed = p_base->cur_state.v;
+    double alloc_speed = initial_speed;
+    double alloc_length = 0;
     for(int i_mid = 1; i_mid < tail_end; i_mid++){
-        ts[i_mid] = ts[i_mid-1] + (laneTreePath[i_mid].midPoint - laneTreePath[i_mid-1].midPoint).norm() / nominal_speed;
+        delta_length = (laneTreePath[i_mid].midPoint - laneTreePath[i_mid-1].midPoint).norm();
+        if(total_length - alloc_length < pow(alloc_speed, 2) / (2 * nominal_acceleration)){ // start deceleration
+            alloc_acceleration = - alloc_speed * alloc_speed * 0.5 / (total_length - alloc_length);
+        }
+        else if(alloc_speed <= nominal_speed){
+            alloc_acceleration = std::min((nominal_speed * nominal_speed - alloc_speed * alloc_speed) / (2 * delta_length), nominal_acceleration);
+        } else{
+            alloc_acceleration = std::max((nominal_speed * nominal_speed - alloc_speed * alloc_speed) / (2 * delta_length), -nominal_acceleration);
+        }
+        ts[i_mid] = ts[i_mid-1] + (sqrt(alloc_speed * alloc_speed + 2 * alloc_acceleration * delta_length) - alloc_speed) / alloc_acceleration;
+        alloc_speed = sqrt(alloc_speed * alloc_speed + 2 * alloc_acceleration * delta_length);
     }
 
     // reformat
