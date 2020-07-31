@@ -47,6 +47,10 @@ namespace Planner {
         bool isRefPlausible; // check whether reference has garbage value
         bool isSFCPlausible; // check whether SFC has garbage value
         bool isDynObstPlausible; //check whether Dynamics Obstacle has garbage value
+
+        bool isSFCSatisfied; // Check MPC results satisfy SFC
+        bool isAccelSatisfied; // Check MPC results satisfy accel
+        bool isSteerSatisfied; // Check MPC steer satisfy Steer
         // YW added
         bool SfcToOptConstraint(double t); // translate sfc into box constraints in optimization
         void SetSfcIdx(int N_corr); // choose sfc idx
