@@ -438,21 +438,23 @@ bool GlobalPlanner::plan(double t) {
                 ts[i_mid] = ts[i_mid - 1] + delta_length / nominal_speed;
                 alloc_speed = nominal_speed;
             } else{
-                double new_speed = sqrt(alloc_speed * alloc_speed + 2 * alloc_acceleration * delta_length);
-                if(new_speed < 0){
-                    new_speed = 0;
+                double new_speed_sq = alloc_speed * alloc_speed + 2 * alloc_acceleration * delta_length;
+                if(new_speed_sq < 0){
+                    new_speed_sq = 0;
                 }
+                double new_speed = sqrt(new_speed_sq);
                 ts[i_mid] = ts[i_mid - 1] + (new_speed - alloc_speed) / alloc_acceleration;
                 alloc_speed = new_speed;
             }
             alloc_length += delta_length;
         }
 
-        if(isnan(ts[i_mid])){
-            int debug = 0;
-        }
+//        if(isnan(ts[i_mid])){
+//            int debug = 0;
+//        }
     }
 
+    
     // reformat
     std::vector<Vector2d, aligned_allocator<Vector2d>> midPoints, leftBoundaryPoints, rightBoundaryPoints;
     midPoints.resize(tail_end);
