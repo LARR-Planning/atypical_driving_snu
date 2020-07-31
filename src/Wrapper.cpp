@@ -1061,8 +1061,8 @@ void Wrapper::runPlanning() {
                                   "[Wrapper] waiting planning input subscriptions.. (message print out every 2 sec)");
             }
 
-        ros::spinOnce();
-        ros::Rate(100).sleep();
+//        ros::spinOnce();
+//        ros::Rate(100).sleep();
     }
 }
 
