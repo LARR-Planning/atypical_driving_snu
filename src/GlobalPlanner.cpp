@@ -419,16 +419,38 @@ bool GlobalPlanner::plan(double t) {
     double alloc_length = 0;
     for(int i_mid = 1; i_mid < tail_end; i_mid++){
         delta_length = (laneTreePath[i_mid].midPoint - laneTreePath[i_mid-1].midPoint).norm();
-        if(total_length - alloc_length < pow(alloc_speed, 2) / (2 * nominal_acceleration)){ // start deceleration
-            alloc_acceleration = - alloc_speed * alloc_speed * 0.5 / (total_length - alloc_length);
+        if(delta_length < SP_EPSILON_FLOAT){
+            ts[i_mid] = ts[i_mid - 1];
         }
-        else if(alloc_speed <= nominal_speed){
-            alloc_acceleration = std::min((nominal_speed * nominal_speed - alloc_speed * alloc_speed) / (2 * delta_length), nominal_acceleration);
-        } else{
-            alloc_acceleration = std::max((nominal_speed * nominal_speed - alloc_speed * alloc_speed) / (2 * delta_length), -nominal_acceleration);
+        else {
+            if (total_length - alloc_length < pow(alloc_speed, 2) / (2 * nominal_acceleration)) { // start deceleration
+                alloc_acceleration = -alloc_speed * alloc_speed * 0.5 / (total_length - alloc_length);
+            } else if (alloc_speed <= nominal_speed) {
+                alloc_acceleration = std::min(
+                        (nominal_speed * nominal_speed - alloc_speed * alloc_speed) / (2 * delta_length),
+                        nominal_acceleration);
+            } else {
+                alloc_acceleration = std::max(
+                        (nominal_speed * nominal_speed - alloc_speed * alloc_speed) / (2 * delta_length),
+                        -nominal_acceleration);
+            }
+            if(abs(alloc_acceleration) < SP_EPSILON_FLOAT){
+                ts[i_mid] = ts[i_mid - 1] + delta_length / nominal_speed;
+                alloc_speed = nominal_speed;
+            } else{
+                double new_speed = sqrt(alloc_speed * alloc_speed + 2 * alloc_acceleration * delta_length);
+                if(new_speed < 0){
+                    new_speed = 0;
+                }
+                ts[i_mid] = ts[i_mid - 1] + (new_speed - alloc_speed) / alloc_acceleration;
+                alloc_speed = new_speed;
+            }
+            alloc_length += delta_length;
         }
-        ts[i_mid] = ts[i_mid-1] + (sqrt(alloc_speed * alloc_speed + 2 * alloc_acceleration * delta_length) - alloc_speed) / alloc_acceleration;
-        alloc_speed = sqrt(alloc_speed * alloc_speed + 2 * alloc_acceleration * delta_length);
+
+        if(isnan(ts[i_mid])){
+            int debug = 0;
+        }
     }
 
     // reformat
