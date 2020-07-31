@@ -78,7 +78,7 @@ void LocalPlanner::QxFromPrediction(Collection<double,N+1> mpcPredictionHeads)
 }
 */
 
-void LocalPlanner::ObstToConstraint() {
+bool LocalPlanner::ObstToConstraint() {
 
     vector<Matrix2d> shape_temp;
     vector<Vector2d> path_temp;
@@ -98,13 +98,21 @@ void LocalPlanner::ObstToConstraint() {
         int count_id = 0;
         Vector2d car_pos;
         car_pos<< p_base->getCarState().x, p_base->getCarState().y;
-        for (int j = 0; j < p_base->getCurObstaclePathArray().obstPathArray.size(); j++) {
+        for (int j = 0; j < p_base->getCurObstaclePathArray().obstPathArray.size(); j++)
+        {
+
             if((p_base->getCurObstaclePathArray().obstPathArray[j].obstPath[0].q - car_pos).norm()<param.dynObstRange)
             {
+
                 for (int i = 0; i < N; i++)
                 {
                     path_temp.push_back(p_base->getCurObstaclePathArray().obstPathArray[j].obstPath[i].q);
                     shape_temp.push_back(p_base->getCurObstaclePathArray().obstPathArray[j].obstPath[i].Q.inverse());
+                    if(isnan(p_base->getCurObstaclePathArray().obstPathArray[j].obstPath[i].q[0])||isnan(p_base->getCurObstaclePathArray().obstPathArray[j].obstPath[i].q[1]))
+                    {
+                        return false;
+                    }
+
                 }
                 path_temp.push_back(p_base->getCurObstaclePathArray().obstPathArray[j].obstPath[N-1].q);
                 shape_temp.push_back(p_base->getCurObstaclePathArray().obstPathArray[j].obstPath[N-1].Q.inverse());
@@ -115,41 +123,14 @@ void LocalPlanner::ObstToConstraint() {
         }
         //cout << "loop size " <<count_id<< endl;
     }
+    return true;
 }
-/*
-Matrix<double,2,1> LocalPlanner::getLocalGoal(){
-    double SP_EPSILON = 1e-9;
-    int box_index = -1;
-    for(int i = 0; i < p_base->getCorridorSeq().size(); i++){
-        Corridor corridor = p_base->getCorridorSeq().at(i);
-        if(corridor.t_end >= param.horizon){
-            box_index = i;
-            break;
-        }
-    }
-    Corridor lastBox = p_base->getCorridorSeq().at(box_index);
-    int goal_index = -1;
-    for(int i = 0; i < p_base->getSkeletonPath().size(); i++){
-        Point skeletonPoint = p_base->getSkeletonPath().at(i);
-        if(skeletonPoint.x > lastBox.xl - SP_EPSILON
-           && skeletonPoint.y > lastBox.yl - SP_EPSILON
-           && skeletonPoint.x < lastBox.xu + SP_EPSILON
-           && skeletonPoint.y < lastBox.yu + SP_EPSILON)
-        {
-            goal_index = i;
-        }
-        else if(goal_index >= 0){
-            break;
-        }
-    }
-    Matrix<double,2,1> tempLocalGoal;
-    tempLocalGoal<< p_base->getSkeletonPath().at(goal_index).x, p_base->getSkeletonPath().at(goal_index).y;
-    return tempLocalGoal;
-}
-*/
-void LocalPlanner::SfcToOptConstraint(double t){
+
+bool LocalPlanner::SfcToOptConstraint(double t){
     //VectorXd time_knots;
     //time_knots.setLinSpaced(N+1,t,t+param.horizon);
+    isSFCPlausible = true;
+
     vector<double> time_knots;
     for(int i =0; i<N+1;i++)
     {
@@ -179,13 +160,19 @@ void LocalPlanner::SfcToOptConstraint(double t){
      for(int i_corr = 0; i_corr < N+1; i_corr++){
          if(sfc_idx[i_corr]){
              effectiveCorridors.emplace_back(queriedCorridors[i_corr]);
+             if (isnan(queriedCorridors[i_corr].xl)||isnan(queriedCorridors[i_corr].xu)||isnan(queriedCorridors[i_corr].yl)||isnan(queriedCorridors[i_corr].yu))
+             {
+                 return false;
+             }
          }
      }
+
 
      p_base->mSet[1].lock();
      p_base->corridor_seq = effectiveCorridors;
      p_base->mSet[1].unlock();
 
+     return true;
  }
 
 void LocalPlanner::SetSfcIdx(int N_corr)
@@ -209,7 +196,7 @@ void LocalPlanner::SetSfcIdx(int N_corr)
     return box_constraint;
  }
 
- void LocalPlanner::SetLocalWpts(double t)
+ bool LocalPlanner::SetLocalWpts(double t)
  {
     static int flag_first = 0;
     VectorXd time_knots;
@@ -217,14 +204,23 @@ void LocalPlanner::SetSfcIdx(int N_corr)
     vector<Vector2d> pos_ref;
     
     Matrix<double,N+1,1> th_ref;
-    // zero th position 
+    // zero th position
+    if(isnan(p_base->laneSmooth.evalX(p_base->laneSmooth.points,time_knots[0])[0])||isnan(p_base->laneSmooth.evalX(p_base->laneSmooth.points,time_knots[0])[1]))
+    {
+        return false;
+    }
     pos_ref.push_back(p_base->laneSmooth.evalX(p_base->laneSmooth.points,time_knots[0]));
-    double direction_diff;
+   double direction_diff;
     for (int i = 1; i<N+1;i++)
     {
+
+        if(isnan(p_base->laneSmooth.evalX(p_base->laneSmooth.points,time_knots[i])[0])||isnan(p_base->laneSmooth.evalX(p_base->laneSmooth.points,time_knots[i])[1]))
+        {
+            return false;
+        }
         pos_ref.push_back(p_base->laneSmooth.evalX(p_base->laneSmooth.points, time_knots[i]));
         if(abs(pos_ref[i][1]-pos_ref[i-1][1])<0.0001&&abs(pos_ref[i][0]-pos_ref[i-1][0])<0.0001)
-        {
+       {
 			if (i ==1)
 			{
 				th_ref[i-1] == p_base->getCarState().theta;
@@ -261,13 +257,17 @@ void LocalPlanner::SetSfcIdx(int N_corr)
         }
 
     }
-
     th_ref[N] = th_ref[N-1];
+//for (int i =N-10 ;i<N;i++)
+//{
+//    cout<< i <<"th step ref x is: "<<pos_ref[i][0]<<" ref y is: "<<pos_ref[i][1]<<"heading is "<<th_ref[i]<<endl;
+//}
+
 
 
     for (int i = 0;i<N+1;i++)
     {
-//        cout<<"At time "<< time_knots[i] <<"[s] pos ref x is: "<<pos_ref[i][0]<<" pos ref y is: "<<pos_ref[i][1]<<endl;
+ //       cout<<"At time "<< time_knots[i] <<"[s] pos ref x is: "<<pos_ref[i][0]<<" pos ref y is: "<<pos_ref[i][1]<<endl;
         local_wpts[i][0] = pos_ref[i][0];
         local_wpts[i][1] = pos_ref[i][1];
         local_wpts[i][2] = th_ref[i];
@@ -293,13 +293,8 @@ void LocalPlanner::SetSfcIdx(int N_corr)
         local_wpts[N][3] = local_wpts[N-1][3];
         local_wpts[N][4] = local_wpts[N-1][4];
     }
-
-
-
-
-
+    return true;
     //cout<<"my_heading angle is:"<<p_base->getCarState().theta<<endl;
-
 //    p_base->getLanePath().lanes[0].laneCenters[0].x;
  }
 
@@ -322,18 +317,27 @@ bool LocalPlannerPlain::plan(double t) {
      cout<<"Current x-position: "<<p_base->getCarState().x<< " [m]"<<endl;
      cout<<"Current y-position: "<<p_base->getCarState().y<< " [m]"<<endl;
      cout<<"Current heading angle: "<<p_base->getCarState().theta*180/3.1415926535<< " [deg]"<<endl;
-     LocalPlanner::SfcToOptConstraint(t); // convert SFC to box constraints
 
-     cout << "[LocalPlanner] finished constraint conversion.. " << endl;
-     LocalPlanner::SetLocalWpts(t);
+     isSFCPlausible = LocalPlanner::SfcToOptConstraint(t); // convert SFC to box constraints
+     if (!isSFCPlausible)
+         cout << "SFC : abnormal (nan value)"<<endl;
+     //cout << "[LocalPlanner] finished constraint conversion.. " << endl;
 
-     cout << "[LocalPlanner] finished ref traj.. " << endl;
-     LocalPlanner::ObstToConstraint();
+     isRefPlausible = LocalPlanner::SetLocalWpts(t);
+     if (!isSFCPlausible)
+         cout << "Reference : abnormal (nan value)"<<endl;
 
+     //cout << "[LocalPlanner] finished ref traj.. " << endl;
 
-     cout << "[LocalPlanner] finished dynamic objects " << endl;
+     isDynObstPlausible = LocalPlanner::ObstToConstraint();
+     //cout << "[LocalPlanner] finished dynamic objects " << endl;
+     if (!isDynObstPlausible)
+         cout << "Dynamic Obstacle : abnormal (nan value)"<<endl;
 
-    isRefUsed = 1;
+//     if(!isSFCPlausible||!isRefPlausible||!isDynObstPlausible)
+//         return false;
+
+     isRefUsed = 1;
 //    cout<<"Number of Obstacle is "<<obs_q.size()<<endl;
     // LocalPlanner::SetLocalWpts();
      using namespace Eigen;
@@ -355,7 +359,7 @@ bool LocalPlannerPlain::plan(double t) {
      prob->set_sfc_idx(sfc_idx);
 
      static int loop_num = 0;
-     cout<<"loop_num in Local Planner"<<loop_num<<endl;
+     //cout<<"loop_num in Local Planner"<<loop_num<<endl;
      std::array<Matrix<double,Nu,1>,N> u0;
      for(int i = 0; i < N; i++)
      {
@@ -447,7 +451,7 @@ bool LocalPlannerPlain::plan(double t) {
              for(int jj = 0; jj<N;jj++)
              {
                  //cout<<"Future "<<jj<<"th Accel input is"<<xN_new[jj][3]<<endl;
-                 if (xN_new[jj][4]>param.maxSteer+0.5 || xN_new[jj][4]<-param.maxSteer-0.5)
+                 if (xN_new[jj][4]>param.maxSteer+0.5 || xN_new[jj][4]<-param.maxSteer-0.5|| xN_new[jj][3]>param.maxAccel+0.1|| xN_new[jj][3]<param.minAccel-0.1  )
                      flag_unstable =1;
 
              }
@@ -497,6 +501,8 @@ bool LocalPlannerPlain::plan(double t) {
                      curPlanning.ts.push_back(ts_temp.coeffRef(i-1, 0));
                      curPlanning.xs.push_back(carState_temp);
                      curPlanning.us.push_back(carInput_temp);
+
+                     //cout<<i<<"th step: (x,y)"<<carState_temp.x << "//"<<carState_temp.y<<" //"<<carState_temp.theta<<endl;
                  }
                 return true;
              }
