@@ -321,25 +321,21 @@ bool LocalPlannerPlain::plan(double t) {
      isSFCPlausible = LocalPlanner::SfcToOptConstraint(t); // convert SFC to box constraints
      if (!isSFCPlausible)
          cout << "SFC : abnormal (nan value)"<<endl;
-     //cout << "[LocalPlanner] finished constraint conversion.. " << endl;
 
      isRefPlausible = LocalPlanner::SetLocalWpts(t);
-     if (!isSFCPlausible)
+     if (!isRefPlausible)
          cout << "Reference : abnormal (nan value)"<<endl;
 
-     //cout << "[LocalPlanner] finished ref traj.. " << endl;
-
      isDynObstPlausible = LocalPlanner::ObstToConstraint();
-     //cout << "[LocalPlanner] finished dynamic objects " << endl;
+
      if (!isDynObstPlausible)
          cout << "Dynamic Obstacle : abnormal (nan value)"<<endl;
 
-//     if(!isSFCPlausible||!isRefPlausible||!isDynObstPlausible)
-//         return false;
+     if(!isSFCPlausible||!isRefPlausible||!isDynObstPlausible)
+         return false;
 
      isRefUsed = 1;
-//    cout<<"Number of Obstacle is "<<obs_q.size()<<endl;
-    // LocalPlanner::SetLocalWpts();
+
      using namespace Eigen;
 
      //Following codes will be wrapped with another wrapper;
@@ -350,7 +346,6 @@ bool LocalPlannerPlain::plan(double t) {
      prob->set_state_weight(param.state_weight);
      prob->set_final_weight(param.final_weight);
      prob->set_input_weight(param.input_weight);
-//     prob->setRear_wheel(true);
      prob->set_car_shape(car_shape);
      prob->setRear_wheel(param.isRearWheeled);
      prob->set_noConstraint(noConstraint_);
@@ -359,7 +354,6 @@ bool LocalPlannerPlain::plan(double t) {
      prob->set_sfc_idx(sfc_idx);
 
      static int loop_num = 0;
-     //cout<<"loop_num in Local Planner"<<loop_num<<endl;
      std::array<Matrix<double,Nu,1>,N> u0;
      for(int i = 0; i < N; i++)
      {
@@ -439,7 +433,7 @@ bool LocalPlannerPlain::plan(double t) {
          }
          else
          {
-             int flag_unstable = 0;
+             bool flag_unstable = false;
              //  Be executed after initial Loop (loop_num>0)
              x0_new = (Matrix<double,Nx,1>()<<p_base->getCarState().x, p_base->getCarState().y,p_base->getCarState().v,
                      next_state[3], next_state[4], p_base->getCarState().theta).finished();
@@ -448,14 +442,40 @@ bool LocalPlannerPlain::plan(double t) {
              uN_new = ilqr.uN_;
              xN_new = ilqr.xN_;
 
+             isSFCSatisfied = true;
+             isAccelSatisfied = true;
+             isSteerSatisfied = true;
+
              for(int jj = 0; jj<N;jj++)
              {
-                 //cout<<"Future "<<jj<<"th Accel input is"<<xN_new[jj][3]<<endl;
-                 if (xN_new[jj][4]>param.maxSteer+0.5 || xN_new[jj][4]<-param.maxSteer-0.5|| xN_new[jj][3]>param.maxAccel+0.1|| xN_new[jj][3]<param.minAccel-0.1  )
-                     flag_unstable =1;
+                 if (xN_new[jj][3]>param.maxAccel+0.1|| xN_new[jj][3]<param.minAccel-0.1)
+                     isAccelSatisfied =false;
 
              }
+             if(!isAccelSatisfied)
+                 cout<< "Cannot Satisfy Acceleration Limits"<<endl;
 
+             for(int jj = 0; jj<N;jj++)
+             {
+                 if(xN_new[jj][4]>param.maxSteer+0.5 || xN_new[jj][4]<-param.maxSteer-0.5)
+                    isSteerSatisfied = false;
+             }
+             if(!isSteerSatisfied)
+                 cout<< "Cannot Satisfy Steering Limits"<<endl;
+
+             for(int jj =0;jj<N+1;jj++)
+             {
+                 if(sfc_idx[jj])
+                 {
+                     if(xN_new[jj][0]<box_constraint[jj].xl||xN_new[jj][0]>box_constraint[jj].xu||xN_new[jj][1]<box_constraint[jj].yl||xN_new[jj][1]>box_constraint[jj].yu)
+                        isSFCSatisfied = false;
+                 }
+             }
+             if(!isSFCSatisfied)
+                 cout<< "Cannot Satisfy SFC"<<endl;
+
+
+             flag_unstable = !isAccelSatisfied || !isSteerSatisfied|| !isSteerSatisfied;
 
 
              if (!flag_unstable)
