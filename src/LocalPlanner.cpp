@@ -219,11 +219,11 @@ void LocalPlanner::SetSfcIdx(int N_corr)
             return false;
         }
         pos_ref.push_back(p_base->laneSmooth.evalX(p_base->laneSmooth.points, time_knots[i]));
-        if(abs(pos_ref[i][1]-pos_ref[i-1][1])<0.0001&&abs(pos_ref[i][0]-pos_ref[i-1][0])<0.0001)
+        if(abs(pos_ref[i][1]-pos_ref[i-1][1])<0.001&&abs(pos_ref[i][0]-pos_ref[i-1][0])<0.001)
        {
 			if (i ==1)
 			{
-				th_ref[i-1] == p_base->getCarState().theta;
+				th_ref[i-1] = p_base->getCarState().theta;
 			}
 			else
 			{
@@ -258,9 +258,9 @@ void LocalPlanner::SetSfcIdx(int N_corr)
 
     }
     th_ref[N] = th_ref[N-1];
-//for (int i =N-10 ;i<N;i++)
+//for (int i =0 ;i<N;i++)
 //{
-//    cout<< i <<"th step ref x is: "<<pos_ref[i][0]<<" ref y is: "<<pos_ref[i][1]<<"heading is "<<th_ref[i]<<endl;
+//    cout<< i <<"th step ref x is: "<<pos_ref[i][0]<<" ref y is: "<<pos_ref[i][1]<<" heading is "<<th_ref[i]*180/3.141592<<"[deg]"<<endl;
 //}
 
 
@@ -553,7 +553,8 @@ bool LocalPlannerPlain::plan(double t) {
                      curPlanning.xs.push_back(carState_temp);
                      curPlanning.us.push_back(carInput_temp);
                  }
-                 
+                 next_state[3] = p_base->getCurInput(t).accel_decel_cmd;
+                 next_state[4] = p_base->getCurInput(t).steer_angle_cmd;
                 ROS_INFO(" Initial guess =  initialized to zero");
                  return false;
              }

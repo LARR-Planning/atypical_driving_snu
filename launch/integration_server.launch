@@ -37,7 +37,7 @@
     <param name = "detected_objects_id" value="$(arg detected_object_frame_id)" />
 
     <!--Shaping params for nominal_speed selection-->
-    <param name = "vmax" value = "7"/> <!--m/s-->
+    <param name = "vmax" value = "4"/> <!--m/s-->
     <param name = "vmin" value = "1.0"/> <!--m/s-->
     <param name = "curve_thres" value = "0.3"/> <!--m/s-->
 
