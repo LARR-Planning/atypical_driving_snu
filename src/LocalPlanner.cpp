@@ -428,6 +428,7 @@ bool LocalPlannerPlain::plan(double t) {
                  curPlanning.xs.push_back(carState_temp);
                  curPlanning.us.push_back(carInput_temp);
              }
+             curPlanning.isSuccess = true;
              loop_num++;
              return true;
          }
@@ -524,6 +525,7 @@ bool LocalPlannerPlain::plan(double t) {
 
                      //cout<<i<<"th step: (x,y)"<<carState_temp.x << "//"<<carState_temp.y<<" //"<<carState_temp.theta<<endl;
                  }
+                 curPlanning.isSuccess = true;
                 return true;
              }
              else
@@ -553,6 +555,7 @@ bool LocalPlannerPlain::plan(double t) {
                      curPlanning.xs.push_back(carState_temp);
                      curPlanning.us.push_back(carInput_temp);
                  }
+                 curPlanning.isSuccess = false;
                  next_state[3] = p_base->getCurInput(t).accel_decel_cmd;
                  next_state[4] = p_base->getCurInput(t).steer_angle_cmd;
                 ROS_INFO(" Initial guess =  initialized to zero");
