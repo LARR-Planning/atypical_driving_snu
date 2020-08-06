@@ -16,7 +16,7 @@
 <arg name = "period" default = "0.1"/>
 <arg name="planning_dt"     default="0.1"/> <!--?-->
 
-<arg name ="isRearWheelDriven"    default="false"/>
+<arg name ="isRearWheelDriven"    default="true"/>
 <arg name = "goal/x" default = "0"/>
 <arg name = "goal/y" default = "0"/>
 
@@ -37,7 +37,7 @@
     <param name = "detected_objects_id" value="$(arg detected_object_frame_id)" />
 
     <!--Shaping params for nominal_speed selection-->
-    <param name = "vmax" value = "6"/> <!--m/s-->
+    <param name = "vmax" value = "4"/> <!--m/s-->
     <param name = "vmin" value = "1.0"/> <!--m/s-->
     <param name = "curve_thres" value = "0.3"/> <!--m/s-->
 

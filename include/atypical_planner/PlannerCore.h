@@ -183,6 +183,8 @@ namespace Planner {
         MatrixXf getPretty(double t_stamp);
         CarState evalX(double t);
         CarInput evalU(double t);
+        visualization_msgs::MarkerArray getMPC(const string& frame_id);
+        bool isSuccess;
     };
 
 

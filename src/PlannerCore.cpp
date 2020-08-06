@@ -252,6 +252,45 @@ visualization_msgs::MarkerArray Lane::getSidePath(string frame_id) {
  * @param frame_id
  * @return
  */
+visualization_msgs::MarkerArray MPCResultTraj::getMPC(const string& frame_id)
+{
+    visualization_msgs::MarkerArray markers_mpc;
+    int i_marker = 0;
+    for (auto &point :xs)
+    {
+        visualization_msgs::Marker marker_mpc;
+        marker_mpc.header.frame_id = frame_id;
+        marker_mpc.id = i_marker ++;
+        marker_mpc.ns = i_marker;
+        marker_mpc.type = visualization_msgs::Marker::CUBE;
+        marker_mpc.action = visualization_msgs::Marker::ADD;
+        marker_mpc.pose.position.x = point.x;
+        marker_mpc.pose.position.y = point.y;
+        marker_mpc.pose.position.z = 0;
+        marker_mpc.scale.x = 0.3;
+        marker_mpc.scale.y = 0.3;
+        marker_mpc.scale.z = 0.3;
+        if(isSuccess)
+        {
+            marker_mpc.color.a = 1;
+            marker_mpc.color.r = 0;
+            marker_mpc.color.g = 0;
+            marker_mpc.color.b = 1;
+        }
+        else
+        {
+            marker_mpc.color.a = 1;
+            marker_mpc.color.r = 1;
+            marker_mpc.color.g = 0;
+            marker_mpc.color.b = 0;
+        }
+        markers_mpc.markers.emplace_back(marker_mpc);
+    }
+    return markers_mpc;
+}
+
+
+
 visualization_msgs::MarkerArray SmoothLane::getPoints(const string& frame_id) {
     visualization_msgs::MarkerArray markers;
     int i_marker = 0;

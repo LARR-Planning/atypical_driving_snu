@@ -77,6 +77,7 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
     pubCurCmd = nh.advertise<driving_msgs::VehicleCmd>("/vehicle_cmd",1);
     pubCurCmdDabin = nh.advertise<geometry_msgs::Twist>("/acc_cmd",1);
     pubMPCTraj = nh.advertise<nav_msgs::Path>("mpc_traj",1);
+    pubMPCTrajMarker = nh.advertise<visualization_msgs::MarkerArray>("mpc_traj_marker",1);
     pubCurPose = nh.advertise<geometry_msgs::PoseStamped>("cur_pose",1);
 
     pubOrigLane = nh.advertise<nav_msgs::Path>("lane_orig",1);
@@ -240,7 +241,7 @@ void RosWrapper::prepareROSmsgs() {
         poseStamped.pose.position.x = pose.x;
         poseStamped.pose.position.y = pose.y;
         planningPath.poses.push_back(poseStamped);
-        }
+    }
     p_base->mSet[1].unlock();
 
     // MPC path
@@ -254,7 +255,7 @@ void RosWrapper::prepareROSmsgs() {
         p_base->mSet[1].unlock();
 
         double t = mpcResultTraj.ts[0];
-        double dt = 0.1;
+        double dt = param.l_param.tStep;
         while(t < mpcResultTraj.ts[mpcResultTraj.ts.size()-1]){
             CarState state = mpcResultTraj.evalX(t);
             MPCPose.pose.position.x = state.x;
@@ -409,7 +410,6 @@ void RosWrapper::publish() {
         pubCurCmd.publish(cmd);
 
         geometry_msgs::Twist cmdDabin;
-
         pubMPCTraj.publish(MPCTraj);
         p_base->log_state_input(curTime());
         }
@@ -423,7 +423,10 @@ void RosWrapper::publish() {
         pubCurCmd.publish(cmd);
         pubMPCTraj.publish(MPCTraj);
         p_base->log_state_input(curTime());}
+        // added
+        pubMPCTrajMarker.publish(p_base->mpc_result.getMPC(SNUFrameId));
     }
+
     pubOurOccu.publish(p_base->localMap);
     int sum = 0 ;
     for (int i = 0 ; i < p_base->localMap.info.width*p_base->localMap.info.height; i ++){
@@ -1061,8 +1064,8 @@ void Wrapper::runPlanning() {
                                   "[Wrapper] waiting planning input subscriptions.. (message print out every 2 sec)");
             }
 
-        ros::spinOnce();
-        ros::Rate(100).sleep();
+//        ros::spinOnce();
+//        ros::Rate(100).sleep();
     }
 }
 

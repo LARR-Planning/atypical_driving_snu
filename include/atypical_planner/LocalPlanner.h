@@ -43,11 +43,19 @@ namespace Planner {
 		Matrix<double,Nx,1> cur_state;
         // YW added
         Collection<Corridor,N+1> box_constraint;
+
+        bool isRefPlausible; // check whether reference has garbage value
+        bool isSFCPlausible; // check whether SFC has garbage value
+        bool isDynObstPlausible; //check whether Dynamics Obstacle has garbage value
+
+        bool isSFCSatisfied; // Check MPC results satisfy SFC
+        bool isAccelSatisfied; // Check MPC results satisfy accel
+        bool isSteerSatisfied; // Check MPC steer satisfy Steer
         // YW added
-        void SfcToOptConstraint(double t); // translate sfc into box constraints in optimization
+        bool SfcToOptConstraint(double t); // translate sfc into box constraints in optimization
         void SetSfcIdx(int N_corr); // choose sfc idx
-        void ObstToConstraint(); // translate obstacle predictions
-        void SetLocalWpts(double t); // find closest 50 lane nodes
+        bool ObstToConstraint(); // translate obstacle predictions
+        bool SetLocalWpts(double t); // find closest 50 lane nodes
         //void QxFromPrediction(Collection<double,N+1> mpcPredictionHeads);        
 		int isRefUsed;
         Collection<Matrix<double,5,1>,N+1> local_wpts;
