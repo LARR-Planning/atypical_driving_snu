@@ -157,6 +157,7 @@ void RosWrapper::updateParam(Param &param_) {
     // global planner
 
     nh.param<double>("vmax",param_.g_param.car_speed_max,4);
+    nh.param<double>("v_ref_past_weight",param_.g_param.v_ref_past_weight,0.3);
     nh.param<double>("vmin",param_.g_param.car_speed_min,1);
     nh.param<double>("curve_thres",param_.g_param.curvature_thres,(3.141592/3.0));
 
@@ -856,26 +857,25 @@ bool Wrapper::processLane(double tTrigger) {
         }
 
 
-
-        double meanCurv = meanCurvature(pathSliced);
-        double vLaneRef; // referance velocity for the current lane
-        double vmin = param.g_param.car_speed_min;
-        double vmax = param.g_param.car_speed_max;
-        double rho_thres = param.g_param.curvature_thres;
-        // ref speed determined
-        if (meanCurv > rho_thres)
-            vLaneRef = vmin;
-        else{
-            vLaneRef = vmax - (vmax-vmin)/rho_thres*meanCurv;
-        }
+//
+//        double meanCurv = meanCurvature(pathSliced);
+//        double vLaneRef; // referance velocity for the current lane
+//        double vmin = param.g_param.car_speed_min;
+//        double vmax = param.g_param.car_speed_max;
+//        double rho_thres = param.g_param.curvature_thres;
+//        // ref speed determined
+//        if (meanCurv > rho_thres)
+//            vLaneRef = vmin;
+//        else{
+//            vLaneRef = vmax - (vmax-vmin)/rho_thres*meanCurv;
+//        }
 
 
         p_base_shared->mSet[1].lock();
         p_base_shared->laneSliced.points = pathSliced;
         p_base_shared->laneSliced.widths = vector<double>(p_base_shared->laneOrig.widths.begin()+idxSliceStart,p_base_shared->laneOrig.widths.begin()+idxSliceEnd+1);
-        p_base_shared->laneSpeed = vLaneRef;
-        p_base_shared->laneCurvature = meanCurv;
-        ROS_INFO("lane [%f,%f]" ,meanCurv,vLaneRef);
+//        p_base_shared->laneSpeed = vLaneRef;
+//        p_base_shared->laneCurvature = meanCurv;
         p_base_shared->mSet[1].unlock();
 //
         if (not ros_wrapper_ptr->isLaneSliceLoaded){

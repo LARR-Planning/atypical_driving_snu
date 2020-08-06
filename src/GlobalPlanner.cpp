@@ -401,6 +401,33 @@ bool GlobalPlanner::plan(double t) {
                                        (laneTreePath[i_mid].midPoint - laneTreePath[i_mid].rightBoundaryPoint).norm());
     }
 
+
+    // Calculate curvature  (JBS)
+
+    vector<Vector2d, aligned_allocator<Vector2d>> pathSliced;
+
+    for (int i_mid = 0; i_mid < tail_end ; i_mid++)
+        pathSliced.emplace_back(laneTreePath[i_mid].midPoint);
+    double meanCurv = meanCurvature(pathSliced);
+
+
+    // Nominal speed (JBS);
+
+    double vmin = param.car_speed_min;
+    double vmax = param.car_speed_max;
+    double rho_thres = param.curvature_thres;
+    double vLaneRef; // referance velocity for the current lane
+    // ref speed determined
+    if (meanCurv > rho_thres)
+        vLaneRef = vmin;
+    else{
+        vLaneRef = vmax - (vmax-vmin)/rho_thres*meanCurv;
+    }
+
+    p_base->laneSpeed = (1-param.v_ref_past_weight)*vLaneRef + param.v_ref_past_weight*p_base->laneSpeed; // mixing
+    p_base->laneCurvature = meanCurv;
+    ROS_INFO("lane [%f,%f]" ,meanCurv,vLaneRef);
+
     // Time allocation
     double nominal_acceleration = 0.5; //TODO: parameterization
     double nominal_speed = p_base->laneSpeed;

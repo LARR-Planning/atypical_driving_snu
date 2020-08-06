@@ -111,6 +111,7 @@ namespace Planner {
         double corridor_width_min;
         double corridor_width_dynamic_min;
         double safe_distance;
+        double v_ref_past_weight;
     };
 
     struct ParamPredictor{
@@ -283,7 +284,7 @@ namespace Planner {
         Lane laneSliced; // lane in current sliding window
         SkeletonLane laneSkeleton;
         SmoothLane laneSmooth;
-        double laneSpeed; // current speed to be applied to the lane in slice
+        double laneSpeed = 0 ; // current speed to be applied to the lane in slice
         double laneCurvature;  // current mean curvature of the slide
 
         bool isUseMovingAverage; // true: Moving average, false: exponential sum
