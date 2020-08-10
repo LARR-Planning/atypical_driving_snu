@@ -28,6 +28,11 @@ bool GlobalPlanner::isCurTrajFeasible() {
  * @return true if success
  */
 bool GlobalPlanner::plan(double t) {
+    if(p_base->localMap.data.empty()){
+        ROS_WARN("[GlobalPlanner] localmap.data is empty");
+        return false;
+    }
+
     // Generate LaneTree
     laneTree.clear();
     laneTreePath.clear();
@@ -35,7 +40,7 @@ bool GlobalPlanner::plan(double t) {
     double lane_length, lane_angle, current_length, alpha;
     Vector2d delta, left_point, mid_point, right_point;
     int i_grid = 0;
-    for(int i_lane = 0; i_lane < p_base->laneSliced.points.size() - 1; i_lane++){
+    for(int i_lane = 0; i_lane < (int)p_base->laneSliced.points.size() - 1; i_lane++){
         int grid_size = 2 * floor(p_base->laneSliced.widths[i_lane]/2/param.grid_resolution) + 1;
         delta = p_base->laneSliced.points[i_lane+1] - p_base->laneSliced.points[i_lane];
         lane_length = delta.norm();
@@ -54,7 +59,6 @@ bool GlobalPlanner::plan(double t) {
                 laneGridPoints[(grid_size-1)/2 + j_side] = left_point;
                 laneGridPoints[(grid_size-1)/2 - j_side] = right_point;
             }
-
             // check occupancy of side points and construct laneTree
             std::vector<int> gridPointStates;
             gridPointStates.resize(laneGridPoints.size());
@@ -90,18 +94,17 @@ bool GlobalPlanner::plan(double t) {
                     }
                 }
             }
-
             int start_idx = -1;
             for(int k_side = 0; k_side < laneGridPoints.size(); k_side++){
                 if(gridPointStates[k_side] == 0){
                     if(start_idx == -1){
                         start_idx = k_side; //not occupied, start idx not initialized -> initialize start index
                     }
-                    if(k_side == laneGridPoints.size() - 1){ // not occupied, laneGrid ended -> add element to tree
+                    if(k_side == (int)laneGridPoints.size() - 1){ // not occupied, laneGrid ended -> add element to tree
                         mid_point = (laneGridPoints[k_side] + laneGridPoints[start_idx])/2;
                         LaneTreeElement laneTreeElement;
                         laneTreeElement.id = i_grid;
-                        laneTreeElement.leftBoundaryPoint = laneGridPoints[laneGridPoints.size()-1];
+                        laneTreeElement.leftBoundaryPoint = laneGridPoints[(int)laneGridPoints.size()-1];
                         laneTreeElement.leftPoint = laneGridPoints[k_side];
                         laneTreeElement.midPoint = mid_point;
                         laneTreeElement.lanePoint = laneGridPoints[(grid_size-1)/2];
@@ -133,7 +136,7 @@ bool GlobalPlanner::plan(double t) {
                     mid_point = (laneGridPoints[k_side-1] + laneGridPoints[start_idx])/2;
                     LaneTreeElement laneTreeElement;
                     laneTreeElement.id = i_grid;
-                    laneTreeElement.leftBoundaryPoint = laneGridPoints[laneGridPoints.size()-1];
+                    laneTreeElement.leftBoundaryPoint = laneGridPoints[(int)laneGridPoints.size()-1];
                     laneTreeElement.leftPoint = laneGridPoints[k_side-1];
                     laneTreeElement.midPoint = mid_point;
                     laneTreeElement.lanePoint = laneGridPoints[(grid_size-1)/2];
@@ -170,10 +173,12 @@ bool GlobalPlanner::plan(double t) {
         }
     }
 
+
     // Allocate children of each node in laneTree
     for(int i_tree = 0; i_tree < laneTree.size(); i_tree++){
         laneTree[i_tree].children = findChildren(i_tree);
     }
+
 
     // Find start node of laneTree
     int i_tree_start = -1;
@@ -206,6 +211,7 @@ bool GlobalPlanner::plan(double t) {
     }
     laneTree[i_tree_start].midPoint = currentPoint; // Fix start node to reflect currentState
 
+
     // Update laneTree to find midPoints
     laneTreeSearch(i_tree_start);
     std::vector<int> tail = getMidPointsFromLaneTree(i_tree_start);
@@ -213,6 +219,7 @@ bool GlobalPlanner::plan(double t) {
     for(int i_tail = 0; i_tail < tail.size(); i_tail++){
         laneTreePath[i_tail] = laneTree[tail[i_tail]];
     }
+
 
     // Smoothing
     int idx_start, idx_end, idx_delta, i_smooth;
@@ -271,6 +278,7 @@ bool GlobalPlanner::plan(double t) {
         i_smooth++;
     }
 
+
     // lane smoothing at first point with Bernstein Polynomial
     window = static_cast<int>((param.start_smoothing_distance + SP_EPSILON)/param.grid_resolution);
     i_smooth = 0;
@@ -305,6 +313,7 @@ bool GlobalPlanner::plan(double t) {
             }
         }
     }
+
 
     // Smoothing using max steering angle - original method
     // Find midAngles
@@ -480,7 +489,6 @@ bool GlobalPlanner::plan(double t) {
 //            int debug = 0;
 //        }
     }
-
     
     // reformat
     std::vector<Vector2d, aligned_allocator<Vector2d>> midPoints, leftBoundaryPoints, rightBoundaryPoints;

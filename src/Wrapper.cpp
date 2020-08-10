@@ -894,7 +894,6 @@ bool Wrapper::processLane(double tTrigger) {
 bool Wrapper::planGlobal(double tTrigger){
     // call global planner
 
-
     bool gpPassed = gp_ptr->plan(tTrigger);
     if (not p_base_shared->isGPsolved)
         p_base_shared->isGPsolved = gpPassed;
