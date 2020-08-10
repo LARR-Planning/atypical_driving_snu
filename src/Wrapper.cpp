@@ -73,6 +73,7 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
     pubCorridorSeq = nh.advertise<visualization_msgs::MarkerArray>("corridor_seq",1);
     pubObservationMarker = nh.advertise<visualization_msgs::MarkerArray>("observation_queue",1);
     pubObservationPoseArray = nh.advertise<geometry_msgs::PoseArray>("observation_pose_queue",1);
+    pubReachSetArray = nh.advertise<visualization_msgs::MarkerArray>("reach_set",1);
     pubPredictionArray = nh.advertise<visualization_msgs::MarkerArray>("prediction",1);
     pubCurCmd = nh.advertise<driving_msgs::VehicleCmd>("/vehicle_cmd",1);
     pubCurCmdDabin = nh.advertise<geometry_msgs::Twist>("/acc_cmd",1);
@@ -322,6 +323,40 @@ void RosWrapper::prepareROSmsgs() {
     ROS_DEBUG("last id  = %d",nsId);
 
     pubObservationMarker.publish(observations);
+
+    if(p_base->getMPCResultTraj().xs.size()>0)
+    {
+        reachSetSeq.markers.clear();
+        for(int i =0; i<std::floor(param.l_param.horizon/param.l_param.tStep);i++)
+        {
+            visualization_msgs::Marker m_reach_set;
+            m_reach_set.header.frame_id = SNUFrameId;
+            m_reach_set.pose.orientation.w = 1.0;
+            m_reach_set.color.b = 1.0, m_reach_set.color.a = 0.1;
+            m_reach_set.type = 3;
+            m_reach_set.ns = to_string(i);
+            m_reach_set.id = i;
+            m_reach_set.pose.position.x = p_base->getMPCResultTraj().xs[i].x;
+            m_reach_set.pose.position.y = p_base->getMPCResultTraj().xs[i].y;
+            m_reach_set.pose.position.z = 0.1;
+
+            // rotation
+            SE3 rot2; rot2.setIdentity();
+            rot2.rotate(AngleAxisd(p_base->getMPCResultTraj().xs[i].theta,Vector3d::UnitZ()));
+            Quaterniond q2(rot2.rotation());
+
+            m_reach_set.pose.orientation.x  = q2.x();
+            m_reach_set.pose.orientation.y  = q2.y();
+            m_reach_set.pose.orientation.z  = q2.z();
+            m_reach_set.pose.orientation.w  = q2.w();
+
+            m_reach_set.scale.x = 0.1+0.1*i;
+            m_reach_set.scale.y = 0.1+0.05*i;
+            m_reach_set.scale.z = 0.6;
+            reachSetSeq.markers.push_back(m_reach_set);
+        }
+        pubReachSetArray.publish(reachSetSeq);
+    }
 
     obstaclePrediction.markers.clear();
     nsId = 0;

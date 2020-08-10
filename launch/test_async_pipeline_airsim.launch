@@ -6,8 +6,8 @@
   <arg name = "use_sim_time" value = "true"/>
 
 <!--   <arg name="bagfile"        default="autoDriveFinalFail.bag"/> -->
-<!--   <arg name="bagfile"        default="autoDriveIntegration.bag"/> -->
- <arg name="bagfile"        default="autoDriveFinalScenarioSuccess.bag"/>
+<!--   <arg name="bagfile"        default="NanSituation.bag"/> -->
+ <arg name="bagfile"        default="NanSituation.bag"/>
 <!--   <arg name="bagfile"        default="autoDriveTwoBoxes.bag"/> -->
   <arg name = "pcl_topic" default = "/airsim_car_node/PhysXCar/lidar/LidarSensor1"/>
 

@@ -78,7 +78,7 @@ namespace Planner{
         // topics to be published
         nav_msgs::Path planningPath; // can be obtained from mpcResultTraj
         nav_msgs::Path lanePathVis;
-
+        visualization_msgs::MarkerArray reachSetSeq;
         visualization_msgs::MarkerArray corridorSeq;
         visualization_msgs::MarkerArray obstaclePrediction;
         nav_msgs::Path MPCTraj; // msg from mpcResultTraj
@@ -91,6 +91,7 @@ namespace Planner{
         ros::Publisher pubCorridorSeq; // publisher for current corridor sequence
         ros::Publisher pubObservationMarker; // publisher for observed position for obstacles
         ros::Publisher pubObservationPoseArray;
+        ros::Publisher pubReachSetArray; // publisher for reach set of car
         ros::Publisher pubPredictionArray; // publisher for prediction of the target
         ros::Publisher pubCurCmd; // if MPC has been solved, it emits the command
         ros::Publisher pubMPCTraj; // if MPC has been solved, it pulish mpc traj for local planner horizon
