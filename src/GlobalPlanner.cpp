@@ -438,7 +438,7 @@ bool GlobalPlanner::plan(double t) {
     ROS_INFO("lane [%f,%f]" ,meanCurv,vLaneRef);
 
     // Time allocation
-    double nominal_acceleration = 0.5; //TODO: parameterization
+    double nominal_acceleration = param.nominal_acceleration;
     double nominal_speed = p_base->laneSpeed;
     double total_length = 0;
     for(int i_mid = 1; i_mid < tail_end; i_mid++){
@@ -578,15 +578,6 @@ std::vector<int> GlobalPlanner::findChildren(int idx){
 
         Vector2d current_point = laneTree[idx].midPoint;
         Vector2d child_point = laneTree[i_tree].midPoint;
-//        double child_width = laneTree[i_tree].width;
-//        double corridor_width_min;
-//        if(laneTree[i_tree].isNearObject) { //if child is near object, change corridor_width_min
-//            corridor_width_min = param.corridor_width_dynamic_min; //TODO: delete this
-//        }
-//        else{
-//            corridor_width_min = param.corridor_width_min;
-//        }
-//        if(!p_base->isOccupied(child_point, current_point) and child_width >= corridor_width_min){
         if(!p_base->isOccupied(child_point, current_point)){
             double dist = (child_point - current_point).norm();
             if(children.empty()){

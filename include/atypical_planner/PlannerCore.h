@@ -112,6 +112,7 @@ namespace Planner {
         double corridor_width_dynamic_min;
         double safe_distance;
         double v_ref_past_weight;
+        double nominal_acceleration;
     };
 
     struct ParamPredictor{

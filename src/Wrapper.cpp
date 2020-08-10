@@ -171,6 +171,7 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<double>("global_planner/corridor_width_min", param_.g_param.corridor_width_min, 1);
     nh.param<double>("global_planner/corridor_width_dynamic_min", param_.g_param.corridor_width_dynamic_min, 3);
     nh.param<double>("global_planner/safe_distance", param_.g_param.safe_distance, 4);
+    nh.param<double>("global_planner/nominal_acceleration", param_.g_param.nominal_acceleration, 0.5);
 
 
     // local planner
