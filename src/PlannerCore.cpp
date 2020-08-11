@@ -710,7 +710,10 @@ void PlannerBase::uploadPrediction(VectorXd tSeq_, double rNominal) {
             //predictor.update_predict(); // this will do nothing if observation is not enough
             if (predictor.is_prediction_available()) {
                 vector<geometry_msgs::Pose> obstFuturePose = predictor.eval_pose_seq(tSeq);
+                Vector2f vel_xy = predictor.getFitVelocity(); // the fitted velocity (constant)
                 ObstaclePath obstPath;
+                obstPath.constantVelocityXY = vel_xy.cast<double>();
+
                 for (auto obstPose : obstFuturePose) {
                     // construct one obstaclePath
                     ObstacleEllipse obstE;
@@ -821,13 +824,16 @@ bool PlannerBase::isOccupied(Vector2d queryPoint) {
  * @param queryPoint frame = SNU
  * @return true if queryPoint is within the obstacle path array
  */
-bool PlannerBase::isObject(const Vector2d& queryPoint){
+bool PlannerBase::isObject(const Vector2d& queryPoint,double& velocity){
     unsigned long nInspection = 5;
 
 //    printf("[DEBUG_JBS] planner base querying start (number of obst = %d ) \n",obstaclePathArray.obstPathArray.size());
 
 //    mSet[0].lock();
         for (auto obstPath : obstaclePathArray.obstPathArray) {
+
+            velocity = obstPath.constantVelocityXY.norm();
+
             for (int i = 0; i < obstPath.obstPath.size(); i += static_cast<int>((obstPath.obstPath.size()-1)/nInspection)) {
                 ObstacleEllipse obst = obstPath.obstPath[i];
                 if (((obst.q - queryPoint).transpose() * obst.Q * (obst.q - queryPoint))(0) < 1) {

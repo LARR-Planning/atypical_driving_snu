@@ -81,6 +81,7 @@ namespace Planner{
 
         visualization_msgs::MarkerArray corridorSeq;
         visualization_msgs::MarkerArray obstaclePrediction;
+        visualization_msgs::MarkerArray obstacleVelocityText;
         nav_msgs::Path MPCTraj; // msg from mpcResultTraj
 
         /**
@@ -102,6 +103,7 @@ namespace Planner{
         ros::Publisher pubSideLane;
         ros::Publisher pubSmoothLane;
         ros::Publisher pubTextSlider;
+        ros::Publisher pubTextTrackingVelocity;
         ros::Publisher pubDetectedObjectsPoseArray;
         ros::Publisher pubCurCmdDabin;
         ros::Publisher pubOurOccu;

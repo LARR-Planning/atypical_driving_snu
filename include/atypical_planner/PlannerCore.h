@@ -121,6 +121,7 @@ namespace Planner {
         int polyOrder;
         double trackingTime; // it observation expires with this value, we detach predictor
         string log_dir; // base dir for log
+        double staticCriteria; // bigger than this = dynamic
     };
 
     /**
@@ -159,6 +160,7 @@ namespace Planner {
     };
 
     struct ObstaclePath{
+        Vector2d constantVelocityXY;
         vector<ObstacleEllipse> obstPath;
     };
 
@@ -321,7 +323,7 @@ namespace Planner {
         bool isOccupied(Vector2d queryPoint); // query point frame = SNU
         bool isOccupied(Vector2d queryPoint1, Vector2d queryPoint2); // rayIntersection query point frame = SNU
 
-        bool isObject(const Vector2d& queryPoint); // query point frame = SNU
+        bool isObject(const Vector2d& queryPoint,double& velocity); // query point frame = SNU
 
 
         // Corridor generation

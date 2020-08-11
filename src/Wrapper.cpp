@@ -88,6 +88,7 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
     pubOurOccu = nh.advertise<nav_msgs::OccupancyGrid>("map_for_planning",1);
 
     pubSmoothLane = nh.advertise<visualization_msgs::MarkerArray>("/smooth_lane",1);
+    pubTextTrackingVelocity = nh.advertise<visualization_msgs::MarkerArray>("/detected_objects_info",1);
     pubTextSlider = nh.advertise<visualization_msgs::Marker>("current_lane",1);
     pubDetectedObjectsPoseArray = nh.advertise<geometry_msgs::PoseArray>("detected_objects_prediction",1);
 
@@ -202,6 +203,7 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<float>("predictor/ref_height",param_.p_param.zHeight,1.0);
     nh.param<int>("predictor/poly_order",param_.p_param.polyOrder,1); // just fix 1
     nh.param<double>("predictor/tracking_expiration",param_.p_param.trackingTime,2.0); // just fix 1
+    nh.param<double>("predictor/dynamic_threshold",param_.p_param.staticCriteria,0.04); // just fix 1
     nh.param<string>("predictor/log_dir",param_.p_param.log_dir,"/home/jbs/test_ws/src/atypical_driving_snu/log/predictor");
     // Common
     nh.param<double>("goal_thres",param_.l_param.goalReachingThres,0.4); // just fix 1
@@ -325,13 +327,46 @@ void RosWrapper::prepareROSmsgs() {
 
     obstaclePrediction.markers.clear();
     nsId = 0;
+
+    // Flush
+    obstacleVelocityText.markers.clear();
+
     // obstacles registered to p_base and fed into local planner
     for(auto obstPath : p_base->getCurObstaclePathArray().obstPathArray){
         // per a obstacle path, make up marker array
         visualization_msgs::Marker m_obstacle_rad;
+
+        double x0 = obstPath.obstPath[0].q(0);
+        double y0 = obstPath.obstPath[0].q(1);
+
+        // Current obstacle chain velocity information
+        visualization_msgs::Marker InfoText;
+        InfoText.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+        InfoText.text = "vx=" + to_string(obstPath.constantVelocityXY(0)) +
+                " / vy=" + to_string(obstPath.constantVelocityXY(1)) +
+                " / v =" + to_string(obstPath.constantVelocityXY.norm());
+
+        InfoText.header.frame_id =SNUFrameId;
+        InfoText.pose.orientation.w = 1.0;
+        InfoText.pose.position.x = x0-0.5;
+        InfoText.pose.position.y = y0-0.5;
+        InfoText.pose.position.z = 1.0;
+        InfoText.color.a = 1.0;
+        InfoText.color.g = 1.0;
+        InfoText.color.r = 1.0;
+        InfoText.color.b = 1.0;
+        InfoText.scale.z = 0.8;
+        InfoText.ns = to_string(nsId);
+        InfoText.id = nsId;
+        obstacleVelocityText.markers.push_back(InfoText);
+
         m_obstacle_rad.header.frame_id = SNUFrameId;
         m_obstacle_rad.pose.orientation.w = 1.0;
-        m_obstacle_rad.color.r = 6.0, m_obstacle_rad.color.a = 0.1;
+        if (obstPath.constantVelocityXY.norm() > param.p_param.staticCriteria )
+            m_obstacle_rad.color.r = 6.0, m_obstacle_rad.color.a = 0.1; // dynamic
+        else
+            m_obstacle_rad.color.b = 6.0, m_obstacle_rad.color.a = 0.4; // static
+
         m_obstacle_rad.type = 3;
         m_obstacle_rad.ns = to_string(nsId);
         int id = 0 ;
@@ -437,7 +472,7 @@ void RosWrapper::publish() {
 //    ROS_WARN_STREAM("[SNU_PLANNER/RosWrapper] publishing occupancy map: size =  " <<  sum << " " <<isLocalMapReceived);
     pubPath.publish(planningPath);
     pubCorridorSeq.publish(corridorSeq);
-
+    pubTextTrackingVelocity.publish(obstacleVelocityText);
     p_base->mSet[1].lock();
     if (isLaneReceived){
         pubOrigLane.publish(p_base->laneOrig.getPath(SNUFrameId));

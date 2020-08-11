@@ -75,7 +75,8 @@ double meanCurvature(const vector<Vector2d, aligned_allocator<Vector2d>> & point
 
     double curvatureSum = 0;
     if (point2dSeq.size() <= 2){
-        cerr << "Cannot compute curvature when number of points <= 2" << endl;
+        cerr << "Cannot compute curvature when number of points <= 2. curvature will be big number" << endl;
+        return 1e+6;
     }
 
     for (int i = 0 ; i < point2dSeq.size()-2 ; i++){

@@ -56,6 +56,7 @@ namespace Predictor{
             Vector3f getLastDimensions() const{return dimensions;}
             void setLogFileDir(string dir) {logFileDir = dir;};
             void setIndex(int idx) {managerIdx = idx;};
+            Vector2f getFitVelocity () {return Vector2f(fit_coeff_x(1),fit_coeff_y(1)); };
     };
 
     typedef tuple<uint, TargetManager >  IndexedPredictor;
