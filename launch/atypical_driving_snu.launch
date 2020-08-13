@@ -130,7 +130,9 @@
         <param name="local_planner/N_corr" value="3" />
         <param name="local_planner/isRearWheel" value="false"/>
         <param name="local_planner/dyn_obst_range" value="30.0"/>
-
+        <param name="local_planner/initial_guess/w_state" value="100.0"/>
+        <param name="local_planner/initial_guess/w_input" value="1.0"/>
+        
         <param name = "smooth_weight" value="0.7"/>
         <param name = "moving_horizon" value="5"/>
         <param name = "isUseMovingAverage" value="false"/>

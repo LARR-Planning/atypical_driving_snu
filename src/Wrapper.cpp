@@ -194,6 +194,8 @@ void RosWrapper::updateParam(Param &param_) {
     param_.l_param.input_weight = ilqr_weight.setting.input_weight;
     param_.l_param.state_weight = ilqr_weight.setting.state_weight;
 
+    nh.param<double>("local_planner/initial_guess/w_state", param_.l_param.ig_state_weight, 100.0);
+    nh.param<double>("local_planner/initial_guess/w_input", param_.l_param.ig_input_weight, 1.0);
 
     bool isUseSimTimeMode = false;
 

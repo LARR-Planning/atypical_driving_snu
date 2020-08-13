@@ -75,6 +75,10 @@ namespace Planner {
         Matrix<double,6,1> state_weight;
         Matrix<double,6,1> final_weight;
         Matrix<double,2,1> input_weight;
+
+        //initial_guess parameters
+        double ig_state_weight;
+        double ig_input_weight;
     };
 
     /**
