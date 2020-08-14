@@ -1,342 +1,139 @@
 #ifndef INITIAL_GUESS_HPP
 #define INITIAL_GUESS_HPP
 
+#include <util.hpp>
+#include <qpOASES.hpp>
+#include <vector>
+#include <iostream>
 #include <Eigen/Core>
 #include <optimization_module/dimension.h>
 #include <optimization_module/parameters/dyn_parameter.h>
-#include <util.hpp>
-#include <qpOASES.hpp>
 
 using namespace std;
 using namespace Eigen;
 
-typedef Triplet<double> Trip;
-
-struct triplet{
-    int row; int col; double val;
-    triplet(int row_, int col_, double val_) : row(row_), col(col_), val(val_){} 
-};
-
-//True if t1 < t2. False if t2 < t1. 
-bool compare(triplet& t1, triplet& t2){
-    if(t1.col>t2.col)
-        return false;
-    else if(t1.col < t2.col)
-        return true;
-    else{
-        if(t1.row > t2.row)
-            return false;    
-        else
-        {
-            return true; 
-        }
-    }
-}
-void Print(std::vector<triplet> t_vec){
-    for(int i=0; i<t_vec.size(); ++i){
-        std::cout << t_vec.at(i).row << " " << t_vec.at(i).col << " " << t_vec.at(i).val << std::endl;
-    }
-}
+typedef Eigen::Triplet<double> Trip;
 
 class QP_block
 {
     private:
-        double EPS = 1e-2;
-        qpOASES::sparse_int_t H_ir[(2+Nu)*(N+1)];
-        qpOASES::sparse_int_t H_jc[(Nx+Nu)*(N+1)];
-        qpOASES::real_t H_val[(2+Nu)*(N+1)];
+    double Q_; double R_;
         Collection<Matrix<double,5,1>,N+1> local_wpts;
 
-        double Q; 
-        double R;
-
     public:
-    QP_block(Collection<Matrix<double,5,1>,N+1> local_wpts_, double Qinput, double Rinput)
-    :local_wpts(local_wpts_), Q(Qinput), R(Rinput)
-    {}
-
-    std::pair<std::vector<triplet>, std::vector<Trip>> A_gen(Eigen::Matrix<double, Nx, Nx, RowMajor> A_fix, 
-                                                            Eigen::Matrix<double, Nx, Nu, RowMajor> B_fix, 
-                                                            Eigen::Matrix<double, Nx, 1> f_fix,
-                                                            Eigen::Matrix<double, Nx, 1> x_init)
-    {
-        std::vector<triplet> trpA; // A_eq
-        std::vector<Trip> trpB; // B_eq 
-        triplet tmp_A1 = triplet(0, 0, 0.0);  triplet tmp_A2 = triplet(0, 0, 0.0); 
-        triplet tmp_A3 = triplet(0, 0, 0.0); 
-        Trip tmp_B1;
-
-        for(int i=0; i<N; i++){
-            for(int j=0; j<Nx; j++){
-                for(int k=0; k<Nx; k++){
-                    if(abs(A_fix(j,k))>EPS)
-                    {
-                        tmp_A1.row = Nx*(i+1)+j;
-                        tmp_A1.col = Nx*i+k;
-                        tmp_A1.val = -1.0*A_fix(j,k);
-                        trpA.push_back(tmp_A1);
-                    }
-                    if(j==k){
-                        tmp_A2.row = Nx*(i+1)+j;
-                        tmp_A2.col = Nx*(i+1)+k;
-                        tmp_A2.val = 1.0;
-                        trpA.push_back(tmp_A2);
-                    }
-                }
-                for(int k=0; k<Nu; k++){
-                    if(abs(B_fix(j,k))>EPS){
-                        tmp_A3.row = Nx*(i+1)+j;
-                        tmp_A3.col = Nx*(N+1) + Nu*i+k;
-                        tmp_A3.val = -1.0*B_fix(j,k);
-                        trpA.push_back(tmp_A3);
-                    }
-                }
-                
-                if(abs(f_fix(j,0))>EPS){
-                    tmp_B1 = Trip(Nx*(i+1)+j, 0, -1.0 * f_fix(j,0));
-                    trpB.push_back(tmp_B1);
-                }
-            }
-        }
-        //Initial Condition
-        for(int i=0; i<Nx; i++){
-            tmp_A1.row = i; tmp_A1.col = i; tmp_A1.val = 1.0;
-            trpA.push_back(tmp_A1);
-            tmp_B1 = Trip(i, 0, x_init(i,0));
-            trpB.push_back(tmp_B1);
-        }
-        //A matrix
-        std::sort(trpA.begin(), trpA.end(), compare);
-        std::pair<std::vector<triplet>, std::vector<Trip>> return_pair = std::make_pair(trpA, trpB);
-        return return_pair;
-    }
+    QP_block(Collection<Matrix<double,5,1>,N+1> local_wpts_, double Q, double R):local_wpts(local_wpts_), Q_(Q), R_(R){}
 
     qpOASES::real_t* QP_block_solver( Eigen::Matrix<double, Nx, 1> x_init, Eigen::Matrix<double, Nu, 1> u_init)
     {
+
         Eigen::Matrix<double, Nx, Nx, RowMajor> A = symbolic_functions::dfdx(x_init, u_init);
         Eigen::Matrix<double, Nx, Nu, RowMajor> B = symbolic_functions::dfdu(x_init, u_init);
         Eigen::Matrix<double, Nx, 1> f0 = symbolic_functions::f(x_init, u_init);
         Eigen::Matrix<double, Nx, Nx, RowMajor> A_fix = A*dt + Eigen::Matrix<double, Nx, Nx, RowMajor>::Identity();
         Eigen::Matrix<double, Nx, Nu, RowMajor> B_fix = B*dt; 
-        Eigen::Matrix<double, Nx, 1> f_fix = A*x_init*dt +B_fix*u_init - f0 *dt;
+
+        Eigen::Matrix<double, Nx, 1> f_fix = -(A*x_init*dt +B_fix*u_init) + f0 *dt;
+
+        std::vector<Trip> trpQ; // Cost Matrix 
+        std::vector<Trip> trpR; // Cost Matrix 
+        
+        std::vector<Trip> trpA; // A_eq
+        std::vector<Trip> trpB; // B_eq 
+        Trip tmp_A1;  Trip tmp_A2; Trip tmp_A3; Trip tmp_B1; Trip trmp_Q; Trip trmp_R;
 
         //Cost Matrix Generation 
-        std::vector<Trip> trpH; // Cost Matrix
-        Trip tmp_H1; Trip tmp_H2;
-
-        //Cost Matrix Generation 
-        double Q = 100.0; double R = 1.0; 
+        double Q = Q_; double R = R_; 
         for(int i=0; i<N+1; ++i){
             for(int j=0; j<2; ++j){
-                tmp_H1 = Trip(Nx*i+j, Nx*i+j, Q);
-                trpH.push_back(tmp_H1);
-                tmp_H2 = Trip(Nx*(N+1)+Nu*i+j, Nx*(N+1)+Nu*i+j, R);
-                trpH.push_back(tmp_H2);
+                trmp_Q = Trip(Nx*i+j, Nx*i+j, Q);
+                trpQ.push_back(trmp_Q);
+                trmp_R = Trip(Nu*i+j, Nu*i+j, R);
+                trpR.push_back(trmp_R);
             }
         }
-        Eigen::SparseMatrix<double, RowMajor> H_sparse( (Nx+Nu)*(N+1), (Nx+Nu)*(N+1) );
-        H_sparse.setFromTriplets(trpH.begin(), trpH.end());
+        Eigen::SparseMatrix<double, RowMajor> Q_sparse( (Nx)*(N+1), (Nx)*(N+1) );
+        Q_sparse.setFromTriplets(trpQ.begin(), trpQ.end());
 
-        //H Matrix 
+        Eigen::Matrix<double, -1, -1, RowMajor> Q_dense = MatrixXd(Q_sparse);
+
+        Eigen::SparseMatrix<double, RowMajor> R_sparse(Nu*(N+1), Nu*(N+1));
+        R_sparse.setFromTriplets(trpR.begin(), trpR.end());
+
+        Eigen::Matrix<double, -1, -1, RowMajor> A_big = Eigen::Matrix<double, Nx*(N+1), Nx*(N+1),RowMajor>::Zero();
+        Eigen::Matrix<double, -1, -1, RowMajor> B_big = Eigen::Matrix<double, Nx*(N+1), Nu*(N+1),RowMajor>::Zero();
         
-        int iter_ir = 0; int iter_jr = 0; int iter_val = 0;
-        for(int i=0; i< (Nx+Nu)*(N+1); i++){
-            if(i < Nx*N){
-                if(i%6==0 || i%6==1)
-                {   H_ir[iter_ir] = i; 
-                    H_jc[iter_jr] = iter_ir; 
-                    H_val[iter_val] = Q; 
-                    iter_ir++; iter_jr++; iter_val++;
-                }
-                else{
-                    H_jc[iter_jr] = iter_ir; 
-                    iter_jr++;
-                }
-            }
-            else{
-                H_ir[iter_ir] = i; 
-                H_jc[iter_jr] = iter_ir; 
-                H_val[iter_val] = R; 
-                iter_ir++; iter_jr++; iter_val++;
-            }
-        }
-
-        //ir, val. -> ir's k-th entry: k-th row of k-th element of val[]
-        //jc -> Each column, Index in val[] of the first number appeared in the column
-        qpOASES::SymSparseMat *H_sp = new qpOASES::SymSparseMat((Nx+Nu)*(N+1),(Nx+Nu)*(N+1), H_ir, H_jc, H_val);
-        // qpOASES::SparseMatrix *A_sp = new SparseMatrix(5, 5, A_ir, A_jc, A_val);
-        
-        H_sp->createDiagInfo();
-
-
-        //F matrix generation 
-        Eigen::Matrix<double, Nx*(N+1),1> ref;
         for(int i=0; i<N+1; i++)
         {
-            ref(6*i,0) = local_wpts[i][0];
-            ref(6*i+1,0) = local_wpts[i][1]; 
-            ref(6*i+2,0) = local_wpts[i][2];
-            ref(6*i+3,0) = local_wpts[i][3];
-            ref(6*i+4,0) = local_wpts[i][4];
-            ref(6*i+5,0) = 0.0; 
+            Eigen::Matrix<double, Nx, Nx,RowMajor> A_tmp = A_fix.inverse();
+            for(int j=i-1; j>=0; j--){
+                A_tmp = A_tmp * A_fix;
+                A_big.block(Nx*i, Nx*j, Nx, Nx) = A_tmp;
+            }
+
+            B_big.block(Nx*i, Nu*i, Nx, Nu) = B_fix; 
         }
 
-        Eigen::Matrix<double, Nu*(N+1), 1> zeros = Eigen::Matrix<double, Nu*(N+1), 1>::Zero();
-        Eigen::Matrix<double, (Nx+Nu)*(N+1), 1> append_ref;  append_ref << ref, zeros; 
-        Eigen::Matrix<double, -1, -1, RowMajor> f_cost((Nx+Nu)*(N+1), 1);
+        Eigen::Matrix<double, Nu*(N+1), Nu*(N+1), RowMajor> H_cost;
+        H_cost = B_big.transpose()*A_big.transpose()*Q_sparse*A_big*B_big + R_sparse;
+        H_cost = 1.0/2.0*(H_cost + H_cost.transpose());
 
-        f_cost = -2*H_sparse*append_ref;
+        Eigen::Matrix<double, Nx*(N+1), 1> X_refined; 
+        Eigen::Matrix<double, Nx, 1> Ax_Bu = A_fix*x_init + B_fix*u_init;
+        Eigen::Matrix<double, Nx, Nx,RowMajor> A_tmp = Eigen::Matrix<double, Nx, Nx, RowMajor>::Identity();
+        Eigen::Matrix<double, Nx, Nx,RowMajor> A_sum = Eigen::Matrix<double, Nx, Nx, RowMajor>::Zero();
 
-
-        //Constraint Matrix Generation 
-        std::pair<std::vector<triplet>, std::vector<Trip>> pair_AB = A_gen(A_fix, B_fix, f_fix, x_init);
-        std::vector<triplet> trpA = pair_AB.first; // A_eq
-        std::vector<Trip> trpB = pair_AB.second;
-
-        // Print(trpA);
-        int size_row = trpA.size();
-        int size_col = (Nx+Nu)*(N+1);
-        int size_val = size_row;
-        qpOASES::sparse_int_t A_ir[size_row];
-        qpOASES::sparse_int_t A_jc[size_col];
-        qpOASES::real_t A_val[size_val];  
-        
-        int iter_A = 0; int iter_row = 0; iter_val = 0;
-        for(int j=0; j<size_col; ++j){
-            //If j'th column is not in A_jc array, then skip. 
-            if(iter_A >= trpA.size())
-            {   cout << "BREAK! " << j << endl;
-                A_jc[j] = iter_A;
-            }
-            else{
-                if( j < trpA.at(iter_A).col)
-                    {
-                        A_jc[j] = iter_A;
-                    }
-                else{
-                    // j = trpA.at(iter_A).col 
-                    int start_idx = iter_A;
-                    int end_idx = iter_A;
-
-                    while(end_idx < trpA.size() && trpA.at(end_idx).col ==j){    
-                        end_idx++;
-                        // if(end_idx > trpA.size())
-                        //     break; 
-                        std::cout << "end_idx: " <<end_idx << " j: " << j << std::endl;
-                    }
-                    A_jc[j] = iter_A;
-                    std::vector<triplet>::iterator first = trpA.begin()+start_idx;
-                    std::vector<triplet>::iterator end = trpA.begin()+end_idx;
-                    for(std::vector<triplet>::iterator it = first; it!=end; it++){
-                        auto triplet_val = *it; 
-                        A_ir[iter_row] = triplet_val.row;
-                        A_val[iter_val] = triplet_val.val; 
-                        iter_row++; iter_val++;
-                    }
-                    
-                    iter_A = end_idx; 
-                }
-            }
+        for(int i=0; i<N+1; i++){
+            A_sum = A_tmp + A_sum; 
+            X_refined.block(Nx*i, 0, 6, 1) = A_tmp*Ax_Bu + A_sum*f_fix;
+            A_tmp = A_tmp * A_fix; 
         }
-        // cout << iter_ir << " " << iter_jr << " " << iter_val << endl;
-        int tot = (Nx+Nu)*(N+1); 
-        qpOASES::SparseMatrix *A_sp = new qpOASES::SparseMatrix(tot, tot, A_ir, A_jc, A_val);
-        A_sp->createDiagInfo();
+        Eigen::Matrix<double, Nx*(N+1), 1> del_x = X_refined - ref; 
 
-        //B matrix 
-        Eigen::SparseMatrix<double, RowMajor> B_sparse((Nx+Nu)*(N+1), 1);
-        B_sparse.setFromTriplets(trpB.begin(), trpB.end());
-        Eigen::Matrix<double, -1, -1,RowMajor> B_eq; 
-        B_eq = Eigen::MatrixXd(B_sparse);
+        Eigen::Matrix<double, -1, -1, RowMajor> f_cost(Nx*(N+1), 1);
 
-        Eigen::Matrix<double, 1, -1, RowMajor> gmat((f_cost.transpose()).template cast<double>());
-        Eigen::Matrix<double, -1, -1, RowMajor> lbAmat(B_eq.template cast<double>());
+        Eigen::Matrix<double, 1, Nx*(N+1)> transp_del_x = del_x.transpose();
+        f_cost = transp_del_x*Q_dense*A_big*B_big; 
         
-        // qpOASES::real_t *Hqp = Hmat.data();
-        // qpOASES::real_t *Aqp = Amat.data();
-        qpOASES::real_t *g = gmat.data();
-        qpOASES::real_t *lbA = lbAmat.data();
-        qpOASES::real_t *ubA = lbAmat.data();
         
-
+        qpOASES::real_t *Hqp = H_cost.data();
+        qpOASES::real_t *g = f_cost.data();
+        
         //Input, State Bound constraint 
-        const int total_N = (Nx+Nu)*(N+1);
-        // qpOASES::real_t *lb = new qpOASES::real_t[total_N];
-        // qpOASES::real_t *ub = new qpOASES::real_t[total_N];
-        Eigen::Matrix<double, 1, total_N, RowMajor> lbmat;
-        Eigen::Matrix<double, 1, total_N, RowMajor> ubmat;
-        // qpOASES::real_t lb[total_N];
-        // qpOASES::real_t ub[total_N];
-        for(int i=0; i<total_N; ++i)
+        Eigen::Matrix<double, Nu*(N+1), 1> lbmat;
+        Eigen::Matrix<double, Nu*(N+1), 1> ubmat;
+        for(int i=0; i<N+1; ++i)
         {
-            if(i < Nx*(N+1)){ //State bound 
-                if(i%6==3){
-                    lbmat(0,i) = acc_min; ubmat(0,i) = acc_max;
-                    // lbmat(0,i) = -100.0; ubmat(0,i) = 100.0;
-
-                }
-                else if(i%6==4){
-                    lbmat(0,i) = steer_min; ubmat(0,i) = steer_max; 
-                    // lbmat(0,i) = -100.0; ubmat(0,i) = 100.0;
-                }
-                else{
-                    lbmat(0,i) = -1000; ubmat(0,i) = 1000;
-                }
-            }
-            else{   //Input bound
-                if(i%2==0){
-                    // lbmat(0,i) = -100.0; ubmat(0,i) = 100.0;
-                    lbmat(0,i) = jerk_min; ubmat(0,i) = jerk_max;
-                }
-                else if(i%2==1){
-                    lbmat(0,i) = steer_dot_min; ubmat(0,i) = steer_dot_max;
-                    // lbmat(0,i) = -100.0; ubmat(0,i) = 100.0;
-
-                }
-            }
+            lbmat(Nu*i, 0) = jerk_min; ubmat(Nu*i, 0) = jerk_max;
+            lbmat(Nu*i+1, 0) = steer_dot_min; ubmat(Nu*i+1, 0) = steer_dot_max;
         }
 
         qpOASES::real_t* lb = lbmat.data();
         qpOASES::real_t* ub = ubmat.data();
 
-        qpOASES::real_t *x1 = new qpOASES::real_t[total_N];
-        qpOASES::int_t nWSR = 2000;
+        qpOASES::real_t *x1 = new qpOASES::real_t[Nu*(N+1)];
+        qpOASES::int_t nWSR = 5000;
         
         qpOASES::Options options;
-        // options.printLevel = qpOASES::PL_LOW;
+        options.printLevel = qpOASES::PL_LOW;
         options.terminationTolerance = 1e-10;
         
 
-        qpOASES::QProblem initial_guess( total_N, total_N);
+        qpOASES::QProblem initial_guess( Nu*(N+1), 0);
         initial_guess.setOptions(options);
-        initial_guess.init(H_sp, g, A_sp, lb, ub, lbA, ubA, nWSR, 0);
+        initial_guess.init(Hqp, g, NULL, lb, ub, NULL, NULL, nWSR, 0);
         
         if(initial_guess.isInfeasible()){
                 cout<<"[QP solver] warning: problem is infeasible. "<<endl;
         }
         cout << "Acutual nWSR: " << nWSR << " / Original: " << 2000 << endl;
-        // qpOASES::QProblemB initial_guess(total_N);
-        // initial_guess.init(Hqp, g, lb, ub, nWSR, 0);
         
-        std::cout << " " << std::endl; 
         initial_guess.getPrimalSolution(x1);
         bool isSolved = initial_guess.isSolved();
         if (isSolved)
             cout<<"[QP solver] Success!  "<<endl;
         else
             cout<<"[QP solver] Failure.  "<<endl;
-
-        // for(int i=0; i< N+1; i++)
-        // {   
-        //     cout << "X: " << x1[6*i]  << " Y: " << x1[6*i+1] << " v: " << x1[6*i+2] << " theta: " <<x1[6*i+5] << endl;
-
-        //     cout << "jerk: " << x1[6*(N+1)+2*i] << " steer_dot: " << x1[6*(N+1)+2*i+1] << endl; 
-        // }
-
-
-        delete H_sp;
-        delete A_sp;
-
+            
         return x1;
     }
 };

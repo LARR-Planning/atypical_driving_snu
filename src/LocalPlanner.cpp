@@ -371,7 +371,7 @@ bool LocalPlannerPlain::plan(double t) {
          xN_new[N].setZero();
      }
      else{
-         if(loop_num == 0)
+         if(loop_num == 0) //No initial input trajectory. 
          {
 
              x0_new = (Matrix<double,Nx,1>()<<p_base->getCarState().x, p_base->getCarState().y,p_base->getCarState().v,
@@ -432,7 +432,7 @@ bool LocalPlannerPlain::plan(double t) {
              loop_num++;
              return true;
          }
-         else
+         else 
          {
              bool flag_unstable = false;
              //  Be executed after initial Loop (loop_num>0)
@@ -529,8 +529,11 @@ bool LocalPlannerPlain::plan(double t) {
                 return true;
              }
              else
-             {
-                uN_NextInit =u0;
+             {  
+                 
+                //QP()   
+                //uN_NextInit = sol; 
+                uN_NextInit =u0; //Input value is unstable. TODO: Change u0 to QP solution. 
 
 
 
