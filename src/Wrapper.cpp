@@ -78,6 +78,7 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
     pubCurCmdDabin = nh.advertise<geometry_msgs::Twist>("/acc_cmd",1);
     pubMPCTraj = nh.advertise<nav_msgs::Path>("mpc_traj",1);
     pubMPCTrajMarker = nh.advertise<visualization_msgs::MarkerArray>("mpc_traj_marker",1);
+    pubPreMPCMarker = nh.advertise<visualization_msgs::MarkerArray>("pre_mpc_marker",1);
     pubCurPose = nh.advertise<geometry_msgs::PoseStamped>("cur_pose",1);
 
     pubOrigLane = nh.advertise<nav_msgs::Path>("lane_orig",1);
@@ -464,6 +465,7 @@ void RosWrapper::publish() {
         p_base->log_state_input(curTime());}
         // added
         pubMPCTrajMarker.publish(p_base->mpc_result.getMPC(SNUFrameId));
+        pubPreMPCMarker.publish(p_base->pre_mpc_result.getPreMPC(SNUFrameId));
     }
 
     pubOurOccu.publish(p_base->localMap);

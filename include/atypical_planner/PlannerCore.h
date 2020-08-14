@@ -195,6 +195,13 @@ namespace Planner {
         bool isSuccess;
     };
 
+    struct preMPCResult{
+        vector<double> ts;
+        vector<CarInput> us;
+        vector<CarState> xs;
+        visualization_msgs::MarkerArray getPreMPC(const string& frame_id);
+    };
+
 
     /**
      * @brief Initial lane
@@ -301,6 +308,7 @@ namespace Planner {
         vector<Corridor> corridor_seq;
         Corridor search_range;
         MPCResultTraj mpc_result;
+        preMPCResult pre_mpc_result;
         driving_msgs::VehicleCmd ctrl_previous;
         vector<driving_msgs::VehicleCmd> ctrl_history;
         ObstaclePathArray obstaclePathArray;
@@ -374,6 +382,8 @@ namespace Planner {
         void setCorridorSeq(const vector<Corridor>& corridor_in_) {corridor_seq = corridor_in_;}
         void setSearchRange(const Corridor& search_range_in_) {search_range = search_range_in_;}
         void setMPCResultTraj(const MPCResultTraj& mpc_result_in_) {mpc_result = mpc_result_in_;}
+        void setPreMPCResult(const preMPCResult& pre_mpc_result_in_) {pre_mpc_result = pre_mpc_result_in_;}
+
 
         // prepare prediction sequence for MPC
         void uploadPrediction(VectorXd tSeq_, double rNominal = 0);

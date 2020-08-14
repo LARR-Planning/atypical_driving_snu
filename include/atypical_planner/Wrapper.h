@@ -96,6 +96,7 @@ namespace Planner{
         ros::Publisher pubCurCmd; // if MPC has been solved, it emits the command
         ros::Publisher pubMPCTraj; // if MPC has been solved, it pulish mpc traj for local planner horizon
         ros::Publisher pubMPCTrajMarker; // same with pubMPCTraj, but Marker Array Version
+        ros::Publisher pubPreMPCMarker; // Marker Array for traj before Optimization
         ros::Publisher pubCurGoal; // Publish current goal point (global goal)
         ros::Publisher pubCurPose;
         ros::Publisher pubSlicedLane;
