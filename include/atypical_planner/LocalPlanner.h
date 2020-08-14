@@ -68,6 +68,7 @@ namespace Planner {
         Matrix<double,Nu,1> input_weight_;
         Matrix<double,Nx,1> final_weight_;
 
+        Vector2d qp_param;
     };
     /**
      * Plain MPC module
