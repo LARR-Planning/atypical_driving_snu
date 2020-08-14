@@ -33,7 +33,7 @@ namespace Planner {
         ParamLocal param; // From yaml file
         iLQRParams ilqr_param; // iLQR parameters
         MPCResultTraj curPlanning; //Planning with intermediate outputs
-
+        preMPCResult prePlanning; // before Optimization, result of warm start
         vector<vector<Matrix2d>> obs_Q;
         vector<vector<Vector2d>> obs_q;
         Matrix<double,2,2> car_shape;

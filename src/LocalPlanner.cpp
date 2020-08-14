@@ -54,6 +54,7 @@ LocalPlanner::LocalPlanner(const Planner::ParamLocal &l_param,
  */
 void LocalPlanner::updateTrajToBase(){
     // update routine here
+    p_base->setPreMPCResult(prePlanning);
     p_base->setMPCResultTraj(curPlanning); // just an example
 }
 
@@ -399,6 +400,44 @@ bool LocalPlannerPlain::plan(double t) {
                      xN_new[j][4]=-param.maxSteer;
 
              }
+
+             Matrix<double,N,1> ts_temp = VectorXd::LinSpaced(N,0.0,param.horizon-param.tStep);
+             ts_temp = ts_temp.array()+ t;
+
+             Matrix<double,6,1> carState_temp0;
+             Matrix<double,2,1> carInput_temp0;
+             CarState carState_temp1;
+             CarInput carInput_temp1;
+             prePlanning.ts.clear();
+             prePlanning.xs.clear();
+             prePlanning.us.clear();
+
+             carState_temp0 = x0_new;
+             for(int i = 1 ; i<N+1;i++)
+             {
+                 carState_temp1.x = carState_temp0.coeffRef(0, 0);
+                 carState_temp1.y = carState_temp0.coeffRef(1, 0);
+                 carState_temp1.v = carState_temp0.coeffRef(2, 0);
+                 carState_temp1.theta = carState_temp0.coeffRef(5, 0);
+                 //cout<<"MPC Future Heading Angle"<<i<<"th: "<< carState_temp.theta<<endl;
+                 carInput_temp1.alpha = carState_temp0.coeffRef(3, 0);
+                 carInput_temp1.delta = carState_temp0.coeffRef(4, 0);
+
+                 prePlanning.ts.push_back(ts_temp.coeffRef(i-1, 0));
+                 prePlanning.xs.push_back(carState_temp1);
+                 prePlanning.us.push_back(carInput_temp1);
+                 if(param.isRearWheeled)
+                 {
+                     carState_temp0 = carState_temp0+param.tStep*symbolic_functions::f(carState_temp0,uN_new[i-1]);
+                 }
+                 else
+                 {
+                     carState_temp0 = carState_temp0+param.tStep*symbolic_functions::f_front(carState_temp0,uN_new[i-1]);
+                 }
+             }
+
+
+
              next_state = xN_new[1];
              
              for(int j = 0;j<N-1;j++)
@@ -407,8 +446,6 @@ bool LocalPlannerPlain::plan(double t) {
              }
              uN_NextInit[N-1]= uN_new[N-1];
 
-             Matrix<double,N,1> ts_temp = VectorXd::LinSpaced(N,0.0,param.horizon-param.tStep);
-             ts_temp = ts_temp.array()+ t;
              CarState carState_temp;
              CarInput carInput_temp;
 
@@ -494,34 +531,68 @@ bool LocalPlannerPlain::plan(double t) {
                          xN_new[j][4]=-param.maxSteer;
 
                  }
-                 next_state = xN_new[1];
 
+                 Matrix<double,N,1> ts_temp = VectorXd::LinSpaced(N,0.0,param.horizon-param.tStep);
+                 ts_temp = ts_temp.array()+ t;
+
+                 Matrix<double,6,1> carState_temp0;
+                 Matrix<double,2,1> carInput_temp0;
+                 CarState carState_temp1;
+                 CarInput carInput_temp1;
+                 prePlanning.ts.clear();
+                 prePlanning.xs.clear();
+                 prePlanning.us.clear();
+
+                 carState_temp0 = x0_new;
+                 for(int i = 1 ; i<N+1;i++)
+                {
+                    carState_temp1.x = carState_temp0.coeffRef(0, 0);
+                    carState_temp1.y = carState_temp0.coeffRef(1, 0);
+                    carState_temp1.v = carState_temp0.coeffRef(2, 0);
+                    carState_temp1.theta = carState_temp0.coeffRef(5, 0);
+                    //cout<<"MPC Future Heading Angle"<<i<<"th: "<< carState_temp.theta<<endl;
+                    carInput_temp1.alpha = carState_temp0.coeffRef(3, 0);
+                    carInput_temp1.delta = carState_temp0.coeffRef(4, 0);
+
+                    prePlanning.ts.push_back(ts_temp.coeffRef(i-1, 0));
+                    prePlanning.xs.push_back(carState_temp1);
+                    prePlanning.us.push_back(carInput_temp1);
+                    if(param.isRearWheeled)
+                    {
+                        carState_temp0 = carState_temp0+param.tStep*symbolic_functions::f(carState_temp0,uN_NextInit[i-1]);
+                    }
+                    else
+                    {
+                        carState_temp0 = carState_temp0+param.tStep*symbolic_functions::f_front(carState_temp0,uN_NextInit[i-1]);
+                    }
+                }
+
+                 // For Next Optimization Loop, Warm Start
+                 next_state = xN_new[1];
                  for(int j = 0;j<N-1;j++)
                  {
                      uN_NextInit[j] = uN_new[j+1];
                  }
                  uN_NextInit[N-1]= uN_new[N-1];
 
-                 Matrix<double,N,1> ts_temp = VectorXd::LinSpaced(N,0.0,param.horizon-param.tStep);
-                 ts_temp = ts_temp.array()+ t;
-                 CarState carState_temp;
-                 CarInput carInput_temp;
-
+                 // Newly updates optimization results
+                 CarState carState_temp2;
+                 CarInput carInput_temp2;
                  curPlanning.ts.clear();
                  curPlanning.xs.clear();
                  curPlanning.us.clear();
                  for(int i = 1 ;i<N+1; i++) {
-                     carState_temp.x = xN_new[i].coeffRef(0, 0);
-                     carState_temp.y = xN_new[i].coeffRef(1, 0);
-                     carState_temp.v = xN_new[i].coeffRef(2, 0);
-                     carState_temp.theta = xN_new[i].coeffRef(5, 0);
+                     carState_temp2.x = xN_new[i].coeffRef(0, 0);
+                     carState_temp2.y = xN_new[i].coeffRef(1, 0);
+                     carState_temp2.v = xN_new[i].coeffRef(2, 0);
+                     carState_temp2.theta = xN_new[i].coeffRef(5, 0);
                      //cout<<"MPC Future Heading Angle"<<i<<"th: "<< carState_temp.theta<<endl;
-                     carInput_temp.alpha = xN_new[i].coeffRef(3, 0);
-                     carInput_temp.delta = xN_new[i].coeffRef(4, 0);
+                     carInput_temp2.alpha = xN_new[i].coeffRef(3, 0);
+                     carInput_temp2.delta = xN_new[i].coeffRef(4, 0);
 
                      curPlanning.ts.push_back(ts_temp.coeffRef(i-1, 0));
-                     curPlanning.xs.push_back(carState_temp);
-                     curPlanning.us.push_back(carInput_temp);
+                     curPlanning.xs.push_back(carState_temp2);
+                     curPlanning.us.push_back(carInput_temp2);
 
                      //cout<<i<<"th step: (x,y)"<<carState_temp.x << "//"<<carState_temp.y<<" //"<<carState_temp.theta<<endl;
                  }
@@ -530,12 +601,48 @@ bool LocalPlannerPlain::plan(double t) {
              }
              else
              {
-                uN_NextInit =u0;
-
-
-
                  Matrix<double,N,1> ts_temp = VectorXd::LinSpaced(N,param.tStep,param.horizon);
                  ts_temp = ts_temp.array()+ t;
+
+                 Matrix<double,6,1> carState_temp0;
+                 Matrix<double,2,1> carInput_temp0;
+                 CarState carState_temp1;
+                 CarInput carInput_temp1;
+                 prePlanning.ts.clear();
+                 prePlanning.xs.clear();
+                 prePlanning.us.clear();
+
+                 carState_temp0 = x0_new;
+                 for(int i = 1 ; i<N+1;i++)
+                 {
+                     carState_temp1.x = carState_temp0.coeffRef(0, 0);
+                     carState_temp1.y = carState_temp0.coeffRef(1, 0);
+                     carState_temp1.v = carState_temp0.coeffRef(2, 0);
+                     carState_temp1.theta = carState_temp0.coeffRef(5, 0);
+                     //cout<<"MPC Future Heading Angle"<<i<<"th: "<< carState_temp.theta<<endl;
+                     carInput_temp1.alpha = carState_temp0.coeffRef(3, 0);
+                     carInput_temp1.delta = carState_temp0.coeffRef(4, 0);
+
+                     prePlanning.ts.push_back(ts_temp.coeffRef(i-1, 0));
+                     prePlanning.xs.push_back(carState_temp1);
+                     prePlanning.us.push_back(carInput_temp1);
+                     if(param.isRearWheeled)
+                     {
+                         carState_temp0 = carState_temp0+param.tStep*symbolic_functions::f(carState_temp0,uN_NextInit[i-1]);
+                     }
+                     else
+                     {
+                         carState_temp0 = carState_temp0+param.tStep*symbolic_functions::f_front(carState_temp0,uN_NextInit[i-1]);
+                     }
+                 }
+
+
+
+                 uN_NextInit =u0;
+
+
+
+
                  CarState carState_temp;
                  CarInput carInput_temp;
 
