@@ -438,18 +438,40 @@ bool LocalPlannerPlain::plan(double t) {
          }
          else 
          {
-             bool flag_unstable = false;
-
+            bool flag_unstable = false;
+            x0_new = (Matrix<double,Nx,1>()<<p_base->getCarState().x, p_base->getCarState().y,p_base->getCarState().v,
+                     next_state[3], next_state[4], p_base->getCarState().theta).finished();
+            
             //Just for Test 
-            ROS_INFO("QP Solver is called");
-            QP<Nx,Nu,N> qp_problem(*prob, x0_new, u0[0], local_wpts, qp_param);
+            ROS_INFO("QP Solver is called"); 
+            Eigen::Matrix<double, Nu,1> init_u; init_u << 0.0, 0.0;
+            QP<Nx,Nu,N> qp_problem(*prob, x0_new, uN_new[N-1], local_wpts, qp_param);
+
             qp_problem.solve();
             uN_NextInit = qp_problem.get_solution();
 
+            Matrix<double, Nx,1> state; state << x0_new;
+            Matrix<double, Nu, 1> input; input << init_u; double t_cur = t; vector<double> time_vec; vector<CarState> state_vec; vector<CarInput> input_vec; 
+            for(int i=0; i< N; i++)
+            {   
+                CarState cur_state; cur_state.x = state[0]; cur_state.y = state[1]; cur_state.v = state[2];cur_state.theta = state[5];
+                state_vec.push_back(cur_state);
+
+                state = state + symbolic_functions::f(state, input) * dt;  
+
+                // cout << "X: " << state[0]  << " Y: " << state[1] << " v: " << state[2] << " theta: " <<state[5] << endl;
+                input[0] = uN_NextInit[i][0];
+                input[1] = uN_NextInit[i][1];
+                // cout << "Jerk: " << input[0] << " Steer dot: " << input[1] << endl; 
+            }
+
+            preMPCResult result; result.ts = time_vec; result.us = input_vec; result.xs = state_vec; 
+            p_base->setPreMPCResult(result);
+
 
              //  Be executed after initial Loop (loop_num>0)
-             x0_new = (Matrix<double,Nx,1>()<<p_base->getCarState().x, p_base->getCarState().y,p_base->getCarState().v,
-                     next_state[3], next_state[4], p_base->getCarState().theta).finished();
+            //  x0_new = (Matrix<double,Nx,1>()<<p_base->getCarState().x, p_base->getCarState().y,p_base->getCarState().v,
+            //          next_state[3], next_state[4], p_base->getCarState().theta).finished();
              iLQR<Nx,Nu,N> ilqr(*prob, x0_new,uN_NextInit,dt,ilqr_param);
              ilqr.solve();
              uN_new = ilqr.uN_;
