@@ -14,8 +14,7 @@
 
 void ref_traj(Collection<Matrix<double,5,1>,N+1>& local_wpts, Collection<Matrix<double,5,1>,N+1>& waypt, double initial_vel)
 {   
-    cout << "START REF" << endl; 
-    initial_vel = max(initial_vel, 0.1);// Prevent vel = 0.0
+    initial_vel = max(initial_vel, 0.5);// Prevent vel = 0.0
     std::vector<double> length_vec;
     double dist = 0.0;
     length_vec.push_back(dist);
@@ -25,28 +24,27 @@ void ref_traj(Collection<Matrix<double,5,1>,N+1>& local_wpts, Collection<Matrix<
     }
 
     int iter = 0;
-    for(double t=0.0; t<=5.1; t=t+dt){
+    for(double t=0.0; t<5.0; t=t+dt){
         int idx = 0;
         double cur_s = t* initial_vel; 
-        while(!(cur_s >=length_vec.at(idx) && cur_s <=length_vec.at(idx+1))){
-            idx++;
-        }
-        double len = waypt[idx+1][0] - waypt[idx][0];
-        cur_s = cur_s - length_vec.at(idx);
-        double x1 = waypt[idx][0]; double x2 = waypt[idx+1][0];
-        double y1 = waypt[idx][1]; double y2 = waypt[idx+1][1];
-        double dsdx = sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2))/(x2-x1);
+            while(idx+1 < length_vec.size() && !(cur_s >=length_vec.at(idx) && cur_s <=length_vec.at(idx+1))){
+                idx++;
+            }
+            double len = waypt[idx+1][0] - waypt[idx][0];
+            cur_s = cur_s - length_vec.at(idx);
+            double x1 = waypt[idx][0]; double x2 = waypt[idx+1][0];
+            double y1 = waypt[idx][1]; double y2 = waypt[idx+1][1];
+            double dsdx = sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2))/(x2-x1);
 
-        double dx = cur_s/dsdx; 
-        double x = x1 + dx; double y = y1+(y2-y1)*dx/len; 
+            double dx = cur_s/dsdx; 
+            double x = x1 + dx; double y = y1+(y2-y1)*dx/len; 
 
-        local_wpts[iter][0] = x;
-        local_wpts[iter][1] = y;
-        local_wpts[iter][2] = 0.0; local_wpts[iter][3] = 0.0; local_wpts[iter][4] = 0.0; 
-        iter++;
+            local_wpts[iter][0] = x;
+            local_wpts[iter][1] = y;
+            local_wpts[iter][2] = 0.0; local_wpts[iter][3] = 0.0; local_wpts[iter][4] = 0.0; 
+            iter++;
     }
 
-    cout << "END REF" << endl; 
 }
 
 
@@ -114,7 +112,7 @@ void QP<Nx,Nu,N>::solve( )
 {   
     //Change for QP. Too many variables exceed planning time. 
     const double dt_ = 0.2; 
-    const int N_ = 25-1;
+    const int N_ = 25;
     Eigen::Matrix<double, Nx*(N_+1),1> ref;
     // cout << "Reference pts." << endl; 
 
@@ -122,18 +120,18 @@ void QP<Nx,Nu,N>::solve( )
     double initial_vel = x0_(2);
     ref_traj(tf_wpts, local_wpts, initial_vel);
 
+    
     for(int i=0; i<N_+1; i++)
     {
-        ref(6*i,0) = tf_wpts[2*i][0];
-        ref(6*i+1,0) = tf_wpts[2*i][1]; 
+        ref(6*i,0) = local_wpts[2*i][0];
+        ref(6*i+1,0) = local_wpts[2*i][1]; 
         ref(6*i+2,0) = local_wpts[2*i][2];
         ref(6*i+3,0) = local_wpts[2*i][3];
         ref(6*i+4,0) = local_wpts[2*i][4];
         ref(6*i+5,0) = 0.0; 
+        // cout << tf_wpts[2*i][0] << ", " << tf_wpts[2*i][1] << endl; 
         // cout << local_wpts[2*i][0] << ", " << local_wpts[2*i][1] << endl; 
     }
-    cout << "Ref" << endl; 
-    cout << ref << endl; 
 
     DynamicsDerivatives<Nx,Nu> dyn = prob_.dynamics(x0_, u0_, dt_);
     //dyn.fx -> A_fix (A*dt+I)
@@ -156,10 +154,10 @@ void QP<Nx,Nu,N>::solve( )
     std::vector<Trip> trpB; // B_eq 
     Trip tmp_A1;  Trip tmp_A2; Trip tmp_A3; Trip tmp_B1; Trip trmp_Q; Trip trmp_R;
 
-    cout << "A_fix" << endl;
-    cout << A_fix << endl; 
+    // cout << "A_fix" << endl;
+    // cout << A_fix << endl; 
 
-    cout << "B_fix" << endl; cout << B_fix << endl;  
+    // cout << "B_fix" << endl; cout << B_fix << endl;  
     //Cost Matrix Generation 
     double Q = Q_; double R = R_; 
     for(int i=0; i<N_+1; ++i){
@@ -211,9 +209,6 @@ void QP<Nx,Nu,N>::solve( )
     }
     Eigen::Matrix<double, Nx*(N_+1), 1> del_x = X_refined - ref; 
 
-    cout << "del_x" << endl; 
-    cout << del_x << endl; 
-
     Eigen::Matrix<double, -1, -1, RowMajor> f_cost(Nx*(N_+1), 1);
 
     Eigen::Matrix<double, 1, Nx*(N_+1)> transp_del_x = del_x.transpose();
@@ -229,7 +224,7 @@ void QP<Nx,Nu,N>::solve( )
     Eigen::Matrix<double, Nu*(N_+1), 1> ubmat;
     for(int i=0; i<N_+1; ++i)
     {
-        lbmat(Nu*i, 0) = jerk_min; ubmat(Nu*i, 0) = jerk_max;
+        lbmat(Nu*i, 0) = jerk_min-3.0; ubmat(Nu*i, 0) = jerk_max+3.0;
         lbmat(Nu*i+1, 0) = steer_dot_min; ubmat(Nu*i+1, 0) = steer_dot_max;
     }
 
