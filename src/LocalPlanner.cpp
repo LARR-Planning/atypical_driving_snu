@@ -443,7 +443,7 @@ bool LocalPlannerPlain::plan(double t) {
             x0_new = (Matrix<double,Nx,1>()<<p_base->getCarState().x, p_base->getCarState().y,p_base->getCarState().v,
                      next_state[3], next_state[4], p_base->getCarState().theta).finished();
             
-            if(p_base->getCarState().v > 0.5){
+            if(p_base->getCarState().v > 1.0){
                 //Just for Test 
                 ROS_INFO("QP Solver is called"); 
                 Eigen::Matrix<double, Nu,1> init_u; init_u << 0.0, 0.0;

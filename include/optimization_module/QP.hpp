@@ -111,8 +111,8 @@ template<const int Nx, const int Nu, const int N>
 void QP<Nx,Nu,N>::solve( )
 {   
     //Change for QP. Too many variables exceed planning time. 
-    const double dt_ = 0.2; 
-    const int N_ = 25;
+    const double dt_ = 0.1; 
+    const int N_ = 50;
     Eigen::Matrix<double, Nx*(N_+1),1> ref;
     // cout << "Reference pts." << endl; 
 
@@ -123,14 +123,21 @@ void QP<Nx,Nu,N>::solve( )
     
     for(int i=0; i<N_+1; i++)
     {
-        ref(6*i,0) = local_wpts[2*i][0];
-        ref(6*i+1,0) = local_wpts[2*i][1]; 
-        ref(6*i+2,0) = local_wpts[2*i][2];
-        ref(6*i+3,0) = local_wpts[2*i][3];
-        ref(6*i+4,0) = local_wpts[2*i][4];
-        ref(6*i+5,0) = 0.0; 
+        // ref(6*i,0) = local_wpts[2*i][0];
+        // ref(6*i+1,0) = local_wpts[2*i][1]; 
+        // ref(6*i+2,0) = local_wpts[2*i][2];
+        // ref(6*i+3,0) = local_wpts[2*i][3];
+        // ref(6*i+4,0) = local_wpts[2*i][4];
+        // ref(6*i+5,0) = 0.0; 
         // cout << tf_wpts[2*i][0] << ", " << tf_wpts[2*i][1] << endl; 
         // cout << local_wpts[2*i][0] << ", " << local_wpts[2*i][1] << endl; 
+        ref(6*i,0) = tf_wpts[i][0];
+        ref(6*i+1,0) = tf_wpts[i][1]; 
+        ref(6*i+2,0) = local_wpts[i][2];
+        ref(6*i+3,0) = local_wpts[i][3];
+        ref(6*i+4,0) = local_wpts[i][4];
+        ref(6*i+5,0) = 0.0; 
+
     }
 
     DynamicsDerivatives<Nx,Nu> dyn = prob_.dynamics(x0_, u0_, dt_);
@@ -264,9 +271,9 @@ void QP<Nx,Nu,N>::solve( )
         // cout << u1 << ", " << u2 << endl; 
 
         VectorU u_(u1, u2);
-        uN_[2*i] = u_;
-        uN_[2*i+1] = u_;
-        // uN_[i] = u_;
+        // uN_[2*i] = u_;
+        // uN_[2*i+1] = u_;
+        uN_[i] = u_;
     
     }
 
