@@ -19,12 +19,12 @@
   <arg name ="detected_object_frame_id" default = "map"/>
 
 
-  <arg name= "lane_width" default="10"/>
-  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/waypoint_airsim.csv"/>
+  <arg name= "lane_width" default="15"/>
+  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/waypoint_kiapi2.csv"/>
   <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
   <arg name = "waypoints" default="$(find atypical_driving)/param/goal_airsim.yaml"/>
 
-  <arg name = "goal/x"  default = "12"/> <!--in world frame -->
+  <arg name = "goal/x"  default = "26"/> <!--in world frame -->
   <arg name = "goal/y" default = "0"/> <!--in world frame -->
 
   <group ns="atypical_planning_test">
