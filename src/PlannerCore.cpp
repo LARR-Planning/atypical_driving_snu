@@ -82,6 +82,38 @@ CarInput MPCResultTraj::evalU(double t) {
     return input;
 }
 
+CarState StoppingResult::evalX(double t) {
+    vector<double> xSet(xs.size());
+    vector<double> ySet(xs.size());
+    // TDOO v, theta?
+    for(uint i = 0 ; i < xs.size(); i++){
+        xSet[i] = xs[i].x;
+        ySet[i] = xs[i].y;
+    }
+
+    CarState xy;
+    xy.x = interpolate(ts,xSet,t,true);
+    xy.y = interpolate(ts,ySet,t,true);
+    return xy;
+}
+
+
+CarInput StoppingResult::evalU(double t) {
+
+    vector<double> aSet(us.size());
+    vector<double> dSet(us.size());
+    // TDOO v, theta?
+    for(uint i = 0 ; i < us.size(); i++){
+        aSet[i] = us[i].alpha;
+        dSet[i] = us[i].delta;
+    }
+
+    CarInput input;
+    input.alpha = interpolate(ts,aSet,t,true);
+    input.delta = interpolate(ts,dSet,t,true);
+    return input;
+}
+
 /**
  * @brief convert lanePath to lane
  * @param lanePath
@@ -315,6 +347,32 @@ visualization_msgs::MarkerArray preMPCResult::getPreMPC(const string& frame_id)
     return markers_Prempc;
 }
 
+visualization_msgs::MarkerArray StoppingResult::getStopping(const string& frame_id)
+{
+    visualization_msgs::MarkerArray markers_Stopping;
+    int i_marker = 0;
+    for (auto &point :xs)
+    {
+        visualization_msgs::Marker marker_mpc;
+        marker_mpc.header.frame_id = frame_id;
+        marker_mpc.id = i_marker ++;
+        marker_mpc.ns = i_marker;
+        marker_mpc.type = visualization_msgs::Marker::CUBE;
+        marker_mpc.action = visualization_msgs::Marker::ADD;
+        marker_mpc.pose.position.x = point.x;
+        marker_mpc.pose.position.y = point.y;
+        marker_mpc.pose.position.z = 0;
+        marker_mpc.scale.x = 0.2;
+        marker_mpc.scale.y = 0.2;
+        marker_mpc.scale.z = 0.2;
+        marker_mpc.color.a = 1.0;
+        marker_mpc.color.r = 0.9;
+        marker_mpc.color.g = 0.9;
+        marker_mpc.color.b = 0.2;
+        markers_Stopping.markers.emplace_back(marker_mpc);
+    }
+    return markers_Stopping;
+}
 
 visualization_msgs::MarkerArray SmoothLane::getPoints(const string& frame_id) {
     visualization_msgs::MarkerArray markers;
@@ -682,6 +740,97 @@ driving_msgs::VehicleCmd PlannerBase::getCurInput(double t){
             //cout<<"flag plot"<<flag<<endl;
             ctrl_history[count_iter].steer_angle_cmd = mpc_result.evalU(t).delta;
             ctrl_history[count_iter].accel_decel_cmd = mpc_result.evalU(t).alpha;
+            cmd.steer_angle_cmd = 0.0;
+            cmd.accel_decel_cmd = 0.0;
+            for(int i = 0; i<smooth_horizon;i++)
+            {
+                cmd.steer_angle_cmd += ctrl_history[i].steer_angle_cmd;
+                cmd.accel_decel_cmd += ctrl_history[i].accel_decel_cmd;
+            }
+            cmd.steer_angle_cmd = cmd.steer_angle_cmd/double(smooth_horizon);
+            cmd.accel_decel_cmd = cmd.accel_decel_cmd/double(smooth_horizon);
+            count_iter++;
+            if(count_iter == smooth_horizon)
+            {
+                count_iter = 0;
+            }
+            //cout<<"count_iter is "<< count_iter << endl;
+            //cout<<"smooth_horizon plot::"<<smooth_horizon<<endl;
+            return cmd;
+//            cmd.steer_angle_cmd = 1/double(smooth_horizon)*(mpc_result.evalU(t).delta-ctrl_history.front().steer_angle_cmd) + ctrl_previous.steer_angle_cmd;
+//            cmd.accel_decel_cmd = 1/double(smooth_horizon)*(mpc_result.evalU(t).alpha-ctrl_history.front().accel_decel_cmd) + ctrl_previous.accel_decel_cmd;
+//            ctrl_previous.steer_angle_cmd = cmd.steer_angle_cmd;
+//            ctrl_previous.accel_decel_cmd = cmd.accel_decel_cmd;
+//            ctrl_history.push_back(cmd);
+//            ctrl_history.pop();
+//            return cmd;
+        }
+
+
+    }
+
+
+};
+
+driving_msgs::VehicleCmd PlannerBase::getStoppingInput(double t){
+    double curr_weight = weight_smooth;
+//    static int flag = 0;
+//    double curr_weight = weight_smooth;
+//    static int count_iter =0;
+//    cout << "weight: " << curr_weight << endl;
+    driving_msgs::VehicleCmd cmd;
+    if(!isUseMovingAverage)
+    {
+        if (flag == 0)
+        {
+            cmd.steer_angle_cmd =  stopping_result.evalU(t).delta;
+            cmd.accel_decel_cmd = stopping_result.evalU(t).alpha;
+            ctrl_previous.steer_angle_cmd = stopping_result.evalU(t).delta;
+            ctrl_previous.accel_decel_cmd = stopping_result.evalU(t).alpha;
+            flag++;
+            return cmd;
+        }
+        else
+        {
+            cmd.steer_angle_cmd = curr_weight*stopping_result.evalU(t).delta +(1-curr_weight)*ctrl_previous.steer_angle_cmd;
+            cmd.accel_decel_cmd = curr_weight*stopping_result.evalU(t).alpha +(1-curr_weight)*ctrl_previous.accel_decel_cmd;
+            ctrl_previous.steer_angle_cmd = cmd.steer_angle_cmd;
+            ctrl_previous.accel_decel_cmd = cmd.accel_decel_cmd;
+            return cmd;
+        }
+    }
+    else
+    {
+        if(flag<smooth_horizon)
+        {
+            if(flag == 0)
+            {
+                cmd.steer_angle_cmd =  stopping_result.evalU(t).delta;
+                cmd.accel_decel_cmd = stopping_result.evalU(t).alpha;
+                ctrl_history.push_back(cmd);
+                flag++;
+                return cmd;
+            }
+            else
+            {
+                cmd.steer_angle_cmd = curr_weight*stopping_result.evalU(t).delta +(1-curr_weight)*ctrl_previous.steer_angle_cmd;
+                cmd.accel_decel_cmd = curr_weight*stopping_result.evalU(t).alpha +(1-curr_weight)*ctrl_previous.accel_decel_cmd;
+                ctrl_history.push_back(cmd);
+                flag++;
+                return cmd;
+            }
+//
+//            cmd.steer_angle_cmd = mpc_result.evalU(t).delta;
+//            cmd.accel_decel_cmd = mpc_result.evalU(t).alpha;
+//            ctrl_history.push_back(cmd);
+//	    flag++;
+//            return cmd;
+        }
+        else
+        {
+            //cout<<"flag plot"<<flag<<endl;
+            ctrl_history[count_iter].steer_angle_cmd = stopping_result.evalU(t).delta;
+            ctrl_history[count_iter].accel_decel_cmd = stopping_result.evalU(t).alpha;
             cmd.steer_angle_cmd = 0.0;
             cmd.accel_decel_cmd = 0.0;
             for(int i = 0; i<smooth_horizon;i++)

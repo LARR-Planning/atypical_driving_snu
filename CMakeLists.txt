@@ -21,12 +21,16 @@ find_package(octomap REQUIRED)
 include_directories(${OCTOMAP_INCLUDE_DIRS})
 link_libraries(${OCTOMAP_LIBRARIES})
 
+find_package( ACADO REQUIRED )
+
 find_package(catkin REQUIRED COMPONENTS roscpp sensor_msgs tf tf2 qpOASES
             geometry_msgs octomap_msgs message_generation nav_msgs message_generation driving_msgs pcl_ros occupancy_grid_utils
             )
 
 include_directories(include ${catkin_INCLUDE_DIRS})
 include_directories(${EIGEN3_INCLUDE_DIRS})
+include_directories(${ACADO_INCLUDE_DIRS})
+
 file(GLOB SNU_PLANNER_SRC src/optimization_module/*.cpp src/*.cpp src/Prediction/*.cpp src/third_party/*.cpp )
 
 
@@ -37,20 +41,24 @@ catkin_package(
 )
 
 add_executable(atypical_driving_test test/main.cpp ${SNU_PLANNER_SRC} src/optimization_module/math.cpp)
-target_link_libraries(atypical_driving_test ${catkin_LIBRARIES} -lstdc++fs )
+target_link_libraries(atypical_driving_test ${catkin_LIBRARIES} -lstdc++fs ${ACADO_SHARED_LIBRARIES})
 
 
 add_executable(virtual_environment_generator test/virtual_environment_generator.cpp ${SNU_PLANNER_SRC})
-target_link_libraries(virtual_environment_generator ${catkin_LIBRARIES} -lstdc++fs)
+target_link_libraries(virtual_environment_generator ${catkin_LIBRARIES} -lstdc++fs ${ACADO_SHARED_LIBRARIES})
 
 #add_executable(lane_tester test/LaneTest/main.cpp ${SNU_PLANNER_SRC})
 #target_link_libraries(lane_tester ${catkin_LIBRARIES} -lstdc++fs)
 
 add_executable(integration_server test/IntegrationTest/server_main.cpp ${SNU_PLANNER_SRC})
-target_link_libraries(integration_server ${catkin_LIBRARIES} -lstdc++fs)
+target_link_libraries(integration_server ${catkin_LIBRARIES} -lstdc++fs ${ACADO_SHARED_LIBRARIES})
 
 add_executable(integration_client test/IntegrationTest/client_main.cpp ${SNU_PLANNER_SRC})
-target_link_libraries(integration_client ${catkin_LIBRARIES} -lstdc++fs)
+target_link_libraries(integration_client ${catkin_LIBRARIES} -lstdc++fs ${ACADO_SHARED_LIBRARIES})
 
 add_executable(keti_client test/KetiTest/client_main.cpp ${SNU_PLANNER_SRC})
-target_link_libraries(keti_client ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+target_link_libraries(keti_client ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${ACADO_SHARED_LIBRARIES})
+
+# add_executable(acado_test test/stopping.cpp )
+# target_link_libraries(acado_test ${ACADO_SHARED_LIBRARIES} )
+# SET_TARGET_PROPERTIES( acado_test PROPERTIES . ${CMAKE_CURRENT_SOURCE_DIR} )

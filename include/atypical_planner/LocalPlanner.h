@@ -23,7 +23,7 @@ namespace Planner {
     class LocalPlanner: public AbstractPlanner {
 
     public:
-        LocalPlanner(const ParamLocal& l_param,shared_ptr<PlannerBase> p_base_);
+        LocalPlanner(const ParamLocal& l_param, shared_ptr<PlannerBase> p_base_);
         void updateTrajToBase();
         Collection<Corridor,N+1> getOptCorridor();
         bool isCurTrajFeasible(); // TODO

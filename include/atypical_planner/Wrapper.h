@@ -8,6 +8,7 @@
 
 #include <atypical_planner/LocalPlanner.h>
 #include <atypical_planner/GlobalPlanner.h>
+#include <third_party/stopping.h>
 
 #include <optimization_module/parameter.hpp>
 
@@ -97,6 +98,7 @@ namespace Planner{
         ros::Publisher pubMPCTraj; // if MPC has been solved, it pulish mpc traj for local planner horizon
         ros::Publisher pubMPCTrajMarker; // same with pubMPCTraj, but Marker Array Version
         ros::Publisher pubPreMPCMarker; // Marker Array for traj before Optimization
+        ros::Publisher pubStoppingMarker; // Marker Array for stopping trajectory 
         ros::Publisher pubCurGoal; // Publish current goal point (global goal)
         ros::Publisher pubCurPose;
         ros::Publisher pubSlicedLane;
@@ -108,7 +110,7 @@ namespace Planner{
         ros::Publisher pubDetectedObjectsPoseArray;
         ros::Publisher pubCurCmdDabin;
         ros::Publisher pubOurOccu;
-
+        
 
         /**
          * Subscriber
@@ -179,6 +181,7 @@ namespace Planner{
 
         LocalPlanner* lp_ptr; /**< local planner */
         GlobalPlanner* gp_ptr; /**< global planner */
+        Stopping* s_ptr; /**< stopping planner */
         RosWrapper* ros_wrapper_ptr; /**< ros wrapper */
 
 
@@ -186,9 +189,11 @@ namespace Planner{
         bool processLane(double tTrigger);
         bool planGlobal(double tTrigger);
         bool planLocal(double tTrigger);
+        bool planStopping(double tTrigger);
         void updateCorrToBase(); // update the results of the planners to p_base
         void updateMPCToBase(); // update the results of the planners to p_base
         void updatePrediction();
+        void updateStopping();
         void runPlanning(); // planning thread.
 
 

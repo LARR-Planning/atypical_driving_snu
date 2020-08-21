@@ -190,6 +190,9 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<bool>("local_planner/isRearWheel",param_.l_param.isRearWheeled,true);
     nh.param<double>("local_planner/dyn_obst_range",param_.l_param.dynObstRange,30.0);
 
+    // stopping
+    nh.param<double>("stopping/trigger_dist", param_.s_param.trigger_dist, 5.0);
+
     Parameter ilqr_weight;
     param_.l_param.final_weight = ilqr_weight.setting.final_weight;
     param_.l_param.input_weight = ilqr_weight.setting.input_weight;
@@ -441,7 +444,15 @@ void RosWrapper::prepareROSmsgs() {
 void RosWrapper::publish() {
 
     // 1. Actuation command
-    if (p_base->isLPsolved) {
+    if(p_base->isStoppingSolved){
+        driving_msgs::VehicleCmd cmd = p_base->getStoppingInput(curTime());
+        cmd.header.stamp = ros::Time::now();
+        cmd.steer_angle_cmd *= (180.0/3.14); // cmd output deg
+        pubCurCmd.publish(cmd);
+
+        pubStoppingMarker.publish(p_base->stopping_result.getStopping(SNUFrameId));
+    }
+    else if (p_base->isLPsolved) {
 
         if (p_base->isLPPassed){
         auto cmd = p_base->getCurInput(curTime());
@@ -462,7 +473,8 @@ void RosWrapper::publish() {
         cmd.header.stamp = ros::Time::now();
         pubCurCmd.publish(cmd);
         pubMPCTraj.publish(MPCTraj);
-        p_base->log_state_input(curTime());}
+        p_base->log_state_input(curTime());
+        }
         // added
         pubMPCTrajMarker.publish(p_base->mpc_result.getMPC(SNUFrameId));
         pubPreMPCMarker.publish(p_base->pre_mpc_result.getPreMPC(SNUFrameId));
@@ -842,6 +854,7 @@ Wrapper::Wrapper() : p_base_shared(make_shared<PlannerBase>()) {
     lp_ptr = new LocalPlannerPlain(param.l_param,p_base_shared); // TODO Stochastic MPC also available
     // cout << p_base_shared.use_count() << endl;
     gp_ptr = new GlobalPlanner(param.g_param,p_base_shared);
+    s_ptr = new Stopping(p_base_shared);
     // cout << p_base_shared.use_count() << endl;
     Predictor::TargetManager predictor(param.p_param.queueSize,param.p_param.zHeight,param.p_param.polyOrder);
     p_base_shared->predictorBase = predictor;
@@ -977,6 +990,16 @@ bool Wrapper::planLocal(double tTrigger) {
     return lpPassed;
 }
 
+bool Wrapper::planStopping(double tTrigger){
+    bool stopPassed = s_ptr->plan(tTrigger);
+    p_base_shared->isStoppingSolved = stopPassed;
+    
+    if(p_base_shared->isStoppingSolved){
+        updateStopping();
+    }
+
+    return stopPassed;
+}
 
 /**
  * @brief Modify p_base with the resultant planning output
@@ -993,7 +1016,9 @@ void Wrapper::updateMPCToBase() {
     lp_ptr->updateTrajToBase();
 //    ROS_INFO( "[Wrapper] p_base updated. Unlocking.\n ");
 }
-
+void Wrapper::updateStopping(){
+    s_ptr->updateStoppingToBase();
+}
 
 
 /**
@@ -1014,6 +1039,7 @@ void Wrapper::runPlanning() {
     bool isLaneSuccess = false;
     bool isGPSuccess = false;
     bool isLPSuccess = false;
+    bool isStopSuccess = false;
     bool isAllGoalReach = false;
 
 
@@ -1030,16 +1056,36 @@ void Wrapper::runPlanning() {
 //                ROS_WARN_STREAM("[SNU_PLANNER/RosWrapper] updated occupancy map");
 
 
-                Vector3d goalXYSNU(p_base_shared->goal_x,p_base_shared->goal_y,0); // goal w.r.t SNu frame
+                Vector3d goalXYSNU(p_base_shared->goal_x, p_base_shared->goal_y, 0); // goal w.r.t SNu frame
                 goalXYSNU = p_base_shared->Tws.inverse()*goalXYSNU;
                 // Goal checking
                 auto distToGoal = (Vector2d(p_base_shared->cur_state.x,p_base_shared->cur_state.y) -
                         Vector2d(goalXYSNU(0),goalXYSNU(1))).norm();
 //                cout << "distance to goal" << distToGoal << endl;
-                if (distToGoal < p_base_shared->goal_thres){
+                if (distToGoal < param.s_param.trigger_dist){
                     printf("=========================================================\n");
-                    ROS_INFO("[SNU_PLANNER] Reached goal! exiting");
+                    ROS_INFO("[SNU_PLANNER] Reached goal! Stopping Control Start");
                     p_base_shared->isReached = true;
+                    p_base_shared->isStopping = true;
+
+                    auto tCkp_stop = chrono::steady_clock::now();
+                    // driving_msgs::VehicleCmd input_cur = p_base_shared->getCurInput(p_base_shared->)
+                    // Matrix<double, 2, 1> u_cur = (Matrix<double, 2,1>)() << p_base
+                    // Planner::Stopping stop_control(p_base_shared, x_cur, goalXYSNU, 0.5, ros_wrapper_ptr->curTime());
+
+                    isStopSuccess = planStopping(ros_wrapper_ptr->curTime());
+                    if(isStopSuccess){
+                        ROS_INFO_STREAM("[Wrapper] Stopping Success! planning time for Stopping: " <<
+                                                                                                    std::chrono::duration_cast<std::chrono::microseconds>(
+                                                                                                            chrono::steady_clock::now() -
+                                                                                                            tCkp_stop).count() * 0.001
+                                                    << "ms");
+                    }
+                    else{
+                         ROS_INFO_STREAM("[Wrapper] Stopping Fail!");
+                    }
+
+                    ROS_INFO("[SNU_PLANNER] Stopping Control End");
                     return ;
                 }
 

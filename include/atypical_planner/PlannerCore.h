@@ -128,6 +128,11 @@ namespace Planner {
         double staticCriteria; // bigger than this = dynamic
     };
 
+    struct ParamStopping{
+        Matrix<double, 4, 1> initial_state;
+        Matrix<double, 3, 1> goal_state; 
+        double trigger_dist;
+    };
     /**
      * @brief Parameters for both planner.
      * @details This is retrieved from launch-param
@@ -136,6 +141,7 @@ namespace Planner {
         ParamGlobal g_param;
         ParamLocal l_param;
         ParamPredictor p_param;
+        ParamStopping s_param;
     };
 
 
@@ -202,6 +208,14 @@ namespace Planner {
         visualization_msgs::MarkerArray getPreMPC(const string& frame_id);
     };
 
+    struct StoppingResult{
+        vector<double> ts;
+        vector<CarInput> us;
+        vector<CarState> xs;
+        CarState evalX(double t);
+        CarInput evalU(double t);
+        visualization_msgs::MarkerArray getStopping(const string& frame_id);
+    };
 
     /**
      * @brief Initial lane
@@ -291,6 +305,8 @@ namespace Planner {
         bool isLPsolved = false;
         bool isReached = false;
         bool isLPPassed = false;
+        bool isStopping = false;
+        bool isStoppingSolved = false;
         // Lane
         parser parse_tool;
         LanePath lane_path; // deprecated (better not to be used in routine source block )
@@ -309,6 +325,7 @@ namespace Planner {
         Corridor search_range;
         MPCResultTraj mpc_result;
         preMPCResult pre_mpc_result;
+        StoppingResult stopping_result;
         driving_msgs::VehicleCmd ctrl_previous;
         vector<driving_msgs::VehicleCmd> ctrl_history;
         ObstaclePathArray obstaclePathArray;
@@ -366,6 +383,8 @@ namespace Planner {
 //            cmd.accel_decel_cmd = mpc_result.evalU(t).alpha;
 //            return cmd;
 //        };
+        driving_msgs::VehicleCmd getStoppingInput(double t);
+
         ObstaclePathArray getCurObstaclePathArray() {return obstaclePathArray;};
         vector<Corridor> getCorridorSeq() {return corridor_seq;}; // Returns just all the latest
         vector<Corridor> getCorridorSeq(double t0,double tf ); // start time is set to zero
@@ -383,7 +402,7 @@ namespace Planner {
         void setSearchRange(const Corridor& search_range_in_) {search_range = search_range_in_;}
         void setMPCResultTraj(const MPCResultTraj& mpc_result_in_) {mpc_result = mpc_result_in_;}
         void setPreMPCResult(const preMPCResult& pre_mpc_result_in_) {pre_mpc_result = pre_mpc_result_in_;}
-
+        void setStoppingTraj(const StoppingResult& stopping_in_) {stopping_result = stopping_in_;}
 
         // prepare prediction sequence for MPC
         void uploadPrediction(VectorXd tSeq_, double rNominal = 0);
