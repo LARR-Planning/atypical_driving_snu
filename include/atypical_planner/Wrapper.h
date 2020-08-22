@@ -8,7 +8,7 @@
 
 #include <atypical_planner/LocalPlanner.h>
 #include <atypical_planner/GlobalPlanner.h>
-#include <third_party/stopping.h>
+#include <third_party/stopping.hpp>
 
 #include <optimization_module/parameter.hpp>
 

@@ -1,4 +1,4 @@
-#include <third_party/stopping.h>
+#include <third_party/stopping.hpp>
 
 
 int main(){

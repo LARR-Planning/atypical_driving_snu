@@ -191,7 +191,7 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<double>("local_planner/dyn_obst_range",param_.l_param.dynObstRange,30.0);
 
     // stopping
-    nh.param<double>("stopping/trigger_dist", param_.s_param.trigger_dist, 5.0);
+    nh.param<double>("stopping/trigger_dist", param_.s_param.trigger_dist, 15.0);
 
     Parameter ilqr_weight;
     param_.l_param.final_weight = ilqr_weight.setting.final_weight;
@@ -992,6 +992,7 @@ bool Wrapper::planLocal(double tTrigger) {
 
 bool Wrapper::planStopping(double tTrigger){
     bool stopPassed = s_ptr->plan(tTrigger);
+    ROS_INFO("stopPassed");
     p_base_shared->isStoppingSolved = stopPassed;
     
     if(p_base_shared->isStoppingSolved){
@@ -1064,8 +1065,9 @@ void Wrapper::runPlanning() {
 //                cout << "distance to goal" << distToGoal << endl;
                 if (distToGoal < param.s_param.trigger_dist){
                     printf("=========================================================\n");
+                    ROS_INFO("%f Trigger Distance", param.s_param.trigger_dist);
                     ROS_INFO("[SNU_PLANNER] Reached goal! Stopping Control Start");
-                    p_base_shared->isReached = true;
+                    p_base_shared->isReached = false;
                     p_base_shared->isStopping = true;
 
                     auto tCkp_stop = chrono::steady_clock::now();
@@ -1086,9 +1088,11 @@ void Wrapper::runPlanning() {
                     }
 
                     ROS_INFO("[SNU_PLANNER] Stopping Control End");
+
                     return ;
                 }
-
+                if(distToGoal < param.l_param.goalReachingThres)
+                    p_base_shared->isReached = true;
 
 
                 ROS_INFO_ONCE("[Wrapper] start planning!");

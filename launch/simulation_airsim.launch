@@ -20,7 +20,7 @@
 
 
   <arg name= "lane_width" default="15"/>
-  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/waypoint_kiapi2.csv"/>
+  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/waypoint_airsim.csv"/>
   <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
   <arg name = "waypoints" default="$(find atypical_driving)/param/goal_airsim.yaml"/>
 
@@ -99,7 +99,7 @@
         <arg name = "goal/y" value = "$(arg goal/y)"/>
         <param name="local_planner/initial_guess/w_state" value="100.0"/>
         <param name="local_planner/initial_guess/w_input" value="1.0"/>
-        <param name="stopping/trigger_dist" value="3.0"/>
+        <param name="stopping/trigger_dist" value="15.0"/>
     </include>
 
 
