@@ -4,7 +4,7 @@
 
   <arg name = "use_sim_time" value = "true"/>
 <!--   <arg name= "bagfile"        default="200518-SNU-1_result.bag"/> -->
-  <arg name= "bagfile"        default="galgori.bag"/>
+  <arg name= "bagfile"        default="kiapi_static2.bag"/>
 
   <param name="use_sim_time" value="$(arg use_sim_time)"/>
 
@@ -19,12 +19,12 @@
   <arg name ="detected_object_frame_id" default = "velodyne"/>
 
   <arg name = "lane_width" default="9"/>
-  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/interpolated_waypoint_parking_lot8.csv"/>
+  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/kiapi_path2.csv"/>
   <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
 
 
-  <arg name = "goal/x"  default = "332268.53"/> <!--in world frame -->
-  <arg name = "goal/y" default = "4138453.75"/> <!--in world frame -->
+  <arg name = "goal/x"  default = "445999.692015"/> <!--in world frame -->
+  <arg name = "goal/y" default = "3944822.6846"/> <!--in world frame -->
 
   <group ns="atypical_planning_test">
     <rosparam file="$(find atypical_driving)/param/MPC_weight.yaml"/>

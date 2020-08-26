@@ -39,7 +39,7 @@
         [1.325, -1.3]
         ]
         static_map: false
-        robot_radius: 0.5
+        robot_radius: 0.9
 
         plugins:
           - {name: obstacles,       type: "costmap_2d::ObstacleLayer"}
@@ -51,11 +51,11 @@
         origin_x: 0
         origin_y: 0
         width: 80
-        resolution: 0.8
+        resolution: 0.4
         height: 80
         rolling_window: true
         inf_is_valid: true,
-        observation_persistance: 100.0,
+        observation_    `persistance: 100.0,
         track_unknown_space: false,
         obstacles:
           track_unknown_space: false,
@@ -75,7 +75,7 @@
             inf_is_valid: true
           }
         inflation:
-          inflation_radius: 0.75
+          inflation_radius: 0.4
         voxel:
           publish_voxel_map: true
     </rosparam>

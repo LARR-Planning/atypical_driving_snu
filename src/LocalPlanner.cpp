@@ -532,6 +532,18 @@ bool LocalPlannerPlain::plan(double t) {
              {
                 uN_NextInit =u0;
 
+                 for(int j = 0; j<N;j++)
+                 {
+                     if(xN_new[j][3]>param.maxAccel)
+                         xN_new[j][3]=param.maxAccel;
+                     if(xN_new[j][3]<param.minAccel)
+                         xN_new[j][3]=param.minAccel;
+                     if(xN_new[j][4]>param.maxSteer)
+                         xN_new[j][4]=param.maxSteer;
+                     if(xN_new[j][4]<-param.maxSteer)
+                         xN_new[j][4]=-param.maxSteer;
+
+                 }
 
 
                  Matrix<double,N,1> ts_temp = VectorXd::LinSpaced(N,param.tStep,param.horizon);

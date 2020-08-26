@@ -10,16 +10,17 @@
   <arg name ="snu_frame_id" default="SNU"/>
   <arg name ="occu_frame_id" default="SNU"/>
   <arg name ="world_frame_id" default="map"/>
-  <arg name ="car_base_frame_id" default="/car_base_link"/>
+  <arg name ="car_base_frame_id" default="/base_link"/>
   <arg name ="lidar_frame_id" default = "velodyne"/>
   <arg name ="detected_object_frame_id" default = "velodyne"/>
 
-  <arg name = "lane_width" default="7"/>
-  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/interpolated_waypoint_parking_lot8.csv"/>
+
+  <arg name = "lane_width" default="5"/>
+  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/kiapi_path2.csv"/>
   <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
 
-  <arg name = "goal/x"  default = "332267.24"/> <!--in world frame -->
-  <arg name = "goal/y" default = "4138451.04"/> <!--in world frame -->
+  <arg name = "goal/x"  default = "445999.692015"/> <!--in world frame -->
+  <arg name = "goal/y" default = "3944822.6846"/> <!--in world frame -->
 
 
     <arg name = "period" default= "0.1"/>
@@ -41,8 +42,8 @@
         <rosparam>
             target_frame:  velodyne # Leave disabled to output scan in pointcloud frame
             transform_tolerance: 0.01
-            min_height: -0.8
-            max_height: 0.3
+            min_height: -1.5
+            max_height: -0.9
 
             angle_min: -3.1408 # -M_PI/2
             angle_max: 3.1408 # M_PI/2
@@ -99,7 +100,7 @@
 
         <!--Shaping params for nominal_speed selection-->
         <param name = "vmax" value = "5"/> <!--m/s-->
-        <param name = "vmin" value = "1.0"/> <!--m/s-->
+        <param name = "vmin" value = "2.0"/> <!--m/s-->
         <param name = "curve_thres" value = "0.3"/> <!--m/s-->
 
         <param name = "goal/x" value = "$(arg goal/x)"/>
@@ -113,15 +114,15 @@
 
         <param name="global_planner/period" value="$(arg period)" />
         <param name="global_planner/grid_resolution" value="0.3" />
-        <param name ="global_planner/max_steering_angle" value = "$(eval 3.14/20)"/>
-        <param name="global_planner/smoothing_distance" value="5" />
+        <param name="global_planner/max_steering_angle" value="$(eval 3.14/20)"/>
+        <param name="global_planner/smoothing_distance" value="16" />
         <param name="global_planner/smoothing_cliff_min_bias" value="1.0" />
         <param name="global_planner/smoothing_cliff_ratio" value="0.5"/>
         <param name="global_planner/start_smoothing_distance" value="8" />
-        <param name="global_planner/corridor_width_min" value = "0.5"/>
-        <param name="global_planner/corridor_width_dynamic_min" value = "4"/>
-	<param name="global_planner/safe_distance" value = "7"/>
-	<param name="global_planner/nominal_acceleration" value="0.5"/>
+        <param name="global_planner/corridor_width_min" value = "0.0"/>
+        <param name="global_planner/corridor_width_dynamic_min" value="8.0"/>
+	    <param name="global_planner/safe_distance" value = "50"/>
+	    <param name="global_planner/nominal_acceleration" value="0.5"/>
 
         <param name="local_planner/horizon" value="$(arg horizon)" />
         <param name="local_planner/ts" value="$(arg planning_dt)" />

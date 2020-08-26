@@ -54,14 +54,14 @@
 
     <param name="global_planner/period" value="$(arg period)" />
     <param name="global_planner/grid_resolution" value="0.3" />
-    <param name="global_planner/smoothing_distance" value="5" />
+    <param name="global_planner/max_steering_angle" value = "$(eval 3.14/20)"/>
+    <param name="global_planner/smoothing_distance" value="8" />
     <param name="global_planner/smoothing_cliff_min_bias" value="1.0" />
     <param name="global_planner/smoothing_cliff_ratio" value="0.5"/>
-    <param name="global_planner/max_steering_angle" value = "$(eval 3.14/20)"/>
     <param name="global_planner/start_smoothing_distance" value="8" />
-    <param name="global_planner/corridor_width_min" value = "0.5"/>
-    <param name="global_planner/corridor_width_dynamic_min" value = "4.0"/>
-    <param name="global_planner/safe_distance" value = "10.0"/>
+    <param name="global_planner/corridor_width_min" value = "0.0"/>
+    <param name="global_planner/corridor_width_dynamic_min" value = "8.0"/>
+    <param name="global_planner/safe_distance" value = "1000.0"/>
     <param name="global_planner/nominal_acceleration" value = "0.5"/>
 
     <param name="local_planner/horizon" value="$(arg horizon)" />
