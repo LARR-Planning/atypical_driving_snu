@@ -991,7 +991,7 @@ bool Wrapper::planLocal(double tTrigger) {
 }
 
 bool Wrapper::planStopping(double tTrigger){
-    bool stopPassed = s_ptr->plan_ct(tTrigger);
+    bool stopPassed = s_ptr->plan(tTrigger);
     ROS_INFO("stopPassed");
     p_base_shared->isStoppingSolved = stopPassed;
     

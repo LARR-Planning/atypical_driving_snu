@@ -98,7 +98,7 @@ namespace Planner{
             }
             // void set_result(double t);
             
-            bool plan_ct(double time)
+            bool plan(double time)
             {   
                 const size_t state_dim = 4;
                 const size_t control_dim = 2;
