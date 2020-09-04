@@ -25,6 +25,10 @@ find_package(blasfeo)
 find_package(hpipm)
 include_directories(${hpipm_INCLUDE_DIRS} ${blasfeo_INCLUDE_DIRS})
 
+find_package(PythonLibs 2.7 REQUIRED)
+include_directories(${PYTHON_INCLUDE_DIRS})
+find_package(Threads)
+
 # find_package( ACADO REQUIRED )
 
 find_package(catkin REQUIRED COMPONENTS roscpp sensor_msgs tf tf2 qpOASES
@@ -46,24 +50,24 @@ catkin_package(
 )
 
 add_executable(atypical_driving_test test/main.cpp ${SNU_PLANNER_SRC} src/optimization_module/math.cpp)
-target_link_libraries(atypical_driving_test ${catkin_LIBRARIES} -lstdc++fs )
+target_link_libraries(atypical_driving_test ${catkin_LIBRARIES} -lstdc++fs  ${PYTHON_LIBRARIES}   pthread)
 # target_link_libraries(atypical_driving_test ${catkin_LIBRARIES} -lstdc++fs)
 SET_TARGET_PROPERTIES( atypical_driving_test PROPERTIES . ${CMAKE_CURRENT_SOURCE_DIR} )
 
 
 add_executable(virtual_environment_generator test/virtual_environment_generator.cpp ${SNU_PLANNER_SRC})
-target_link_libraries(virtual_environment_generator ${catkin_LIBRARIES} -lstdc++fs )
+target_link_libraries(virtual_environment_generator ${catkin_LIBRARIES} -lstdc++fs ${PYTHON_LIBRARIES}   pthread)
 SET_TARGET_PROPERTIES( virtual_environment_generator PROPERTIES . ${CMAKE_CURRENT_SOURCE_DIR} )
 
 #add_executable(lane_tester test/LaneTest/main.cpp ${SNU_PLANNER_SRC})
 #target_link_libraries(lane_tester ${catkin_LIBRARIES} -lstdc++fs)
 
 add_executable(integration_server test/IntegrationTest/server_main.cpp ${SNU_PLANNER_SRC})
-target_link_libraries(integration_server ${catkin_LIBRARIES} -lstdc++fs)
+target_link_libraries(integration_server ${catkin_LIBRARIES} -lstdc++fs ${PYTHON_LIBRARIES}   pthread)
 SET_TARGET_PROPERTIES( integration_server PROPERTIES . ${CMAKE_CURRENT_SOURCE_DIR} )
 
 add_executable(integration_client test/IntegrationTest/client_main.cpp ${SNU_PLANNER_SRC})
-target_link_libraries(integration_client ${catkin_LIBRARIES} -lstdc++fs )
+target_link_libraries(integration_client ${catkin_LIBRARIES} -lstdc++fs ${PYTHON_LIBRARIES}   pthread)
 SET_TARGET_PROPERTIES( integration_client PROPERTIES . ${CMAKE_CURRENT_SOURCE_DIR} )
 
 add_executable(keti_client test/KetiTest/client_main.cpp ${SNU_PLANNER_SRC})

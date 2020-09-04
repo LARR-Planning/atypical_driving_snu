@@ -12,12 +12,14 @@
 #include <chrono>
 #include <ros/ros.h>
 #include <iostream>
+#include <third_party/matplotlibcpp.h>
 
 
 const double t_stop = 5.0;
 // using namespace std;
 // using namespace ct::core;
 // using namespace ct::optcon;
+namespace plt = matplotlibcpp;
 
 namespace Planner{
 
@@ -27,7 +29,7 @@ namespace Planner{
             Eigen::Vector3d goal;
             double thres_ = 0.5;
             std::vector<Eigen::Matrix<double, 2, 1>> u_result;
-            int step_size = 10;
+            int step_size = 50;
             double time_horizon = 5.0;
             double pi = 3.141592;
 
@@ -79,11 +81,7 @@ namespace Planner{
                 // ilqr_param.verbosity = 0;
                 // ilqr_param.dmu = 1.2;
                 // ilqr_param.dphi = 0.8;
-                state0 = (Eigen::Matrix<double,4,1>()<<p_base->getCarState().x, p_base->getCarState().y,
-                    p_base->getCarState().v, p_base->getCarState().theta).finished();
-                Eigen::Vector3d goalXYSNU(p_base->goal_x, p_base->goal_y, 0); // goal w.r.t SNu frame
-                goalXYSNU = p_base->Tws.inverse()*goalXYSNU;
-                goal = goalXYSNU;
+
 
                 car_shape << 2.0, 0.0, 0.0, 2.0;
                 state_weight_<< 0.5, 0.5, 0.0, 0.0, 0.0, 0.05;
@@ -100,6 +98,12 @@ namespace Planner{
             
             bool plan(double time)
             {   
+                state0 = (Eigen::Matrix<double,4,1>()<<p_base->getCarState().x, p_base->getCarState().y,
+                          p_base->getCarState().v, p_base->getCarState().theta).finished();
+                Eigen::Vector3d goalXYSNU(p_base->goal_x, p_base->goal_y, 0); // goal w.r.t SNu frame
+                goalXYSNU = p_base->Tws.inverse()*goalXYSNU;
+                goal = goalXYSNU;
+
                 const size_t state_dim = 4;
                 const size_t control_dim = 2;
 
@@ -120,6 +124,9 @@ namespace Planner{
                 /* STEP 1-F: initialization with initial state and desired time horizon */
                 ct::core::StateVector<state_dim> x0;
                 x0[0] = state0(0,0);   x0[1] = state0(1,0);  x0[2] = state0(2,0);  x0[3] = state0(3,0);
+                
+                Eigen::Vector4d x_f; 
+                x_f[0] = goal(0,0); x_f[1] = goal(1,0); x_f[2] = 0.0; x_f[3] = x0[3];
 
                 /* STEP 1-C: create a cost function. We have pre-specified the cost-function weights for this problem in "nlocCost.info".
                 * Here, we show how to create terms for intermediate and final cost and how to automatically load them from the configuration file.
@@ -146,9 +153,7 @@ namespace Planner{
                 R_final = R_scale_f * R_final;
                 finalCost->setWeights(Q_final, R_final);
 
-                Eigen::Vector4d x_f; 
-                // x_f[0] = goal(0,0); x_f[1] = goal(1,0); x_f[2] = 0.0; x_f[3] = goal(2,0);
-                x_f[0] = x0[0]+ 5.0; x_f[1] = 0.0; x_f[2] = 0.0; x_f[3] = x0[3];
+                // x_f[0] = x0[0]+ 5.0; x_f[1] = 0.0; x_f[2] = 0.0; x_f[3] = x0[3];
 
                 Eigen::Vector2d u_f; u_f << 0.0, 0.0;
                 finalCost->setStateAndControlReference(x_f, u_f);
@@ -212,6 +217,8 @@ namespace Planner{
                 optConProblem.setInputBoxConstraints(inputBoxConstraints);
                 // optConProblem.setStateBoxConstraints(stateBoxConstraints);
 
+                ROS_INFO("[OPT] Start Point x: %f, y: %f, v: %f, th: %f", x0[0], x0[1], x0[2], x0[3]);
+                ROS_INFO("[OPT] Goal Point x: %f, y: %f, th: %f", x_f[0], x_f[1], x_f[3]);
 
                 std::cout << "STEP1 FINISHED" << std::endl;     
 
@@ -222,10 +229,10 @@ namespace Planner{
                 * linear quadratic regulator, iLQR, for this example. In the following, we
                 * modify only a few settings, for more detail, check out the NLOptConSettings class. */
                 ct::optcon::NLOptConSettings ilqr_settings;
-                ilqr_settings.dt = 0.01;  // the control discretization in [sec]
+                ilqr_settings.dt = dt;  // the control discretization in [sec]
                 ilqr_settings.integrator = ct::core::IntegrationType::EULERCT;
                 ilqr_settings.discretization = ct::optcon::NLOptConSettings::APPROXIMATION::FORWARD_EULER;
-                ilqr_settings.max_iterations = 10;
+                ilqr_settings.max_iterations = 1000;
                 ilqr_settings.nThreads = 1;
                 ilqr_settings.nlocp_algorithm = ct::optcon::NLOptConSettings::NLOCP_ALGORITHM::GNMS;
                 ilqr_settings.lqocp_solver = ct::optcon::NLOptConSettings::LQOCP_SOLVER::HPIPM_SOLVER;  // solve LQ-problems using HPIPM
@@ -263,9 +270,98 @@ namespace Planner{
                 // STEP 4: retrieve the solution
                 ct::core::StateFeedbackController<state_dim, control_dim> solution = iLQR.getSolution();
 
+                //Conversion to u_result
+                //std::vector<Eigen::Matrix<double, 2, 1>> u_result;
+                auto stateArray = solution.x_ref();
+                auto controlArray = solution.uff();
+                auto timeArray = solution.time();                
+                if (timeArray.size() != stateArray.size())
+                {
+                    std::cout << timeArray.size() << std::endl;
+                    std::cout << stateArray.size() << std::endl;
+                    std::cout << "Cannot plot data, x and t not equal length" << std::endl;
+                    return false; 
+                }
+                Eigen::Vector2d input; 
+                for (size_t j = 0; j < controlArray.size(); j++)
+                {
+                    input[0] = controlArray[j](0);
+                    input[1] = controlArray[j](1);
+                    u_result.push_back(input);
+                }
 
+
+                std::cout << "Size of the timeArray: " << timeArray.size() << std::endl; 
+                
+                
+                std::vector<double> x_traj;
+                std::vector<double> y_traj;
+                std::vector<double> th_traj;
+                std::vector<double> v_traj;
+                    
+                std::vector<double> time_state;
+                for (size_t j = 0; j < stateArray.size(); j++)
+                {
+                    x_traj.push_back(stateArray[j](0));
+                    y_traj.push_back(stateArray[j](1));
+                    v_traj.push_back(stateArray[j](2));
+                    th_traj.push_back(stateArray[j](3));
+                    time_state.push_back(timeArray[j]);
+                }
+
+                std::vector<double> a_traj;
+                std::vector<double> del_traj;
+                
+                std::vector<double> time_control;
+                for (size_t j = 0; j < controlArray.size(); j++)
+                {
+                    a_traj.push_back(controlArray[j](0));
+                    del_traj.push_back(controlArray[j](1));        
+                    time_control.push_back(timeArray[j]);
+                }
+
+                // plt::figure(1);
+                // // plt::figure_size(1500, 1000);
+
+                // std::cout << "Time size: " <<  time_state.size() << std::endl; 
+                // std::cout << "X size: " << x_traj.size() << std::endl; 
+                // std::cout << "Y size: " << y_traj.size() << std::endl; 
+                // std::cout << "V size: " << v_traj.size() << std::endl; 
+                // std::cout << "Theta size: " << th_traj.size() << std::endl; 
+
+                // plt::subplot(3, 2, 1);
+                // plt::named_plot("x", time_state, x_traj);
+                // plt::title("x_traj");
+
+                // plt::subplot(3, 2, 2);
+                // plt::named_plot("y", time_state, y_traj);
+                // plt::title("y_traj");
+
+                // plt::subplot(3, 2, 3);
+                // plt::plot(time_state, v_traj);
+                // plt::title("v_traj");
+
+                // plt::subplot(3, 2, 4);
+                // plt::plot(time_state, th_traj);
+                // plt::title("th_traj");
+
+                // plt::subplot(3, 2, 5);
+                // plt::plot(time_control, a_traj);
+                // plt::title("a_traj");
+
+                // plt::subplot(3, 2, 6);
+                // plt::plot(time_control, del_traj);
+                // plt::title("del_traj");
+
+
+                // plt::legend();
+                // plt::show(false);
+                // plt::save("/home/dabinnkim/stopping_state.png");
+
+
+                set_result(time);
+                return true; 
             }
-
 //             bool plan(double time)
 //             {   
 //                 USING_NAMESPACE_ACADO
@@ -528,7 +624,7 @@ namespace Planner{
                 stop_result.ts.clear();
                 stop_result.us.clear();
                 stop_result.xs.clear();
-                Eigen::Matrix<double, 10, 1> ts_temp = Eigen::VectorXd::LinSpaced(step_size, 0.0, time_horizon);
+                Eigen::Matrix<double, 50, 1> ts_temp = Eigen::VectorXd::LinSpaced(step_size, 0.0, time_horizon);
                 ts_temp = ts_temp.array() + t;
                 CarState carState_temp;
                 CarInput carInput_temp;
