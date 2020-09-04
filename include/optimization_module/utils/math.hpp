@@ -7,14 +7,14 @@
 
 #include <geometry_msgs/Quaternion.h> // I want to remove this....
 
-using namespace Eigen;
+// using namespace Eigen;
 
 // fixed size homogenous container
 template<typename T, const int size>
 using Collection = std::array<T, size>; 
 
 
-VectorXd power(const double a, const VectorXd b);
+Eigen::VectorXd power(const double a, const Eigen::VectorXd b);
 
 //VectorXd power(const VectorXd a, const VectorXd b)
 //{
@@ -43,7 +43,7 @@ VectorXd power(const double a, const VectorXd b);
 
 // TODO : can I make fixed-size version of this?
 
-MatrixXd nan(const int n, const int m);
+Eigen::MatrixXd nan(const int n, const int m);
 /*
  *	Right kronecker product with identity matrix (I x A)
  */
@@ -96,9 +96,9 @@ MatrixXd nan(const int n, const int m);
  *	Square root of positive symmetric matrix
  */
 template<const int N>
-Matrix<double,N,N> sqrt( const Matrix<double,N,N> Q )
+Eigen::Matrix<double,N,N> sqrt( const Eigen::Matrix<double,N,N> Q )
 {
-	SelfAdjointEigenSolver<Matrix<double,N,N>> es(Q);
+	Eigen::SelfAdjointEigenSolver<Eigen::Matrix<double,N,N> > es(Q);
 	return es.operatorSqrt();
 }
 
@@ -106,9 +106,9 @@ Matrix<double,N,N> sqrt( const Matrix<double,N,N> Q )
  *	Vectorization (column major)
  */
 template<const int rowA, const int colA>
-Matrix<double,rowA*colA,1> vec( Matrix<double,rowA,colA> A )
+Eigen::Matrix<double,rowA*colA,1> vec( Eigen::Matrix<double,rowA,colA> A )
 {
-	Map<Matrix<double,rowA*colA,1>> vecA(A.data(),rowA,colA);
+	Eigen::Map<Eigen::Matrix<double,rowA*colA,1> > vecA(A.data(),rowA,colA);
 	return vecA;
 }
 
@@ -121,10 +121,10 @@ int factorial(int n);
  *	Matrix power (simple)
  */
 template<const int N>
-Matrix<double,N,N> pow( const Matrix<double,N,N> A, int p )
+Eigen::Matrix<double,N,N> pow( const Eigen::Matrix<double,N,N> A, int p )
 {
 	if( p == 0 )
-		return Matrix<double,N,N>::Identity();
+		return Eigen::Matrix<double,N,N>::Identity();
 	else
 		return pow(A,p-1) * A;
 }
@@ -133,18 +133,18 @@ Matrix<double,N,N> pow( const Matrix<double,N,N> A, int p )
  *	expm_jac : Jacobian of matrix exponential
  */
 template<const int N, const int size>
-Collection<Matrix<double,N,N>,size>
-	expm_jac( Matrix<double,N,N> A, 
-			  Collection<Matrix<double,N,N>,size> dA_dK,
+Collection<Eigen::Matrix<double,N,N>,size>
+	expm_jac( Eigen::Matrix<double,N,N> A, 
+			  Collection<Eigen::Matrix<double,N,N>,size> dA_dK,
 			  double dt )
 {
-	Collection<Matrix<double,N,N>,size> dexpAdt_dK;
+	Collection<Eigen::Matrix<double,N,N>,size> dexpAdt_dK;
 	for(int k=0; k<size; k++)
 	{
 		dexpAdt_dK[k] = dt*dA_dK[k];
 		for(int i=1; i<=2; i++) // this number must be different wit respect to dt
 		{
-			Matrix<double,N,N> deriv = Matrix<double,N,N>::Zero();
+			Eigen::Matrix<double,N,N> deriv = Eigen::Matrix<double,N,N>::Zero();
 			for(int j=0; j<=i; j++)
 				deriv += pow<N>(dt*A,j) * (dt*dA_dK[k]) * pow<N>(dt*A,(i-j));
 			dexpAdt_dK[k] += (1.0/factorial(i+1))*deriv;

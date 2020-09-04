@@ -6,7 +6,7 @@
 
 
 using namespace Planner;
-
+using namespace Eigen;
 /**
  * @brief Outputs Vector form for logging
  * @return

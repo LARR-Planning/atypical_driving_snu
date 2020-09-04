@@ -4,6 +4,7 @@
 
 #include <third_party/Utils.h>
 
+using namespace Eigen; 
 double interpolate( vector<double> &xData, vector<double> &yData, double x, bool extrapolate )
 {
     int size = xData.size();

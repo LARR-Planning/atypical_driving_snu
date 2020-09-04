@@ -5,9 +5,9 @@
 #include <ros/ros.h>
 
 using namespace std;
-using namespace Eigen;
-typedef Matrix<float,6,1> Vector6f;
-typedef Matrix<float,8,1> Vector8f;
+// using namespace Eigen;
+typedef Eigen::Matrix<float,6,1> Vector6f;
+typedef Eigen::Matrix<float,8,1> Vector8f;
 
 namespace Predictor{
     class TargetManager{
@@ -33,7 +33,7 @@ namespace Predictor{
             int size_history = 2000;
             double lastObservationTime;
             double trackingExpirationTime;
-            Vector3f dimensions;
+            Eigen::Vector3f dimensions;
 
             list<Vector8f> observationHistory;
             string logFileDir;
@@ -41,22 +41,22 @@ namespace Predictor{
             TargetManager () {};
             ~TargetManager();
             TargetManager(int queue_size,float z_value,int poly_order,int index = 0 );
-            void update_observation(float t , geometry_msgs::Pose target_pose,Vector3f dimensions_ );
+            void update_observation(float t , geometry_msgs::Pose target_pose,Eigen::Vector3f dimensions_ );
             void update_predict();
             float getHeight() {return z_value;};
             geometry_msgs::Pose eval_pose(float t);
             vector<geometry_msgs::Pose> eval_pose_seq(vector<float> ts);            
-            vector<geometry_msgs::Pose> eval_pose_seq(VectorXf ts);
+            vector<geometry_msgs::Pose> eval_pose_seq(Eigen::VectorXf ts);
             geometry_msgs::PoseArray get_obsrv_pose(string world_frame_id);
             bool is_prediction_available() {return is_predicted;};       
             visualization_msgs::Marker get_obsrv_marker(string world_frame_id, int  ns = 0); // observation used for the latest prediction update
             double getLastObservationTime(){return lastObservationTime;};
             void setExpiration(const double & T) {trackingExpirationTime =  T;};
             double getExpiration() const {return trackingExpirationTime;};
-            Vector3f getLastDimensions() const{return dimensions;}
+            Eigen::Vector3f getLastDimensions() const{return dimensions;}
             void setLogFileDir(string dir) {logFileDir = dir;};
             void setIndex(int idx) {managerIdx = idx;};
-            Vector2f getFitVelocity () {return Vector2f(fit_coeff_x(1),fit_coeff_y(1)); };
+            Eigen::Vector2f getFitVelocity () {return Eigen::Vector2f(fit_coeff_x(1),fit_coeff_y(1)); };
     };
 
     typedef tuple<uint, TargetManager >  IndexedPredictor;

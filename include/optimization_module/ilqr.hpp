@@ -8,7 +8,7 @@
 #include <optimization_module/utils/math.hpp>
 //#define EIGEN_USE_MKL_ALL
 
-using namespace Eigen;
+// using namespace Eigen;
 
 struct iLQRParams
 {
@@ -17,10 +17,10 @@ struct iLQRParams
     double rhoFactor;
     double rhoMax;
     double rhoMin;
-    VectorXd tolGrads;
-    VectorXd tolCosts;
-    VectorXd tolConsts;
-    VectorXd alphas;
+    Eigen::VectorXd tolGrads;
+    Eigen::VectorXd tolCosts;
+    Eigen::VectorXd tolConsts;
+    Eigen::VectorXd alphas;
     int maxIter;
     double mu;
     double lambda;
@@ -37,21 +37,21 @@ class iLQR
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 	protected:
-		typedef Matrix<double,Nx,1> 	VectorX; 
-		typedef Matrix<double,Nu,1> 	VectorU;
-		typedef Matrix<double,Nx,Nx> 	MatrixXX;
-		typedef Matrix<double,Nx,Nu> 	MatrixXU;
-		typedef Matrix<double,Nu,Nx> 	MatrixUX;
-		typedef Matrix<double,Nu,Nu> 	MatrixUU;
+		typedef Eigen::Matrix<double,Nx,1> 	VectorX; 
+		typedef Eigen::Matrix<double,Nu,1> 	VectorU;
+		typedef Eigen::Matrix<double,Nx,Nx> 	MatrixXX;
+		typedef Eigen::Matrix<double,Nx,Nu> 	MatrixXU;
+		typedef Eigen::Matrix<double,Nu,Nx> 	MatrixUX;
+		typedef Eigen::Matrix<double,Nu,Nu> 	MatrixUU;
 		
 		struct FullTrajectory
 		{
 			Collection<VectorX,N+1> x;
 			Collection<double,N+1> c;
-			Collection<VectorXd,N+1> con;
-			Collection<VectorXd,N+1> activated;
+			Collection<Eigen::VectorXd,N+1> con;
+			Collection<Eigen::VectorXd,N+1> activated;
 			Collection<VectorU,N> u;
-			Matrix<double,4,1> costs;
+			Eigen::Matrix<double,4,1> costs;
 		};
 
 	public: 
@@ -69,22 +69,22 @@ class iLQR
 		VectorX 					x0_; 					// initial state
 		Collection<VectorX,N+1> 	xN_;					// nominal state
 		Collection<double,N+1> 		cN_; 					// nominal cost
-		Collection<VectorXd,N+1> 	constN_; 				// nominal constraint
-		Collection<VectorXd,N+1> 	activated_; 			// flag for active constraints
+		Collection<Eigen::VectorXd,N+1> 	constN_; 				// nominal constraint
+		Collection<Eigen::VectorXd,N+1> 	activated_; 			// flag for active constraints
 		Collection<VectorU,N> 		uN_;					// nominal input
-		Matrix<double,4,1> 			costsN_; 				// stage, final, penalty, lagrange
+		Eigen::Matrix<double,4,1> 			costsN_; 				// stage, final, penalty, lagrange
 
-		Collection<VectorXd,N+1> 	mu_; 					// penalty
-		Collection<VectorXd,N+1> 	lambda_; 				// lagrange
-		Collection<VectorXd,N+1> 	phi_; 					// penalty/lagrange update condition
-		Collection<VectorXd,N+1> 	eq_flag_; 				// flag for equality constrints
+		Collection<Eigen::VectorXd,N+1> 	mu_; 					// penalty
+		Collection<Eigen::VectorXd,N+1> 	lambda_; 				// lagrange
+		Collection<Eigen::VectorXd,N+1> 	phi_; 					// penalty/lagrange update condition
+		Collection<Eigen::VectorXd,N+1> 	eq_flag_; 				// flag for equality constrints
 		
 		Collection<VectorU,N> 		k_;						// feedforward term
 		Collection<MatrixUX,N> 		K_;						// feedback gain
 
 	private:
 		FullTrajectory 				forward_pass(double);	// forward pass
-		Matrix<double,2,1> 			backward_pass(); 		// backward pass
+		Eigen::Matrix<double,2,1> 			backward_pass(); 		// backward pass
 		void 						update_lagrange(int);	// lagrange update routine
 
 		iLQRParams 					params_;				// structure of parameters
@@ -131,7 +131,7 @@ iLQR<Nx,Nu,N>::iLQR( ProblemDescription<Nx,Nu>& prob,						// problem setup
 	xN_[0] = x0_;
 	uN_ = u_init;
 	dt_ = dt;
-	costsN_ = Matrix<double,4,1>::Zero();
+	costsN_ = Eigen::Matrix<double,4,1>::Zero();
 	
 	// update parameters
 	params_ = params;
@@ -160,11 +160,11 @@ iLQR<Nx,Nu,N>::iLQR( ProblemDescription<Nx,Nu>& prob,						// problem setup
 		
 			costsN_(1) = cN_[k];
 		}
-		mu_[k] 			= VectorXd::Constant(const_deriv.Nc, params_.mu);
-		lambda_[k] 		= VectorXd::Constant(const_deriv.Nc, params_.lambda);
-		phi_[k] 		= VectorXd::Constant(const_deriv.Nc, params_.phi);
-		eq_flag_[k] 	= VectorXd::Constant(const_deriv.Nc, 0.0);
-		activated_[k] 	= VectorXd::Constant(const_deriv.Nc, 0.0);
+		mu_[k] 			= Eigen::VectorXd::Constant(const_deriv.Nc, params_.mu);
+		lambda_[k] 		= Eigen::VectorXd::Constant(const_deriv.Nc, params_.lambda);
+		phi_[k] 		= Eigen::VectorXd::Constant(const_deriv.Nc, params_.phi);
+		eq_flag_[k] 	= Eigen::VectorXd::Constant(const_deriv.Nc, 0.0);
+		activated_[k] 	= Eigen::VectorXd::Constant(const_deriv.Nc, 0.0);
 		for( int i=0; i<const_deriv.Nc; i++ )
 		{
 			if( i < const_deriv.Neq )
@@ -199,7 +199,7 @@ void iLQR<Nx,Nu,N>::solve( void )
 		{	
 			/* STEP 1 : backward computation of optimal gains */
 			auto t_backward_start = std::chrono::system_clock::now();
-			Matrix<double,2,1> dV = backward_pass();
+			Eigen::Matrix<double,2,1> dV = backward_pass();
 			//cout << "Backward : " << 
 			//	(std::chrono::system_clock::now() - t_backward_start).count()*1e-9 << endl;
 			t_backward_ += (std::chrono::system_clock::now() - t_backward_start).count()*1e-9;
@@ -210,7 +210,7 @@ void iLQR<Nx,Nu,N>::solve( void )
 			double dcost = 0.0;
 			double expected = 0.0;
 			double alpha = 0.0;
-			FullTrajectory new_traj;
+			FullTrajectory new_traj;	
 			for(int i=0; i<params_.alphas.size(); i++)
 			{
 				alpha = params_.alphas[i];
@@ -230,7 +230,7 @@ void iLQR<Nx,Nu,N>::solve( void )
 					break;
 				}
 			}	
-			Matrix<double,N,1> grad = Matrix<double,N,1>::Zero(); // estimated gradient
+			Eigen::Matrix<double,N,1> grad = Eigen::Matrix<double,N,1>::Zero(); // estimated gradient
 			for(int k=0; k<N; k++)
 				grad(k) = (alpha*k_[k].array().abs()/(uN_[k].array().abs()+1)).matrix().maxCoeff();
 			double mean_grad = grad.mean();
@@ -345,7 +345,7 @@ typename iLQR<Nx,Nu,N>::FullTrajectory iLQR<Nx,Nu,N>::forward_pass( double alpha
 	
 	// fix initial state
 	new_traj.x[0] = x0_;
-	new_traj.costs = Matrix<double,4,1>::Zero();
+	new_traj.costs = Eigen::Matrix<double,4,1>::Zero();
 
 	// integration
 	for( int k=0; k<N+1; k++ )
@@ -371,7 +371,7 @@ typename iLQR<Nx,Nu,N>::FullTrajectory iLQR<Nx,Nu,N>::forward_pass( double alpha
 			new_traj.costs(1) = new_traj.c[k];
 		}
 		
-		new_traj.activated[k] = VectorXd::Zero(new_traj.con[k].size());
+		new_traj.activated[k] = Eigen::VectorXd::Zero(new_traj.con[k].size());
 		for( int i=0; i<new_traj.con[k].size(); i++ )
 		{
 			if( eq_flag_[k](i) == 1.0 || lambda_[k](i) > 0.0 || new_traj.con[k](i) < 0.0 )
@@ -392,9 +392,9 @@ typename iLQR<Nx,Nu,N>::FullTrajectory iLQR<Nx,Nu,N>::forward_pass( double alpha
  * returns estimated value reduction dV 
  */
 template<const int Nx, const int Nu, const int N>
-Matrix<double,2,1> iLQR<Nx,Nu,N>::backward_pass()
+Eigen::Matrix<double,2,1> iLQR<Nx,Nu,N>::backward_pass()
 {
-	Matrix<double,2,1> dV = VectorXd::Zero(2);
+	Eigen::Matrix<double,2,1> dV = Eigen::VectorXd::Zero(2);
 	
 	DynamicsDerivatives<Nx,Nu> 		dyn_deriv;
 	CostDerivatives<Nx,Nu> 			cost_deriv;
@@ -408,7 +408,7 @@ Matrix<double,2,1> iLQR<Nx,Nu,N>::backward_pass()
 	const_deriv = prob_.constraint(xN_[N], nan(Nu,1), N, WITH_DERIVATIVES);
 	if( const_deriv.Nc > 0 )
 	{	// update when constraints exist
-		MatrixXd I_mu = (activated_[N].array() * mu_[N].array()).matrix().asDiagonal();
+		Eigen::MatrixXd I_mu = (activated_[N].array() * mu_[N].array()).matrix().asDiagonal();
 		Vx 	+= const_deriv.conx.transpose() * (I_mu * const_deriv.con - lambda_[N]);
 		Vxx += const_deriv.conx.transpose() * (I_mu * const_deriv.conx);
 	}
@@ -440,11 +440,11 @@ Matrix<double,2,1> iLQR<Nx,Nu,N>::backward_pass()
 		const_deriv = prob_.constraint(xN_[k], uN_[k], k, WITH_DERIVATIVES);
 		if( const_deriv.Nc > 0 )
 		{	// update when constraints exist
-			VectorXd con = const_deriv.con;
-			MatrixXd conx = const_deriv.conx;
-			MatrixXd conu = const_deriv.conu;
+			Eigen::VectorXd con = const_deriv.con;
+			Eigen::MatrixXd conx = const_deriv.conx;
+			Eigen::MatrixXd conu = const_deriv.conu;
 
-			MatrixXd I_mu = (activated_[k].array() * mu_[k].array()).matrix().asDiagonal();
+			Eigen::MatrixXd I_mu = (activated_[k].array() * mu_[k].array()).matrix().asDiagonal();
 			Qx += conx.transpose() * (I_mu * con - lambda_[k]);
 			Qu += conu.transpose() * (I_mu * con - lambda_[k]);
 			Qxx += conx.transpose() * I_mu * conx;

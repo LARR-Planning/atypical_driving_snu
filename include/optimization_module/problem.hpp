@@ -34,7 +34,7 @@ class Problem : public ProblemDescription<Nx,Nu>
 {
 private:
 
-    Collection<Matrix<double,5,1>,N+1> x_ref; // Reference Tracking Mode
+    Collection<Eigen::Matrix<double,5,1>,N+1> x_ref; // Reference Tracking Mode
     int isRefUsed;
     VectorX final_weight_ = VectorX::Zero(); //Final Cost Weight Factor
     VectorX state_weight_ = VectorX::Zero(); //Running Cost State Weight Factor
@@ -42,17 +42,17 @@ private:
 
     Collection<Planner::Corridor,N+1>& sfc_modified;
     Collection<bool,N+1> sfc_idx;
-    Matrix<double,2,2> car_shape;
+    Eigen::Matrix<double,2,2> car_shape;
 
-    vector<vector<Matrix2d>>& obs_Q;
-    vector<vector<Vector2d>>& obs_q;
+    vector<vector<Eigen::Matrix2d>>& obs_Q;
+    vector<vector<Eigen::Vector2d>>& obs_q;
 
     bool noConstraint_ = true;
     bool isRearWheel_;
 
 public:
-    Problem (Collection<Planner::Corridor,N+1>& corridor_seq, vector<vector<Vector2d>>& obs_pos,
-            vector<vector<Matrix2d>>& obs_shape)
+    Problem (Collection<Planner::Corridor,N+1>& corridor_seq, vector<vector<Eigen::Vector2d>>& obs_pos,
+            vector<vector<Eigen::Matrix2d>>& obs_shape)
             : sfc_modified(corridor_seq), obs_Q(obs_shape),obs_q(obs_pos)
     { }
 
@@ -61,13 +61,13 @@ public:
 
     void set_state_weight( const VectorX weight )
     { state_weight_ = weight; }
-    void set_car_shape(const Matrix<double,2,2> shape)
+    void set_car_shape(const Eigen::Matrix<double,2,2> shape)
     { car_shape = shape; }
 
     void set_final_weight( const VectorX weight )
     { final_weight_ = weight;	}
 
-    void set_ref(const Collection<Matrix<double,5,1>,N+1> x_ref_)
+    void set_ref(const Collection<Eigen::Matrix<double,5,1>,N+1> x_ref_)
     {x_ref = x_ref_;}
 
     void set_sfc_idx(const Collection<bool,N+1> sfc_idx_)
@@ -153,7 +153,7 @@ public:
         else
         {
             // final cost must be computed here
-            Matrix<double, Nu, 1> u_Zero = Matrix<double, Nu, 1>::Zero();
+            Eigen::Matrix<double, Nu, 1> u_Zero = Eigen::Matrix<double, Nu, 1>::Zero();
             CostDerivatives<Nx, Nu> obj;
             obj.c = symbolic_functions::cost(x, u_Zero, final_weight_, input_weight_, x_ref[idx-1]);
             if (type == WITHOUT_DERIVATIVES)
@@ -170,9 +170,9 @@ public:
     
     ConstraintDerivatives<Nx,Nu>
     constraint(const VectorX x, const VectorU u, const int idx, const ReturnType type) {
-        Matrix<double, 6, 1> x_ = x.block<6, 1>(0, 0);
-        Matrix<double, 2, 1> u_ = u.block<2, 1>(0, 0);
-        Matrix<double, 4, 1> sfc_modified_temp;
+        Eigen::Matrix<double, 6, 1> x_ = x.block<6, 1>(0, 0);
+        Eigen::Matrix<double, 2, 1> u_ = u.block<2, 1>(0, 0);
+        Eigen::Matrix<double, 4, 1> sfc_modified_temp;
         sfc_modified_temp << sfc_modified[idx].xl,sfc_modified[idx].xu,
                             sfc_modified[idx].yl,sfc_modified[idx].yu; //xl, xu, yl, yu
 
@@ -207,7 +207,7 @@ public:
                 if(type == WITHOUT_DERIVATIVES)
                     return obj;
                 obj.conx = symbolic_functions::conx_final(x_,sfc_modified_temp);
-                Matrix<double,Nc-4,Nu> temp_zero;
+                Eigen::Matrix<double,Nc-4,Nu> temp_zero;
                 temp_zero.setZero();
                 obj.conu = temp_zero;
 
@@ -216,24 +216,24 @@ public:
         }
         else
         {
-            Matrix<double,2,2> Q1;
+            Eigen::Matrix<double,2,2> Q1;
             Q1 = car_shape;
             double sqrtTrQ1 = sqrt(Q1.trace());
 
             if(!std::isnan(u_(0)))
             {
-                Matrix<double,2,1> q1;
+                Eigen::Matrix<double,2,1> q1;
                 q1<<x_(0,0),x_(1,0);
 
                 ConstraintDerivatives<Nx,Nu> obj(Nc+N_obs,0);
                 for(int i = 0; i<N_obs;i++)
                 {
-                    Matrix<double,2,1> q2 = obs_q[i][idx];
-                    Matrix<double,2,2> Q2 = obs_Q[i][idx];
+                    Eigen::Matrix<double,2,1> q2 = obs_q[i][idx];
+                    Eigen::Matrix<double,2,2> Q2 = obs_Q[i][idx];
                     double sqrtTrQ2 = sqrt(Q2.trace());
 
-                    Matrix<double,2,2>  Qsum = (1.0+sqrtTrQ2/sqrtTrQ1)*Q1+(1.0+sqrtTrQ1/sqrtTrQ2)*Q2;
-                    Matrix<double,2,2> invQsum = Qsum.inverse();
+                    Eigen::Matrix<double,2,2>  Qsum = (1.0+sqrtTrQ2/sqrtTrQ1)*Q1+(1.0+sqrtTrQ1/sqrtTrQ2)*Q2;
+                    Eigen::Matrix<double,2,2> invQsum = Qsum.inverse();
                     obj.con(Nc+i) = (q1-q2).dot(invQsum*(q1-q2))-1.0;
                     if(type!= WITHOUT_DERIVATIVES)
                     {
@@ -263,7 +263,7 @@ public:
                 if(type == WITHOUT_DERIVATIVES)
                     return obj;
                 obj.conx.block<Nc-4,Nx>(0,0) = symbolic_functions::conx_final(x_,sfc_modified_temp);
-                Matrix<double,Nc-4,Nu> temp_zero;
+                Eigen::Matrix<double,Nc-4,Nu> temp_zero;
                 temp_zero.setZero();
                 obj.conu = temp_zero;
                 return obj;

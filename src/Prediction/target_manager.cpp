@@ -1,7 +1,7 @@
 #include "third_party/Prediction/target_manager.hpp"
 using namespace DAP;
 using namespace Predictor;
-
+using namespace Eigen;
 
 
 TargetManager::TargetManager(int queue_size,float z_value,int poly_order,int index):queue_size(queue_size),z_value(z_value),poly_order(poly_order),managerIdx(index) {
@@ -156,7 +156,7 @@ geometry_msgs::Pose TargetManager::eval_pose(float t){
     pose.position.x = polyeval(fit_coeff_x,t); 
     pose.position.y = polyeval(fit_coeff_y,t);
     pose.position.z = z_value;
-    Eigen:Quaternionf q;
+    Eigen::Quaternionf q;
     q.x() = polyeval(fit_coeff_qx,t);
     q.y() = polyeval(fit_coeff_qy,t);
     q.z() = polyeval(fit_coeff_qz,t);

@@ -34,7 +34,6 @@
 
 
 using namespace std;
-using namespace Eigen;
 
 namespace Planner {
 
@@ -50,7 +49,7 @@ namespace Planner {
         double yu;
         double t_start;
         double t_end;
-        VectorXf getPretty();
+        Eigen::VectorXf getPretty();
     };
 
     /**
@@ -72,9 +71,9 @@ namespace Planner {
         int N_corr;
 	double dynObstRange;
         //ilQR parameters
-        Matrix<double,6,1> state_weight;
-        Matrix<double,6,1> final_weight;
-        Matrix<double,2,1> input_weight;
+        Eigen::Matrix<double,6,1> state_weight;
+        Eigen::Matrix<double,6,1> final_weight;
+        Eigen::Matrix<double,2,1> input_weight;
 
         //initial_guess parameters
         double ig_state_weight;
@@ -129,8 +128,8 @@ namespace Planner {
     };
 
     struct ParamStopping{
-        Matrix<double, 4, 1> initial_state;
-        Matrix<double, 3, 1> goal_state; 
+        Eigen::Matrix<double, 4, 1> initial_state;
+        Eigen::Matrix<double, 3, 1> goal_state; 
         double trigger_dist;
     };
     /**
@@ -161,8 +160,8 @@ namespace Planner {
     };
     // (x-q)'Q(x-q) >= 1 : safe region
     struct ObstacleEllipse{
-        Matrix<double,2,1> q;
-        Matrix2d Q; // diag([1/r1^2 1/r2^2])
+        Eigen::Matrix<double,2,1> q;
+        Eigen::Matrix2d Q; // diag([1/r1^2 1/r2^2])
         double r1;
         double r2;
         double theta; // x-axis angle w.r.t x-axis of SNU
@@ -170,7 +169,7 @@ namespace Planner {
     };
 
     struct ObstaclePath{
-        Vector2d constantVelocityXY;
+        Eigen::Vector2d constantVelocityXY;
         vector<ObstacleEllipse> obstPath;
     };
 
@@ -194,7 +193,7 @@ namespace Planner {
         vector<double> ts;
         vector<CarInput> us;
         vector<CarState> xs;
-        MatrixXf getPretty(double t_stamp);
+        Eigen::MatrixXf getPretty(double t_stamp);
         CarState evalX(double t);
         CarInput evalU(double t);
         visualization_msgs::MarkerArray getMPC(const string& frame_id);
@@ -221,12 +220,12 @@ namespace Planner {
      * @brief Initial lane
      */
     struct Lane{
-        vector<Vector2d, aligned_allocator<Vector2d>> points;
+        vector<Eigen::Vector2d, Eigen::aligned_allocator<Eigen::Vector2d>> points;
         vector<double> widths;
         Lane(){};
         Lane(const LanePath& lanePath);
         void untilGoal(double goal_x,double goal_y);
-        vector<Vector2d, aligned_allocator<Vector2d>> slicing(const CarState& curCarState,Vector2d windowOrig,double w, double h , int & startIdx , int & endIdx );
+        vector<Eigen::Vector2d, Eigen::aligned_allocator<Eigen::Vector2d>> slicing(const CarState& curCarState,Eigen::Vector2d windowOrig,double w, double h , int & startIdx , int & endIdx );
         nav_msgs::Path getPath(string frame_id);
         visualization_msgs::MarkerArray getSidePath(string frame_id);
     };
@@ -251,12 +250,12 @@ namespace Planner {
             next = -1;
         }
         int id;
-        Vector2d leftBoundaryPoint;
-        Vector2d leftPoint;
-        Vector2d midPoint;
-        Vector2d lanePoint;
-        Vector2d rightPoint;
-        Vector2d rightBoundaryPoint;
+        Eigen::Vector2d leftBoundaryPoint;
+        Eigen::Vector2d leftPoint;
+        Eigen::Vector2d midPoint;
+        Eigen::Vector2d lanePoint;
+        Eigen::Vector2d rightPoint;
+        Eigen::Vector2d rightBoundaryPoint;
         bool isNearObject;
         vector<int> children;
 
@@ -275,16 +274,16 @@ namespace Planner {
     struct SmoothLane: public Lane{
         vector<double> ts;
         vector<double> box_size;
-        vector<Vector2d, aligned_allocator<Vector2d>> leftBoundaryPoints;
-        vector<Vector2d, aligned_allocator<Vector2d>> rightBoundaryPoints;
+        vector<Eigen::Vector2d, Eigen::aligned_allocator<Eigen::Vector2d>> leftBoundaryPoints;
+        vector<Eigen::Vector2d, Eigen::aligned_allocator<Eigen::Vector2d>> rightBoundaryPoints;
         bool isBlocked;
         bool isBlockedByObject;
 
         int n_total_markers = 0;
 
-        Vector2d evalX(const std::vector<Vector2d, aligned_allocator<Vector2d>>& points_vector, double t);
-        Vector2d evalX(double t);
-        Vector2d evalSidePoint(double t, bool isLeft);
+        Eigen::Vector2d evalX(const std::vector<Eigen::Vector2d, Eigen::aligned_allocator<Eigen::Vector2d>>& points_vector, double t);
+        Eigen::Vector2d evalX(double t);
+        Eigen::Vector2d evalSidePoint(double t, bool isLeft);
         double evalWidth(double t);
         visualization_msgs::MarkerArray getPoints(const string& frame_id);
     };
@@ -349,14 +348,14 @@ namespace Planner {
         int flag = 0;
 
         int count_iter =0;
-        bool isOccupied(Vector2d queryPoint); // query point frame = SNU
-        bool isOccupied(Vector2d queryPoint1, Vector2d queryPoint2); // rayIntersection query point frame = SNU
+        bool isOccupied(Eigen::Vector2d queryPoint); // query point frame = SNU
+        bool isOccupied(Eigen::Vector2d queryPoint1, Eigen::Vector2d queryPoint2); // rayIntersection query point frame = SNU
 
-        bool isObject(const Vector2d& queryPoint,double& velocity); // query point frame = SNU
+        bool isObject(const Eigen::Vector2d& queryPoint,double& velocity); // query point frame = SNU
 
 
         // Corridor generation
-        Corridor expandCorridor(Vector2d point, Vector2d leftBoundaryPoint, Vector2d rightBoundaryPoint, double max_box_size, double map_resolution);
+        Corridor expandCorridor(Eigen::Vector2d point, Eigen::Vector2d leftBoundaryPoint, Eigen::Vector2d rightBoundaryPoint, double max_box_size, double map_resolution);
         std::vector<Corridor> expandCorridors(std::vector<double> ts, double map_resolution);
         visualization_msgs::MarkerArray getTestCorridors(std::string frame_id); //TODO: debug purpose, delete this after debugging - jungwon
 
@@ -405,7 +404,7 @@ namespace Planner {
         void setStoppingTraj(const StoppingResult& stopping_in_) {stopping_result = stopping_in_;}
 
         // prepare prediction sequence for MPC
-        void uploadPrediction(VectorXd tSeq_, double rNominal = 0);
+        void uploadPrediction(Eigen::VectorXd tSeq_, double rNominal = 0);
 
         // logger
         void log_state_input(double t_cur);

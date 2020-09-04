@@ -40,7 +40,7 @@ namespace Planner{
         int findLaneTreePathTail(bool& isBlocked, bool& isBlockedByObject);
         int nChoosek(int n, int k);
         double getBernsteinBasis(int n, int i, double t_normalized);
-        Vector2d getPointFromControlPoints(std::vector<Vector2d, aligned_allocator<Vector2d>> control_points, double t_normalized);
+        Eigen::Vector2d getPointFromControlPoints(std::vector<Eigen::Vector2d, Eigen::aligned_allocator<Eigen::Vector2d>> control_points, double t_normalized);
     };
 
 }

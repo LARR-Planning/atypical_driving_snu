@@ -4,7 +4,7 @@ project(atypical_driving)
 set(CMAKE_CXX_STANDARD 11)
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -O3")
 set(CMAKE_BUILD_TYPE "Release")
-# set(CMAKE_BUILD_TYPE "Debug")
+#  set(CMAKE_BUILD_TYPE "Debug")
 
 
 find_package(Eigen3  REQUIRED NO_MODULE)
@@ -21,15 +21,20 @@ find_package(octomap REQUIRED)
 include_directories(${OCTOMAP_INCLUDE_DIRS})
 link_libraries(${OCTOMAP_LIBRARIES})
 
-find_package( ACADO REQUIRED )
+find_package(blasfeo)
+find_package(hpipm)
+include_directories(${hpipm_INCLUDE_DIRS} ${blasfeo_INCLUDE_DIRS})
+
+# find_package( ACADO REQUIRED )
 
 find_package(catkin REQUIRED COMPONENTS roscpp sensor_msgs tf tf2 qpOASES
             geometry_msgs octomap_msgs message_generation nav_msgs message_generation driving_msgs pcl_ros occupancy_grid_utils
+            ct_core ct_rbd ct_optcon ct_models
             )
 
 include_directories(include ${catkin_INCLUDE_DIRS})
 include_directories(${EIGEN3_INCLUDE_DIRS})
-include_directories(${ACADO_INCLUDE_DIRS})
+include_directories(. ${ACADO_INCLUDE_DIRS})
 
 file(GLOB SNU_PLANNER_SRC src/optimization_module/*.cpp src/*.cpp src/Prediction/*.cpp src/third_party/*.cpp )
 
@@ -41,27 +46,28 @@ catkin_package(
 )
 
 add_executable(atypical_driving_test test/main.cpp ${SNU_PLANNER_SRC} src/optimization_module/math.cpp)
-target_link_libraries(atypical_driving_test ${catkin_LIBRARIES} -lstdc++fs ${ACADO_SHARED_LIBRARIES})
+target_link_libraries(atypical_driving_test ${catkin_LIBRARIES} -lstdc++fs )
+# target_link_libraries(atypical_driving_test ${catkin_LIBRARIES} -lstdc++fs)
 SET_TARGET_PROPERTIES( atypical_driving_test PROPERTIES . ${CMAKE_CURRENT_SOURCE_DIR} )
 
 
 add_executable(virtual_environment_generator test/virtual_environment_generator.cpp ${SNU_PLANNER_SRC})
-target_link_libraries(virtual_environment_generator ${catkin_LIBRARIES} -lstdc++fs ${ACADO_SHARED_LIBRARIES})
+target_link_libraries(virtual_environment_generator ${catkin_LIBRARIES} -lstdc++fs )
 SET_TARGET_PROPERTIES( virtual_environment_generator PROPERTIES . ${CMAKE_CURRENT_SOURCE_DIR} )
 
 #add_executable(lane_tester test/LaneTest/main.cpp ${SNU_PLANNER_SRC})
 #target_link_libraries(lane_tester ${catkin_LIBRARIES} -lstdc++fs)
 
 add_executable(integration_server test/IntegrationTest/server_main.cpp ${SNU_PLANNER_SRC})
-target_link_libraries(integration_server ${catkin_LIBRARIES} -lstdc++fs ${ACADO_SHARED_LIBRARIES})
+target_link_libraries(integration_server ${catkin_LIBRARIES} -lstdc++fs)
 SET_TARGET_PROPERTIES( integration_server PROPERTIES . ${CMAKE_CURRENT_SOURCE_DIR} )
 
 add_executable(integration_client test/IntegrationTest/client_main.cpp ${SNU_PLANNER_SRC})
-target_link_libraries(integration_client ${catkin_LIBRARIES} -lstdc++fs ${ACADO_SHARED_LIBRARIES})
+target_link_libraries(integration_client ${catkin_LIBRARIES} -lstdc++fs )
 SET_TARGET_PROPERTIES( integration_client PROPERTIES . ${CMAKE_CURRENT_SOURCE_DIR} )
 
 add_executable(keti_client test/KetiTest/client_main.cpp ${SNU_PLANNER_SRC})
-target_link_libraries(keti_client ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${ACADO_SHARED_LIBRARIES})
+target_link_libraries(keti_client ${catkin_LIBRARIES} ${PCL_LIBRARIES} )
 SET_TARGET_PROPERTIES( keti_client PROPERTIES . ${CMAKE_CURRENT_SOURCE_DIR} )
 
 # add_executable(acado_test test/stopping.cpp )

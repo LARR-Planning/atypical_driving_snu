@@ -5,14 +5,14 @@
 #include <optimization_module/dimension.h>
 #include <optimization_module/parameters/dyn_parameter.h>
 
-using namespace Eigen;
+// using namespace Eigen;
 namespace symbolic_functions
 {
-    double cost(Matrix<double,Nx,1>x_,
-                Matrix<double,Nu,1>u_,
-                Matrix<double,Nx,1>Q,
-                Matrix<double,Nu,1>R,
-                Matrix<double,5,1>g
+    double cost(Eigen::Matrix<double,Nx,1>x_,
+                Eigen::Matrix<double,Nu,1>u_,
+                Eigen::Matrix<double,Nx,1>Q,
+                Eigen::Matrix<double,Nu,1>R,
+                Eigen::Matrix<double,5,1>g
                 )
     {
         float x = x_(0,0);

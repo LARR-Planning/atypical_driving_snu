@@ -6,7 +6,7 @@
 #include <boost/variant.hpp>
 
 using namespace std;
-using namespace Eigen;
+// using namespace Eigen;
 
 class ParameterHandler
 {
@@ -15,15 +15,15 @@ class ParameterHandler
 		{ pnh = make_shared<ros::NodeHandle>( node_name ); }
 		void get(const string name, double &dst){ dst = boost::get<double>(get<double>(name)); }
 		void get(const string name, int &dst){ dst = boost::get<int>(get<int>(name)); }
-		void get(const string name, VectorXd &dst){ dst = boost::get<VectorXd>(get<double>(name)); }
-		void get(const string name, VectorXi &dst){ dst = boost::get<VectorXi>(get<int>(name)); }
+		void get(const string name, Eigen::VectorXd &dst){ dst = boost::get<Eigen::VectorXd>(get<double>(name)); }
+		void get(const string name, Eigen::VectorXi &dst){ dst = boost::get<Eigen::VectorXi>(get<int>(name)); }
 		void get(const string name, string &dst){ dst = get(name); }
 
 	private:
 		shared_ptr<ros::NodeHandle> pnh;
 	
 		template<typename T>
-		boost::variant<T,Eigen::Matrix<T,Dynamic,1>> get( const string name )
+		boost::variant<T,Eigen::Matrix<T,Eigen::Dynamic,1>> get( const string name )
 		{
 			XmlRpc::XmlRpcValue data;
 			if( !pnh->getParam( name, data ) )
@@ -35,7 +35,7 @@ class ParameterHandler
 			{	// parameter is found
 				if( data.getType() == XmlRpc::XmlRpcValue::Type::TypeArray )
 				{	// value is a vector
-					Eigen::Matrix<T,Dynamic,1> dst = Eigen::Matrix<T,Dynamic,Dynamic>(data.size(),1);
+					Eigen::Matrix<T,Eigen::Dynamic,1> dst = Eigen::Matrix<T,Eigen::Dynamic,Eigen::Dynamic>(data.size(),1);
 					for(int i=0; i<data.size(); i++)
 						dst(i) = static_cast<T>( data[i] );
 					return dst;

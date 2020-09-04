@@ -10,9 +10,9 @@ class Parameter
 
 		struct Setting {
 			int verbosity;
-			VectorXd state_weight;
-			VectorXd input_weight;
-			VectorXd final_weight;
+			Eigen::VectorXd state_weight;
+			Eigen::VectorXd input_weight;
+			Eigen::VectorXd final_weight;
 			double phi;
 			double dphi;
 			double dmu;

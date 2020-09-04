@@ -8,6 +8,7 @@
 #define PI                  3.1415
 
 using namespace Planner;
+using namespace Eigen;
 
 GlobalPlanner::GlobalPlanner(const Planner::ParamGlobal &g_param,
                              shared_ptr<PlannerBase> p_base_) : AbstractPlanner(p_base_),param(g_param) {

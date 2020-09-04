@@ -5,10 +5,10 @@
 #include <optimization_module/dimension.h>
 #include <optimization_module/parameters/dyn_parameter.h>
 
-using namespace Eigen;
+// using namespace Eigen;
 namespace symbolic_functions
 {
-    Matrix<double,Nx,1> f(Matrix<double,Nx,1>x_, Matrix<double,Nu,1>u_)
+    Eigen::Matrix<double,Nx,1> f(Eigen::Matrix<double,Nx,1>x_, Eigen::Matrix<double,Nu,1>u_)
     {
         float x = x_(0,0);
         float y = x_(1,0);
@@ -19,7 +19,7 @@ namespace symbolic_functions
         
         float adot = u_(0,0);
         float deldot = u_(1,0);
-        Matrix<double,Nx,1> dyn;
+        Eigen::Matrix<double,Nx,1> dyn;
         dyn.setZero();
 
         dyn(0,0) = v * std::cos(th);

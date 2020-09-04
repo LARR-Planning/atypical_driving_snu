@@ -10,6 +10,7 @@
 #include <math.h>
 #include <cmath>
 using namespace Planner;
+using namespace Eigen;
 
 ///////////////////////////
 //   Local Planner base  //
@@ -214,7 +215,7 @@ void LocalPlanner::SetSfcIdx(int N_corr)
         return false;
     }
     pos_ref.push_back(p_base->laneSmooth.evalX(p_base->laneSmooth.points,time_knots[0]));
-   double direction_diff;
+    double direction_diff;
     for (int i = 1; i<N+1;i++)
     {
 

@@ -12,7 +12,7 @@
 #include <ros/ros.h>
 // #include <optimization_module/symbolic_functions/dfdx.hpp>
 
-void ref_traj(Collection<Matrix<double,5,1>,N+1>& local_wpts, Collection<Matrix<double,5,1>,N+1>& waypt, double initial_vel)
+void ref_traj(Collection<Eigen::Matrix<double,5,1>,N+1>& local_wpts, Collection<Eigen::Matrix<double,5,1>,N+1>& waypt, double initial_vel)
 {   
     initial_vel = max(initial_vel, 0.5);// Prevent vel = 0.0
     std::vector<double> length_vec;
@@ -52,25 +52,25 @@ template<const int Nx, const int Nu, const int N>
 class QP
 {
     protected:
-    typedef Triplet<double>  Trip;
-    typedef Matrix<double,Nx,1> 	VectorX; 
-    typedef Matrix<double,Nu,1> 	VectorU;
-    typedef Matrix<double,Nx,Nx> 	MatrixXX;
-    typedef Matrix<double,Nx,Nu> 	MatrixXU;
-    typedef Matrix<double,Nu,Nx> 	MatrixUX;
-    typedef Matrix<double,Nu,Nu> 	MatrixUU;
+    typedef Eigen::Triplet<double>  Trip;
+    typedef Eigen::Matrix<double,Nx,1> 	VectorX; 
+    typedef Eigen::Matrix<double,Nu,1> 	VectorU;
+    typedef Eigen::Matrix<double,Nx,Nx> 	MatrixXX;
+    typedef Eigen::Matrix<double,Nx,Nu> 	MatrixXU;
+    typedef Eigen::Matrix<double,Nu,Nx> 	MatrixUX;
+    typedef Eigen::Matrix<double,Nu,Nu> 	MatrixUU;
 
     public:
     QP(ProblemDescription<Nx, Nu>& prob,
         const VectorX x_init,
         const VectorU u_init, 
-        Collection<Matrix<double,5,1>,N+1>& local_wpts_, 
-        Vector2d qp_param);
+        Collection<Eigen::Matrix<double,5,1>,N+1>& local_wpts_, 
+        Eigen::Vector2d qp_param);
     void solve();
     Collection<VectorU,N> get_solution();
 
     VectorX                     x0_;                    // initial state
-    Collection<Matrix<double,5,1>,N+1> local_wpts;
+    Collection<Eigen::Matrix<double,5,1>,N+1> local_wpts;
     // Collection<VectorX,N+1> 	xN_;					// nominal state
     // Collection<double,N+1> 		cN_; 					// nominal cost
     // Collection<VectorXd,N+1> 	constN_; 				// nominal constraint
@@ -92,8 +92,8 @@ template<const int Nx, const int Nu, const int N>
 QP<Nx,Nu,N>::QP( ProblemDescription<Nx,Nu>& prob,						// problem setup
                 const VectorX x_init,
                 const VectorU u_init, 
-                Collection<Matrix<double,5,1>,N+1>& local_wpts_, 
-                Vector2d qp_param)
+                Collection<Eigen::Matrix<double,5,1>,N+1>& local_wpts_, 
+                Eigen::Vector2d qp_param)
                  : prob_(prob), local_wpts(local_wpts_)
 {
     // initial setups
@@ -116,7 +116,7 @@ void QP<Nx,Nu,N>::solve( )
     Eigen::Matrix<double, Nx*(N_+1),1> ref;
     // cout << "Reference pts." << endl; 
 
-    Collection<Matrix<double,5,1>,N+1> tf_wpts; 
+    Collection<Eigen::Matrix<double,5,1>,N+1> tf_wpts; 
     double initial_vel = x0_(2);
     ref_traj(tf_wpts, local_wpts, initial_vel);
 
@@ -144,13 +144,13 @@ void QP<Nx,Nu,N>::solve( )
     //dyn.fx -> A_fix (A*dt+I)
     //dyn.fu -> B_fix (B*dt)
 
-    Eigen::Matrix<double, Nx, Nx, RowMajor> A = symbolic_functions::dfdx(x0_, u0_);
-    Eigen::Matrix<double, Nx, Nu, RowMajor> B = symbolic_functions::dfdu(x0_, u0_);
+    Eigen::Matrix<double, Nx, Nx, Eigen::RowMajor> A = symbolic_functions::dfdx(x0_, u0_);
+    Eigen::Matrix<double, Nx, Nu, Eigen::RowMajor> B = symbolic_functions::dfdu(x0_, u0_);
     Eigen::Matrix<double, Nx, 1> f0 = symbolic_functions::f(x0_, u0_);
     // Eigen::Matrix<double, Nx, Nx, RowMajor> A_fix = A*dt + Eigen::Matrix<double, Nx, Nx, RowMajor>::Identity();
-    Eigen::Matrix<double, Nx, Nx, RowMajor> A_fix = A*dt_ + Eigen::Matrix<double, Nx, Nx, RowMajor>::Identity();
+    Eigen::Matrix<double, Nx, Nx, Eigen::RowMajor> A_fix = A*dt_ + Eigen::Matrix<double, Nx, Nx, Eigen::RowMajor>::Identity();
     // Eigen::Matrix<double, Nx, Nu, RowMajor> B_fix = B*dt; 
-    Eigen::Matrix<double, Nx, Nu, RowMajor> B_fix = B*dt_; 
+    Eigen::Matrix<double, Nx, Nu, Eigen::RowMajor> B_fix = B*dt_; 
 
     Eigen::Matrix<double, Nx, 1> f_fix = -(A*x0_*dt_ +B_fix*u0_) + f0 *dt_;
 
@@ -175,20 +175,20 @@ void QP<Nx,Nu,N>::solve( )
             trpR.push_back(trmp_R);
         }
     }
-    Eigen::SparseMatrix<double, RowMajor> Q_sparse( (Nx)*(N_+1), (Nx)*(N_+1) );
+    Eigen::SparseMatrix<double, Eigen::RowMajor> Q_sparse( (Nx)*(N_+1), (Nx)*(N_+1) );
     Q_sparse.setFromTriplets(trpQ.begin(), trpQ.end());
 
-    Eigen::Matrix<double, -1, -1, RowMajor> Q_dense = MatrixXd(Q_sparse);
+    Eigen::Matrix<double, -1, -1, Eigen::RowMajor> Q_dense = Eigen::MatrixXd(Q_sparse);
 
-    Eigen::SparseMatrix<double, RowMajor> R_sparse(Nu*(N_+1), Nu*(N_+1));
+    Eigen::SparseMatrix<double, Eigen::RowMajor> R_sparse(Nu*(N_+1), Nu*(N_+1));
     R_sparse.setFromTriplets(trpR.begin(), trpR.end());
 
-    Eigen::Matrix<double, -1, -1, RowMajor> A_big = Eigen::Matrix<double, Nx*(N_+1), Nx*(N_+1),RowMajor>::Zero();
-    Eigen::Matrix<double, -1, -1, RowMajor> B_big = Eigen::Matrix<double, Nx*(N_+1), Nu*(N_+1),RowMajor>::Zero();
+    Eigen::Matrix<double, -1, -1, Eigen::RowMajor> A_big = Eigen::Matrix<double, Nx*(N_+1), Nx*(N_+1),Eigen::RowMajor>::Zero();
+    Eigen::Matrix<double, -1, -1, Eigen::RowMajor> B_big = Eigen::Matrix<double, Nx*(N_+1), Nu*(N_+1),Eigen::RowMajor>::Zero();
     
     for(int i=0; i<N_+1; i++)
     {
-        Eigen::Matrix<double, Nx, Nx,RowMajor> A_tmp = A_fix.inverse();
+        Eigen::Matrix<double, Nx, Nx,Eigen::RowMajor> A_tmp = A_fix.inverse();
         for(int j=i-1; j>=0; j--){
             A_tmp = A_tmp * A_fix;
             A_big.block(Nx*i, Nx*j, Nx, Nx) = A_tmp;
@@ -197,7 +197,7 @@ void QP<Nx,Nu,N>::solve( )
         B_big.block(Nx*i, Nu*i, Nx, Nu) = B_fix; 
     }
 
-    Eigen::Matrix<double, Nu*(N_+1), Nu*(N_+1), RowMajor> H_cost;
+    Eigen::Matrix<double, Nu*(N_+1), Nu*(N_+1), Eigen::RowMajor> H_cost;
     H_cost = B_big.transpose()*A_big.transpose()*Q_sparse*A_big*B_big + R_sparse;
     H_cost = 1.0/2.0*(H_cost + H_cost.transpose());
 
@@ -206,8 +206,8 @@ void QP<Nx,Nu,N>::solve( )
 
     Eigen::Matrix<double, Nx*(N_+1), 1> X_refined; 
     Eigen::Matrix<double, Nx, 1> Ax_Bu = A_fix*x0_ + B_fix*u0_;
-    Eigen::Matrix<double, Nx, Nx,RowMajor> A_tmp = Eigen::Matrix<double, Nx, Nx, RowMajor>::Identity();
-    Eigen::Matrix<double, Nx, Nx,RowMajor> A_sum = Eigen::Matrix<double, Nx, Nx, RowMajor>::Zero();
+    Eigen::Matrix<double, Nx, Nx,Eigen::RowMajor> A_tmp = Eigen::Matrix<double, Nx, Nx, Eigen::RowMajor>::Identity();
+    Eigen::Matrix<double, Nx, Nx,Eigen::RowMajor> A_sum = Eigen::Matrix<double, Nx, Nx, Eigen::RowMajor>::Zero();
 
     for(int i=0; i<N_+1; i++){
         A_sum = A_tmp + A_sum; 
@@ -216,7 +216,7 @@ void QP<Nx,Nu,N>::solve( )
     }
     Eigen::Matrix<double, Nx*(N_+1), 1> del_x = X_refined - ref; 
 
-    Eigen::Matrix<double, -1, -1, RowMajor> f_cost(Nx*(N_+1), 1);
+    Eigen::Matrix<double, -1, -1, Eigen::RowMajor> f_cost(Nx*(N_+1), 1);
 
     Eigen::Matrix<double, 1, Nx*(N_+1)> transp_del_x = del_x.transpose();
     f_cost = transp_del_x*Q_dense*A_big*B_big; 
@@ -281,7 +281,7 @@ void QP<Nx,Nu,N>::solve( )
 
 
 template<const int Nx, const int Nu, const int N>
-Collection<Matrix<double,Nu,1>,N> QP<Nx,Nu,N>::get_solution( )
+Collection<Eigen::Matrix<double,Nu,1>,N> QP<Nx,Nu,N>::get_solution( )
 {
     return uN_;
 }

@@ -2,7 +2,7 @@
 #define DYN_PARAMETER_H
 #include <Eigen/Dense>
 
-using namespace Eigen;
+// using namespace Eigen;
 
 const double car_width = 0.0;
 const double car_length = 0.0;

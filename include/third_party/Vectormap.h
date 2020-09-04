@@ -13,7 +13,7 @@
 
 using namespace std;
 using namespace geometry_msgs;
-using namespace Eigen;
+// using namespace Eigen;
 
 namespace Planner{
 
@@ -25,12 +25,12 @@ namespace Planner{
 
     struct LanePath{
         vector<LaneNode> lanes;
-        void applyTransform(const Matrix4d& Tab){
+        void applyTransform(const Eigen::Matrix4d& Tab){
             for (auto & lane :lanes){
                 for(auto it = lane.laneCenters.begin() ; it!= lane.laneCenters.end(); it++){
 
-                       Vector4d xb(it->x,it->y,0,1);
-                       Vector4d xa = Tab*xb;
+                       Eigen::Vector4d xb(it->x,it->y,0,1);
+                       Eigen::Vector4d xa = Tab*xb;
                        it->x = xa(0);
                        it->y = xa(1);
                 }
@@ -40,8 +40,8 @@ namespace Planner{
         void applyTransform(const SE3& Tab){
             for (auto & lane :lanes){
                 for(auto it = lane.laneCenters.begin() ; it!= lane.laneCenters.end(); it++){
-                    Vector3d xb(it->x,it->y,0);
-                    Vector3d xa = Tab*xb;
+                    Eigen::Vector3d xb(it->x,it->y,0);
+                    Eigen::Vector3d xa = Tab*xb;
                     it->x = xa(0);
                     it->y = xa(1);
                 }

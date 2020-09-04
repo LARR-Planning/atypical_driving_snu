@@ -5,10 +5,10 @@
 #include <optimization_module/dimension.h>
 #include <optimization_module/parameters/dyn_parameter.h>
 
-using namespace Eigen;
+// using namespace Eigen;
 namespace symbolic_functions
 {
-    Matrix<double,Nx,Nu> dfdu_front(Matrix<double,Nx,1>x_, Matrix<double,Nu,1> u)
+    Eigen::Matrix<double,Nx,Nu> dfdu_front(Eigen::Matrix<double,Nx,1>x_, Eigen::Matrix<double,Nu,1> u)
     {
         float x = x_(0,0);
         float y = x_(1,0);
@@ -19,7 +19,7 @@ namespace symbolic_functions
         float adot = u(0,0);
         float deldot = u(1,0);
 
-        Matrix<double,Nx,Nu> linB;
+        Eigen::Matrix<double,Nx,Nu> linB;
         linB.setZero();
         linB(3,0) = 1.0;
         linB(4,1) = 1.0;

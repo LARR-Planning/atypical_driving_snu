@@ -2,7 +2,7 @@
 // Created by lyw on 20. 5. 10..
 //
 #include <optimization_module/utils/math.hpp>
-
+using namespace Eigen; 
 VectorXd power(const double a, const VectorXd b)
 {
     int Nb = b.size();

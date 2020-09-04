@@ -2,6 +2,7 @@
 #include <third_party/Prediction/basic_operations.hpp>
 using namespace  DAP;
 using namespace std;
+using namespace Eigen;
 
 string current_working_directory()
 {

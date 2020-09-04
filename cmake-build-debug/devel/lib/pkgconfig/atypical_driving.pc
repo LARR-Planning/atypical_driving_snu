@@ -1,0 +1,8 @@
+prefix=/home/dabinnkim/catkin_ws/src/atypical_driving_snu/cmake-build-debug/devel
+
+Name: atypical_driving
+Description: Description of atypical_driving
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib -latypical_driving
+Requires: roscpp

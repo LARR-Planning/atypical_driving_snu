@@ -5,10 +5,10 @@
 #include <optimization_module/dimension.h>
 #include <optimization_module/parameters/dyn_parameter.h>
 
-using namespace Eigen;
+// using namespace Eigen;
 namespace symbolic_functions
 {
-    Matrix<double,Nc-4,Nx> conx_final(Matrix<double,Nx,1> x_, Matrix<double,4,1>
+    Eigen::Matrix<double,Nc-4,Nx> conx_final(Eigen::Matrix<double,Nx,1> x_, Eigen::Matrix<double,4,1>
             sfc_modified)
     {
         float x = x_(0,0);
@@ -18,7 +18,7 @@ namespace symbolic_functions
         float del = x_(4,0);
         float th = x_(5,0);
 
-        Matrix<double,Nc-4,Nx> CONX_FINAL;
+        Eigen::Matrix<double,Nc-4,Nx> CONX_FINAL;
 
         CONX_FINAL.setZero();
         CONX_FINAL(0,0) = 1.0;

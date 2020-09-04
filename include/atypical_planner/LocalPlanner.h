@@ -34,13 +34,13 @@ namespace Planner {
         iLQRParams ilqr_param; // iLQR parameters
         MPCResultTraj curPlanning; //Planning with intermediate outputs
         preMPCResult prePlanning; // before Optimization, result of warm start
-        vector<vector<Matrix2d>> obs_Q;
-        vector<vector<Vector2d>> obs_q;
-        Matrix<double,2,2> car_shape;
-        Collection<Matrix<double,2,1>,N> uN_NextInit;
+        vector<vector<Eigen::Matrix2d>> obs_Q;
+        vector<vector<Eigen::Vector2d>> obs_q;
+        Eigen::Matrix<double,2,2> car_shape;
+        Collection<Eigen::Matrix<double,2,1>,N> uN_NextInit;
 
-        Matrix<double,Nx,1> next_state;
-		Matrix<double,Nx,1> cur_state;
+        Eigen::Matrix<double,Nx,1> next_state;
+		Eigen::Matrix<double,Nx,1> cur_state;
         // YW added
         Collection<Corridor,N+1> box_constraint;
 
@@ -58,17 +58,17 @@ namespace Planner {
         bool SetLocalWpts(double t); // find closest 50 lane nodes
         //void QxFromPrediction(Collection<double,N+1> mpcPredictionHeads);        
 		int isRefUsed;
-        Collection<Matrix<double,5,1>,N+1> local_wpts;
+        Collection<Eigen::Matrix<double,5,1>,N+1> local_wpts;
 
         Collection<bool,N+1> sfc_idx; //  sfc idx
 
 
 		//Matrix<double,2,1> wpts_initial;
-        Matrix<double,Nx,1> state_weight_;
-        Matrix<double,Nu,1> input_weight_;
-        Matrix<double,Nx,1> final_weight_;
+        Eigen::Matrix<double,Nx,1> state_weight_;
+        Eigen::Matrix<double,Nu,1> input_weight_;
+        Eigen::Matrix<double,Nx,1> final_weight_;
 
-        Vector2d qp_param;
+        Eigen::Vector2d qp_param;
     };
     /**
      * Plain MPC module

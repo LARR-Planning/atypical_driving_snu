@@ -3,7 +3,7 @@
 
 #include <Eigen/Dense>
 
-using namespace Eigen;
+// using namespace Eigen;
 using namespace std;
 
 enum ReturnType { WITH_DERIVATIVES, WITHOUT_DERIVATIVES };
@@ -13,12 +13,12 @@ template<const int Nx, const int Nu>
 class DescriptionBase 
 {
 	protected:
-		typedef Matrix<double,Nx,1> VectorX;
-		typedef Matrix<double,Nu,1> VectorU;
-		typedef Matrix<double,Nx,Nx> MatrixXX;
-		typedef Matrix<double,Nx,Nu> MatrixXU;
-		typedef Matrix<double,Nu,Nx> MatrixUX;
-		typedef Matrix<double,Nu,Nu> MatrixUU;
+		typedef Eigen::Matrix<double,Nx,1> VectorX;
+		typedef Eigen::Matrix<double,Nu,1> VectorU;
+		typedef Eigen::Matrix<double,Nx,Nx> MatrixXX;
+		typedef Eigen::Matrix<double,Nx,Nu> MatrixXU;
+		typedef Eigen::Matrix<double,Nu,Nx> MatrixUX;
+		typedef Eigen::Matrix<double,Nu,Nu> MatrixUU;
 };
 
 // dynamics container
@@ -74,15 +74,15 @@ class ConstraintDerivatives : public DescriptionBase<Nx,Nu>
 		{	// the number of all and equality constraints are determined at construction
 			Nc = nc;
 			Neq = neq;
-			con = MatrixXd::Zero(nc,1);
-			conx = MatrixXd::Zero(nc,Nx);
-			conu = MatrixXd::Zero(nc,Nu);
+			con = Eigen::MatrixXd::Zero(nc,1);
+			conx = Eigen::MatrixXd::Zero(nc,Nx);
+			conu = Eigen::MatrixXd::Zero(nc,Nu);
 		};
 		int Nc;
 		int Neq;
-		Matrix<double,Dynamic,1> 	con;
-		Matrix<double,Dynamic,Nx> 	conx;
-		Matrix<double,Dynamic,Nu> 	conu;
+		Eigen::Matrix<double,Eigen::Dynamic,1> 	con;
+		Eigen::Matrix<double,Eigen::Dynamic,Nx> 	conx;
+		Eigen::Matrix<double,Eigen::Dynamic,Nu> 	conu;
 };
 
 // base class for describing dynamics, cost, and constraint

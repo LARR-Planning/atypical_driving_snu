@@ -10,7 +10,7 @@
 #include <optimization_module/parameters/dyn_parameter.h>
 
 using namespace std;
-using namespace Eigen;
+// using namespace Eigen;
 
 typedef Eigen::Triplet<double> Trip;
 
@@ -21,7 +21,7 @@ class QP_block
         Collection<Matrix<double,5,1>,N+1> local_wpts;
 
     public:
-    QP_block(Collection<Matrix<double,5,1>,N+1> local_wpts_, double Q, double R):local_wpts(local_wpts_), Q_(Q), R_(R){}
+    QP_block(Collection<Eigen::Matrix<double,5,1>,N+1> local_wpts_, double Q, double R):local_wpts(local_wpts_), Q_(Q), R_(R){}
 
     qpOASES::real_t* QP_block_solver( Eigen::Matrix<double, Nx, 1> x_init, Eigen::Matrix<double, Nu, 1> u_init)
     {

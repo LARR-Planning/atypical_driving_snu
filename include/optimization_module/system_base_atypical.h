@@ -4,7 +4,7 @@
 #include <Eigen/Dense>
 
 using namespace std;
-using namespace Eigen;
+// using namespace Eigen;
 
 /*
  * Base class of nonlinear system.
@@ -15,10 +15,10 @@ template<const int Nx, const int Nu>
 class SystemBase
 {
     protected:
-        typedef Matrix<double,Nx,1> VectorX;
-        typedef Matrix<double,Nu,1> VectorU;
-        typedef Matrix<double,Nx,Nx> MatrixXX;
-        typedef Matrix<double,Nx,Nu> MatrixXU;
+        typedef Eigen::Matrix<double,Nx,1> VectorX;
+        typedef Eigen::Matrix<double,Nu,1> VectorU;
+        typedef Eigen::Matrix<double,Nx,Nx> MatrixXX;
+        typedef Eigen::Matrix<double,Nx,Nu> MatrixXU;
 
     public:
         explicit SystemBase(){};

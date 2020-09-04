@@ -5,11 +5,11 @@
 #include <optimization_module/dimension.h>
 #include <optimization_module/parameters/dyn_parameter.h>
 
-using namespace Eigen;
+// using namespace Eigen;
 namespace symbolic_functions
 {
-    Matrix<double,Nc,Nu> conu(Matrix<double,Nx,1> x_, Matrix<double,Nu,1>u,
-            Matrix<double,4,1> sfc_modified)
+    Eigen::Matrix<double,Nc,Nu> conu(Eigen::Matrix<double,Nx,1> x_, Eigen::Matrix<double,Nu,1>u,
+            Eigen::Matrix<double,4,1> sfc_modified)
     {
         float x = x_(0,0);
         float y = x_(1,0);
@@ -21,7 +21,7 @@ namespace symbolic_functions
         float adot = u(0,0);
         float deldot = u(1,0);
 
-        Matrix<double,Nc,Nu> CONU;
+        Eigen::Matrix<double,Nc,Nu> CONU;
         CONU.setZero();
         CONU(8,0) = 1.0;
         CONU(9,0) = -1.0;
