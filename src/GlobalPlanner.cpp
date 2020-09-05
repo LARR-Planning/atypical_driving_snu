@@ -64,7 +64,7 @@ bool GlobalPlanner::plan(double t) {
             gridPointStates.resize(laneGridPoints.size());
             for(int k_side = 0; k_side < laneGridPoints.size(); k_side++) {
                 double object_velocity = 0;
-                if(p_base->isObject(laneGridPoints[k_side],object_velocity)){
+                if(p_base->isObject(laneGridPoints[k_side],object_velocity) and object_velocity > param.object_velocity_threshold){
                     gridPointStates[k_side] = 2;
                 }
                 else if(p_base->isOccupied(laneGridPoints[k_side])){
@@ -223,17 +223,24 @@ bool GlobalPlanner::plan(double t) {
 
 
     // Smoothing
-    int idx_start, idx_end, idx_delta, i_smooth;
+    int idx_start, idx_end, idx_delta, i_smooth, window;
+    double window_length;
     Vector2d smoothingPoint;
 
     // line smoothing except first point
     i_smooth = 1;
-    int window = static_cast<int>((param.smoothing_distance + SP_EPSILON)/param.grid_resolution);
     while(i_smooth < laneTreePath.size()) {
         double bias = (laneTreePath[i_smooth].midPoint - laneTreePath[i_smooth].lanePoint).norm();
         if (bias > param.smoothing_cliff_min_bias) {
             //Forward search
             int i_forward = i_smooth + 1;
+            window = 0;
+            window_length = 0;
+            while(window < (int) laneTreePath.size() - i_smooth - 1 and window_length < param.smoothing_distance){
+                window_length += (laneTreePath[i_smooth + window + 1].lanePoint - laneTreePath[i_smooth + window].lanePoint).norm();
+                window++;
+            }
+
             while (i_forward < std::min(i_smooth + window, (int) laneTreePath.size() - 1)) {
                 if ((laneTreePath[i_forward].midPoint - laneTreePath[i_forward].lanePoint).norm() < bias * param.smoothing_cliff_ratio) {
                     i_forward++;
@@ -256,6 +263,13 @@ bool GlobalPlanner::plan(double t) {
 
             //backward search
             int i_backward = i_smooth - 1;
+            window = 0;
+            window_length = 0;
+            while(window < (int) i_smooth - 1 and window_length < param.smoothing_distance){
+                window_length += (laneTreePath[i_smooth - window - 1].lanePoint - laneTreePath[i_smooth - window].lanePoint).norm();
+                window++;
+            }
+
             while (i_backward > std::max(i_smooth - window, 0)) {
                 if ((laneTreePath[i_backward].midPoint - laneTreePath[i_backward].lanePoint).norm() < bias * param.smoothing_cliff_ratio) {
                     i_backward--;
@@ -281,8 +295,14 @@ bool GlobalPlanner::plan(double t) {
 
 
     // lane smoothing at first point with Bernstein Polynomial
-    window = static_cast<int>((param.start_smoothing_distance + SP_EPSILON)/param.grid_resolution);
     i_smooth = 0;
+    window = 0;
+    window_length = 0;
+    while(window < (int) laneTreePath.size() - i_smooth - 1 and window_length < param.smoothing_distance){
+        window_length += (laneTreePath[i_smooth + window + 1].lanePoint - laneTreePath[i_smooth + window].lanePoint).norm();
+        window++;
+    }
+
     int i_forward = std::min(i_smooth + window, (int) laneTreePath.size() - 1);
     int n = 3;
     std::vector<Vector2d, aligned_allocator<Vector2d>> controlPoints;
@@ -666,8 +686,15 @@ int GlobalPlanner::findLaneTreePathTail(bool& isBlocked, bool& isBlockedByObject
 
     //safe distance
     if(isBlocked){
-        tail_end = tail_end - static_cast<int>((param.safe_distance + SP_EPSILON)/param.grid_resolution);
-        if(tail_end < 1){
+        int window = 0;
+        double window_length = 0;
+        while(window < tail_end - 1 and window_length < param.safe_distance){
+            window_length += (laneTreePath[tail_end - window - 1].lanePoint - laneTreePath[tail_end - window].lanePoint).norm();
+            window++;
+        }
+
+        tail_end = tail_end - window;
+        if(window_length < param.safe_distance){
             tail_end = 1;
         }
     }

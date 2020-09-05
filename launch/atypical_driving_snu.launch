@@ -123,6 +123,7 @@
         <param name="global_planner/corridor_width_dynamic_min" value="8.0"/>
 	    <param name="global_planner/safe_distance" value = "50"/>
 	    <param name="global_planner/nominal_acceleration" value="0.5"/>
+	    <param name="global_planner/object_velocity_threshold" value="0.1"/>
 
         <param name="local_planner/horizon" value="$(arg horizon)" />
         <param name="local_planner/ts" value="$(arg planning_dt)" />

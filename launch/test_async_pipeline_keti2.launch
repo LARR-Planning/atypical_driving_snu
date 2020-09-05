@@ -4,7 +4,7 @@
 
   <arg name = "use_sim_time" value = "true"/>
 <!--   <arg name= "bagfile"        default="200518-SNU-1_result.bag"/> -->
-  <arg name= "bagfile"        default="kiapi_static2.bag"/>
+  <arg name= "bagfile"        default="kiapi_dynamic2.bag"/>
 
   <param name="use_sim_time" value="$(arg use_sim_time)"/>
 
