@@ -113,6 +113,7 @@ namespace Planner {
         double safe_distance;
         double v_ref_past_weight;
         double nominal_acceleration;
+        double object_velocity_threshold;
     };
 
     struct ParamPredictor{

@@ -64,7 +64,7 @@ bool GlobalPlanner::plan(double t) {
             gridPointStates.resize(laneGridPoints.size());
             for(int k_side = 0; k_side < laneGridPoints.size(); k_side++) {
                 double object_velocity = 0;
-                if(p_base->isObject(laneGridPoints[k_side],object_velocity)){
+                if(p_base->isObject(laneGridPoints[k_side],object_velocity) and object_velocity > param.object_velocity_threshold){
                     gridPointStates[k_side] = 2;
                 }
                 else if(p_base->isOccupied(laneGridPoints[k_side])){
