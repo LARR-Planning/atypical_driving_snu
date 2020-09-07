@@ -87,7 +87,7 @@ namespace Planner{
         /**
          *  Publisher
          */
-
+        ros::Publisher pubLastPublishedInput ; // only visualization purpose
         ros::Publisher pubPath; // publisher for result path
         ros::Publisher pubCorridorSeq; // publisher for current corridor sequence
         ros::Publisher pubObservationMarker; // publisher for observed position for obstacles

@@ -37,6 +37,7 @@ Panels:
         - /LaserScan2
         - /MarkerArray9
         - /MarkerArray9/Namespaces1
+        - /TwistStamped1
       Splitter Ratio: 0.38962963223457336
     Tree Height: 728
   - Class: rviz/Selection
@@ -715,6 +716,16 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: true
+    - Class: jsk_rviz_plugin/TwistStamped
+      Enabled: true
+      Name: TwistStamped
+      Topic: /atypical_planning_test/publishedInput
+      Unreliable: false
+      Value: true
+      angular color: 255; 0; 0
+      angular scale: 5
+      linear color: 0; 255; 0
+      linear scale: 5
   Enabled: true
   Global Options:
     Background Color: 136; 138; 133
@@ -743,25 +754,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 64.32561492919922
+      Distance: 24.897686004638672
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 19.473962783813477
-        Y: -7.085239887237549
-        Z: 28.82147789001465
+        X: 32.14960861206055
+        Y: -29.01636505126953
+        Z: 29.05845069885254
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.539796233177185
+      Pitch: 1.5347962379455566
       Target Frame: PhysXCar/odom_local_ned
       Value: Orbit (rviz)
-      Yaw: 3.0653610229492188
+      Yaw: 3.040360927581787
     Saved: ~
 Window Geometry:
   Displays:

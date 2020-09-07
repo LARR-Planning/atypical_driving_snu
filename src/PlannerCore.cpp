@@ -218,14 +218,20 @@ visualization_msgs::MarkerArray Lane::getSidePath(string frame_id) {
 
     visualization_msgs::Marker leftLane = baseLane; leftLane.ns = "left";
     visualization_msgs::Marker rightLane = baseLane; rightLane.ns = "right";
-    int idx = 0 ;
+    int idx = 10 ;
 
     Matrix2d rot;
     rot << 0, -1,
             1,0;
 
-    for (; idx < points.size() -1; idx ++ ){
-        Vector2d dir = (points[idx+1] - points[idx]); dir.normalize();
+    for (; idx < points.size() -5  ; idx ++ ){
+
+
+        Vector2d dir = (points[idx+4] - points[idx]);
+
+        if (dir.norm() > 0.03)
+        {
+        dir.normalize();
         Vector2d leftDir = rot*dir;
         Vector2d rightDir = -leftDir;
 
@@ -238,6 +244,8 @@ visualization_msgs::MarkerArray Lane::getSidePath(string frame_id) {
         right.x = points[idx](0) + widths[idx]/2*rightDir(0) ;
         right.y = points[idx](1) + widths[idx]/2*rightDir(1);
         rightLane.points.push_back(right);
+
+        }
     }
 
     sideLanes.markers.push_back(leftLane);

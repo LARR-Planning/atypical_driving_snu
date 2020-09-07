@@ -5,3 +5,5 @@ sudo apt-get install ros-melodic-pointcloud-to-laserscan
 
 https://github.com/clearpathrobotics/occupancy_grid_utils.git
 https://github.com/icsl-Jeon/driving_msgs.git
+
+sudo apt-get install ros-melodic-jsk-visualization

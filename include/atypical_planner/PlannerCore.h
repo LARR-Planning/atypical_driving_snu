@@ -32,6 +32,7 @@
 #include <occupancy_grid_utils/coordinate_conversions.h>
 #include <occupancy_grid_utils/ray_tracer.h>
 
+#include <geometry_msgs/TwistStamped.h>
 
 using namespace std;
 using namespace Eigen;
@@ -192,7 +193,6 @@ namespace Planner {
         bool isSuccess;
     };
 
-
     /**
      * @brief Initial lane
      */
@@ -311,6 +311,8 @@ namespace Planner {
         SE3 Tsb; // SNU to body
 
 
+
+        TwistStamped lastPublishedInput;
         string log_file_name_base;
         geometry_msgs::PoseStamped cur_pose; // current pose of the car w.r.t the {SNU}
         deque<CarState> desired_state_seq;

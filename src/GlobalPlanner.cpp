@@ -456,7 +456,7 @@ bool GlobalPlanner::plan(double t) {
 
     p_base->laneSpeed = (1-param.v_ref_past_weight)*vLaneRef + param.v_ref_past_weight*p_base->laneSpeed; // mixing
     p_base->laneCurvature = meanCurv;
-    ROS_INFO("lane [%f,%f]" ,meanCurv,vLaneRef);
+    ROS_INFO("[lane curvature , lane ref speed] = [%f,%f]" ,meanCurv,vLaneRef);
 
     // Time allocation
     double nominal_acceleration = param.nominal_acceleration;
