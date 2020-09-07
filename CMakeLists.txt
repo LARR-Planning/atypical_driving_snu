@@ -31,7 +31,7 @@ find_package(Threads)
 
 # find_package( ACADO REQUIRED )
 
-find_package(catkin REQUIRED COMPONENTS roscpp sensor_msgs tf tf2 qpOASES
+find_package(catkin REQUIRED COMPONENTS roscpp sensor_msgs tf tf2 qpoases
             geometry_msgs octomap_msgs message_generation nav_msgs message_generation driving_msgs pcl_ros occupancy_grid_utils
             ct_core ct_rbd ct_optcon ct_models
             )

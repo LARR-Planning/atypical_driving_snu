@@ -191,7 +191,10 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<double>("local_planner/dyn_obst_range",param_.l_param.dynObstRange,30.0);
 
     // stopping
-    nh.param<double>("stopping/trigger_dist", param_.s_param.trigger_dist, 15.0);
+    nh.param<double>("stopping/trigger_dist", param_.s_param.trigger_dist, 10.0);
+    nh.param<double>("stopping/final_Q", param_.s_param.final_Q, 1000.0);
+    nh.param<double>("stopping/inter_R", param_.s_param.inter_R, 100.0);
+    
 
     Parameter ilqr_weight;
     param_.l_param.final_weight = ilqr_weight.setting.final_weight;
@@ -212,7 +215,7 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<double>("predictor/dynamic_threshold",param_.p_param.staticCriteria,0.04); // just fix 1
     nh.param<string>("predictor/log_dir",param_.p_param.log_dir,"/home/jbs/test_ws/src/atypical_driving_snu/log/predictor");
     // Common
-    nh.param<double>("goal_thres",param_.l_param.goalReachingThres,0.4); // just fix 1
+    nh.param<double>("goal_thres",param_.l_param.goalReachingThres,1.0); // just fix 1
     p_base->goal_thres = param_.l_param.goalReachingThres;
 
     nh.param<bool>("use_nominal_obstacle_rad",use_nominal_obstacle_radius,false); // just fix 1
@@ -1032,9 +1035,11 @@ void Wrapper::runPlanning() {
     double Tp = 4.0; // sec
     auto tCkpG = chrono::steady_clock::now(); // check point time
     auto tCkpL = chrono::steady_clock::now(); // check point time
+    auto tCkp_stop = chrono::steady_clock::now();
 
     bool doGPlan = true; // turn on if we have started the class
     bool doLPlan = true; // turn on if we have started the class
+    bool doStopping = true; 
     bool didLplanByG = false; // Lp already done in GP loop
     bool isPlanPossible = false;
     bool isLaneSuccess = false;
@@ -1062,16 +1067,19 @@ void Wrapper::runPlanning() {
                 auto distToGoal = (Vector2d(p_base_shared->cur_state.x,p_base_shared->cur_state.y) -
                         Vector2d(goalXYSNU(0),goalXYSNU(1))).norm();
 //                cout << "distance to goal" << distToGoal << endl;
+                if(distToGoal < param.l_param.goalReachingThres){
+                    p_base_shared->isReached = true;
+                    return;
+                }
 
-                if (distToGoal < param.s_param.trigger_dist)
+                if (distToGoal < param.s_param.trigger_dist && doStopping)
                 {
                     printf("=========================================================\n");
                     ROS_INFO("%f Trigger Distance", param.s_param.trigger_dist);
                     ROS_INFO("[SNU_PLANNER] Reached goal! Stopping Control Start");
-                    p_base_shared->isReached = false;
                     p_base_shared->isStopping = true;
 
-                    auto tCkp_stop = chrono::steady_clock::now();
+                    tCkp_stop = chrono::steady_clock::now();
                     // driving_msgs::VehicleCmd input_cur = p_base_shared->getCurInput(p_base_shared->)
                     // Matrix<double, 2, 1> u_cur = (Matrix<double, 2,1>)() << p_base
                     // Planner::Stopping stop_control(p_base_shared, x_cur, goalXYSNU, 0.5, ros_wrapper_ptr->curTime());
@@ -1090,69 +1098,73 @@ void Wrapper::runPlanning() {
 
                     ROS_INFO("[SNU_PLANNER] Stopping Control End");
 
-                    return;
+                    // return;
                 }
-                if(distToGoal < param.l_param.goalReachingThres)
-                    p_base_shared->isReached = true;
+
+                // if(p_base_shared->isStopping){
+                    
+                // }
+                if(distToGoal > param.s_param.trigger_dist){
+                    ROS_INFO_ONCE("[Wrapper] start planning!");
+                    // 3. Do planning (GP->LP) or LP only
+                    if (doGPlan) { // G plan
+
+                        tCkpG = chrono::steady_clock::now(); // check point time
+                        // Lane processing
+                        isLaneSuccess = processLane(ros_wrapper_ptr->curTime());
+                        if (isLaneSuccess){
+                            ROS_INFO("[Wrapper] lane extracted!");
+                            ROS_INFO("[Wrapper] begin GP..");
+                            isGPSuccess = planGlobal(ros_wrapper_ptr->curTime());
+
+                            if (isGPSuccess) { // let's call LP
+                                ROS_INFO_STREAM("[Wrapper] GP success! planning time for gp: " <<
+                                                                                            std::chrono::duration_cast<std::chrono::microseconds>(
+                                                                                                    chrono::steady_clock::now() -
+                                                                                                    tCkpG).count() * 0.001
+                                                        << "ms");
+                                ROS_INFO("[Wrapper] begin LP..");
+
+                                auto tCkp_mpc = chrono::steady_clock::now();
+                                isLPSuccess = planLocal(ros_wrapper_ptr->curTime()); // TODO time ?
+                                if (isLPSuccess)
+                                    ROS_INFO_STREAM("[Wrapper] LP success! planning time for lp: " <<
+                                                                                                std::chrono::duration_cast<std::chrono::microseconds>(
+                                                                                                        chrono::steady_clock::now() -
+                                                                                                        tCkp_mpc).count() *
+                                                                                                0.001
+                                                                                                << "ms");
+                                else { // LP failed
+                                    ROS_INFO_STREAM("[Wrapper] LP failed.");
+                                    ROS_INFO_STREAM("[Wrapper] LP failed! planning time for lp: " <<
+                                                                                                std::chrono::duration_cast<std::chrono::microseconds>(
+                                                                                                        chrono::steady_clock::now() -
+                                                                                                        tCkp_mpc).count() *
+                                                                                                0.001
+                                                                                                << "ms");
 
 
-                ROS_INFO_ONCE("[Wrapper] start planning!");
-                // 3. Do planning (GP->LP) or LP only
-                if (doGPlan) { // G plan
-
-                    tCkpG = chrono::steady_clock::now(); // check point time
-                    // Lane processing
-                    isLaneSuccess = processLane(ros_wrapper_ptr->curTime());
-                    if (isLaneSuccess){
-                        ROS_INFO("[Wrapper] lane extracted!");
-                        ROS_INFO("[Wrapper] begin GP..");
-                        isGPSuccess = planGlobal(ros_wrapper_ptr->curTime());
-
-                        if (isGPSuccess) { // let's call LP
-                            ROS_INFO_STREAM("[Wrapper] GP success! planning time for gp: " <<
-                                                                                           std::chrono::duration_cast<std::chrono::microseconds>(
-                                                                                                   chrono::steady_clock::now() -
-                                                                                                   tCkpG).count() * 0.001
-                                                    << "ms");
-                            ROS_INFO("[Wrapper] begin LP..");
-
-                            auto tCkp_mpc = chrono::steady_clock::now();
-                            isLPSuccess = planLocal(ros_wrapper_ptr->curTime()); // TODO time ?
-                            if (isLPSuccess)
-                                ROS_INFO_STREAM("[Wrapper] LP success! planning time for lp: " <<
-                                                                                               std::chrono::duration_cast<std::chrono::microseconds>(
-                                                                                                       chrono::steady_clock::now() -
-                                                                                                       tCkp_mpc).count() *
-                                                                                               0.001
-                                                                                               << "ms");
-                            else { // LP failed
-                                ROS_INFO_STREAM("[Wrapper] LP failed.");
-                                ROS_INFO_STREAM("[Wrapper] LP failed! planning time for lp: " <<
-                                                                                               std::chrono::duration_cast<std::chrono::microseconds>(
-                                                                                                       chrono::steady_clock::now() -
-                                                                                                       tCkp_mpc).count() *
-                                                                                               0.001
-                                                                                               << "ms");
 
 
 
+                                }
+                            } else // GP failed
+                                ROS_INFO_STREAM("[Wrapper] GP failed.");
 
+                        }else{ // Lane failed
+                            ROS_WARN("[Wrapper] lane extraction failed..");
+                        }
+    //                    isGPSuccess = false;
+                    } // G plan ended
+                    doGPlan = (chrono::steady_clock::now() - tCkpG > std::chrono::duration<double>(param.g_param.period));
 
-                            }
-                        } else // GP failed
-                            ROS_INFO_STREAM("[Wrapper] GP failed.");
+                } 
+                else { // planning cannot be started
+                    ROS_WARN_THROTTLE(2,
+                                    "[Wrapper] waiting planning input subscriptions.. (message print out every 2 sec)");
+                }
+            doStopping = (chrono::steady_clock::now() - tCkp_stop > std::chrono::duration<double>(0.1));
 
-                    }else{ // Lane failed
-                        ROS_WARN("[Wrapper] lane extraction failed..");
-                    }
-//                    isGPSuccess = false;
-                } // G plan ended
-                doGPlan = (chrono::steady_clock::now() - tCkpG > std::chrono::duration<double>(param.g_param.period));
-
-            } 
-            else { // planning cannot be started
-                ROS_WARN_THROTTLE(2,
-                                  "[Wrapper] waiting planning input subscriptions.. (message print out every 2 sec)");
             }
 
 //        ros::spinOnce();

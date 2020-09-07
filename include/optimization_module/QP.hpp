@@ -223,59 +223,59 @@ void QP<Nx,Nu,N>::solve( )
     
 
     
-    qpOASES::real_t *Hqp = H_cost.data();
-    qpOASES::real_t *g = f_cost.data();
+    // qpOASES::real_t *Hqp = H_cost.data();
+    // qpOASES::real_t *g = f_cost.data();
     
-    //Input, State Bound constraint 
-    Eigen::Matrix<double, Nu*(N_+1), 1> lbmat;
-    Eigen::Matrix<double, Nu*(N_+1), 1> ubmat;
-    for(int i=0; i<N_+1; ++i)
-    {
-        lbmat(Nu*i, 0) = jerk_min-3.0; ubmat(Nu*i, 0) = jerk_max+3.0;
-        lbmat(Nu*i+1, 0) = steer_dot_min; ubmat(Nu*i+1, 0) = steer_dot_max;
-    }
+    // //Input, State Bound constraint 
+    // Eigen::Matrix<double, Nu*(N_+1), 1> lbmat;
+    // Eigen::Matrix<double, Nu*(N_+1), 1> ubmat;
+    // for(int i=0; i<N_+1; ++i)
+    // {
+    //     lbmat(Nu*i, 0) = jerk_min-3.0; ubmat(Nu*i, 0) = jerk_max+3.0;
+    //     lbmat(Nu*i+1, 0) = steer_dot_min; ubmat(Nu*i+1, 0) = steer_dot_max;
+    // }
 
-    qpOASES::real_t* lb = lbmat.data();
-    qpOASES::real_t* ub = ubmat.data();
+    // qpOASES::real_t* lb = lbmat.data();
+    // qpOASES::real_t* ub = ubmat.data();
 
-    qpOASES::real_t *solution = new qpOASES::real_t[Nu*(N_+1)];
-    qpOASES::int_t nWSR = 5000;
+    // qpOASES::real_t *solution = new qpOASES::real_t[Nu*(N_+1)];
+    // qpOASES::int_t nWSR = 5000;
     
-    qpOASES::Options options;
-    options.printLevel = qpOASES::PL_LOW;
-    options.terminationTolerance = 1e-10;
+    // qpOASES::Options options;
+    // options.printLevel = qpOASES::PL_LOW;
+    // options.terminationTolerance = 1e-10;
     
 
-    qpOASES::QProblem initial_guess( Nu*(N_+1), 0);
-    initial_guess.setOptions(options);
-    initial_guess.init(Hqp, g, NULL, lb, ub, NULL, NULL, nWSR, 0);
+    // qpOASES::QProblem initial_guess( Nu*(N_+1), 0);
+    // initial_guess.setOptions(options);
+    // initial_guess.init(Hqp, g, NULL, lb, ub, NULL, NULL, nWSR, 0);
     
-    if(initial_guess.isInfeasible()){
-            cout<<"[QP solver] warning: problem is infeasible. "<<endl;
-    }
-    cout << "Acutual nWSR: " << nWSR << " / Original: " << 2000 << endl;
+    // if(initial_guess.isInfeasible()){
+    //         cout<<"[QP solver] warning: problem is infeasible. "<<endl;
+    // }
+    // cout << "Acutual nWSR: " << nWSR << " / Original: " << 2000 << endl;
     
-    initial_guess.getPrimalSolution(solution);
-    bool isSolved = initial_guess.isSolved();
-    if (isSolved)
-        cout<<"[QP solver] Success!  "<<endl;
-    else
-        cout<<"[QP solver] Failure.  "<<endl;
+    // initial_guess.getPrimalSolution(solution);
+    // bool isSolved = initial_guess.isSolved();
+    // if (isSolved)
+    //     cout<<"[QP solver] Success!  "<<endl;
+    // else
+    //     cout<<"[QP solver] Failure.  "<<endl;
 
-    // cout << "Solution" << endl; 
+    // // cout << "Solution" << endl; 
 
-    for(int i=0; i< N_+1; i++)
-    {    
-        double u1 = solution[2*i];
-        double u2 = solution[2*i+1];   
-        // cout << u1 << ", " << u2 << endl; 
+    // for(int i=0; i< N_+1; i++)
+    // {    
+    //     double u1 = solution[2*i];
+    //     double u2 = solution[2*i+1];   
+    //     // cout << u1 << ", " << u2 << endl; 
 
-        VectorU u_(u1, u2);
-        // uN_[2*i] = u_;
-        // uN_[2*i+1] = u_;
-        uN_[i] = u_;
+    //     VectorU u_(u1, u2);
+    //     // uN_[2*i] = u_;
+    //     // uN_[2*i+1] = u_;
+    //     uN_[i] = u_;
     
-    }
+    // }
 
 }
 

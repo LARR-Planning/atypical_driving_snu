@@ -97,9 +97,11 @@
         <arg name = "isRearWheelDriven" value="true"/>
         <arg name = "goal/x" value = "$(arg goal/x)"/>
         <arg name = "goal/y" value = "$(arg goal/y)"/>
-        <param name="local_planner/initial_guess/w_state" value="100.0"/>
-        <param name="local_planner/initial_guess/w_input" value="1.0"/>
-        <param name="stopping/trigger_dist" value="15.0"/>
+        <arg name = "local_planner/initial_guess/w_state" value="100.0"/>
+        <arg name = "local_planner/initial_guess/w_input" value="1.0"/>
+        <arg name = "stopping/trigger_dist" value="0.1"/>
+        <arg name = "stopping/final_Q" value="1000.0"/>
+        <arg name = "stopping/inter_R" value="100.0"/>
     </include>
 
 

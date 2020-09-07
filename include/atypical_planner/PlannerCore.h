@@ -131,6 +131,8 @@ namespace Planner {
         Eigen::Matrix<double, 4, 1> initial_state;
         Eigen::Matrix<double, 3, 1> goal_state; 
         double trigger_dist;
+        double final_Q;
+        double inter_R;
     };
     /**
      * @brief Parameters for both planner.

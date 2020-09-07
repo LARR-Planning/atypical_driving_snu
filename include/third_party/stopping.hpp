@@ -139,7 +139,7 @@ namespace Planner{
                 // intermediateCost->setWeights();
 
                 Eigen::MatrixXd Q_inter(4,4); Q_inter = Eigen::Matrix4d::Identity();
-                double Q_scale_i = 0.1; double R_scale_i = 0.1;
+                double Q_scale_i = 0.1; double R_scale_i = 100.0;
                 Eigen::MatrixXd R_inter(2,2); R_inter = Eigen::Matrix2d::Identity();
                 Q_inter = Q_scale_i * Q_inter;
                 R_inter = R_scale_i * R_inter;
@@ -220,7 +220,6 @@ namespace Planner{
                 ROS_INFO("[OPT] Start Point x: %f, y: %f, v: %f, th: %f", x0[0], x0[1], x0[2], x0[3]);
                 ROS_INFO("[OPT] Goal Point x: %f, y: %f, th: %f", x_f[0], x_f[1], x_f[3]);
 
-                std::cout << "STEP1 FINISHED" << std::endl;     
 
                 /* STEP 2: set up a nonlinear optimal control solver. */
                 /* STEP 2-A: Create the settings.
@@ -232,14 +231,13 @@ namespace Planner{
                 ilqr_settings.dt = dt;  // the control discretization in [sec]
                 ilqr_settings.integrator = ct::core::IntegrationType::EULERCT;
                 ilqr_settings.discretization = ct::optcon::NLOptConSettings::APPROXIMATION::FORWARD_EULER;
-                ilqr_settings.max_iterations = 1000;
+                ilqr_settings.max_iterations = 200;
                 ilqr_settings.nThreads = 1;
                 ilqr_settings.nlocp_algorithm = ct::optcon::NLOptConSettings::NLOCP_ALGORITHM::GNMS;
                 ilqr_settings.lqocp_solver = ct::optcon::NLOptConSettings::LQOCP_SOLVER::HPIPM_SOLVER;  // solve LQ-problems using HPIPM
                 ilqr_settings.lqoc_solver_settings.num_lqoc_iterations = 10;                // number of riccati sub-iterations
-                ilqr_settings.printSummary = true;
+                ilqr_settings.printSummary = false;
 
-                std::cout << "STEP 2-A Finished" << std::endl; 
 
                 /* STEP 2-B: provide an initial guess */
                 // calculate the number of time steps K
@@ -252,7 +250,6 @@ namespace Planner{
                 ct::core::StateVectorArray<state_dim> x_ref_init(K + 1, x0);
                 ct::optcon::NLOptConSolver<state_dim, control_dim>::Policy_t initController(x_ref_init, u0_ff, u0_fb, ilqr_settings.dt);
 
-                std::cout << "STEP 2-B Finished" << std::endl; 
 
 
                 // STEP 2-C: create an NLOptConSolver instance
@@ -260,12 +257,10 @@ namespace Planner{
                 // set the initial guess
                 iLQR.setInitialGuess(initController);
 
-                std::cout << "STEP 2-C Finished" << std::endl; 
 
                 // STEP 3: solve the optimal control problem
                 iLQR.solve();
 
-                std::cout << "STEP 3 Finished" << std::endl; 
 
                 // STEP 4: retrieve the solution
                 ct::core::StateFeedbackController<state_dim, control_dim> solution = iLQR.getSolution();
@@ -360,246 +355,9 @@ namespace Planner{
 
 
                 set_result(time);
+                u_result.clear();
                 return true; 
             }
-//             bool plan(double time)
-//             {   
-//                 USING_NAMESPACE_ACADO
-
-
-//                 double t_start = time; double t_end = time + 5.0; 
-
-//                 ROS_INFO("Start Point x: %f, y: %f, v: %f, th: %f", state0(0,0), state0(1,0), state0(2,0), state0(3,0));
-//                 ROS_INFO("Goal Point x: %f, y: %f", goal(0,0), goal(1,0));
-                
-                 
-//                 double x0, y0, v0, th0, xf, yf;
-//                 x0 = state0(0,0); y0 = state0(1,0); v0 = state0(2,0); th0 = state0(3,0);
-// //                xf = goal(0,0); yf = goal(1,0);
-//                 xf = x0 + 5.0; yf = y0;
-//                 // x0 = start_(0,0); y0 = start_(1,0); v0 = start_(2,0); th0 = start_(3,0);
-//                 // xf = goal_(0,0); yf = goal_(1,0); vf = 0.0; thf = goal_(2,0);
-
-                
-//                 DifferentialState x, y, v, th;
-//                 Control a, del;
-//                 // ACADO::IntermediateState i = x+y;
-
-//                 DifferentialEquation f(t_start, t_end);
-//                 // std::cout << i<< std::endl;
-
-//                 f << dot(x) == v*cos(th);
-//                 f << dot(y) == v*sin(th);
-//                 f << dot(v) == a;
-//                 f << dot(th) == v*tan(del)*invL;
-
-//                 // const double time_time = time;
-//                 u_int mesh = 10;
-//                 OCP ocp(t_start, t_end, mesh);
-
-//                 ocp.minimizeMayerTerm( a*a + del*del );
-//                 ocp.subjectTo(f);
-//                 ocp.subjectTo( AT_START, x == x0);
-//                 ocp.subjectTo( AT_START, y == y0);
-//                 ocp.subjectTo( AT_START, v == v0);
-//                 ocp.subjectTo( AT_START, th == th0);
-
-// //                thres_ = 0.5;
-//                 ocp.subjectTo( AT_END, xf-thres_ <= x <= xf+thres_);
-//                 ocp.subjectTo( AT_END, yf-thres_ <= y <= yf+thres_);
-//                 ocp.subjectTo( AT_END, a == 0.0);
-//                 ocp.subjectTo( AT_END, v == 0.0);
-//                 ocp.subjectTo( steer_min     <= del <= steer_max );
-//                 ocp.subjectTo( acc_min <= a <= acc_max );
-                
-
-//                 OptimizationAlgorithm alg(ocp);
-//                 alg.init();
-//                 // alg.set( ACADO::MAX_NUM_ITERATIONS, 20 );
-//                 alg.set( PRINTLEVEL, DEBUG );
-//                 // alg.set( ACADO::INTEGRATOR_TYPE, ACADO::INT_RK78);
-//                 // alg.set( ACADO::INTEGRATOR_TOLERANCE, 1e-8);
-//                 // alg.set( ACADO::DISCRETIZATION_TYPE, ACADO::MULTIPLE_SHOOTING);
-//                 // alg.set( ACADO::KKT_TOLERANCE, 1e-4);
-//                 // // alg.set( QP_SOLVER, QP_FORCES);
-//                 // alg.set( ACADO::SPARSE_QP_SOLUTION, ACADO::CONDENSING);  
-
-//                 VariablesGrid uStart( 2, t_start, t_end, 2 );
-//                 // uStart( 0,0 ) = 0.0;
-//                 // uStart( 1,0 ) = 0.0;
-//                 alg.initializeControls(uStart);
-
-//                 ROS_INFO("[OPT] Start Point x: %f, y: %f, v: %f, th: %f", x0, y0, v0, th0);
-//                 ROS_INFO("[OPT] Goal Point x: %f, y: %f", xf, yf);
-//                 ROS_INFO("[OPT] LIMIT steer_min: %f, steer_max: %f, acc_min: %f, acc_max: %f", steer_min, steer_max, acc_min, acc_max);
-//                 ROS_INFO("[OPT] inv_L: %f", invL);
-//                 ROS_INFO("Time Span start: %f, end: %f", t_start, t_end);
-//                 ROS_INFO("Step size: %d", step_size);
-
-                
-//                 alg.solve();
-//                 ROS_INFO("OPT SUCCESS");
-//                 // GnuplotWindow window;
-//                 // window.addSubplot( x, "X [m]" );
-//                 // window.addSubplot( y, "Y [m]" );
-//                 // window.addSubplot( v, "Velocity [m/s]" );
-//                 // window.addSubplot( th,  "Theta [rad]" );
-//                 // window.addSubplot( u(0),  "Accel [m/s^2]" );
-//                 // window.addSubplot( u(1),  "Steer [rad]" );
-                            
-//                 // alg << window;
-//                 alg.getControls(uStart);
-//                 uStart.print();
-                
-
-//                 VariablesGrid controls;
-//                 alg.getControls          (controls  );
-
-
-//                 std::vector<DMatrix> control_vec; 
-//                 DMatrix control_mat;
-//                 for(int i=0; i< controls.getNumPoints(); i++){
-//                     control_mat = controls.getMatrix(i);
-//                     control_vec.push_back(control_mat);
-//                 }
-//                 // std::cout << typeid(x).name() << std::endl;
-//                 for(int i=0; i<control_vec.size(); i++)
-//                 {
-//                     std::cout << control_vec.at(i) << std::endl;        
-//                 }
-
-//                 // std::vector<Eigen::Matrix<double, 2, 1>> return_vec;
-//                 Eigen::Matrix<double, 2, 1> vec;
-
-//                 for(int i=0; i<control_vec.size(); i++)
-//                 {
-//                     vec(0,0) = (control_vec.at(i))(0,0);
-//                     vec(1,0) = (control_vec.at(i))(1,0);
-//                     u_result.push_back(vec);        
-//                 }
-                
-
-//                 set_result(time);
-
-//                 if(!u_result.empty())
-//                     return true;
-//                 return false;
-//             }
-
-            // bool plan_ilqr(double time)
-            // {
-            //     cout << "[Stopping] Initialized.. " << endl;
-            // //    cout << "[LocalPlanner] Done. " << endl;
-            // //    cout<< "I am in the Local Planner plan function"<<endl;
-            //     cout<<"---------------------------------"<<endl;
-            // //     cout<< "New Local Goal is"<<x_goal_.coeffRef(0,0)<<"and"<<x_goal_.coeffRef(1,0)<<endl;
-            //     cout<<"Current car Speed: "<<p_base->getCarState().v<<" [m/s]"<<endl;
-            //     cout<<"Current x-position: "<<p_base->getCarState().x<< " [m]"<<endl;
-            //     cout<<"Current y-position: "<<p_base->getCarState().y<< " [m]"<<endl;
-            //     cout<<"Current heading angle: "<<p_base->getCarState().theta*180/3.1415926535<< " [deg]"<<endl;
-
-            //     isRefPlausible = LocalPlanner::SetLocalWpts(t);
-            //     if (!isRefPlausible)
-            //         cout << "Reference : abnormal (nan value)"<<endl;
-
-            //     //Following codes will be wrapped with another wrapper;
-            //     std::shared_ptr<Problem> prob = std::make_shared<Problem>(box_constraint,obs_q,obs_Q);
-            //     // Do not have to be defined every loop
-
-            //     bool noConstraint_ = 0;
-            //     prob->set_state_weight(param.state_weight);
-            //     prob->set_final_weight(param.final_weight);
-            //     prob->set_input_weight(param.input_weight);
-            //     prob->set_car_shape(car_shape);
-            //     prob->setRear_wheel(param.isRearWheeled);
-            //     prob->set_noConstraint(noConstraint_);
-            //     prob->set_refUsed(isRefUsed);
-            //     prob->set_ref(local_wpts);
-            //     prob->set_sfc_idx(sfc_idx);
-
-            //     static int loop_num = 0;
-            //     std::array<Matrix<double,Nu,1>,N> u0;
-            //     for(int i = 0; i < N; i++)
-            //     {
-            //         u0[i] = (Matrix<double,Nu,1>()<< 0,0.0).finished();
-            //     }
-            //     Matrix<double,Nx,1> x0_new;
-            //     Collection<Matrix<double,Nu,1>,N> uN_new;
-            //     Collection<Matrix<double,Nx,1>,N+1> xN_new;
-
-            //     // if car state contains strange value;
-            //     if(isnan(p_base->getCarState().theta) || isnan(p_base->getCarState().theta)|| (p_base->getCarState().v>1000)) {
-            //         for (int i = 0; i < N; i++) {
-            //             xN_new[i].setZero();
-            //             uN_new[i].setZero();
-            //         }
-            //         xN_new[N].setZero();
-            //     }
-            //     else{
-            //         if(loop_num == 0) //No initial input trajectory. 
-            //         {
-
-            //             x0_new = (Matrix<double,Nx,1>()<<p_base->getCarState().x, p_base->getCarState().y,p_base->getCarState().v,
-            //                     0.0, 0.0, p_base->getCarState().theta).finished();
-            //             //cout<<"current x: " <<p_base->getCarState().x<<endl;
-            //             //cout<<"current y: " <<p_base->getCarState().y<<endl;
-            //             //cout<<"current v: " <<p_base->getCarState().v<<endl;
-            //             //cout<<"current theta: " <<p_base->getCarState().theta*180/3.1415926535<<"[deg]"<<endl;
-            //             uN_new = u0;
-            //             iLQR<Nx,Nu,N> ilqr_init(*prob, x0_new,uN_new,param.tStep,ilqr_param);
-            //             ilqr_init.solve();
-
-            //             //uN_NextInit = ilqr_init.uN_;
-            //             uN_new = ilqr_init.uN_;
-            //             xN_new = ilqr_init.xN_;
-            //             for(int j = 0; j<N;j++)
-            //             {
-            //                 if(xN_new[j][3]>param.maxAccel)
-            //                     xN_new[j][3]=param.maxAccel;
-            //                 if(xN_new[j][3]<param.minAccel)
-            //                     xN_new[j][3]=param.minAccel;
-            //                 if(xN_new[j][4]>param.maxSteer)
-            //                     xN_new[j][4]=param.maxSteer;
-            //                 if(xN_new[j][4]<-param.maxSteer)
-            //                     xN_new[j][4]=-param.maxSteer;
-
-            //             }
-            //             next_state = xN_new[1];
-                        
-            //             for(int j = 0;j<N-1;j++)
-            //             {
-            //                 uN_NextInit[j] = uN_new[j+1];
-            //             }
-            //             uN_NextInit[N-1]= uN_new[N-1];
-
-            //             Matrix<double,N,1> ts_temp = VectorXd::LinSpaced(N,0.0,param.horizon-param.tStep);
-            //             ts_temp = ts_temp.array()+ t;
-            //             CarState carState_temp;
-            //             CarInput carInput_temp;
-
-            //             curPlanning.ts.clear();
-            //             curPlanning.xs.clear();
-            //             curPlanning.us.clear();
-            //             for(int i = 0 ;i<N; i++) {
-            //                 carState_temp.x = xN_new[i].coeffRef(0, 0);
-            //                 carState_temp.y = xN_new[i].coeffRef(1, 0);
-            //                 carState_temp.v = xN_new[i].coeffRef(2, 0);
-            //                 carState_temp.theta = xN_new[i].coeffRef(5, 0);
-            //                 //cout<<"MPC Future Heading Angle"<<i<<"th: "<< carState_temp.theta<<endl;
-            //                 carInput_temp.alpha = xN_new[i].coeffRef(3, 0);
-            //                 carInput_temp.delta = xN_new[i].coeffRef(4, 0);
-
-            //                 curPlanning.ts.push_back(ts_temp.coeffRef(i, 0));
-            //                 curPlanning.xs.push_back(carState_temp);
-            //                 curPlanning.us.push_back(carInput_temp);
-            //             }
-            //             curPlanning.isSuccess = true;
-            //             loop_num++;
-            //             return true;
-            //         }
-            // }
-
-
             
             Eigen::Matrix<double, 4, 1> mini_dyn(Eigen::Matrix<double, 4, 1>x_, Eigen::Matrix<double, 2, 1>u_, double dt)
             {   
@@ -637,6 +395,8 @@ namespace Planner{
 
                     carInput_temp.alpha = (u_result.at(i)).coeffRef(0,0);
                     carInput_temp.delta = (u_result.at(i)).coeffRef(1,0);
+
+                    ROS_INFO("Time: %f, Alpha: %f, Delta: %f",ts_temp.coeffRef(i,0), carInput_temp.alpha, carInput_temp.delta);
 
                     state_temp = mini_dyn(state_temp, (u_result.at(i)), dt);
 
