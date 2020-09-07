@@ -5,3 +5,13 @@ sudo apt-get install ros-melodic-pointcloud-to-laserscan
 
 https://github.com/clearpathrobotics/occupancy_grid_utils.git
 https://github.com/icsl-Jeon/driving_msgs.git
+
+##### Control-toolbox for Stopping #####
+
+https://github.com/ethz-adrl/control-toolbox
+https://github.com/ANYbotics/kindr.git
+
+Install blasfeo & hpipm by running control-toolbox/ct/install_hpipm.sh which generates static library of blasfeo & hpipm
+To make sure that CMake of control-toolbox can find balsfeo & hpipm package, build blasfeo and hpipm under /tmp folder with CMake.
+
+######################################## 
