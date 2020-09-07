@@ -396,7 +396,7 @@ namespace Planner{
                     carInput_temp.alpha = (u_result.at(i)).coeffRef(0,0);
                     carInput_temp.delta = (u_result.at(i)).coeffRef(1,0);
 
-                    ROS_INFO("Time: %f, Alpha: %f, Delta: %f",ts_temp.coeffRef(i,0), carInput_temp.alpha, carInput_temp.delta);
+                    // ROS_INFO("Time: %f, Alpha: %f, Delta: %f",ts_temp.coeffRef(i,0), carInput_temp.alpha, carInput_temp.delta);
 
                     state_temp = mini_dyn(state_temp, (u_result.at(i)), dt);
 
