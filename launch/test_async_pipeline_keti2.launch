@@ -4,7 +4,7 @@
 
   <arg name = "use_sim_time" value = "true"/>
 <!--   <arg name= "bagfile"        default="200518-SNU-1_result.bag"/> -->
-  <arg name= "bagfile"        default="kiapi_dynamic2.bag"/>
+  <arg name= "bagfile"        default="kiapi_static2.bag"/>
 
   <param name="use_sim_time" value="$(arg use_sim_time)"/>
 
@@ -44,8 +44,8 @@
         <rosparam>
             target_frame:  velodyne # Leave disabled to output scan in pointcloud frame
             transform_tolerance: 0.01
-            min_height: -0.8
-            max_height: 0.3
+            min_height: -1.5 # default = -0.8 / KIAPI = -1.5
+            max_height: -0.9 # default = 0.3 / KIAPI= -0.9
 
             angle_min: -3.1408 # -M_PI/2
             angle_max: 3.1408 # M_PI/2
