@@ -20,7 +20,7 @@
 
 
   <arg name= "lane_width" default="15"/>
-  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/waypoint_kiapi2.csv"/>
+  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/waypoint_kiapi3.csv"/>
   <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
   <arg name = "waypoints" default="$(find atypical_driving)/param/goal_airsim.yaml"/>
 
