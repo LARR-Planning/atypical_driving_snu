@@ -309,14 +309,14 @@ void LocalPlanner::SetSfcIdx(int N_corr)
 bool LocalPlannerPlain::plan(double t) {
 //    Checked that this function is always executed
     cout << "[LocalPlanner] Initialized.. " << endl;
-//    cout << "[LocalPlanner] Done. " << endl;
-//    cout<< "I am in the Local Planner plan function"<<endl;
-     cout<<"---------------------------------"<<endl;
-//     cout<< "New Local Goal is"<<x_goal_.coeffRef(0,0)<<"and"<<x_goal_.coeffRef(1,0)<<endl;
-     cout<<"Current car Speed: "<<p_base->getCarState().v<<" [m/s]"<<endl;
-     cout<<"Current x-position: "<<p_base->getCarState().x<< " [m]"<<endl;
-     cout<<"Current y-position: "<<p_base->getCarState().y<< " [m]"<<endl;
-     cout<<"Current heading angle: "<<p_base->getCarState().theta*180/3.1415926535<< " [deg]"<<endl;
+////    cout << "[LocalPlanner] Done. " << endl;
+////    cout<< "I am in the Local Planner plan function"<<endl;
+//     cout<<"---------------------------------"<<endl;
+////     cout<< "New Local Goal is"<<x_goal_.coeffRef(0,0)<<"and"<<x_goal_.coeffRef(1,0)<<endl;
+//     cout<<"Current car Speed: "<<p_base->getCarState().v<<" [m/s]"<<endl;
+//     cout<<"Current x-position: "<<p_base->getCarState().x<< " [m]"<<endl;
+//     cout<<"Current y-position: "<<p_base->getCarState().y<< " [m]"<<endl;
+//     cout<<"Current heading angle: "<<p_base->getCarState().theta*180/3.1415926535<< " [deg]"<<endl;
 
      isSFCPlausible = LocalPlanner::SfcToOptConstraint(t); // convert SFC to box constraints
      if (!isSFCPlausible)

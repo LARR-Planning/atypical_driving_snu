@@ -69,6 +69,7 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
     count_corridors = 0;
 
     // Publisher
+    pubLastPublishedInput = nh.advertise<geometry_msgs::TwistStamped>("publishedInput",1);
     pubPath = nh.advertise<nav_msgs::Path>("planning_path",1);
     pubCorridorSeq = nh.advertise<visualization_msgs::MarkerArray>("corridor_seq",1);
     pubObservationMarker = nh.advertise<visualization_msgs::MarkerArray>("observation_queue",1);
@@ -445,7 +446,15 @@ void RosWrapper::publish() {
         auto cmd = p_base->getCurInput(curTime());
         cmd.header.stamp = ros::Time::now();
         cmd.steer_angle_cmd *= (180.0/3.14); // cmd output deg
+
+        p_base->lastPublishedInput.twist.linear.x  = cmd.accel_decel_cmd;
+        p_base->lastPublishedInput.twist.angular.z = cmd.steer_angle_cmd*3.14/180.0;
+        p_base->lastPublishedInput.header.stamp = ros::Time::now();
+        p_base->lastPublishedInput.header.frame_id = baseLinkId;
+
+
         pubCurCmd.publish(cmd);
+        pubLastPublishedInput.publish(p_base->lastPublishedInput);
 
         geometry_msgs::Twist cmdDabin;
         pubMPCTraj.publish(MPCTraj);
@@ -466,10 +475,10 @@ void RosWrapper::publish() {
     }
 
     pubOurOccu.publish(p_base->localMap);
-    int sum = 0 ;
-    for (int i = 0 ; i < p_base->localMap.info.width*p_base->localMap.info.height; i ++){
-        sum += p_base->localMap.data[i];
-    }
+//    int sum = 0 ;
+//    for (int i = 0 ; i < p_base->localMap.info.width*p_base->localMap.info.height; i ++){
+//        sum += p_base->localMap.data[i];
+//    }
 //    ROS_WARN_STREAM("[SNU_PLANNER/RosWrapper] publishing occupancy map: size =  " <<  sum << " " <<isLocalMapReceived);
     pubPath.publish(planningPath);
     pubCorridorSeq.publish(corridorSeq);
@@ -725,7 +734,7 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
         double theta = atan2(e1.y(), e1.x());
         curState.theta = theta;
 
-        // make v
+        // make
         curState.v = speed; // reverse gear = negative
         ROS_DEBUG("Current car state (x,y,theta(degree),v(m/s)) : [%f,%f,%f,%f]", curState.x, curState.y,
                   curState.theta * 180 / M_PI, curState.v);
@@ -791,10 +800,7 @@ void RosWrapper::cbObstacles(const geometry_msgs::PoseStamped& obstPose) {
 bool RosWrapper::isAllInputReceived() {
 
     bool isOKKK = true;
-    if (not isLocalMapReceived) {
-        ROS_ERROR_THROTTLE(2,"[SNU_PLANNER/RosWrapper] Still no occupancy grid received.");
-        return false;
-    }
+
     if (not isCarPoseCovReceived) {
         ROS_ERROR_THROTTLE(2,"[SNU_PLANNER/RosWrapper] Still no car pose received.");
         return false;
@@ -805,6 +811,11 @@ bool RosWrapper::isAllInputReceived() {
     }
     if (not isFrameRefReceived) {
         ROS_ERROR_THROTTLE(2,"[SNU_PLANNER/RosWrapper] Still no referance frame (SNU) fixed.");
+        return false;
+    }
+
+    if (not isLocalMapReceived) {
+        ROS_ERROR_THROTTLE(2,"[SNU_PLANNER/RosWrapper] Still no occupancy grid received.");
         return false;
     }
 
@@ -998,12 +1009,11 @@ void Wrapper::updateMPCToBase() {
  */
 void Wrapper::runPlanning() {
 
-    ROS_INFO_ONCE( "[Wrapper] planning thread started !!!!\n"); // TODO
     // initial stuffs
     double Tp = 4.0; // sec
     auto tCkpG = chrono::steady_clock::now(); // check point time
     auto tCkpL = chrono::steady_clock::now(); // check point time
-
+    auto tCkpStatePrinter = chrono::steady_clock::now();
     bool doGPlan = true; // turn on if we have started the class
     bool doLPlan = true; // turn on if we have started the class
     bool didLplanByG = false; // Lp already done in GP loop
@@ -1014,6 +1024,7 @@ void Wrapper::runPlanning() {
     bool isAllGoalReach = false;
 
 
+    tCkpStatePrinter = chrono::steady_clock::now(); // check point time
     while (ros::ok()){
 
         p_base_shared->localMap = p_base_shared->localMapBuffer;
@@ -1021,9 +1032,21 @@ void Wrapper::runPlanning() {
             isPlanPossible = ros_wrapper_ptr->isAllInputReceived();
             didLplanByG = false;
 
+
+        if (ros_wrapper_ptr->isCarPoseCovReceived and
+            ros_wrapper_ptr->isFrameRefReceived and
+            ros_wrapper_ptr->isCarSpeedReceived){
+
+            ROS_INFO_ONCE("[Wrapper] All car states have been received!");
+            if (chrono::steady_clock::now() - tCkpStatePrinter > std::chrono::duration<double>(param.g_param.period)) {
+                p_base_shared->getCarState().print();
+                tCkpStatePrinter = chrono::steady_clock::now();
+
+            }
+            }
+
             if (isPlanPossible) {
-
-
+                ROS_INFO_ONCE( "[Wrapper] planning thread started !!!!\n"); // TODO
 //                ROS_WARN_STREAM("[SNU_PLANNER/RosWrapper] updated occupancy map");
 
 
@@ -1101,7 +1124,7 @@ void Wrapper::runPlanning() {
             }
 
 //        ros::spinOnce();
-//        ros::Rate(100).sleep();
+        ros::Rate(100).sleep();
     }
 }
 
