@@ -64,6 +64,7 @@
     <param name="global_planner/safe_distance" value = "10.0"/>
     <param name="global_planner/nominal_acceleration" value = "0.5"/>
     <param name="global_planner/object_velocity_threshold" value="0.02"/>
+    <param name="global_planner/max_obstacle_prediction_query_size" value="1000"/>
 
     <param name="local_planner/horizon" value="$(arg horizon)" />
     <param name="local_planner/ts" value="$(arg planning_dt)" />
