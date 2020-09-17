@@ -114,6 +114,7 @@ namespace Planner {
         double v_ref_past_weight;
         double nominal_acceleration;
         double object_velocity_threshold;
+        double max_obstacle_prediction_query_size;
     };
 
     struct ParamPredictor{
@@ -324,7 +325,7 @@ namespace Planner {
         bool isOccupied(Vector2d queryPoint); // query point frame = SNU
         bool isOccupied(Vector2d queryPoint1, Vector2d queryPoint2); // rayIntersection query point frame = SNU
 
-        bool isObject(const Vector2d& queryPoint,double& velocity); // query point frame = SNU
+        bool isObject(const Vector2d& queryPoint, int maxObstQuerySize, double& velocity); // query point frame = SNU
 
 
         // Corridor generation

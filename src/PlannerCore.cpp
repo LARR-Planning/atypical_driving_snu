@@ -824,18 +824,21 @@ bool PlannerBase::isOccupied(Vector2d queryPoint) {
  * @param queryPoint frame = SNU
  * @return true if queryPoint is within the obstacle path array
  */
-bool PlannerBase::isObject(const Vector2d& queryPoint,double& velocity){
+bool PlannerBase::isObject(const Vector2d& queryPoint, int maxObstQuerySize, double& velocity){
     unsigned long nInspection = 5;
 
 //    printf("[DEBUG_JBS] planner base querying start (number of obst = %d ) \n",obstaclePathArray.obstPathArray.size());
 
 //    mSet[0].lock();
         for (auto obstPath : obstaclePathArray.obstPathArray) {
-
             velocity = obstPath.constantVelocityXY.norm();
 
-            for (int i = 0; i < obstPath.obstPath.size(); i += static_cast<int>((obstPath.obstPath.size()-1)/nInspection)) {
-                ObstacleEllipse obst = obstPath.obstPath[i];
+            int obstQuerySize = std::min((int)obstPath.obstPath.size(), maxObstQuerySize);
+            int nInspection_ = std::min(obstQuerySize, (int)nInspection);
+//            for (int i = 0; i < obstQuerySize; i += static_cast<int>((obstQuerySize-1)/nInspection)) {
+            for (int i = 0; i < nInspection_; i++) {
+                int index = static_cast<int>((double)(obstQuerySize-1)/nInspection_ * i);
+                ObstacleEllipse obst = obstPath.obstPath[index];
                 if (((obst.q - queryPoint).transpose() * obst.Q * (obst.q - queryPoint))(0) < 1) {
 //                    ROS_WARN("Query point collided with object");
 
