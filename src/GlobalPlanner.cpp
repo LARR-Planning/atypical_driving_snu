@@ -38,7 +38,7 @@ bool GlobalPlanner::plan(double t) {
     laneTreePath.clear();
     Vector2d currentPoint(p_base->cur_state.x, p_base->cur_state.y);
     double lane_length, lane_angle, current_length, alpha;
-    Vector2d delta, left_point, mid_point, right_point;
+    Vector2d delta, left_point, mid_point, right_point, left_boundary_point, right_boundary_point;
     int i_grid = 0;
     for(int i_lane = 0; i_lane < (int)p_base->laneSliced.points.size() - 1; i_lane++){
         int grid_size = 2 * floor(p_base->laneSliced.widths[i_lane]/2/param.grid_resolution) + 1;
@@ -56,6 +56,8 @@ bool GlobalPlanner::plan(double t) {
             for(int j_side = 1; j_side <= (grid_size-1)/2; j_side++){
                 left_point = mid_point + j_side * param.grid_resolution * Vector2d(cos(lane_angle + M_PI/2),sin(lane_angle + M_PI/2));
                 right_point = mid_point + j_side * param.grid_resolution * Vector2d(cos(lane_angle - M_PI/2),sin(lane_angle - M_PI/2));
+                left_boundary_point = mid_point + p_base->laneSliced.widths[i_lane]/2 * Vector2d(cos(lane_angle + M_PI/2),sin(lane_angle + M_PI/2));
+                right_boundary_point = mid_point + p_base->laneSliced.widths[i_lane]/2 * Vector2d(cos(lane_angle - M_PI/2),sin(lane_angle - M_PI/2));
                 laneGridPoints[(grid_size-1)/2 + j_side] = left_point;
                 laneGridPoints[(grid_size-1)/2 - j_side] = right_point;
             }
@@ -106,12 +108,12 @@ bool GlobalPlanner::plan(double t) {
                         mid_point = (laneGridPoints[k_side] + laneGridPoints[start_idx])/2;
                         LaneTreeElement laneTreeElement;
                         laneTreeElement.id = i_grid;
-                        laneTreeElement.leftBoundaryPoint = laneGridPoints[(int)laneGridPoints.size()-1];
+                        laneTreeElement.leftBoundaryPoint = left_boundary_point;
                         laneTreeElement.leftPoint = laneGridPoints[k_side];
                         laneTreeElement.midPoint = mid_point;
                         laneTreeElement.lanePoint = laneGridPoints[(grid_size-1)/2];
                         laneTreeElement.rightPoint = laneGridPoints[start_idx];
-                        laneTreeElement.rightBoundaryPoint = laneGridPoints[0];
+                        laneTreeElement.rightBoundaryPoint = right_boundary_point;
                         laneTreeElement.width = (laneGridPoints[k_side] - laneGridPoints[start_idx]).norm();
                         if(start_idx > 0){
                             laneTreeElement.isNearObject = (gridPointStates[start_idx - 1] == 2);
@@ -138,12 +140,12 @@ bool GlobalPlanner::plan(double t) {
                     mid_point = (laneGridPoints[k_side-1] + laneGridPoints[start_idx])/2;
                     LaneTreeElement laneTreeElement;
                     laneTreeElement.id = i_grid;
-                    laneTreeElement.leftBoundaryPoint = laneGridPoints[(int)laneGridPoints.size()-1];
+                    laneTreeElement.leftBoundaryPoint = left_boundary_point;
                     laneTreeElement.leftPoint = laneGridPoints[k_side-1];
                     laneTreeElement.midPoint = mid_point;
                     laneTreeElement.lanePoint = laneGridPoints[(grid_size-1)/2];
                     laneTreeElement.rightPoint = laneGridPoints[start_idx];
-                    laneTreeElement.rightBoundaryPoint = laneGridPoints[0];
+                    laneTreeElement.rightBoundaryPoint = right_boundary_point;
                     laneTreeElement.width = (laneGridPoints[k_side-1] - laneGridPoints[start_idx]).norm();
                     if(gridPointStates[k_side] == 2 or (start_idx > 0 and gridPointStates[start_idx - 1] == 2)){
                         laneTreeElement.isNearObject = true;
@@ -295,46 +297,46 @@ bool GlobalPlanner::plan(double t) {
     }
 
 
-    // lane smoothing at first point with Bernstein Polynomial
-    i_smooth = 0;
-    window = 0;
-    window_length = 0;
-    while(window < (int) laneTreePath.size() - i_smooth - 1 and window_length < param.smoothing_distance){
-        window_length += (laneTreePath[i_smooth + window + 1].lanePoint - laneTreePath[i_smooth + window].lanePoint).norm();
-        window++;
-    }
-
-    int i_forward = std::min(i_smooth + window, (int) laneTreePath.size() - 1);
-    int n = 3;
-    std::vector<Vector2d, aligned_allocator<Vector2d>> controlPoints;
-    controlPoints.resize(4);
-    controlPoints[0] = laneTreePath[i_smooth].midPoint;
-    controlPoints[1] = laneTreePath[i_smooth].midPoint + Vector2d(cos(p_base->cur_state.theta), sin(p_base->cur_state.theta)) * (p_base->cur_state.v/n);
-    controlPoints[2] = laneTreePath[i_forward].midPoint - (p_base->laneSliced.points[1] - p_base->laneSliced.points[0]).normalized() * (p_base->laneSpeed/n);
-    controlPoints[3] = laneTreePath[i_forward].midPoint;
-
-    if (i_forward - i_smooth > 1) {
-        idx_start = i_smooth;
-        idx_end = i_forward;
-        idx_delta = idx_end - idx_start;
-        for (int j_smooth = 1; j_smooth < idx_delta; j_smooth++) {
-            alpha = static_cast<double>(j_smooth) / static_cast<double>(idx_delta);
-            smoothingPoint = getPointFromControlPoints(controlPoints, alpha);
-            laneTreePath[idx_start + j_smooth].midPoint = smoothingPoint;
-        }
-    }
-
-    // If midPoints are out of bounds, then push them into bounds
-    for (int i_mid = 0; i_mid < laneTreePath.size(); i_mid++) {
-        if (p_base->isOccupied(laneTreePath[i_mid].midPoint)) {
-            if ((laneTreePath[i_mid].midPoint - laneTreePath[i_mid].leftPoint).norm() <
-                (laneTreePath[i_mid].midPoint - laneTreePath[i_mid].rightPoint).norm()) {
-                laneTreePath[i_mid].midPoint = laneTreePath[i_mid].leftPoint;
-            } else {
-                laneTreePath[i_mid].midPoint = laneTreePath[i_mid].rightPoint;
-            }
-        }
-    }
+//    // lane smoothing at first point with Bernstein Polynomial
+//    i_smooth = 0;
+//    window = 0;
+//    window_length = 0;
+//    while(window < (int) laneTreePath.size() - i_smooth - 1 and window_length < param.smoothing_distance){
+//        window_length += (laneTreePath[i_smooth + window + 1].lanePoint - laneTreePath[i_smooth + window].lanePoint).norm();
+//        window++;
+//    }
+//
+//    int i_forward = std::min(i_smooth + window, (int) laneTreePath.size() - 1);
+//    int n = 3;
+//    std::vector<Vector2d, aligned_allocator<Vector2d>> controlPoints;
+//    controlPoints.resize(4);
+//    controlPoints[0] = laneTreePath[i_smooth].midPoint;
+//    controlPoints[1] = laneTreePath[i_smooth].midPoint + Vector2d(cos(p_base->cur_state.theta), sin(p_base->cur_state.theta)) * (p_base->cur_state.v/n);
+//    controlPoints[2] = laneTreePath[i_forward].midPoint - (p_base->laneSliced.points[1] - p_base->laneSliced.points[0]).normalized() * (p_base->laneSpeed/n);
+//    controlPoints[3] = laneTreePath[i_forward].midPoint;
+//
+//    if (i_forward - i_smooth > 1) {
+//        idx_start = i_smooth;
+//        idx_end = i_forward;
+//        idx_delta = idx_end - idx_start;
+//        for (int j_smooth = 1; j_smooth < idx_delta; j_smooth++) {
+//            alpha = static_cast<double>(j_smooth) / static_cast<double>(idx_delta);
+//            smoothingPoint = getPointFromControlPoints(controlPoints, alpha);
+//            laneTreePath[idx_start + j_smooth].midPoint = smoothingPoint;
+//        }
+//    }
+//
+//    // If midPoints are out of bounds, then push them into bounds
+//    for (int i_mid = 0; i_mid < laneTreePath.size(); i_mid++) {
+//        if (p_base->isOccupied(laneTreePath[i_mid].midPoint)) {
+//            if ((laneTreePath[i_mid].midPoint - laneTreePath[i_mid].leftPoint).norm() <
+//                (laneTreePath[i_mid].midPoint - laneTreePath[i_mid].rightPoint).norm()) {
+//                laneTreePath[i_mid].midPoint = laneTreePath[i_mid].leftPoint;
+//            } else {
+//                laneTreePath[i_mid].midPoint = laneTreePath[i_mid].rightPoint;
+//            }
+//        }
+//    }
 
 
     // Smoothing using max steering angle - original method
