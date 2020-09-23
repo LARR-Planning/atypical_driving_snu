@@ -293,6 +293,7 @@ namespace Planner {
         double laneCurvature;  // current mean curvature of the slide
 
         bool isUseMovingAverage; // true: Moving average, false: exponential sum
+        double stopSpeed;
         double weight_smooth; // exponential weight smoothing
         int smooth_horizon; // moving average smoothing
 

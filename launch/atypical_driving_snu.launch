@@ -137,6 +137,7 @@
         <param name = "smooth_weight" value="0.7"/>
         <param name = "moving_horizon" value="5"/>
         <param name = "isUseMovingAverage" value="false"/>
+        <param name = "stopSpeed" value="0.5"/>
 
         <param name="predictor/observation_queue" value="10" />
         <param name="predictor/ref_height" value="0.4" />

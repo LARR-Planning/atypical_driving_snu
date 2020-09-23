@@ -630,8 +630,16 @@ driving_msgs::VehicleCmd PlannerBase::getCurInput(double t){
             cmd.accel_decel_cmd = curr_weight*mpc_result.evalU(t).alpha +(1-curr_weight)*ctrl_previous.accel_decel_cmd;
             ctrl_previous.steer_angle_cmd = cmd.steer_angle_cmd;
             ctrl_previous.accel_decel_cmd = cmd.accel_decel_cmd;
+            if(getCarState().v<stopSpeed && cmd.accel_decel_cmd<0)
+                {
+                    cmd.steer_angle_cmd = 0.0;
+                    cmd.accel_decel_cmd = 0.0;
+                }
+
+
             return cmd;
         }
+
     }
     else
     {

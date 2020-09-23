@@ -335,7 +335,7 @@ bool LocalPlannerPlain::plan(double t) {
          return false;
 
      isRefUsed = 1;
-
+     //cout<<"Current State - Reference State"<<abs(p_base->getCarState().x-local_wpts[0][0])<<endl;
      using namespace Eigen;
 
      //Following codes will be wrapped with another wrapper;
@@ -352,7 +352,6 @@ bool LocalPlannerPlain::plan(double t) {
      prob->set_refUsed(isRefUsed);
      prob->set_ref(local_wpts);
      prob->set_sfc_idx(sfc_idx);
-
      static int loop_num = 0;
      std::array<Matrix<double,Nu,1>,N> u0;
      for(int i = 0; i < N; i++)
