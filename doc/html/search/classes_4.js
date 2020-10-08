@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['mpcresulttraj',['MPCResultTraj',['../struct_planner_1_1_m_p_c_result_traj.html',1,'Planner']]]
+  ['globalplanner',['GlobalPlanner',['../class_planner_1_1_global_planner.html',1,'Planner']]]
 ];

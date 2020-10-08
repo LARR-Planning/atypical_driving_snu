@@ -72,8 +72,6 @@
          <arg name = "rviz" value = "false"/>
          <arg name = "occupancy_frame_id" value = "$(arg occu_frame_id)"/>
          <arg name = "lidar_frame_id" value = "$(arg lidar_frame_id)"/>
-         <arg name = "cost_map_min_z" value = "-0.5"/>
-         <arg name = "cost_map_max_z" value = "0.6"/>
      </include>
 
 

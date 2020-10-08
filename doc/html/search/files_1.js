@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['localplanner_2ecpp',['LocalPlanner.cpp',['../_local_planner_8cpp.html',1,'']]],
-  ['localplanner_2eh',['LocalPlanner.h',['../_local_planner_8h.html',1,'']]]
+  ['basic_5foperations_2ecpp',['basic_operations.cpp',['../basic__operations_8cpp.html',1,'']]],
+  ['basic_5foperations_2ehpp',['basic_operations.hpp',['../basic__operations_8hpp.html',1,'']]]
 ];

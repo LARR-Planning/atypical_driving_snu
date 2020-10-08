@@ -54,3 +54,6 @@ target_link_libraries(integration_client ${catkin_LIBRARIES} -lstdc++fs)
 
 add_executable(keti_client test/KetiTest/client_main.cpp ${SNU_PLANNER_SRC})
 target_link_libraries(keti_client ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+
+#add_executable(tf_gimbal src/tfGimbal.cpp)
+#target_link_libraries(tf_gimbal ${catkin_LIBRARIES})

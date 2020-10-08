@@ -1,4 +1,4 @@
 <map id="Planner::Wrapper::runPlanning" name="Planner::Wrapper::runPlanning">
 <area shape="rect" id="node2" href="$class_planner_1_1_wrapper.html#a7de6456aacb65f1289ab74a065af1a6b" title="Run the two thread (Planner &amp; ROS) " alt="" coords="252,5,401,32"/>
-<area shape="rect" id="node3" href="$main_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627" title="main" alt="" coords="449,5,500,32"/>
+<area shape="rect" id="node3" href="$server__main_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627" title="main" alt="" coords="449,5,500,32"/>
 </map>

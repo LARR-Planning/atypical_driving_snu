@@ -53,7 +53,7 @@ namespace Planner{
          */
 
         bool use_nominal_obstacle_radius = false;
-
+        bool use_keti_velocity = false;
 
         double sibalBeforeOccu  = 0;
 

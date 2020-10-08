@@ -12,27 +12,6 @@ TargetManager::TargetManager(int queue_size,float z_value,int poly_order,int ind
 
 };
 
-void TargetManager::update_observation(float t, geometry_msgs::Pose target_pose, Vector3f dimensions_) {
-
-    dimensions = dimensions_;
-    geometry_msgs::Point position = target_pose.position;
-    geometry_msgs::Quaternion quat = target_pose.orientation;
-
-    Vector6f state; state << position.x,position.y,quat.x,quat.y,quat.z,quat.w;
-    Vector8f stateWithDim; stateWithDim << state , dimensions_(0),dimensions_(1) ;
-    observations.push_back(std::make_tuple(t,state));
-    // total history for logging
-    observationHistory.push_back(stateWithDim);
-
-    lastObservationTime = t;
-
-    if (observations.size() > queue_size)
-        observations.pop_front();
-    if (observationHistory.size() > size_history)
-        observationHistory.pop_front();
-
-}
-
 /**
  * @brief renew the polynomial models
  */
@@ -92,7 +71,7 @@ void TargetManager::update_predict(){
 
 //        ROS_INFO("step2");
 //
-    list<tuple<float,Vector6f>> observationsBuffer = observations;
+    list<tuple<float,Vector8f>> observationsBuffer = observations;
     if (observationsBuffer.size() > queue_size-1){
 //        ROS_INFO("step0");
             VectorXf t_vals(observationsBuffer.size());
@@ -104,8 +83,13 @@ void TargetManager::update_predict(){
             VectorXf qz_vals(observationsBuffer.size());
             VectorXf qw_vals(observationsBuffer.size());
 
-            int i =0 ;
-            for (list<tuple<float,Vector6f>>::iterator it = observationsBuffer.begin() ; it != observationsBuffer.end() ; it++, i++){
+            VectorXf vx_vals(observationsBuffer.size());
+            VectorXf vy_vals(observationsBuffer.size());
+
+
+
+        int i =0 ;
+            for (list<tuple<float,Vector8f>>::iterator it = observationsBuffer.begin() ; it != observationsBuffer.end() ; it++, i++){
                 t_vals(i) = std::get<0>(*it);
                 x_vals(i) = std::get<1>(*it)(0);
                 y_vals(i) = std::get<1>(*it)(1);
@@ -114,6 +98,10 @@ void TargetManager::update_predict(){
                 qy_vals(i) = std::get<1>(*it)(3);
                 qz_vals(i) = std::get<1>(*it)(4);
                 qw_vals(i) = std::get<1>(*it)(5);
+
+                vx_vals(i) = std::get<1>(*it)(6);
+                vy_vals(i) = std::get<1>(*it)(7);
+
             }
 
             ROS_DEBUG_STREAM("Observation queue for prediction: ");
@@ -134,6 +122,8 @@ void TargetManager::update_predict(){
 
             int N_pnt = observationsBuffer.size();
             obsrv_traj_for_predict = DAP::TXYZQuatTraj(8,N_pnt);
+            obst_traj_velocity_keti = DAP::TXYZTraj(4,N_pnt);
+
             obsrv_traj_for_predict.block(0,0,1,N_pnt) = t_vals.transpose();
             obsrv_traj_for_predict.block(1,0,1,N_pnt) = x_vals.transpose();
             obsrv_traj_for_predict.block(2,0,1,N_pnt) = y_vals.transpose();
@@ -144,12 +134,43 @@ void TargetManager::update_predict(){
             obsrv_traj_for_predict.block(7,0,1,N_pnt) = qz_vals.transpose();
             obsrv_traj_for_predict.block(4,0,1,N_pnt) = qw_vals.transpose();
 
-            is_predicted = true;
+            obst_traj_velocity_keti.block(0,0,1,N_pnt)  = t_vals.transpose();
+            obst_traj_velocity_keti.block(1,0,1,N_pnt)  = vx_vals.transpose();
+            obst_traj_velocity_keti.block(2,0,1,N_pnt)  = vy_vals.transpose();
+
+
+
+
+        is_predicted = true;
 
 //        ROS_INFO("step2");
     }
 }
-// x dir = velocity 
+
+void TargetManager::update_observation(float t, geometry_msgs::Pose target_pose, Vector3f dimensions_,float vxKeti  , float vyKeti ) {
+
+    dimensions = dimensions_;
+    geometry_msgs::Point position = target_pose.position;
+    geometry_msgs::Quaternion quat = target_pose.orientation;
+
+    Vector6f state; state << position.x,position.y,quat.x,quat.y,quat.z,quat.w;
+    Vector8f stateWithDim; stateWithDim << state , dimensions_(0),dimensions_(1) ;
+    Vector8f stateWithVel; stateWithVel << state, vxKeti, vyKeti ;
+    observations.push_back(std::make_tuple(t,stateWithVel));
+    // total history for logging
+    observationHistory.push_back(stateWithDim);
+
+    lastObservationTime = t;
+
+    if (observations.size() > queue_size)
+        observations.pop_front();
+    if (observationHistory.size() > size_history)
+        observationHistory.pop_front();
+
+
+
+}
+// x dir = velocity
 geometry_msgs::Pose TargetManager::eval_pose(float t){
     geometry_msgs::Pose pose;
     // translation 

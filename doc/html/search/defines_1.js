@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['c_5fdialect',['C_DIALECT',['../_c_make_c_compiler_id_8c.html#a07f8e5783674099cd7f5110e22a78cdb',1,'CMakeCCompilerId.c']]],
-  ['compiler_5fid',['COMPILER_ID',['../_c_make_c_compiler_id_8c.html#a81dee0709ded976b2e0319239f72d174',1,'COMPILER_ID():&#160;CMakeCCompilerId.c'],['../_c_make_c_x_x_compiler_id_8cpp.html#a81dee0709ded976b2e0319239f72d174',1,'COMPILER_ID():&#160;CMakeCXXCompilerId.cpp']]],
-  ['cxx_5fstd',['CXX_STD',['../_c_make_c_x_x_compiler_id_8cpp.html#a34cc889e576a1ae6c84ae9e0a851ba21',1,'CMakeCXXCompilerId.cpp']]]
+  ['sp_5fepsilon',['SP_EPSILON',['../_global_planner_8cpp.html#a30a5d69a067978620e7b43ab7f5e6cc6',1,'GlobalPlanner.cpp']]],
+  ['sp_5fepsilon_5ffloat',['SP_EPSILON_FLOAT',['../_global_planner_8cpp.html#a3079800553daa93013e5323b06dea869',1,'GlobalPlanner.cpp']]],
+  ['sp_5finfinity',['SP_INFINITY',['../_global_planner_8cpp.html#ad3b090ad4ffcc68e9089eb90654ff31d',1,'GlobalPlanner.cpp']]]
 ];

@@ -1,3 +1,8 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$struct_planner_1_1_car_input.html" title="Input term of MPC. " alt="" coords="5,5,129,32"/>
+<area shape="rect" id="node1" href="$class_description_base.html" title="DescriptionBase\&lt; Nx,\l Nu \&gt;" alt="" coords="5,104,156,145"/>
+<area shape="rect" id="node2" href="$class_constraint_derivatives.html" title="ConstraintDerivatives\l\&lt; Nx, Nu \&gt;" alt="" coords="205,5,353,47"/>
+<area shape="rect" id="node3" href="$class_cost_derivatives.html" title="CostDerivatives\&lt; Nx,\l Nu \&gt;" alt="" coords="204,71,353,112"/>
+<area shape="rect" id="node4" href="$class_dynamics_derivatives.html" title="DynamicsDerivatives\l\&lt; Nx, Nu \&gt;" alt="" coords="205,136,352,177"/>
+<area shape="rect" id="node5" href="$class_problem_description.html" title="ProblemDescription\l\&lt; Nx, Nu \&gt;" alt="" coords="211,201,347,243"/>
+<area shape="rect" id="node6" href="$class_problem.html" title="Problem" alt="" coords="401,209,472,235"/>
 </map>

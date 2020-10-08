@@ -28,6 +28,9 @@
 <!--3. server-->
 <node pkg="atypical_driving" type="integration_server" name="atypical_planning_test" output="screen">
 
+    <param name = "use_nominal_obstacle_rad" value="true"/>
+    <param name = "use_keti_velocity" value="true"/>
+
     <remap from = "/occupancy_grid" to = "/costmap_node/costmap/costmap"/>
 
     <param name = "world_frame_id" value="$(arg world_frame_id)" />

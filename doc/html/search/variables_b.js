@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['subcarposecov',['subCarPoseCov',['../class_planner_1_1_ros_wrapper.html#ad8160d6734ba0f64734d155c73c00ddd',1,'Planner::RosWrapper']]]
+  ['jerk_5fmax',['jerk_max',['../dyn__parameter_8h.html#ab2e652f9f391edb6b5aad3452cd47930',1,'dyn_parameter.h']]],
+  ['jerk_5fmin',['jerk_min',['../dyn__parameter_8h.html#a70b0f68b59581f288c9feb39a33f8449',1,'dyn_parameter.h']]]
 ];

@@ -726,9 +726,18 @@ void PlannerBase::uploadPrediction(VectorXd tSeq_, double rNominal) {
             //predictor.update_predict(); // this will do nothing if observation is not enough
             if (predictor.is_prediction_available()) {
                 vector<geometry_msgs::Pose> obstFuturePose = predictor.eval_pose_seq(tSeq);
+
+                // Updates the constantVelocityXY from linear fitting
                 Vector2f vel_xy = predictor.getFitVelocity(); // the fitted velocity (constant)
+                Vector2f vel_xy_keti = predictor.getAvgKetiVelocity();
+
+
                 ObstaclePath obstPath;
                 obstPath.constantVelocityXY = vel_xy.cast<double>();
+                obstPath.meanVelocity = vel_xy_keti.cast<double>();
+
+                // Updates the constantVelocityXY from KETI
+
 
                 for (auto obstPose : obstFuturePose) {
                     // construct one obstaclePath
@@ -840,14 +849,20 @@ bool PlannerBase::isOccupied(Vector2d queryPoint) {
  * @param queryPoint frame = SNU
  * @return true if queryPoint is within the obstacle path array
  */
-bool PlannerBase::isObject(const Vector2d& queryPoint, int maxObstQuerySize, double& velocity){
+bool PlannerBase::isObject(const Vector2d& queryPoint, int maxObstQuerySize, double& velocity,bool use_keti_vel){
     unsigned long nInspection = 5;
 
 //    printf("[DEBUG_JBS] planner base querying start (number of obst = %d ) \n",obstaclePathArray.obstPathArray.size());
 
 //    mSet[0].lock();
         for (auto obstPath : obstaclePathArray.obstPathArray) {
-            velocity = obstPath.constantVelocityXY.norm();
+
+
+            if(not use_keti_vel)
+                velocity = obstPath.constantVelocityXY.norm();
+            else
+                velocity = obstPath.meanVelocity.norm();
+
 
             int obstQuerySize = std::min((int)obstPath.obstPath.size(), maxObstQuerySize);
             int nInspection_ = std::min(obstQuerySize, (int)nInspection);

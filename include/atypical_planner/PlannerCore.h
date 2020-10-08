@@ -90,6 +90,7 @@ namespace Planner {
         double car_speed_max;
         double car_speed_min;
         double curvature_thres;
+        bool use_keti_velocity = false;
 
 //        double car_acceleration;
 //        double world_x_min;
@@ -163,7 +164,8 @@ namespace Planner {
     };
 
     struct ObstaclePath{
-        Vector2d constantVelocityXY;
+        Vector2d constantVelocityXY; // from linear fitting (orignal method)
+        Vector2d meanVelocity; // from  direct KETI. (averaged)
         vector<ObstacleEllipse> obstPath;
     };
 
@@ -328,7 +330,7 @@ namespace Planner {
         bool isOccupied(Vector2d queryPoint); // query point frame = SNU
         bool isOccupied(Vector2d queryPoint1, Vector2d queryPoint2); // rayIntersection query point frame = SNU
 
-        bool isObject(const Vector2d& queryPoint, int maxObstQuerySize, double& velocity); // query point frame = SNU
+        bool isObject(const Vector2d& queryPoint, int maxObstQuerySize, double& velocity,bool use_keti_vel = false); // query point frame = SNU
 
 
         // Corridor generation
