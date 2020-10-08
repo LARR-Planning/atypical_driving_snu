@@ -16,11 +16,11 @@
 
 
   <arg name = "lane_width" default="5"/>
-  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/kiapi_path2.csv"/>
+  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/interpolated_yugokri_path1.csv"/>
   <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
 
-  <arg name = "goal/x"  default = "445999.692015"/> <!--in world frame -->
-  <arg name = "goal/y" default = "3944822.6846"/> <!--in world frame -->
+  <arg name = "goal/x"  default = "451489.3968"/> <!--in world frame -->
+  <arg name = "goal/y" default = "3947475.6160"/> <!--in world frame -->
 
 
     <arg name = "period" default= "0.1"/>
@@ -43,14 +43,14 @@
             target_frame:  velodyne # Leave disabled to output scan in pointcloud frame
             transform_tolerance: 0.01
             min_height: -1.5
-            max_height: -0.9
+            max_height: 0.1
 
             angle_min: -3.1408 # -M_PI/2
             angle_max: 3.1408 # M_PI/2
             angle_increment: 0.0027 # M_PI/360.0
             scan_time: 0.0333
             range_min: 0.0
-            range_max: 200.0
+            range_max: 100.0
             use_inf: true
             inf_epsilon: 100.0
 
@@ -78,7 +78,7 @@
 
 
     <!--2. snu_car_tf to velodyne_tf -->
-    <node pkg="tf" type="static_transform_publisher" name="link2lidar" args="-2.0 0 0.2 0 0 0  $(arg car_base_frame_id) $(arg lidar_frame_id) 100"/>
+    <node pkg="tf" type="static_transform_publisher" name="link2lidar" args="-0.5 0 0.2 0 0 0  $(arg car_base_frame_id) $(arg lidar_frame_id) 100"/>
 
     <!--3. client-->
     <node pkg="atypical_driving" type="keti_client" name="atypical_driving_client" output="screen">
@@ -100,8 +100,8 @@
 
         <!--Shaping params for nominal_speed selection-->
         <param name = "vmax" value = "5"/> <!--m/s-->
-        <param name = "vmin" value = "2.0"/> <!--m/s-->
-        <param name = "curve_thres" value = "0.3"/> <!--m/s-->
+        <param name = "vmin" value = "0.2"/> <!--m/s-->
+        <param name = "curve_thres" value = "0.2"/> <!--m/s-->
 
         <param name = "goal/x" value = "$(arg goal/x)"/>
         <param name = "goal/y" value = "$(arg goal/y)"/>
@@ -121,9 +121,9 @@
         <param name="global_planner/start_smoothing_distance" value="8" />
         <param name="global_planner/corridor_width_min" value = "0.0"/>
         <param name="global_planner/corridor_width_dynamic_min" value="8.0"/>
-	    <param name="global_planner/safe_distance" value = "50"/>
-	    <param name="global_planner/nominal_acceleration" value="0.5"/>
-	    <param name="global_planner/object_velocity_threshold" value="0.1"/>
+	    <param name="global_planner/safe_distance" value = "10"/>
+	    <param name="global_planner/nominal_acceleration" value="1.0"/>
+	    <param name="global_planner/object_velocity_threshold" value="-0.2"/>
 
         <param name="local_planner/horizon" value="$(arg horizon)" />
         <param name="local_planner/ts" value="$(arg planning_dt)" />

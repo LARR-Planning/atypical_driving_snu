@@ -478,7 +478,8 @@ void RosWrapper::publish() {
 
     pubOurOccu.publish(p_base->localMap);
 //    int sum = 0 ;
-//    for (int i = 0 ; i < p_base->localMap.info.width*p_base->localMap.info.height; i ++){
+//    for (int i = 0 ; i < p_base->localMap.
+//    info.width*p_base->localMap.info.height; i ++){
 //        sum += p_base->localMap.data[i];
 //    }
 //    ROS_WARN_STREAM("[SNU_PLANNER/RosWrapper] publishing occupancy map: size =  " <<  sum << " " <<isLocalMapReceived);
