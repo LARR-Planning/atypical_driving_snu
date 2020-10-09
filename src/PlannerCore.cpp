@@ -804,6 +804,7 @@ void PlannerBase::log_corridor(double t_cur, double tf) {
     }
 }
 
+
 void PlannerBase::log_mpc(double t_cur) {
     if (this->isLPsolved){
         string file_name = log_file_name_base + "_mpc.txt";

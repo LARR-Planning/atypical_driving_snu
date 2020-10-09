@@ -438,11 +438,27 @@ bool GlobalPlanner::plan(double t) {
     // Calculate curvature  (JBS)
 
     vector<Vector2d, aligned_allocator<Vector2d>> pathSliced;
-
-    for (int i_mid = 0; i_mid < tail_end ; i_mid++)
-        pathSliced.emplace_back(laneTreePath[i_mid].midPoint);
-    double meanCurv = meanCurvature(pathSliced);
-
+//
+//    for (int i_mid = 0; i_mid < tail_end ; i_mid++)
+//        pathSliced.emplace_back(laneTreePath[i_mid].midPoint);
+//
+    double meanCurv;
+//    cout<<"CHECK,CHECK"<<(p_base->getMPCResultTraj().xs.size())<<endl;
+    if(p_base->getMPCResultTraj().xs.size()==0)
+    {
+        meanCurv = 1e6;
+    }
+    else
+    {
+        for(int i = 0;i< p_base->getMPCResultTraj().xs.size();i++)
+        {
+            Vector2d resultsMPCTemp;
+            resultsMPCTemp[0] = p_base->getMPCResultTraj().xs[i].x;
+            resultsMPCTemp[1] = p_base->getMPCResultTraj().xs[i].y;
+            pathSliced.emplace_back(resultsMPCTemp);
+        }
+        meanCurv = meanCurvature(pathSliced);
+    }
 
     // Nominal speed (JBS);
 
@@ -456,7 +472,7 @@ bool GlobalPlanner::plan(double t) {
     else{
         vLaneRef = vmax - (vmax-vmin)/rho_thres*meanCurv;
     }
-
+    cout<<"Reference Lane Speed is: "<<vLaneRef<<endl;
     p_base->laneSpeed = (1-param.v_ref_past_weight)*vLaneRef + param.v_ref_past_weight*p_base->laneSpeed; // mixing
     p_base->laneCurvature = meanCurv;
     ROS_INFO("[lane curvature , lane ref speed] = [%f,%f]" ,meanCurv,vLaneRef);
