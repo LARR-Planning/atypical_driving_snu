@@ -4,11 +4,11 @@ using namespace Predictor;
 
 
 
-TargetManager::TargetManager(int queue_size,float z_value,int poly_order,int index):queue_size(queue_size),z_value(z_value),poly_order(poly_order),managerIdx(index) {
+TargetManager::TargetManager(bool useKetiVel,int queue_size,float z_value,int poly_order,int index):
+queue_size(queue_size),z_value(z_value),poly_order(poly_order),managerIdx(index),predictWithKetiVel(useKetiVel) {
 
     assert(poly_order > 0 or queue_size >0 && "Invalid initialization of target manager" );
     //obsrv_traj_for_predict_total = TXYZTraj(4,100000);
-
 
 };
 
@@ -173,10 +173,32 @@ void TargetManager::update_observation(float t, geometry_msgs::Pose target_pose,
 // x dir = velocity
 geometry_msgs::Pose TargetManager::eval_pose(float t){
     geometry_msgs::Pose pose;
-    // translation 
-    pose.position.x = polyeval(fit_coeff_x,t); 
-    pose.position.y = polyeval(fit_coeff_y,t);
+
+
+    if (predictWithKetiVel){
+
+        double tLastObsv = obsrv_traj_for_predict.coeff(0,observations.size()-1); // time stamp of the last observation
+        double xLastObsv = obsrv_traj_for_predict.coeff(1,observations.size()-1);
+        double yLastObsv = obsrv_traj_for_predict.coeff(2,observations.size()-1);
+
+
+
+        Vector2f meanKetiVel = getAvgKetiVelocity();
+
+//        cout << "mean KETI velocity " << meanKetiVel.transpose() << endl;
+
+        pose.position.x = xLastObsv + (t-tLastObsv)*meanKetiVel(0);
+        pose.position.y = yLastObsv + (t-tLastObsv)*meanKetiVel(1);
+
+    }else{
+        // translation
+        pose.position.x = polyeval(fit_coeff_x,t);
+        pose.position.y = polyeval(fit_coeff_y,t);
+    }
+
     pose.position.z = z_value;
+
+    // In case of orientation, we just use first order regression
     Eigen:Quaternionf q;
     q.x() = polyeval(fit_coeff_qx,t);
     q.y() = polyeval(fit_coeff_qy,t);

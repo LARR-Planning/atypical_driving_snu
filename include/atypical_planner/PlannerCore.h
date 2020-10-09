@@ -126,6 +126,7 @@ namespace Planner {
         double trackingTime; // it observation expires with this value, we detach predictor
         string log_dir; // base dir for log
         double staticCriteria; // bigger than this = dynamic
+        bool predictWithKeti;
     };
 
     /**

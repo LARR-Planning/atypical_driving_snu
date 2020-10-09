@@ -14,6 +14,7 @@ namespace Predictor{
         private:
             int managerIdx;
             bool isNoPredictionWarnEmitted = false;
+            bool predictWithKetiVel = false;
             std::list<std::tuple<float,Vector8f>> observations; // (t,state) where state = [x,y,qx,qy,qz,qw]
 
             Eigen::VectorXf fit_coeff_x;
@@ -42,7 +43,7 @@ namespace Predictor{
         public:
             TargetManager () {};
             ~TargetManager();
-            TargetManager(int queue_size,float z_value,int poly_order,int index = 0 );
+            TargetManager(bool useKetiVel, int queue_size,float z_value,int poly_order,int index = 0);
             void update_observation(float t , geometry_msgs::Pose target_pose,Vector3f dimensions_ ,float vxKeti  , float vyKeti);
             void update_predict();
             float getHeight() {return z_value;};

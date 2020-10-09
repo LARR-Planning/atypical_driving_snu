@@ -97,6 +97,9 @@
 
     <!--4. server-->
     <include file = "$(find atypical_driving)/launch/integration_server.launch" >
+
+        <arg name="use_keti_vel" value="true"/>
+
         <arg name = "world_frame_id" value = "$(arg world_frame_id)"/>
         <arg name = "snu_frame_id" value = "$(arg snu_frame_id)"/>
         <arg name = "occu_frame_id" value = "$(arg occu_frame_id)"/>

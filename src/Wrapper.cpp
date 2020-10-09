@@ -216,7 +216,9 @@ void RosWrapper::updateParam(Param &param_) {
 
     nh.param<bool>("use_nominal_obstacle_rad",use_nominal_obstacle_radius,false); // just fix 1
     nh.param<bool>("use_keti_velocity",use_keti_velocity,true); // just fix 1
-    param.g_param.use_keti_velocity = use_keti_velocity;
+    param_.g_param.use_keti_velocity = use_keti_velocity; // when jungwon query isObject
+    param_.p_param.predictWithKeti = use_keti_velocity; // when the target is predicted
+
 
     if(use_nominal_obstacle_radius)
         ROS_INFO("[SNU_PLANNER/RosWrapper] We assume fixed-size obstacle.");
@@ -353,7 +355,7 @@ void RosWrapper::prepareROSmsgs() {
         InfoText.text = "[Fitting] vx=" + to_string(obstPath.constantVelocityXY(0)) +
                 " / vy=" + to_string(obstPath.constantVelocityXY(1)) +
                 " / v =" + to_string(obstPath.constantVelocityXY.norm()) +
-                " \n [KETI mean] vs = "+ to_string(obstPath.meanVelocity(0)) +
+                " \n [KETI mean] vx = "+ to_string(obstPath.meanVelocity(0)) +
                 " / vy=" + to_string(obstPath.meanVelocity(1)) +
                 " / v =" + to_string(obstPath.meanVelocity.norm()) ;
 
@@ -882,7 +884,8 @@ Wrapper::Wrapper() : p_base_shared(make_shared<PlannerBase>()) {
     // cout << p_base_shared.use_count() << endl;
     gp_ptr = new GlobalPlanner(param.g_param,p_base_shared);
     // cout << p_base_shared.use_count() << endl;
-    Predictor::TargetManager predictor(param.p_param.queueSize,param.p_param.zHeight,param.p_param.polyOrder);
+    cout << "predict with keti ? " <<param.p_param.predictWithKeti << endl;
+    Predictor::TargetManager predictor(param.p_param.predictWithKeti,param.p_param.queueSize,param.p_param.zHeight,param.p_param.polyOrder);
     p_base_shared->predictorBase = predictor;
     p_base_shared->predictorBase.setExpiration(param.p_param.trackingTime);
     p_base_shared->predictorBase.setLogFileDir(param.p_param.log_dir);
