@@ -97,6 +97,7 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
     // Subscriber
     subCarPoseCov = nh.subscribe("/current_pose",1,&RosWrapper::cbCarPoseCov,this);
     subCarSpeed = nh.subscribe("/current_speed",1,&RosWrapper::cbCarSpeed,this);
+    subKetiImu = nh.subscribe("/imu",1,&RosWrapper::cbImu,this);
     //subExampleObstaclePose = nh.subscribe("obstacle_pose",1,&RosWrapper::cbObstacles,this);
     subDetectedObjects= nh.subscribe("/detected_objects",1,&RosWrapper::cbDetectedObjects,this);
     subOccuMap = nh.subscribe("/costmap_node/costmap/costmap",100,&RosWrapper::cbOccuMap,this); //TODO: fix /costmap_node/costmap/costmap to /occupancy_grid
@@ -155,6 +156,7 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<string>("snu_frame_id",SNUFrameId,"/SNU");
     nh.param<string>("occu_map_frame_id",octomapGenFrameId,"/map");
     nh.param<string>("base_link_id",baseLinkId,"/base_link");
+    nh.param<string>("car_imu_frame_id",carImuFrameId,"/car_imu");
     nh.param<string>("detected_objects_id",detectedObjectId,"/map");
 
     // global planner
@@ -556,7 +558,18 @@ void RosWrapper::processTf() {
         q.setZ(pose.pose.orientation.z);
         q.setW(pose.pose.orientation.w);
         transform.setRotation(q);
+
         tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(),SNUFrameId, baseLinkId));
+
+        // car_base_link to imu frame (applying only pitch)
+
+        if (isImuReceived) {
+            tf::Quaternion qPitch;
+            qPitch.setRPY(0,pitchAngleFromImu,0);
+            tf::Quaternion qImu = qPitch*q;
+            transform.setRotation(qImu);
+            tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(),SNUFrameId, carImuFrameId));
+        }
 
 
         // (b) send Tws (static)
@@ -808,6 +821,8 @@ void RosWrapper::cbOccuUpdate(const map_msgs::OccupancyGridUpdateConstPtr &msg) 
 }
 
 
+
+
 void RosWrapper::cbCarSpeed(const std_msgs::Float64& speed_) {
     // Incoming data is km/h
     speed = speed_.data*1000.0/3600;
@@ -824,6 +839,25 @@ void RosWrapper::cbObstacles(const geometry_msgs::PoseStamped& obstPose) {
     double t = curTime();
     // p_base->predictorSet[0].update_observation(t,obstPose.pose.position); // Deprecated
 
+}
+
+void RosWrapper::cbImu(const sensor_msgs::Imu &imu) {
+    ROS_INFO_ONCE("imu received! ");
+
+    tf::Quaternion q;
+    q.setX(imu.orientation.x);
+    q.setY(imu.orientation.y);
+    q.setZ(imu.orientation.z);
+    q.setW(imu.orientation.w);
+    q.normalize();
+
+    double roll,pitch,yaw;
+    tf::Matrix3x3(q).getRPY(roll, pitch, yaw);
+    pitchAngleFromImu = pitch;
+
+//    Tci.setOrigin(tf::Vector3(0,0,0));
+//    Tci.setRotation(q);
+    isImuReceived = true;
 }
 
 /**
