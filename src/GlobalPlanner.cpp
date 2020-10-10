@@ -176,7 +176,7 @@ bool GlobalPlanner::plan(double t) {
             current_length += param.grid_resolution;
         }
     }
-
+    int last_tail_idx = laneTree.back().id;
 
     // Allocate children of each node in laneTree
     for(int i_tree = 0; i_tree < laneTree.size(); i_tree++){
@@ -416,15 +416,15 @@ bool GlobalPlanner::plan(double t) {
 //    p_base->mSet[1].unlock();
 
     // check width and cut tail
-    bool isBlocked = false;
+    bool isBlocked = (last_tail_idx != laneTreePath.back().id);
     bool isBlockedByObject = false;
     int tail_end = findLaneTreePathTail(isBlocked, isBlockedByObject);
-    if(not isBlocked){
-        ROS_WARN_STREAM("[GlobalPlanner] Not blocked, obstaclePathArray size:" << p_base->obstaclePathArray.obstPathArray.size());
-        for(int i = 0; i < p_base->obstaclePathArray.obstPathArray.size(); i++){
-            ROS_WARN_STREAM("[GlobalPlanner] Not blocked, obstacle position: (" << p_base->obstaclePathArray.obstPathArray[i].obstPath[0].q(0) << ", " << p_base->obstaclePathArray.obstPathArray[i].obstPath[0].q(1) << ")");
-        }
-    }
+//    if(not isBlocked){
+//        ROS_WARN_STREAM("[GlobalPlanner] Not blocked, obstaclePathArray size:" << p_base->obstaclePathArray.obstPathArray.size());
+//        for(int i = 0; i < p_base->obstaclePathArray.obstPathArray.size(); i++){
+//            ROS_WARN_STREAM("[GlobalPlanner] Not blocked, obstacle position: (" << p_base->obstaclePathArray.obstPathArray[i].obstPath[0].q(0) << ", " << p_base->obstaclePathArray.obstPathArray[i].obstPath[0].q(1) << ")");
+//        }
+//    }
 
     // width allocation
     std::vector<double> box_size;
@@ -663,7 +663,6 @@ std::vector<int> GlobalPlanner::getMidPointsFromLaneTree(int i_tree_start){
 }
 
 int GlobalPlanner::findLaneTreePathTail(bool& isBlocked, bool& isBlockedByObject){
-    isBlocked = false;
     isBlockedByObject = false;
     int tail_end = (int)laneTreePath.size() - 1;
     double corridor_width_min;
@@ -700,6 +699,9 @@ int GlobalPlanner::findLaneTreePathTail(bool& isBlocked, bool& isBlockedByObject
         if(window_length < param.safe_distance){
             tail_end = 1;
         }
+    }
+    else{
+        int debug = 0;
     }
 
     return tail_end;

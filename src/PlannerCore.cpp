@@ -851,10 +851,10 @@ bool PlannerBase::isObject(const Vector2d& queryPoint, int maxObstQuerySize, dou
 
             int obstQuerySize = std::min((int)obstPath.obstPath.size(), maxObstQuerySize);
             int nInspection_ = std::min(obstQuerySize, (int)nInspection);
-//            for (int i = 0; i < obstQuerySize; i += static_cast<int>((obstQuerySize-1)/nInspection)) {
-            for (int i = 0; i < nInspection_; i++) {
-                int index = static_cast<int>((double)(obstQuerySize-1)/nInspection_ * i);
-                ObstacleEllipse obst = obstPath.obstPath[index];
+            for (int i = 0; i < obstQuerySize; i += static_cast<int>((obstQuerySize-1)/nInspection)) {
+//            for (int i = 0; i < nInspection_; i++) {
+//                int index = static_cast<int>((double)(obstQuerySize-1)/nInspection_ * i);
+                ObstacleEllipse obst = obstPath.obstPath[i];
                 if (((obst.q - queryPoint).transpose() * obst.Q * (obst.q - queryPoint))(0) < 1) {
 //                    ROS_WARN("Query point collided with object");
 

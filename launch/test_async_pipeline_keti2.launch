@@ -4,7 +4,7 @@
 
   <arg name = "use_sim_time" value = "true"/>
 <!--   <arg name= "bagfile"        default="200518-SNU-1_result.bag"/> -->
-  <arg name= "bagfile"        default="kiapi_static2.bag"/>
+  <arg name= "bagfile"        default="ACCFail.bag"/>
 
   <param name="use_sim_time" value="$(arg use_sim_time)"/>
 
@@ -14,17 +14,17 @@
   <arg name ="snu_frame_id" default="SNU"/>
   <arg name ="occu_frame_id" default="SNU"/>
   <arg name ="world_frame_id" default="map"/>
-  <arg name ="car_base_frame_id" default="/car_base_link"/>
+  <arg name ="car_base_frame_id" default="/base_link"/>
   <arg name ="lidar_frame_id" default = "velodyne"/>
   <arg name ="detected_object_frame_id" default = "velodyne"/>
 
-  <arg name = "lane_width" default="9"/>
-  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/kiapi_path2.csv"/>
+  <arg name = "lane_width" default="5"/>
+  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/interpolated_yugokri_path1.csv"/>
   <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
 
 
-  <arg name = "goal/x"  default = "445999.692015"/> <!--in world frame -->
-  <arg name = "goal/y" default = "3944822.6846"/> <!--in world frame -->
+  <arg name = "goal/x"  default = "451489.3968"/> <!--in world frame -->
+  <arg name = "goal/y" default = "3947475.6160"/> <!--in world frame -->
 
   <group ns="atypical_planning_test">
     <rosparam file="$(find atypical_driving)/param/MPC_weight.yaml"/>
