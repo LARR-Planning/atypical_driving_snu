@@ -84,17 +84,20 @@ double meanCurvature(const vector<Vector2d, aligned_allocator<Vector2d>> & point
     for (int i = 0 ; i < point2dSeq.size()-2 ; i++){
         Vector2d v1 = point2dSeq[i+1] - point2dSeq[i];
         Vector2d v2 = point2dSeq[i+2] - point2dSeq[i+1];
-
-        double angleThres = max(min(v1.dot(v2) / (v1.norm()*v2.norm()),1.0),-1.0);
-        double theta = acos(angleThres);
-
-        curvatureSum += theta/v1.norm();
-        if (theta/v1.norm() > maxCurve )
-            maxCurve =theta/v1.norm() ;
+        if(v1.norm()<1e-3||v2.norm()<1e-3)
+        {
+            curvatureSum +=1e3; // paramterize?? //Yunwoo
+        }
+        else
+        {
+            double angleThres = max(min(v1.dot(v2) / (v1.norm()*v2.norm()),1.0),-1.0);
+            double theta = acos(angleThres);
+            curvatureSum += theta/v1.norm();
+        }
     }
-
-    printf("max/avg curvature : [%f / %f]\n",maxCurve,curvatureSum/(point2dSeq.size()-2) );
+    //cout << curvatureSum<< endl;
+    cout << curvatureSum/(point2dSeq.size()-2)<< endl;
     return curvatureSum/(point2dSeq.size()-2);
-//    return maxCurve;
+
 
 }

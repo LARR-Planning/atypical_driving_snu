@@ -1048,7 +1048,7 @@ bool Wrapper::planLocal(double tTrigger) {
 
 //    // let's log
 //    if (lpPassed) {
-    if (p_base_shared->isLPPassed)
+    if (p_base_shared->isLPsolved)
 
         updateMPCToBase();
 //    }
