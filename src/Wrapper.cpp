@@ -81,6 +81,7 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
     pubMPCTraj = nh.advertise<nav_msgs::Path>("mpc_traj",1);
     pubMPCTrajMarker = nh.advertise<visualization_msgs::MarkerArray>("mpc_traj_marker",1);
     pubCurPose = nh.advertise<geometry_msgs::PoseStamped>("cur_pose",1);
+    pubPitching= nh.advertise<std_msgs::Float64>("imu_pitcing",1);
 
     pubOrigLane = nh.advertise<nav_msgs::Path>("lane_orig",1);
     pubSlicedLane = nh.advertise<nav_msgs::Path>("lane_sliced",1);
@@ -97,6 +98,7 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
     // Subscriber
     subCarPoseCov = nh.subscribe("/current_pose",1,&RosWrapper::cbCarPoseCov,this);
     subCarSpeed = nh.subscribe("/current_speed",1,&RosWrapper::cbCarSpeed,this);
+    subKetiImu = nh.subscribe("/imu",1,&RosWrapper::cbImu,this);
     //subExampleObstaclePose = nh.subscribe("obstacle_pose",1,&RosWrapper::cbObstacles,this);
     subDetectedObjects= nh.subscribe("/detected_objects",1,&RosWrapper::cbDetectedObjects,this);
     subOccuMap = nh.subscribe("/costmap_node/costmap/costmap",100,&RosWrapper::cbOccuMap,this); //TODO: fix /costmap_node/costmap/costmap to /occupancy_grid
@@ -155,6 +157,7 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<string>("snu_frame_id",SNUFrameId,"/SNU");
     nh.param<string>("occu_map_frame_id",octomapGenFrameId,"/map");
     nh.param<string>("base_link_id",baseLinkId,"/base_link");
+    nh.param<string>("car_imu_frame_id",carImuFrameId,"/car_imu");
     nh.param<string>("detected_objects_id",detectedObjectId,"/map");
 
     // global planner
@@ -207,13 +210,19 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<float>("predictor/ref_height",param_.p_param.zHeight,1.0);
     nh.param<int>("predictor/poly_order",param_.p_param.polyOrder,1); // just fix 1
     nh.param<double>("predictor/tracking_expiration",param_.p_param.trackingTime,2.0); // just fix 1
-    nh.param<double>("predictor/dynamic_threshold",param_.p_param.staticCriteria,0.04); // just fix 1
+    nh.param<double>("global_planner/object_velocity_threshold",param_.p_param.staticCriteria,0.04); // just fix 1
     nh.param<string>("predictor/log_dir",param_.p_param.log_dir,"/home/jbs/test_ws/src/atypical_driving_snu/log/predictor");
+
     // Common
     nh.param<double>("goal_thres",param_.l_param.goalReachingThres,0.4); // just fix 1
     p_base->goal_thres = param_.l_param.goalReachingThres;
 
     nh.param<bool>("use_nominal_obstacle_rad",use_nominal_obstacle_radius,false); // just fix 1
+    nh.param<bool>("use_keti_velocity",use_keti_velocity,true); // just fix 1
+    param_.g_param.use_keti_velocity = use_keti_velocity; // when jungwon query isObject
+    param_.p_param.predictWithKeti = use_keti_velocity; // when the target is predicted
+
+
     if(use_nominal_obstacle_radius)
         ROS_INFO("[SNU_PLANNER/RosWrapper] We assume fixed-size obstacle.");
 
@@ -346,9 +355,12 @@ void RosWrapper::prepareROSmsgs() {
         // Current obstacle chain velocity information
         visualization_msgs::Marker InfoText;
         InfoText.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
-        InfoText.text = "vx=" + to_string(obstPath.constantVelocityXY(0)) +
+        InfoText.text = "[Fitting] vx=" + to_string(obstPath.constantVelocityXY(0)) +
                 " / vy=" + to_string(obstPath.constantVelocityXY(1)) +
-                " / v =" + to_string(obstPath.constantVelocityXY.norm());
+                " / v =" + to_string(obstPath.constantVelocityXY.norm()) +
+                " \n [KETI mean] vx = "+ to_string(obstPath.meanVelocity(0)) +
+                " / vy=" + to_string(obstPath.meanVelocity(1)) +
+                " / v =" + to_string(obstPath.meanVelocity.norm()) ;
 
         InfoText.header.frame_id =SNUFrameId;
         InfoText.pose.orientation.w = 1.0;
@@ -366,7 +378,14 @@ void RosWrapper::prepareROSmsgs() {
 
         m_obstacle_rad.header.frame_id = SNUFrameId;
         m_obstacle_rad.pose.orientation.w = 1.0;
-        if (obstPath.constantVelocityXY.norm() > param.p_param.staticCriteria )
+
+        float obstacleAvgSpeed;
+        if (use_keti_velocity)
+            obstacleAvgSpeed = obstPath.meanVelocity.norm();
+        else
+            obstacleAvgSpeed = obstPath.constantVelocityXY.norm();
+
+        if (obstacleAvgSpeed > param.p_param.staticCriteria )
             m_obstacle_rad.color.r = 6.0, m_obstacle_rad.color.a = 0.1; // dynamic
         else
             m_obstacle_rad.color.b = 6.0, m_obstacle_rad.color.a = 0.4; // static
@@ -540,7 +559,21 @@ void RosWrapper::processTf() {
         q.setZ(pose.pose.orientation.z);
         q.setW(pose.pose.orientation.w);
         transform.setRotation(q);
+
         tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(),SNUFrameId, baseLinkId));
+
+        // car_base_link to imu frame (applying only pitch)
+
+        if (isImuReceived) {
+            tf::Quaternion qPitch;
+            qPitch.setRPY(0,pitchAngleFromImu,0);
+            std_msgs::Float64 pitchVal;
+            pitchVal.data = pitchAngleFromImu;
+            pubPitching.publish(pitchVal);
+            tf::Quaternion qImu = qPitch*q;
+            transform.setRotation(qImu);
+            tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(),SNUFrameId, carImuFrameId));
+        }
 
 
         // (b) send Tws (static)
@@ -596,10 +629,24 @@ void RosWrapper::cbDetectedObjects(const driving_msgs::DetectedObjectArray &obje
             geometry_msgs::PoseStamped objectOrig; // pose w.r.t obstacleRefFrame
             objectOrig.header.frame_id = obstacleRefFrame;
             objectOrig.pose = object.odom.pose.pose;
+            float vx = object.odom.twist.twist.linear.x;
+            float vy = object.odom.twist.twist.linear.y;
+
             geometry_msgs::PoseStamped objectSNU; // pose w.r.t SNU frame
 
             try {
                 tf_ls.transformPose(SNUFrameId,ros::Time(0),objectOrig,obstacleRefFrame,objectSNU);
+
+
+                // Rotating the KETI velocity
+                tf::StampedTransform T_sv; // T_{snuframe, velodyne frame}
+                tf_ls.lookupTransform(SNUFrameId,obstacleRefFrame,ros::Time(0),T_sv);
+
+                auto R_sv = T_sv.getBasis();
+                tf::Vector3 velKetiOrig(vx,vy,0); // before rotation
+                tf::Vector3 velKetiSNU  = R_sv*velKetiOrig;
+                float vxSNU = velKetiSNU.x();
+                float vySNU = velKetiSNU.y();
 
                 uint id = object.id;
 
@@ -620,13 +667,13 @@ void RosWrapper::cbDetectedObjects(const driving_msgs::DetectedObjectArray &obje
 
                 if (predictorOwner != p_base->indexedPredictorSet.end()) {
                     get<1>(*predictorOwner).update_observation(curTime(), objectSNU.pose,
-                                                               updateDimension);
+                                                               updateDimension,vxSNU,vySNU);
                 } else {
                     // no owner found, we create predictor and attach it
                     auto newPredictor = make_tuple(id, p_base->predictorBase);
                     get<1>(newPredictor).setIndex(id);
                     get<1>(newPredictor).update_observation(curTime(), objectSNU.pose,
-                                                            updateDimension);
+                                                            updateDimension,vxSNU,vySNU);
                     p_base->indexedPredictorSet.push_back(newPredictor);
                     ROS_INFO("[SNU_PLANNER/RosWrapper] Predictor attached for obstacle id = %d", id);
                 }
@@ -778,6 +825,8 @@ void RosWrapper::cbOccuUpdate(const map_msgs::OccupancyGridUpdateConstPtr &msg) 
 }
 
 
+
+
 void RosWrapper::cbCarSpeed(const std_msgs::Float64& speed_) {
     // Incoming data is km/h
     speed = speed_.data*1000.0/3600;
@@ -794,6 +843,25 @@ void RosWrapper::cbObstacles(const geometry_msgs::PoseStamped& obstPose) {
     double t = curTime();
     // p_base->predictorSet[0].update_observation(t,obstPose.pose.position); // Deprecated
 
+}
+
+void RosWrapper::cbImu(const sensor_msgs::Imu &imu) {
+    ROS_INFO_ONCE("imu received! ");
+
+    tf::Quaternion q;
+    q.setX(imu.orientation.x);
+    q.setY(imu.orientation.y);
+    q.setZ(imu.orientation.z);
+    q.setW(imu.orientation.w);
+    q.normalize();
+
+    double roll,pitch,yaw;
+    tf::Matrix3x3(q).getRPY(roll, pitch, yaw);
+    pitchAngleFromImu = pitch;
+
+//    Tci.setOrigin(tf::Vector3(0,0,0));
+//    Tci.setRotation(q);
+    isImuReceived = true;
 }
 
 /**
@@ -854,7 +922,8 @@ Wrapper::Wrapper() : p_base_shared(make_shared<PlannerBase>()) {
     // cout << p_base_shared.use_count() << endl;
     gp_ptr = new GlobalPlanner(param.g_param,p_base_shared);
     // cout << p_base_shared.use_count() << endl;
-    Predictor::TargetManager predictor(param.p_param.queueSize,param.p_param.zHeight,param.p_param.polyOrder);
+    cout << "predict with keti ? " <<param.p_param.predictWithKeti << endl;
+    Predictor::TargetManager predictor(param.p_param.predictWithKeti,param.p_param.queueSize,param.p_param.zHeight,param.p_param.polyOrder);
     p_base_shared->predictorBase = predictor;
     p_base_shared->predictorBase.setExpiration(param.p_param.trackingTime);
     p_base_shared->predictorBase.setLogFileDir(param.p_param.log_dir);
@@ -979,7 +1048,7 @@ bool Wrapper::planLocal(double tTrigger) {
 
 //    // let's log
 //    if (lpPassed) {
-    if (p_base_shared->isLPPassed)
+    if (p_base_shared->isLPsolved)
 
         updateMPCToBase();
 //    }

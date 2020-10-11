@@ -23,6 +23,7 @@
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
 #include <driving_msgs/DetectedObjectArray.h>
+#include <sensor_msgs/Imu.h>
 #include <geometry_msgs/PoseArray.h>
 #include <functional>
 #include <nav_msgs/Path.h>
@@ -47,14 +48,16 @@ namespace Planner{
         ros::NodeHandle nh;
         tf::TransformBroadcaster tf_br;
         tf::TransformListener tf_ls;
+        tf::StampedTransform Tci; // transform from car_base_link to imu
+        double pitchAngleFromImu; // pitch angle
 
         /**
          * Operation mode
          */
 
         bool use_nominal_obstacle_radius = false;
-
-
+        bool use_keti_velocity = false;
+        bool isImuReceived = false;
         double sibalBeforeOccu  = 0;
 
         /**
@@ -65,7 +68,7 @@ namespace Planner{
         string octomapGenFrameId; // the referance frame of octomap
         string baseLinkId; // frame id of car frame
         string detectedObjectId; // frame id of detected objects
-
+        string carImuFrameId; // frmae id of the imu link
         string predictorLogFileDir; // directory of observations of predictor
 
         int max_marker_id; //count current published markers
@@ -107,7 +110,7 @@ namespace Planner{
         ros::Publisher pubDetectedObjectsPoseArray;
         ros::Publisher pubCurCmdDabin;
         ros::Publisher pubOurOccu;
-
+        ros::Publisher pubPitching; // publishing pitch angle
 
         /**
          * Subscriber
@@ -118,6 +121,8 @@ namespace Planner{
         ros::Subscriber subDetectedObjects;
         ros::Subscriber subOccuMap; // occupancy grid
         ros::Subscriber subOccuUpdate; // sibal
+        ros::Subscriber subKetiImu;
+
 
         /**
          * Callback functions
@@ -130,6 +135,8 @@ namespace Planner{
 
         void cbObstacles(const geometry_msgs::PoseStamped& obstPose);
         void cbDetectedObjects(const driving_msgs::DetectedObjectArray& objectsArray);
+
+        void cbImu(const sensor_msgs::Imu& imu);
 
         /**
          * Core routines in while loop of ROS thread

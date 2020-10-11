@@ -3,8 +3,9 @@
 <launch>
 
   <arg name = "use_sim_time" value = "true"/>
-<!--   <arg name= "bagfile"        default="200518-SNU-1_result.bag"/> -->
-  <arg name= "bagfile"        default="ACCFail.bag"/>
+
+<!--  <arg name= "bagfile"        default="kiapi_static1.bag"/> -->
+  <arg name= "bagfile"        default="niceButNominalTooFast.bag"/>
 
   <param name="use_sim_time" value="$(arg use_sim_time)"/>
 
@@ -17,6 +18,7 @@
   <arg name ="car_base_frame_id" default="/base_link"/>
   <arg name ="lidar_frame_id" default = "velodyne"/>
   <arg name ="detected_object_frame_id" default = "velodyne"/>
+  <arg name ="car_imu_frame_id" default = "/car_imu"/>
 
   <arg name = "lane_width" default="5"/>
   <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/interpolated_yugokri_path1.csv"/>
@@ -25,6 +27,8 @@
 
   <arg name = "goal/x"  default = "451489.3968"/> <!--in world frame -->
   <arg name = "goal/y" default = "3947475.6160"/> <!--in world frame -->
+
+
 
   <group ns="atypical_planning_test">
     <rosparam file="$(find atypical_driving)/param/MPC_weight.yaml"/>
@@ -42,10 +46,10 @@
 
         <remap from="scan" to="/scan"/>
         <rosparam>
-            target_frame:  velodyne # Leave disabled to output scan in pointcloud frame
+            target_frame: car_imu # Leave disabled to output scan in pointcloud frame
             transform_tolerance: 0.01
-            min_height: -1.5 # default = -0.8 / KIAPI = -1.5
-            max_height: -0.9 # default = 0.3 / KIAPI= -0.9
+            min_height: -1.4 # default = -0.8 / KIAPI = -1.5
+            max_height: 0.1 # default = 0.3 / KIAPI= -0.9
 
             angle_min: -3.1408 # -M_PI/2
             angle_max: 3.1408 # M_PI/2
@@ -60,7 +64,7 @@
             # 0 : Detect number of cores
             # 1 : Single threaded
             # 2->inf : Parallelism level
-            concurrency_level: 1
+            concurrency_level: 3
         </rosparam>
 
     </node>
@@ -80,7 +84,9 @@
 
 
     <!--1. Data feeder-->
-    <node pkg="rosbag" type="play" name="rosbag_record_diag" args="--clock --loop $(find atypical_driving)/worlds/$(arg bagfile)" >
+<!--    <node pkg="rosbag" type="play" name="rosbag_record_diag" args="&#45;&#45;clock &#45;&#45;loop $(find atypical_driving)/worlds/$(arg bagfile)" >-->
+
+    <node pkg="rosbag" type="play" name="rosbag_record_diag" args="--clock -r 3 --loop /media/jbs/Samsung_T3/2020BAG/kiapi\ test/AACIntersection.bag" >
         <remap from="/current_pose_cov" to="/current_pose"/>
         <remap from="/tf" to="/tf_keti"/>
     </node>
@@ -95,6 +101,9 @@
 
     <!--4. server-->
     <include file = "$(find atypical_driving)/launch/integration_server.launch" >
+
+        <arg name="use_keti_vel" value="false"/>
+
         <arg name = "world_frame_id" value = "$(arg world_frame_id)"/>
         <arg name = "snu_frame_id" value = "$(arg snu_frame_id)"/>
         <arg name = "occu_frame_id" value = "$(arg occu_frame_id)"/>
@@ -106,7 +115,6 @@
         <arg name = "isRearWheelDriven" value ="false"/>
         <arg name = "goal/x" value = "$(arg goal/x)"/>
         <arg name = "goal/y" value = "$(arg goal/y)"/>
-
 <!--         <arg name = "period"  value= "0.05"/> -->
 <!--         <arg name="planning_dt" value="0.1"/> -->
 

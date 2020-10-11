@@ -1,4 +1,12 @@
 <map id="Planner::PlannerBase" name="Planner::PlannerBase">
-<area shape="rect" id="node2" href="$struct_planner_1_1_m_p_c_result_traj.html" title="Final output of MPC : trajectory of inputs. " alt="" coords="5,5,169,32"/>
-<area shape="rect" id="node3" href="$struct_planner_1_1_car_state.html" title="State feed for MPC. " alt="" coords="193,5,320,32"/>
+<area shape="rect" id="node2" href="$struct_planner_1_1_lane.html" title="Initial lane. " alt="" coords="19,91,121,117"/>
+<area shape="rect" id="node4" href="$struct_planner_1_1_skeleton_lane.html" title="Modified lane by global planner. " alt="" coords="265,91,418,117"/>
+<area shape="rect" id="node7" href="$struct_planner_1_1_smooth_lane.html" title="final output " alt="" coords="268,141,415,168"/>
+<area shape="rect" id="node3" href="$struct_planner_1_1_lane_path.html" title="Planner::LanePath" alt="" coords="5,217,135,244"/>
+<area shape="rect" id="node5" href="$class_planner_1_1parser.html" title="Planner::parser" alt="" coords="286,255,397,281"/>
+<area shape="rect" id="node6" href="$class_predictor_1_1_target_manager.html" title="Predictor::TargetManager" alt="" coords="257,305,426,332"/>
+<area shape="rect" id="node8" href="$struct_planner_1_1_obstacle_path_array.html" title="Planner::ObstaclePathArray" alt="" coords="249,356,433,383"/>
+<area shape="rect" id="node9" href="$struct_planner_1_1_m_p_c_result_traj.html" title="Final output of MPC : trajectory of inputs. " alt="" coords="259,407,423,433"/>
+<area shape="rect" id="node10" href="$struct_planner_1_1_car_state.html" title="State feed for MPC. " alt="" coords="278,457,405,484"/>
+<area shape="rect" id="node11" href="$struct_planner_1_1_corridor.html" title="Planner::Corridor" alt="" coords="281,508,401,535"/>
 </map>

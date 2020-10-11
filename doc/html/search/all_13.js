@@ -1,4 +1,30 @@
 var searchData=
 [
-  ['v',['v',['../struct_planner_1_1_car_state.html#a1a7604d3370eb0ac48f64f58f9cd6387',1,'Planner::CarState::v()'],['../struct_planner_1_1_car_input.html#a6aebef59698543f568dbbc0762a71641',1,'Planner::CarInput::v()']]]
+  ['r',['r',['../struct_d_a_p_1_1_index.html#a37fb5d535979aefd625afc0ad0bfd0bf',1,'DAP::Index']]],
+  ['r1',['r1',['../struct_planner_1_1_obstacle_ellipse.html#a1e9ae2d8dedc0b661eb341339e6a6b08',1,'Planner::ObstacleEllipse']]],
+  ['r2',['r2',['../struct_planner_1_1_obstacle_ellipse.html#acd5c9a703c340f993c61cfa43869431d',1,'Planner::ObstacleEllipse']]],
+  ['read_5fse3_5fseq',['read_SE3_seq',['../namespace_d_a_p.html#ac479c175a9daab83881b12c76e5d8b20',1,'DAP']]],
+  ['read_5ftxyzquat_5fseq',['read_TXYZQuat_seq',['../namespace_d_a_p.html#a30166c584d7541bb80621fda6075bc64',1,'DAP']]],
+  ['readme_2emd',['README.md',['../_r_e_a_d_m_e_8md.html',1,'']]],
+  ['rejectionradius',['rejectionRadius',['../_keti_test_2client__main_8cpp.html#abc95f6688e830ac0ed1524f5a7b93ba3',1,'client_main.cpp']]],
+  ['resolution',['Resolution',['../map__reader_8m.html#ac3f24b70648e1c120a05b2a02934df3d',1,'map_reader.m']]],
+  ['return',['return',['../find_parents_8m.html#a9717e7bbecb906637e86cef6da3d83c2',1,'return():&#160;findParents.m'],['../lane_tree_d_f_s_8m.html#a9717e7bbecb906637e86cef6da3d83c2',1,'return():&#160;laneTreeDFS.m']]],
+  ['returntype',['ReturnType',['../problem__description_8h.html#a36a419f0b50a0c1d2d4cf712e0ba64cc',1,'problem_description.h']]],
+  ['rho',['rho',['../structi_l_q_r_params.html#af8ac83fc65c63d35c78d9cbc6af4d46f',1,'iLQRParams']]],
+  ['rho_5f',['rho_',['../classi_l_q_r.html#aba10fd732fdb2d140b50b38ebe823d40',1,'iLQR']]],
+  ['rhofactor',['rhoFactor',['../structi_l_q_r_params.html#a873c21865557ebce23bdaa29652403dc',1,'iLQRParams']]],
+  ['rhomax',['rhoMax',['../structi_l_q_r_params.html#a5047b9d131ddca15a44d1a9102e88ca6',1,'iLQRParams']]],
+  ['rhomin',['rhoMin',['../structi_l_q_r_params.html#a2c2fdc1a0c2fee528074b33f5278cb41',1,'iLQRParams']]],
+  ['rightboundarypoint',['rightBoundaryPoint',['../class_planner_1_1_lane_tree_element.html#add66efbbedce54f62050a8df30bb9d9d',1,'Planner::LaneTreeElement']]],
+  ['rightboundarypoints',['rightBoundaryPoints',['../struct_planner_1_1_smooth_lane.html#a0083e16127b687ac0b6a443714cf7010',1,'Planner::SmoothLane']]],
+  ['rightgridpoint',['rightGridPoint',['../test_8m.html#a0211fc4bf8f7e24383669a5b8713cfc7',1,'test.m']]],
+  ['rightpoint',['rightPoint',['../class_planner_1_1_lane_tree_element.html#a4415a16ec500bdf0573a0179a10a7af3',1,'Planner::LaneTreeElement']]],
+  ['road_5fwidth',['road_width',['../test_8m.html#acbccd3d44e10ab44d099938727ab2d42',1,'test.m']]],
+  ['ros_5foperations_2ecpp',['ros_operations.cpp',['../ros__operations_8cpp.html',1,'']]],
+  ['ros_5foperations_2ehpp',['ros_operations.hpp',['../ros__operations_8hpp.html',1,'']]],
+  ['ros_5fwrapper_5fptr',['ros_wrapper_ptr',['../class_planner_1_1_wrapper.html#a7995604355fb8d30150354e0529e37bd',1,'Planner::Wrapper']]],
+  ['roswrapper',['RosWrapper',['../class_planner_1_1_ros_wrapper.html',1,'Planner::RosWrapper'],['../class_planner_1_1_ros_wrapper.html#a6f71b1b5ce48276c8a34d7e9f1f3fcb4',1,'Planner::RosWrapper::RosWrapper()']]],
+  ['run',['run',['../class_planner_1_1_wrapper.html#a7de6456aacb65f1289ab74a065af1a6b',1,'Planner::Wrapper']]],
+  ['runplanning',['runPlanning',['../class_planner_1_1_wrapper.html#a50daff5b6103f50ba12bc6e6dc0f3d6d',1,'Planner::Wrapper']]],
+  ['runros',['runROS',['../class_planner_1_1_ros_wrapper.html#aa4864effd8cb1bc0a32c9539b792c5b7',1,'Planner::RosWrapper']]]
 ];

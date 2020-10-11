@@ -275,5 +275,22 @@ sgtitle('id = 35')
 
 
 
+%% logger for pitch angle 
+
+
+bag = rosbag('imu_pitch_log_nice_but_nominal_too_fast.bag');
+bSel = select(bag,'Topic','/atypical_planning_test/imu_pitcing');
+msgStructs = readMessages(bSel,'DataFormat','struct');
+
+pitchSet = [];
+for n = 1:length(msgStructs)
+    pitchSet = [pitchSet msgStructs{n}.Data] ;
+end
+
+plot(pitchSet*180/pi)
+
+
+
+
 
 

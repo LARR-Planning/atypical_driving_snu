@@ -1,4 +1,5 @@
 <map id="Planner::Param" name="Planner::Param">
 <area shape="rect" id="node2" href="$struct_planner_1_1_param_local.html" title="Parameters for local planner. " alt="" coords="5,5,148,32"/>
-<area shape="rect" id="node3" href="$struct_planner_1_1_param_global.html" title="Parameters for global planner. " alt="" coords="171,5,321,32"/>
+<area shape="rect" id="node3" href="$struct_planner_1_1_param_predictor.html" title="Planner::ParamPredictor" alt="" coords="172,5,336,32"/>
+<area shape="rect" id="node4" href="$struct_planner_1_1_param_global.html" title="Parameters for global planner. " alt="" coords="361,5,510,32"/>
 </map>
