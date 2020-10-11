@@ -3,6 +3,7 @@
 <launch>
 
   <arg name = "use_sim_time" value = "true"/>
+
 <!--  <arg name= "bagfile"        default="kiapi_static1.bag"/> -->
   <arg name= "bagfile"        default="niceButNominalTooFast.bag"/>
 
@@ -14,7 +15,7 @@
   <arg name ="snu_frame_id" default="SNU"/>
   <arg name ="occu_frame_id" default="SNU"/>
   <arg name ="world_frame_id" default="map"/>
-  <arg name ="car_base_frame_id" default="/car_base_link"/>
+  <arg name ="car_base_frame_id" default="/base_link"/>
   <arg name ="lidar_frame_id" default = "velodyne"/>
   <arg name ="detected_object_frame_id" default = "velodyne"/>
   <arg name ="car_imu_frame_id" default = "/car_imu"/>
@@ -26,6 +27,7 @@
 
   <arg name = "goal/x"  default = "451489.3968"/> <!--in world frame -->
   <arg name = "goal/y" default = "3947475.6160"/> <!--in world frame -->
+
 
 
   <group ns="atypical_planning_test">

@@ -161,7 +161,7 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<string>("detected_objects_id",detectedObjectId,"/map");
 
     // global planner
-
+    nh.param<double>("car_width",param_.g_param.car_width,2);
     nh.param<double>("vmax",param_.g_param.car_speed_max,4);
     nh.param<double>("v_ref_past_weight",param_.g_param.v_ref_past_weight,0.3);
     nh.param<double>("vmin",param_.g_param.car_speed_min,1);

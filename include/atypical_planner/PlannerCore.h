@@ -83,7 +83,7 @@ namespace Planner {
      */
     struct ParamGlobal {
 //        double horizon;
-//        double car_width;
+        double car_width;
 //        double car_z_min;
 //        double car_z_max;
         // by JBS
