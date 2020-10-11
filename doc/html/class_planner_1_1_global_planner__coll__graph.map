@@ -1,4 +1,5 @@
 <map id="Planner::GlobalPlanner" name="Planner::GlobalPlanner">
 <area shape="rect" id="node2" href="$class_planner_1_1_abstract_planner.html" title="Abstract class. The shared attributes to be inherited to the derived classes. " alt="" coords="5,5,172,32"/>
-<area shape="rect" id="node3" href="$struct_planner_1_1_param_global.html" title="Parameters for global planner. " alt="" coords="197,5,346,32"/>
+<area shape="rect" id="node3" href="$struct_planner_1_1_corridor.html" title="Planner::Corridor" alt="" coords="197,5,317,32"/>
+<area shape="rect" id="node4" href="$struct_planner_1_1_param_global.html" title="Parameters for global planner. " alt="" coords="341,5,490,32"/>
 </map>

@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['globalplanner',['GlobalPlanner',['../class_planner_1_1_global_planner.html',1,'Planner']]]
+  ['descriptionbase',['DescriptionBase',['../class_description_base.html',1,'']]],
+  ['dynamicsderivatives',['DynamicsDerivatives',['../class_dynamics_derivatives.html',1,'']]]
 ];

@@ -1,6 +1,7 @@
 <map id="Planner::LocalPlanner::updateTrajToBase" name="Planner::LocalPlanner::updateTrajToBase">
-<area shape="rect" id="node2" href="$class_planner_1_1_wrapper.html#a5ff99ef7e9d54664ae6cc99cc5fee902" title="Modify p_base with the resultant planning output. " alt="" coords="203,5,373,47"/>
-<area shape="rect" id="node3" href="$class_planner_1_1_wrapper.html#a50daff5b6103f50ba12bc6e6dc0f3d6d" title="Engage the while loop of planners. " alt="" coords="421,13,620,39"/>
-<area shape="rect" id="node4" href="$class_planner_1_1_wrapper.html#a7de6456aacb65f1289ab74a065af1a6b" title="Run the two thread (Planner &amp; ROS) " alt="" coords="668,13,817,39"/>
-<area shape="rect" id="node5" href="$main_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627" title="main" alt="" coords="865,13,916,39"/>
+<area shape="rect" id="node2" href="$class_planner_1_1_wrapper.html#a9517ad0983eb3aaf30e3c5c191ce38eb" title="Planner::Wrapper::update\lMPCToBase" alt="" coords="203,5,373,47"/>
+<area shape="rect" id="node3" href="$class_planner_1_1_wrapper.html#a6047349503e524abf5066f01c161f5a9" title="Planner::Wrapper::planLocal" alt="" coords="421,13,608,39"/>
+<area shape="rect" id="node4" href="$class_planner_1_1_wrapper.html#a50daff5b6103f50ba12bc6e6dc0f3d6d" title="Engage the while loop of planners. " alt="" coords="656,13,855,39"/>
+<area shape="rect" id="node5" href="$class_planner_1_1_wrapper.html#a7de6456aacb65f1289ab74a065af1a6b" title="Run the two thread (Planner &amp; ROS) " alt="" coords="903,13,1052,39"/>
+<area shape="rect" id="node6" href="$server__main_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627" title="main" alt="" coords="1100,13,1151,39"/>
 </map>

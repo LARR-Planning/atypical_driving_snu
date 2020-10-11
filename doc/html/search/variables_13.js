@@ -1,7 +1,19 @@
 var searchData=
 [
-  ['x',['x',['../struct_planner_1_1_car_state.html#ab221ce5c6e84b4e820ddd1d83de695d3',1,'Planner::CarState']]],
-  ['xl',['xl',['../struct_planner_1_1_corridor.html#abc3def8b013acb224fe439b327b77566',1,'Planner::Corridor']]],
-  ['xs',['xs',['../struct_planner_1_1_m_p_c_result_traj.html#ad6578e47d04f097b753135d700898cab',1,'Planner::MPCResultTraj']]],
-  ['xu',['xu',['../struct_planner_1_1_corridor.html#a018779921724239c1e0b33c1baebda13',1,'Planner::Corridor']]]
+  ['r',['r',['../struct_d_a_p_1_1_index.html#a37fb5d535979aefd625afc0ad0bfd0bf',1,'DAP::Index']]],
+  ['r1',['r1',['../struct_planner_1_1_obstacle_ellipse.html#a1e9ae2d8dedc0b661eb341339e6a6b08',1,'Planner::ObstacleEllipse']]],
+  ['r2',['r2',['../struct_planner_1_1_obstacle_ellipse.html#acd5c9a703c340f993c61cfa43869431d',1,'Planner::ObstacleEllipse']]],
+  ['rejectionradius',['rejectionRadius',['../_keti_test_2client__main_8cpp.html#abc95f6688e830ac0ed1524f5a7b93ba3',1,'client_main.cpp']]],
+  ['resolution',['Resolution',['../map__reader_8m.html#ac3f24b70648e1c120a05b2a02934df3d',1,'map_reader.m']]],
+  ['return',['return',['../find_parents_8m.html#a9717e7bbecb906637e86cef6da3d83c2',1,'return():&#160;findParents.m'],['../lane_tree_d_f_s_8m.html#a9717e7bbecb906637e86cef6da3d83c2',1,'return():&#160;laneTreeDFS.m']]],
+  ['rho',['rho',['../structi_l_q_r_params.html#af8ac83fc65c63d35c78d9cbc6af4d46f',1,'iLQRParams']]],
+  ['rho_5f',['rho_',['../classi_l_q_r.html#aba10fd732fdb2d140b50b38ebe823d40',1,'iLQR']]],
+  ['rhofactor',['rhoFactor',['../structi_l_q_r_params.html#a873c21865557ebce23bdaa29652403dc',1,'iLQRParams']]],
+  ['rhomax',['rhoMax',['../structi_l_q_r_params.html#a5047b9d131ddca15a44d1a9102e88ca6',1,'iLQRParams']]],
+  ['rhomin',['rhoMin',['../structi_l_q_r_params.html#a2c2fdc1a0c2fee528074b33f5278cb41',1,'iLQRParams']]],
+  ['rightboundarypoint',['rightBoundaryPoint',['../class_planner_1_1_lane_tree_element.html#add66efbbedce54f62050a8df30bb9d9d',1,'Planner::LaneTreeElement']]],
+  ['rightboundarypoints',['rightBoundaryPoints',['../struct_planner_1_1_smooth_lane.html#a0083e16127b687ac0b6a443714cf7010',1,'Planner::SmoothLane']]],
+  ['rightpoint',['rightPoint',['../class_planner_1_1_lane_tree_element.html#a4415a16ec500bdf0573a0179a10a7af3',1,'Planner::LaneTreeElement']]],
+  ['road_5fwidth',['road_width',['../test_8m.html#acbccd3d44e10ab44d099938727ab2d42',1,'test.m']]],
+  ['ros_5fwrapper_5fptr',['ros_wrapper_ptr',['../class_planner_1_1_wrapper.html#a7995604355fb8d30150354e0529e37bd',1,'Planner::Wrapper']]]
 ];

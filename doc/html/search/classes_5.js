@@ -1,7 +1,6 @@
 var searchData=
 [
-  ['param',['Param',['../struct_planner_1_1_param.html',1,'Planner']]],
-  ['paramglobal',['ParamGlobal',['../struct_planner_1_1_param_global.html',1,'Planner']]],
-  ['paramlocal',['ParamLocal',['../struct_planner_1_1_param_local.html',1,'Planner']]],
-  ['plannerbase',['PlannerBase',['../class_planner_1_1_planner_base.html',1,'Planner']]]
+  ['ilqr',['iLQR',['../classi_l_q_r.html',1,'']]],
+  ['ilqrparams',['iLQRParams',['../structi_l_q_r_params.html',1,'']]],
+  ['index',['Index',['../struct_d_a_p_1_1_index.html',1,'DAP']]]
 ];

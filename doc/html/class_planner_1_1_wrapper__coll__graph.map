@@ -1,10 +1,13 @@
 <map id="Planner::Wrapper" name="Planner::Wrapper">
-<area shape="rect" id="node2" href="$class_planner_1_1_global_planner.html" title="Planner::GlobalPlanner" alt="" coords="293,147,448,173"/>
-<area shape="rect" id="node3" href="$class_planner_1_1_abstract_planner.html" title="Abstract class. The shared attributes to be inherited to the derived classes. " alt="" coords="5,171,172,197"/>
-<area shape="rect" id="node8" href="$class_planner_1_1_local_planner.html" title="Planner::LocalPlanner" alt="" coords="296,197,445,224"/>
-<area shape="rect" id="node4" href="$struct_planner_1_1_param_global.html" title="Parameters for global planner. " alt="" coords="14,7,163,33"/>
-<area shape="rect" id="node6" href="$struct_planner_1_1_param.html" title="Parameters for both planner. " alt="" coords="315,45,427,72"/>
-<area shape="rect" id="node5" href="$class_planner_1_1_ros_wrapper.html" title="ROS communicator such as topic advertising/subscription and ros&#45;param parsing. " alt="" coords="297,96,444,123"/>
-<area shape="rect" id="node7" href="$struct_planner_1_1_param_local.html" title="Parameters for local planner. " alt="" coords="17,115,160,141"/>
-<area shape="rect" id="node9" href="$struct_planner_1_1_m_p_c_result_traj.html" title="Final output of MPC : trajectory of inputs. " alt="" coords="7,232,171,259"/>
+<area shape="rect" id="node2" href="$class_planner_1_1_global_planner.html" title="Planner::GlobalPlanner" alt="" coords="303,53,457,80"/>
+<area shape="rect" id="node3" href="$class_planner_1_1_abstract_planner.html" title="Abstract class. The shared attributes to be inherited to the derived classes. " alt="" coords="5,205,172,232"/>
+<area shape="rect" id="node10" href="$class_planner_1_1_local_planner.html" title="Planner::LocalPlanner" alt="" coords="305,299,455,325"/>
+<area shape="rect" id="node4" href="$struct_planner_1_1_corridor.html" title="Planner::Corridor" alt="" coords="29,5,149,32"/>
+<area shape="rect" id="node5" href="$struct_planner_1_1_param_global.html" title="Parameters for global planner. " alt="" coords="14,73,163,100"/>
+<area shape="rect" id="node7" href="$struct_planner_1_1_param.html" title="Parameters for both planner. " alt="" coords="324,141,436,168"/>
+<area shape="rect" id="node6" href="$class_planner_1_1_ros_wrapper.html" title="ROS communicator such as topic advertising/subscription and ros&#45;param parsing. " alt="" coords="547,135,693,161"/>
+<area shape="rect" id="node8" href="$struct_planner_1_1_param_local.html" title="Parameters for local planner. " alt="" coords="17,281,160,308"/>
+<area shape="rect" id="node9" href="$struct_planner_1_1_param_predictor.html" title="Planner::ParamPredictor" alt="" coords="7,141,171,168"/>
+<area shape="rect" id="node11" href="$structi_l_q_r_params.html" title="iLQRParams" alt="" coords="40,395,137,421"/>
+<area shape="rect" id="node12" href="$struct_planner_1_1_m_p_c_result_traj.html" title="Final output of MPC : trajectory of inputs. " alt="" coords="7,344,171,371"/>
 </map>

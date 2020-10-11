@@ -1,5 +1,6 @@
 <map id="Planner::RosWrapper" name="Planner::RosWrapper">
-<area shape="rect" id="node2" href="$class_planner_1_1_planner_base.html" title="The planning results and ingredients. " alt="" coords="97,95,245,121"/>
-<area shape="rect" id="node3" href="$struct_planner_1_1_m_p_c_result_traj.html" title="Final output of MPC : trajectory of inputs. " alt="" coords="5,5,169,32"/>
-<area shape="rect" id="node4" href="$struct_planner_1_1_car_state.html" title="State feed for MPC. " alt="" coords="193,5,320,32"/>
+<area shape="rect" id="node2" href="$struct_planner_1_1_param.html" title="Parameters for both planner. " alt="" coords="198,95,310,121"/>
+<area shape="rect" id="node3" href="$struct_planner_1_1_param_local.html" title="Parameters for local planner. " alt="" coords="5,5,148,32"/>
+<area shape="rect" id="node4" href="$struct_planner_1_1_param_predictor.html" title="Planner::ParamPredictor" alt="" coords="172,5,336,32"/>
+<area shape="rect" id="node5" href="$struct_planner_1_1_param_global.html" title="Parameters for global planner. " alt="" coords="361,5,510,32"/>
 </map>

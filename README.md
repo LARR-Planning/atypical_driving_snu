@@ -39,5 +39,18 @@ In the terminal, you will see ROS_WARNINGS the printed output which says that
 Simple thing. your works are completing all the functions in your header and source files referring the summary [diagram](https://www.lucidchart.com/documents/edit/2f00f5b3-6e62-4ff4-8b19-dc401daf80f8/GdaP.vOKzV1F). 
 All the example implementation can be found in the source files. Please understand the overall flow of the codes. 
 
+### Parameter description 
 
+### Boseong 
+
+* `use_keti_velocity` : Setting this to true will use the velocity of `detected_object` message as the constant velocity of a obstacle path. 
+The velocity of the obstacle path is the average of the keti velocities. Using this, the target position is predicted. In case of the pose,
+ use just fit using a linear regression of the raw data of keti observation. Setting this parameter to false will use linear regression for 
+ all translation and orientation altogther while using coefficients of the fitting model for the representative speed (for dynamic object thresholding or visualization)
+    
+  
+### Jungown 
+
+
+### Yunwoo 
 
