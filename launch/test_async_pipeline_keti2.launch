@@ -45,9 +45,9 @@
 
         <remap from="scan" to="/scan"/>
         <rosparam>
-            target_frame:  velodyne # Leave disabled to output scan in pointcloud frame
+            target_frame: car_imu # Leave disabled to output scan in pointcloud frame
             transform_tolerance: 0.01
-            min_height: -1.5 # default = -0.8 / KIAPI = -1.5
+            min_height: -1.4 # default = -0.8 / KIAPI = -1.5
             max_height: 0.1 # default = 0.3 / KIAPI= -0.9
 
             angle_min: -3.1408 # -M_PI/2
@@ -63,7 +63,7 @@
             # 0 : Detect number of cores
             # 1 : Single threaded
             # 2->inf : Parallelism level
-            concurrency_level: 1
+            concurrency_level: 3
         </rosparam>
 
     </node>
@@ -85,7 +85,7 @@
     <!--1. Data feeder-->
 <!--    <node pkg="rosbag" type="play" name="rosbag_record_diag" args="&#45;&#45;clock &#45;&#45;loop $(find atypical_driving)/worlds/$(arg bagfile)" >-->
 
-    <node pkg="rosbag" type="play" name="rosbag_record_diag" args="--clock -r 3 --loop /home/jbs/ACCFail.bag" >
+    <node pkg="rosbag" type="play" name="rosbag_record_diag" args="--clock -r 3 --loop /media/jbs/Samsung_T3/2020BAG/kiapi\ test/AACIntersection.bag" >
         <remap from="/current_pose_cov" to="/current_pose"/>
         <remap from="/tf" to="/tf_keti"/>
     </node>
@@ -101,7 +101,7 @@
     <!--4. server-->
     <include file = "$(find atypical_driving)/launch/integration_server.launch" >
 
-        <arg name="use_keti_vel" value="true"/>
+        <arg name="use_keti_vel" value="false"/>
 
         <arg name = "world_frame_id" value = "$(arg world_frame_id)"/>
         <arg name = "snu_frame_id" value = "$(arg snu_frame_id)"/>

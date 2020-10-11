@@ -32,6 +32,7 @@
 
     <param name = "use_nominal_obstacle_rad" value="true"/>
     <param name = "use_keti_velocity" value="$(arg use_keti_vel)"/>
+    <param name = "local_planner/obstacle_radius_nominal" value="1"/>
 
 
     <remap from = "/occupancy_grid" to = "/costmap_node/costmap/costmap"/>

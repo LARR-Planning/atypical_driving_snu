@@ -81,6 +81,7 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
     pubMPCTraj = nh.advertise<nav_msgs::Path>("mpc_traj",1);
     pubMPCTrajMarker = nh.advertise<visualization_msgs::MarkerArray>("mpc_traj_marker",1);
     pubCurPose = nh.advertise<geometry_msgs::PoseStamped>("cur_pose",1);
+    pubPitching= nh.advertise<std_msgs::Float64>("imu_pitcing",1);
 
     pubOrigLane = nh.advertise<nav_msgs::Path>("lane_orig",1);
     pubSlicedLane = nh.advertise<nav_msgs::Path>("lane_sliced",1);
@@ -566,6 +567,9 @@ void RosWrapper::processTf() {
         if (isImuReceived) {
             tf::Quaternion qPitch;
             qPitch.setRPY(0,pitchAngleFromImu,0);
+            std_msgs::Float64 pitchVal;
+            pitchVal.data = pitchAngleFromImu;
+            pubPitching.publish(pitchVal);
             tf::Quaternion qImu = qPitch*q;
             transform.setRotation(qImu);
             tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(),SNUFrameId, carImuFrameId));

@@ -110,7 +110,7 @@ namespace Planner{
         ros::Publisher pubDetectedObjectsPoseArray;
         ros::Publisher pubCurCmdDabin;
         ros::Publisher pubOurOccu;
-
+        ros::Publisher pubPitching; // publishing pitch angle
 
         /**
          * Subscriber
