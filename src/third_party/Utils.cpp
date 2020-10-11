@@ -79,6 +79,8 @@ double meanCurvature(const vector<Vector2d, aligned_allocator<Vector2d>> & point
         return 1e+6;
     }
 
+    double maxCurve = -1;
+
     for (int i = 0 ; i < point2dSeq.size()-2 ; i++){
         Vector2d v1 = point2dSeq[i+1] - point2dSeq[i];
         Vector2d v2 = point2dSeq[i+2] - point2dSeq[i+1];
@@ -96,5 +98,6 @@ double meanCurvature(const vector<Vector2d, aligned_allocator<Vector2d>> & point
     //cout << curvatureSum<< endl;
     cout << curvatureSum/(point2dSeq.size()-2)<< endl;
     return curvatureSum/(point2dSeq.size()-2);
+
 
 }

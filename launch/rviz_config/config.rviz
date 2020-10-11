@@ -39,8 +39,8 @@ Panels:
         - /MarkerArray9/Namespaces1
         - /TwistStamped1
         - /PointCloud24
-      Splitter Ratio: 0.38962963223457336
-    Tree Height: 230
+      Splitter Ratio: 0.389629632
+    Tree Height: 156
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -49,7 +49,7 @@ Panels:
       - /2D Nav Goal1
       - /Publish Point1
     Name: Tool Properties
-    Splitter Ratio: 0.5886790156364441
+    Splitter Ratio: 0.588679016
   - Class: rviz/Views
     Expanded:
       - /Current View1
@@ -60,8 +60,6 @@ Panels:
     Name: Time
     SyncMode: 0
     SyncSource: PointCloud2
-Preferences:
-  PromptSaveOnExit: true
 Toolbars:
   toolButtonStyle: 2
 Visualization Manager:
@@ -73,7 +71,7 @@ Visualization Manager:
       Color: 239; 41; 41
       Enabled: true
       Line Style:
-        Line Width: 0.029999999329447746
+        Line Width: 0.0299999993
         Value: Lines
       Name: Grid
       Normal Cell Count: 0
@@ -105,7 +103,7 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: false
-    - Angle Tolerance: 0.10000000149011612
+    - Angle Tolerance: 0.100000001
       Class: rviz/Odometry
       Covariance:
         Orientation:
@@ -117,7 +115,7 @@ Visualization Manager:
           Scale: 1
           Value: true
         Position:
-          Alpha: 0.30000001192092896
+          Alpha: 0.300000012
           Color: 204; 51; 204
           Scale: 1
           Value: true
@@ -125,16 +123,16 @@ Visualization Manager:
       Enabled: true
       Keep: 1
       Name: Odometry
-      Position Tolerance: 0.10000000149011612
+      Position Tolerance: 0.100000001
       Shape:
         Alpha: 1
         Axes Length: 1
-        Axes Radius: 0.10000000149011612
+        Axes Radius: 0.100000001
         Color: 255; 25; 0
-        Head Length: 0.30000001192092896
-        Head Radius: 0.10000000149011612
+        Head Length: 0.300000012
+        Head Radius: 0.100000001
         Shaft Length: 1
-        Shaft Radius: 0.05000000074505806
+        Shaft Radius: 0.0500000007
         Value: Arrow
       Topic: /airsim_car_node/PhysXCar/odom_local_ned
       Unreliable: false
@@ -145,11 +143,11 @@ Visualization Manager:
       Class: rviz/Pose
       Color: 255; 25; 0
       Enabled: false
-      Head Length: 0.30000001192092896
-      Head Radius: 0.10000000149011612
+      Head Length: 0.300000012
+      Head Radius: 0.100000001
       Name: Pose
       Shaft Length: 1
-      Shaft Radius: 0.05000000074505806
+      Shaft Radius: 0.0500000007
       Shape: Axes
       Topic: /atypical_planning_test/obstacle_pose
       Unreliable: false
@@ -167,23 +165,20 @@ Visualization Manager:
       Marker Topic: /atypical_planning_test/prediction
       Name: MarkerArray
       Namespaces:
-        0: true
-        1: true
-        2: true
-        3: true
+        {}
       Queue Size: 100
       Value: true
     - Alpha: 1
       Axes Length: 3
-      Axes Radius: 0.20000000298023224
+      Axes Radius: 0.200000003
       Class: rviz/Pose
       Color: 255; 25; 0
       Enabled: true
-      Head Length: 0.30000001192092896
-      Head Radius: 0.10000000149011612
+      Head Length: 0.300000012
+      Head Radius: 0.100000001
       Name: Pose
       Shaft Length: 1
-      Shaft Radius: 0.05000000074505806
+      Shaft Radius: 0.0500000007
       Shape: Axes
       Topic: /atypical_driving_client/current_car_posestamped
       Unreliable: false
@@ -195,15 +190,15 @@ Visualization Manager:
         All Enabled: false
         SNU:
           Value: true
-        base_link:
-          Value: true
-        eth_cam_2:
+        car_base_link:
           Value: false
+        car_imu:
+          Value: true
         map:
           Value: true
         velodyne:
           Value: true
-      Marker Scale: 10
+      Marker Scale: 20
       Name: TF
       Show Arrows: false
       Show Axes: true
@@ -211,11 +206,11 @@ Visualization Manager:
       Tree:
         map:
           SNU:
-            base_link:
-              eth_cam_2:
-                {}
+            car_base_link:
               velodyne:
                 {}
+            car_imu:
+              {}
       Update Interval: 0
       Value: true
     - Class: rviz/MarkerArray
@@ -231,11 +226,11 @@ Visualization Manager:
       Class: rviz/Path
       Color: 46; 52; 54
       Enabled: true
-      Head Diameter: 0.30000001192092896
-      Head Length: 0.20000000298023224
-      Length: 0.30000001192092896
+      Head Diameter: 0.300000012
+      Head Length: 0.200000003
+      Length: 0.300000012
       Line Style: Billboards
-      Line Width: 0.30000001192092896
+      Line Width: 0.300000012
       Name: Path
       Offset:
         X: 0
@@ -243,9 +238,9 @@ Visualization Manager:
         Z: 0
       Pose Color: 255; 85; 255
       Pose Style: None
-      Radius: 0.029999999329447746
-      Shaft Diameter: 0.10000000149011612
-      Shaft Length: 0.10000000149011612
+      Radius: 0.0299999993
+      Shaft Diameter: 0.100000001
+      Shaft Length: 0.100000001
       Topic: /atypical_planning_test/lane_path
       Unreliable: false
       Value: true
@@ -264,9 +259,9 @@ Visualization Manager:
       Class: rviz/Path
       Color: 239; 41; 41
       Enabled: false
-      Head Diameter: 0.30000001192092896
-      Head Length: 0.20000000298023224
-      Length: 0.30000001192092896
+      Head Diameter: 0.300000012
+      Head Length: 0.200000003
+      Length: 0.300000012
       Line Style: Billboards
       Line Width: 0.5
       Name: Path
@@ -276,9 +271,9 @@ Visualization Manager:
         Z: 0
       Pose Color: 255; 85; 255
       Pose Style: None
-      Radius: 0.029999999329447746
-      Shaft Diameter: 0.10000000149011612
-      Shaft Length: 0.10000000149011612
+      Radius: 0.0299999993
+      Shaft Diameter: 0.100000001
+      Shaft Length: 0.100000001
       Topic: /atypical_planning_test/mpc_traj
       Unreliable: false
       Value: false
@@ -292,9 +287,9 @@ Visualization Manager:
       Value: false
     - Class: octomap_rviz_plugin/OccupancyGrid
       Enabled: false
-      Max. Height Display: 3.4028234663852886e+38
+      Max. Height Display: 3.40282347e+38
       Max. Octree Depth: 16
-      Min. Height Display: -3.4028234663852886e+38
+      Min. Height Display: -3.40282347e+38
       Name: OccupancyGrid
       Octomap Topic: /atypical_planning_test/octomap_snu
       Queue Size: 5
@@ -325,7 +320,7 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.10000000149011612
+      Size (m): 0.100000001
       Style: Flat Squares
       Topic: /velodyne_points
       Unreliable: false
@@ -355,7 +350,7 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.20000000298023224
+      Size (m): 0.200000003
       Style: Flat Squares
       Topic: /airsim_car_node/PhysXCar/lidar/LidarSensor1
       Unreliable: false
@@ -400,7 +395,7 @@ Visualization Manager:
       Topic: /costmap_node/costmap/footprint
       Unreliable: false
       Value: true
-    - Alpha: 0.10000000149011612
+    - Alpha: 0.100000001
       Class: rviz/Map
       Color Scheme: map
       Draw Behind: false
@@ -433,7 +428,7 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.009999999776482582
+      Size (m): 0.00999999978
       Style: Flat Squares
       Topic: /costmap_node/costmap/tof_layer/clearing_endpoints
       Unreliable: false
@@ -445,11 +440,11 @@ Visualization Manager:
       Class: rviz/Path
       Color: 255; 255; 255
       Enabled: true
-      Head Diameter: 0.30000001192092896
-      Head Length: 0.20000000298023224
-      Length: 0.30000001192092896
+      Head Diameter: 0.300000012
+      Head Length: 0.200000003
+      Length: 0.300000012
       Line Style: Billboards
-      Line Width: 0.10000000149011612
+      Line Width: 0.100000001
       Name: Path
       Offset:
         X: 0
@@ -457,9 +452,9 @@ Visualization Manager:
         Z: 0
       Pose Color: 255; 85; 255
       Pose Style: None
-      Radius: 0.029999999329447746
-      Shaft Diameter: 0.10000000149011612
-      Shaft Length: 0.10000000149011612
+      Radius: 0.0299999993
+      Shaft Diameter: 0.100000001
+      Shaft Length: 0.100000001
       Topic: /atypical_planning_test/lane_orig
       Unreliable: false
       Value: true
@@ -468,11 +463,11 @@ Visualization Manager:
       Class: rviz/Path
       Color: 252; 233; 79
       Enabled: true
-      Head Diameter: 0.30000001192092896
-      Head Length: 0.20000000298023224
-      Length: 0.30000001192092896
+      Head Diameter: 0.300000012
+      Head Length: 0.200000003
+      Length: 0.300000012
       Line Style: Billboards
-      Line Width: 0.30000001192092896
+      Line Width: 0.300000012
       Name: Path
       Offset:
         X: 0
@@ -480,9 +475,9 @@ Visualization Manager:
         Z: 0
       Pose Color: 255; 85; 255
       Pose Style: None
-      Radius: 0.029999999329447746
-      Shaft Diameter: 0.10000000149011612
-      Shaft Length: 0.10000000149011612
+      Radius: 0.0299999993
+      Shaft Diameter: 0.100000001
+      Shaft Length: 0.100000001
       Topic: /atypical_planning_test/lane_sliced
       Unreliable: false
       Value: true
@@ -520,33 +515,33 @@ Visualization Manager:
       Queue Size: 100
       Value: true
     - Alpha: 1
-      Arrow Length: 0.30000001192092896
+      Arrow Length: 0.300000012
       Axes Length: 0.5
-      Axes Radius: 0.07999999821186066
+      Axes Radius: 0.0799999982
       Class: rviz/PoseArray
       Color: 211; 215; 207
       Enabled: true
       Head Length: 0.5
-      Head Radius: 0.20000000298023224
+      Head Radius: 0.200000003
       Name: PoseArray
-      Shaft Length: 0.23000000417232513
-      Shaft Radius: 0.10000000149011612
+      Shaft Length: 0.230000004
+      Shaft Radius: 0.100000001
       Shape: Arrow (3D)
       Topic: /atypical_planning_test/detected_objects_prediction
       Unreliable: false
       Value: true
     - Alpha: 1
-      Arrow Length: 0.30000001192092896
+      Arrow Length: 0.300000012
       Axes Length: 0.5
-      Axes Radius: 0.029999999329447746
+      Axes Radius: 0.0299999993
       Class: rviz/PoseArray
       Color: 255; 25; 0
       Enabled: true
-      Head Length: 0.07000000029802322
-      Head Radius: 0.029999999329447746
+      Head Length: 0.0700000003
+      Head Radius: 0.0299999993
       Name: PoseArray
-      Shaft Length: 0.23000000417232513
-      Shaft Radius: 0.009999999776482582
+      Shaft Length: 0.230000004
+      Shaft Radius: 0.00999999978
       Shape: Axes
       Topic: /atypical_planning_test/observation_pose_queue
       Unreliable: false
@@ -556,11 +551,11 @@ Visualization Manager:
       Class: rviz/Path
       Color: 0; 0; 255
       Enabled: false
-      Head Diameter: 0.30000001192092896
-      Head Length: 0.20000000298023224
-      Length: 0.30000001192092896
+      Head Diameter: 0.300000012
+      Head Length: 0.200000003
+      Length: 0.300000012
       Line Style: Billboards
-      Line Width: 0.4000000059604645
+      Line Width: 0.400000006
       Name: Path
       Offset:
         X: 0
@@ -568,9 +563,9 @@ Visualization Manager:
         Z: 0
       Pose Color: 255; 85; 255
       Pose Style: None
-      Radius: 0.029999999329447746
-      Shaft Diameter: 0.10000000149011612
-      Shaft Length: 0.10000000149011612
+      Radius: 0.0299999993
+      Shaft Diameter: 0.100000001
+      Shaft Length: 0.100000001
       Topic: /atypical_planning_test/mpc_traj
       Unreliable: false
       Value: false
@@ -597,14 +592,14 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.009999999776482582
+      Size (m): 0.00999999978
       Style: Flat Squares
       Topic: /velodyne_points_snu
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
-    - Alpha: 0.699999988079071
+    - Alpha: 0.699999988
       Class: rviz/Map
       Color Scheme: costmap
       Draw Behind: false
@@ -637,7 +632,7 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.10000000149011612
+      Size (m): 0.100000001
       Style: Flat Squares
       Topic: /scan
       Unreliable: false
@@ -646,15 +641,15 @@ Visualization Manager:
       Value: false
     - Alpha: 1
       Axes Length: 1
-      Axes Radius: 0.10000000149011612
+      Axes Radius: 0.100000001
       Class: rviz/Pose
       Color: 255; 25; 0
       Enabled: true
-      Head Length: 0.30000001192092896
-      Head Radius: 0.10000000149011612
+      Head Length: 0.300000012
+      Head Radius: 0.100000001
       Name: Pose
       Shaft Length: 1
-      Shaft Radius: 0.05000000074505806
+      Shaft Radius: 0.0500000007
       Shape: Arrow
       Topic: /airsim_car_node/CustomizationCharacter_2_pose
       Unreliable: false
@@ -721,33 +716,23 @@ Visualization Manager:
       Marker Topic: /detected_objects_info
       Name: MarkerArray
       Namespaces:
-        0: true
-        1: true
-        2: true
-        3: true
+        {}
       Queue Size: 100
       Value: true
     - Class: jsk_rviz_plugin/TwistStamped
       Enabled: true
       Name: TwistStamped
-      Topic: /atypical_planning_test/publishedInput
-      Unreliable: false
-      Value: true
-      angular color: 255; 0; 0
-      angular scale: 5
-      linear color: 0; 255; 0
-      linear scale: 5
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
+        Max Value: 48.4262733
+        Min Value: -5.1363759
         Value: true
       Axis: Z
       Channel Name: intensity
       Class: rviz/PointCloud2
       Color: 255; 255; 255
-      Color Transformer: Intensity
+      Color Transformer: AxisColor
       Decay Time: 0
       Enabled: true
       Invert Rainbow: false
@@ -760,12 +745,32 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.10000000149011612
+      Size (m): 0.100000001
       Style: Flat Squares
       Topic: /velodyne_points_snu
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
+      Value: true
+    - Class: rviz/Image
+      Enabled: true
+      Image Topic: /eth_cam_2/camera/image_raw
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: Image
+      Normalize Range: true
+      Queue Size: 2
+      Transport Hint: raw
+      Unreliable: false
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /smooth_lane
+      Name: MarkerArray
+      Namespaces:
+        "": true
+      Queue Size: 100
       Value: true
     - Class: rviz/Image
       Enabled: false
@@ -779,14 +784,6 @@ Visualization Manager:
       Transport Hint: raw
       Unreliable: false
       Value: false
-    - Class: rviz/MarkerArray
-      Enabled: true
-      Marker Topic: /smooth_lane
-      Name: MarkerArray
-      Namespaces:
-        "": true
-      Queue Size: 100
-      Value: true
   Enabled: true
   Global Options:
     Background Color: 136; 138; 133
@@ -802,10 +799,7 @@ Visualization Manager:
     - Class: rviz/FocusCamera
     - Class: rviz/Measure
     - Class: rviz/SetInitialPose
-      Theta std deviation: 0.2617993950843811
       Topic: /initialpose
-      X std deviation: 0.5
-      Y std deviation: 0.5
     - Class: rviz/SetGoal
       Topic: /move_base_simple/goal
     - Class: rviz/PublishPoint
@@ -815,35 +809,35 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 52.37211990356445
+      Distance: 175.646347
       Enable Stereo Rendering:
-        Stereo Eye Separation: 0.05999999865889549
+        Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 6.636319160461426
-        Y: -4.206423759460449
-        Z: 0.3353406488895416
+        X: 22.7293663
+        Y: 3.04530883
+        Z: -1.74255466
       Focal Shape Fixed Size: false
-      Focal Shape Size: 0.05000000074505806
+      Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
-      Near Clip Distance: 0.009999999776482582
-      Pitch: 1.5697963237762451
+      Near Clip Distance: 0.00999999978
+      Pitch: 1.56979632
       Target Frame: velodyne
       Value: Orbit (rviz)
-      Yaw: 3.0053980350494385
+      Yaw: 3.11538339
     Saved: ~
 Window Geometry:
   Displays:
-    collapsed: true
-  Height: 1023
-  Hide Left Dock: true
+    collapsed: false
+  Height: 1027
+  Hide Left Dock: false
   Hide Right Dock: true
   Image:
-    collapsed: true
-  QMainWindow State: 000000ff00000000fd00000004000000000000023800000361fc0200000009fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073000000003d00000123000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000a0049006d0061006700650000000166000002380000001600ffffff000000010000013b00000363fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003d00000363000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000039f0000003efc0100000002fb0000000800540069006d006501000000000000039f000002eb00fffffffb0000000800540069006d006501000000000000045000000000000000000000039f0000036100000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+    collapsed: false
+  QMainWindow State: 000000ff00000000fd0000000400000000000002b100000379fc0200000009fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006400fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afc00000028000000dd000000dd00fffffffa000000010100000002fb0000000a0049006d0061006700650000000000ffffffff0000005c00fffffffb000000100044006900730070006c0061007900730100000000000002b10000016a00fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000a0049006d006100670065010000010b000002960000001600ffffff000000010000013b00000379fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000002800000379000000b000fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000005870000003efc0100000002fb0000000800540069006d00650100000000000005870000030000fffffffb0000000800540069006d00650100000000000004500000000000000000000002d00000037900000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -852,6 +846,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: true
-  Width: 927
-  X: 993
-  Y: 27
+  Width: 1415
+  X: 503
+  Y: 24

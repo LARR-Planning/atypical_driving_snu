@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['roswrapper',['RosWrapper',['../class_planner_1_1_ros_wrapper.html',1,'Planner']]]
+  ['jumppointsearch',['JumpPointSearch',['../class_j_p_s_1_1_jump_point_search.html',1,'JPS']]]
 ];

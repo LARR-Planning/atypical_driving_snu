@@ -1,7 +1,5 @@
 var searchData=
 [
-  ['roswrapper',['RosWrapper',['../class_planner_1_1_ros_wrapper.html#aaf953555796aba83792a50d86bed0ced',1,'Planner::RosWrapper']]],
-  ['run',['run',['../class_planner_1_1_wrapper.html#a7de6456aacb65f1289ab74a065af1a6b',1,'Planner::Wrapper']]],
-  ['runplanning',['runPlanning',['../class_planner_1_1_wrapper.html#a50daff5b6103f50ba12bc6e6dc0f3d6d',1,'Planner::Wrapper']]],
-  ['runros',['runROS',['../class_planner_1_1_ros_wrapper.html#aa4864effd8cb1bc0a32c9539b792c5b7',1,'Planner::RosWrapper']]]
+  ['has_5fforced_5fneighbours',['has_forced_neighbours',['../class_j_p_s_1_1_jump_point_search.html#a822f708595bdc75362e106e2fd4b8af3',1,'JPS::JumpPointSearch']]],
+  ['horizon_5fglobal',['horizon_global',['../logger_8m.html#a128e5ea1567eda43dc82dea2f75066e1',1,'logger.m']]]
 ];
