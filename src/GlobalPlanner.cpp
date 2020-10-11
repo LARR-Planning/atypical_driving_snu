@@ -416,6 +416,7 @@ bool GlobalPlanner::plan(double t) {
 //    p_base->mSet[1].unlock();
 
     // check width and cut tail
+    //TODO: End point of lane should be goal point!
     bool isBlocked = (last_tail_idx != laneTreePath.back().id);
     bool isBlockedByObject = false;
     int tail_end = findLaneTreePathTail(isBlocked, isBlockedByObject);
@@ -602,7 +603,16 @@ std::vector<int> GlobalPlanner::findChildren(int idx){
 
         Vector2d current_point = laneTree[idx].midPoint;
         Vector2d child_point = laneTree[i_tree].midPoint;
-        if(!p_base->isOccupied(child_point, current_point)){
+        Vector2d delta = child_point - current_point;
+        double current_to_child_angle = atan2(delta.y(), delta.x());
+        Vector2d current_left_point = current_point + param.car_width/2 * Vector2d(cos(current_to_child_angle + M_PI/2), sin(current_to_child_angle + M_PI/2));
+        Vector2d child_left_point = child_point + param.car_width/2 * Vector2d(cos(current_to_child_angle + M_PI/2), sin(current_to_child_angle + M_PI/2));
+        Vector2d current_right_point = current_point + param.car_width/2 * Vector2d(cos(current_to_child_angle - M_PI/2), sin(current_to_child_angle - M_PI/2));
+        Vector2d child_right_point = child_point + param.car_width/2 * Vector2d(cos(current_to_child_angle - M_PI/2), sin(current_to_child_angle - M_PI/2));
+
+        if(!p_base->isOccupied(child_point, current_point)
+        and (!p_base->isOccupied(child_left_point, current_left_point)
+             or !p_base->isOccupied(child_right_point, current_right_point))){
             double dist = (child_point - current_point).norm();
             if(children.empty()){
                 children.emplace_back(i_tree);
