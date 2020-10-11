@@ -20,7 +20,7 @@
 <arg name = "goal/x" default = "0"/>
 <arg name = "goal/y" default = "0"/>
 
-<arg name = "use_keti_vel" default=" false"/>
+<arg name = "use_keti_vel" default=" true"/>
 
 <group ns="atypical_planning_test">
 <rosparam file="$(find atypical_driving)/param/MPC_weight.yaml"/>
@@ -71,7 +71,7 @@
     <param name="global_planner/corridor_width_dynamic_min" value = "8.0"/>
     <param name="global_planner/safe_distance" value = "3.0"/>
     <param name="global_planner/nominal_acceleration" value = "0.5"/>
-    <param name="global_planner/object_velocity_threshold" value="-1.0"/>
+    <param name="global_planner/object_velocity_threshold" value="0.3"/>
     <param name="global_planner/max_obstacle_prediction_query_size" value="1000"/>
 
     <param name="local_planner/horizon" value="$(arg horizon)" />
