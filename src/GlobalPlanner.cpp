@@ -184,7 +184,23 @@ bool GlobalPlanner::plan(double t) {
             current_length += param.grid_resolution;
         }
     }
+    if(laneTree.empty()){
+        ROS_WARN("[GlobalPlanner] laneTree is empty! use current point to construct laneTree");
+        LaneTreeElement laneTreeElement;
+        laneTreeElement.id = 0;
+        laneTreeElement.leftBoundaryPoint = currentPoint;
+        laneTreeElement.leftPoint = currentPoint;
+        laneTreeElement.midPoint = currentPoint;
+        laneTreeElement.lanePoint = currentPoint;
+        laneTreeElement.rightPoint = currentPoint;
+        laneTreeElement.rightBoundaryPoint = currentPoint;
+        laneTreeElement.width = 0;
+        laneTreeElement.isNearObject = false;
+        laneTree.emplace_back(laneTreeElement);
+    }
     int last_tail_idx = laneTree.back().id;
+
+
 
     // Allocate children of each node in laneTree
     for(int i_tree = 0; i_tree < laneTree.size(); i_tree++){
