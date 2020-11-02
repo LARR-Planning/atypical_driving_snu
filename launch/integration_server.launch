@@ -83,9 +83,11 @@
     <param name="local_planner/isRearWheel" value="$(arg isRearWheelDriven)"/>
     <param name="local_planner/dyn_obst_range" value="30.0"/>    
 
+    <!--smoothing_type: 0:Exponential Average, 1:Moving Average, 2:Acc(exp),Steer(mov), 3:ignore small angle -->
     <param name = "smooth_weight" value="0.7"/>
-    <param name = "moving_horizon" value="5"/>
-    <param name = "isUseMovingAverage" value="false"/>
+    <param name = "moving_horizon" value="20"/>
+    <param name = "smoothing_type" value="2"/>
+    <param name = "ignore_angle" value="0.017"/>
     <param name = "stopSpeed" value="0.5"/>
 
     <param name="predictor/observation_queue" value="10" />

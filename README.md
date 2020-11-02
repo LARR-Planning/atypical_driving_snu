@@ -66,4 +66,16 @@ The velocity of the obstacle path is the average of the keti velocities. Using t
 * 'global_planner/max_obstacle_prediction_query_size': obstacle prediction query size
 
 ### Yunwoo 
+* `local_planner/horizon`: MPC horizon (seconds)
+* `local_planner/ts`: MPC time step (seconds)
+* `local_planner/max_steer`: Max Steering Angle
+* `local_planner/max_accel`: Max Acceleration
+* `local_planner/min_accel`: Min Acceleration (minus)
+* `local_planner/N_corr`: Number of Corridor
+* `local_planner/isRearWheel`: RealCar:0, Airsim:1
+* `local_planner/dyn_obst_range`: Dynamic Obstacle Consideration Range
 
+* `smoothing_type`: it has value: 0(exponential average), 1(moving average), 2(expoential+moving average), 3(ignore small handle angle)
+* `smooth_weight`: when you use exponential average, this values should satisfy 0<value<1, and higher value is regarded as giving more weight to current value
+* `moving_horizon`: when you use moving average, this means size of horizon.
+* `ignore_angle`: Amount of Ignoring small angle (handle)
