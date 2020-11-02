@@ -20,7 +20,7 @@
 <arg name = "goal/x" default = "0"/>
 <arg name = "goal/y" default = "0"/>
 
-<arg name = "use_keti_vel" default=" true"/>
+<arg name = "use_keti_vel" default="true"/>
 
 <group ns="atypical_planning_test">
 <rosparam file="$(find atypical_driving)/param/MPC_weight.yaml"/>
@@ -45,7 +45,7 @@
 
     <!--Shaping params for nominal_speed selection-->
     <param name = "vmax" value = "5.0"/> <!--m/s-->
-    <param name = "vmin" value = "1.0"/> <!--m/s-->
+    <param name = "vmin" value = "2.0"/> <!--m/s-->
     <param name = "v_ref_past_weight" value = "0.8"/> <!--m/s-->
     <param name = "curve_thres" value = "0.05"/> <!--m/s-->
 
@@ -59,20 +59,20 @@
 
     <rosparam command="load" file="$(arg waypoints)" />
 
-    <param name="global_planner/car_width" value="2" />
+    <param name="global_planner/car_width" value="1.0" />
     <param name="global_planner/period" value="$(arg period)" />
     <param name="global_planner/grid_resolution" value="0.3" />
     <param name="global_planner/max_steering_angle" value = "$(eval 3.14/20)"/>
     <param name="global_planner/smoothing_distance" value="8" />
-    <param name="global_planner/smoothing_cliff_min_bias" value="1.0" />
+    <param name="global_planner/smoothing_cliff_min_bias" value="0.5" />
     <param name="global_planner/smoothing_cliff_ratio" value="0.5"/>
     <param name="global_planner/start_smoothing_distance" value="8" />
     <param name="global_planner/corridor_width_min" value = "0.5"/>
     <param name="global_planner/corridor_width_dynamic_min" value = "8.0"/>
-    <param name="global_planner/safe_distance" value = "3.0"/>
+    <param name="global_planner/safe_distance" value = "5.0"/>
     <param name="global_planner/nominal_acceleration" value = "0.5"/>
     <param name="global_planner/object_velocity_threshold" value="0.3"/>
-    <param name="global_planner/max_obstacle_prediction_query_size" value="1000"/>
+    <param name="global_planner/max_obstacle_prediction_query_size" value="20"/>
 
     <param name="local_planner/horizon" value="$(arg horizon)" />
     <param name="local_planner/ts" value="$(arg planning_dt)" />

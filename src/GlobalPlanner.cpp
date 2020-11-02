@@ -115,6 +115,10 @@ bool GlobalPlanner::plan(double t) {
                         laneTreeElement.rightPoint = laneGridPoints[start_idx];
                         laneTreeElement.rightBoundaryPoint = right_boundary_point;
                         laneTreeElement.width = (laneGridPoints[k_side] - laneGridPoints[start_idx]).norm();
+                        if(laneTreeElement.width == 0){
+                            int debug = 0;
+                        }
+
                         if(start_idx > 0){
                             laneTreeElement.isNearObject = (gridPointStates[start_idx - 1] == 2);
                         }
@@ -147,6 +151,10 @@ bool GlobalPlanner::plan(double t) {
                     laneTreeElement.rightPoint = laneGridPoints[start_idx];
                     laneTreeElement.rightBoundaryPoint = right_boundary_point;
                     laneTreeElement.width = (laneGridPoints[k_side-1] - laneGridPoints[start_idx]).norm();
+                    if(laneTreeElement.width == 0){
+                        int debug = 0;
+                    }
+
                     if(gridPointStates[k_side] == 2 or (start_idx > 0 and gridPointStates[start_idx - 1] == 2)){
                         laneTreeElement.isNearObject = true;
                     }
@@ -223,7 +231,6 @@ bool GlobalPlanner::plan(double t) {
     for(int i_tail = 0; i_tail < tail.size(); i_tail++){
         laneTreePath[i_tail] = laneTree[tail[i_tail]];
     }
-
 
     // Smoothing
     int idx_start, idx_end, idx_delta, i_smooth, window;
@@ -556,6 +563,14 @@ bool GlobalPlanner::plan(double t) {
     p_base->laneSmooth = smoothLane;
     p_base->mSet[1].unlock();
 
+
+//    for(auto & point : smoothLane.points){
+//        ROS_INFO_STREAM("(" << point.x() << "," << point.y() << ")");
+//    }
+    if(smoothLane.points.size() < 2){
+        int debug = 0;
+    }
+
     return true; // change this line properly
 }
 
@@ -701,7 +716,7 @@ int GlobalPlanner::findLaneTreePathTail(bool& isBlocked, bool& isBlockedByObject
         }
 
         if(laneTreePath[i_tree].width < corridor_width_min){
-            ROS_WARN("[GlobalPlanner] lanePath blocked");
+            ROS_WARN("[GlobalPlanner] lanePath blocked by corridor_width_min");
             tail_end = std::max(i_tree - 1, 1);
             isBlocked = true;
             if(laneTreePath[i_tree].isNearObject) {
@@ -714,6 +729,7 @@ int GlobalPlanner::findLaneTreePathTail(bool& isBlocked, bool& isBlockedByObject
 
     //safe distance
     if(isBlocked){
+        ROS_WARN("[GlobalPlanner] lanePath blocked");
         int window = 0;
         double window_length = 0;
         while(window < tail_end - 1 and window_length < param.safe_distance){
@@ -725,9 +741,6 @@ int GlobalPlanner::findLaneTreePathTail(bool& isBlocked, bool& isBlockedByObject
         if(window_length < param.safe_distance){
             tail_end = 1;
         }
-    }
-    else{
-        int debug = 0;
     }
 
     return tail_end;

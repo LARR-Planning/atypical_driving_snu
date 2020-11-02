@@ -161,12 +161,12 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<string>("detected_objects_id",detectedObjectId,"/map");
 
     // global planner
-    nh.param<double>("car_width",param_.g_param.car_width,2);
     nh.param<double>("vmax",param_.g_param.car_speed_max,4);
     nh.param<double>("v_ref_past_weight",param_.g_param.v_ref_past_weight,0.3);
     nh.param<double>("vmin",param_.g_param.car_speed_min,1);
     nh.param<double>("curve_thres",param_.g_param.curvature_thres,(3.141592/3.0));
 
+    nh.param<double>("global_planner/car_width",param_.g_param.car_width,2);
     nh.param<double>("global_planner/period",param_.g_param.period,2);
     nh.param<double>("global_planner/grid_resolution",param_.g_param.grid_resolution,0.3);
     nh.param<double>("global_planner/smoothing_distance",param_.g_param.smoothing_distance, 8);

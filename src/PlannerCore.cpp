@@ -851,7 +851,7 @@ bool PlannerBase::isOccupied(Vector2d queryPoint) {
  * @return true if queryPoint is within the obstacle path array
  */
 bool PlannerBase::isObject(const Vector2d& queryPoint, int maxObstQuerySize, double& velocity,bool use_keti_vel){
-    unsigned long nInspection = 5;
+    unsigned long nInspection = 1000;
 
 //    printf("[DEBUG_JBS] planner base querying start (number of obst = %d ) \n",obstaclePathArray.obstPathArray.size());
 
