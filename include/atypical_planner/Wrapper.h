@@ -49,6 +49,9 @@ namespace Planner{
         tf::TransformBroadcaster tf_br;
         tf::TransformListener tf_ls;
         tf::StampedTransform Tci; // transform from car_base_link to imu
+        tf::Quaternion qImu0; // initial imu quaternion
+        tf::Quaternion qImu; // current imu quaternion
+
         double pitchAngleFromImu; // pitch angle
 
         /**

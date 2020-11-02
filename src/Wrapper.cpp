@@ -554,6 +554,11 @@ void RosWrapper::processTf() {
         tf::Transform transform;
         transform.setOrigin( tf::Vector3(pose.pose.position.x, pose.pose.position.y, pose.pose.position.z) );
         tf::Quaternion q;
+//        q.setX(0);
+//        q.setY(0);
+//        q.setZ(0);
+//        q.setW(1);
+
         q.setX(pose.pose.orientation.x);
         q.setY(pose.pose.orientation.y);
         q.setZ(pose.pose.orientation.z);
@@ -565,15 +570,38 @@ void RosWrapper::processTf() {
         // car_base_link to imu frame (applying only pitch)
 
         if (isImuReceived) {
+
+            // Consider pitch only
+
+//            tf::Quaternion qPitch;
+//            qPitch.setRPY(0,pitchAngleFromImu,0);
+//            std_msgs::Float64 pitchVal;
+//            pitchVal.data = pitchAngleFromImu;
+//            pubPitching.publish(pitchVal);
+//            tf::Quaternion qImuPitch = qPitch*q;
+//            transform.setRotation(qImuPitch);
+
+            // total transform
+            tf::Quaternion qImuInv = qImu0;
+            qImuInv.setW(-qImuInv.getW());
+
+            tf::Quaternion qImuRelative = qImu*qImuInv;
+
+
+            double roll,pitch,yaw;
+            tf::Matrix3x3(qImuRelative).getRPY(roll, pitch, yaw);
+
             tf::Quaternion qPitch;
-            qPitch.setRPY(0,pitchAngleFromImu,0);
-            std_msgs::Float64 pitchVal;
-            pitchVal.data = pitchAngleFromImu;
-            pubPitching.publish(pitchVal);
-            tf::Quaternion qImu = qPitch*q;
-            transform.setRotation(qImu);
-            tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(),SNUFrameId, carImuFrameId));
+            qPitch.setRPY(0,pitch,0);
+            tf::StampedTransform Tbi; // base link to imu
+            Tbi.setOrigin(tf::Vector3(0,0,0));
+            Tbi.setRotation(qPitch);
+            Tbi.child_frame_id_ = carImuFrameId;
+            Tbi.frame_id_ = baseLinkId;
+            tf_br.sendTransform(tf::StampedTransform(Tbi, ros::Time::now(),baseLinkId, carImuFrameId));
         }
+
+
 
 
         // (b) send Tws (static)
@@ -861,7 +889,12 @@ void RosWrapper::cbImu(const sensor_msgs::Imu &imu) {
 
 //    Tci.setOrigin(tf::Vector3(0,0,0));
 //    Tci.setRotation(q);
-    isImuReceived = true;
+    if (not isImuReceived) { // first received
+        qImu0 = q;
+        ROS_INFO("[RosWrapper] rotation is initialized from imu: RPY [%f, %f, %f]",roll,pitch,yaw);
+        isImuReceived = true;
+    }
+    qImu = q;
 }
 
 /**

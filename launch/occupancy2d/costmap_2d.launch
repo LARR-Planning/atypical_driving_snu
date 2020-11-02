@@ -6,7 +6,7 @@
   <arg name = "use_sim_time" default = "true"/>
   <arg name = "rviz" default = "true"/>
   <arg name = "occupancy_frame_id" default = "map"/>
-  <arg name = "lidar_frame_id" default = "LidarSensor1"/>
+  <arg name = "lidar_frame_id" default = "car_imu"/>
   <arg name = "scan_topic" default = "/scan"/>
 
   <arg name = "cost_map_min_z" default = "0"/>
@@ -46,16 +46,15 @@
           - {name: inflation,       type: "costmap_2d::InflationLayer"}
 
         publish_frequency: 5
-        update_frequency: 10
-        transform_tolerance: 2.0
+        update_frequency: 20
+        transform_tolerance: 1.0
         origin_x: 0
         origin_y: 0
         width: 80
-        resolution: 0.4
-        height: 80
+        resolution: 0.2
+        height: 40
         rolling_window: true
         inf_is_valid: true,
-        observation_    `persistance: 100.0,
         track_unknown_space: false,
         obstacles:
           track_unknown_space: false,
