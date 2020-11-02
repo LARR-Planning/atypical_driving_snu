@@ -8,7 +8,7 @@
 ### 1. Getting started 
 #### Dependencies until now 
 * Octomap 
-
+* rqt_multiplot, sudo apt-get install sudo apt-get install ros-melodic-rqt-multiplot
 #### Test run 
 ```
 $ cd ~/catkin_ws/
@@ -50,7 +50,20 @@ The velocity of the obstacle path is the average of the keti velocities. Using t
     
   
 ### Jungown 
-
+* 'global_planner/car_width': When construcing laneTree, car width is used to determine whether two node are connected. (m)
+* 'global_planner/period': ????
+* 'global_planner/grid_resolution' : Lane grid resolution (m)
+* 'global_planner/max_steering_angle': Maximum angle between two adjacent points in smoothLane (rad)
+* 'global_planner/smoothing_cliff_min_bias': If distance between the waypoint and a point on unsmoothed lane is larger than this parameter, set that point as the start point of line smoothing. (m)
+* 'global_planner/smoothing_cliff_ratio': If distance between the waypoint and a point on unsmoothed lane is larger than this parameter, set that point as the end point of line smoothing.
+* 'global_planner/smoothing_distance': Range of line smoothring (m)
+* 'global_planner/start_smoothing_distance': Not used in this version
+* 'global_planner/corridor_width_min': If lane is blocked by obstacle, minimum width of corridor should be larger than this parameter. (m) 
+* 'global_planner/corridor_width_dynamic_min': If lane is blocked by object, minimum width of corridor should be larger than this parameter. (m) 
+* 'global_planner/safe_distance': Distance between smoothLane and blocked point if lane is blocked by obstacle or object. (m) 
+* 'global_planner/nominal_acceleration': Nominal acceleration for determining time segment of smoothLane. (m/s^2)
+* 'global_planner/object_velocity_threshold': If object is faster than this parameter, object is determined to dynamic object (m/s)
+* 'global_planner/max_obstacle_prediction_query_size': obstacle prediction query size
 
 ### Yunwoo 
 
