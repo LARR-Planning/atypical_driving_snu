@@ -53,4 +53,7 @@ The velocity of the obstacle path is the average of the keti velocities. Using t
 
 
 ### Yunwoo 
-
+* `smoothing_type`: it has value: 0(exponential average), 1(moving average), 2(expoential+moving average), 3(ignore small handle angle)
+* `smooth_weight`: when you use exponential average, this values should satisfy 0<value<1, and higher value is regarded as giving more weight to current value
+* `moving_horizon`: when you use moving average, this means size of horizon.
+* `ignore_angle`: Amount of Ignoring small angle (handle)
