@@ -467,7 +467,7 @@ bool LocalPlannerPlain::plan(double t) {
              {
                  if(sfc_idx[jj])
                  {
-                     if((xN_new[jj][0]<box_constraint[jj].xl-0.5)||(xN_new[jj][0]>box_constraint[jj].xu+0.5)||(xN_new[jj][1]<box_constraint[jj].yl-0.5)||(xN_new[jj][1]>box_constraint[jj].yu+0.5))
+                     if((xN_new[jj][0]<box_constraint[jj].xl-param.sfcMargin)||(xN_new[jj][0]>box_constraint[jj].xu+param.sfcMargin)||(xN_new[jj][1]<box_constraint[jj].yl-param.sfcMargin)||(xN_new[jj][1]>box_constraint[jj].yu+param.sfcMargin))
                         isSFCSatisfied = false;
                  }
              }

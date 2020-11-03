@@ -69,6 +69,7 @@ namespace Planner {
         double minAccel; // [minAccel,maxAccel] can be negative
         double nominal_speed;
         bool isRearWheeled;
+        double sfcMargin;
         double period;
         int N_corr;
 	double dynObstRange;
