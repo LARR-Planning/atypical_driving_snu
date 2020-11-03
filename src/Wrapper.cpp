@@ -681,7 +681,6 @@ void RosWrapper::pclCallback(const sensor_msgs::PointCloud2::ConstPtr pcl_msg){
 
     processedPclPtr->points.clear();
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
-
     vector<dbscan::Point> dbscanPoints;
 
     for(int c = 0 ; c<pcl_msg->width ; c++)
@@ -693,6 +692,9 @@ void RosWrapper::pclCallback(const sensor_msgs::PointCloud2::ConstPtr pcl_msg){
             // like filter
             if (p.y < param.g_param.pcl_ly/2.0 and p.y > -param.g_param.pcl_ly/2.0 and
                 p.x < param.g_param.pcl_lx/2.0 and p.x > -param.g_param.pcl_lx/2
+
+
+
                 ){
                     pcl::PointXYZ pclPnt;
                     pclPnt.x = p.x;
@@ -718,7 +720,7 @@ void RosWrapper::pclCallback(const sensor_msgs::PointCloud2::ConstPtr pcl_msg){
 
     double pitchMin = -M_PI/6;
     double pitchMax = M_PI/6;
-    int Npitch = 6;
+    int Npitch = 7;
     VectorXd pitchSet(Npitch); pitchSet.setLinSpaced(Npitch,pitchMin,pitchMax);
     double z_distance_sum_min = 1e+9;
     double pitchGround;
@@ -732,14 +734,16 @@ void RosWrapper::pclCallback(const sensor_msgs::PointCloud2::ConstPtr pcl_msg){
         pcl::transformPointCloud (*cloud, *cloud_pitched, transform_1);
 
         double z_distance_sum = 0;
+        int nPnt = 0;
         for (auto pnt: cloud_pitched->points){
-            if (pnt.z < param.g_param.pcl_z_min){
+            if (pnt.z < param.g_param.pcl_z_min ){
                 z_distance_sum+= pow(pnt.z-param.g_param.pcl_z_min,2);
+                nPnt++;
             }
         }
 
-        if (z_distance_sum < z_distance_sum_min){
-            z_distance_sum_min = z_distance_sum;
+        if (z_distance_sum/nPnt < z_distance_sum_min){
+            z_distance_sum_min = z_distance_sum/nPnt;
             pitchGround = theta;
         }
     }
@@ -768,7 +772,7 @@ void RosWrapper::pclCallback(const sensor_msgs::PointCloud2::ConstPtr pcl_msg){
 
 
     if (pitchGround != 0){
-            ROS_INFO("[RosWrapper] detected slope. theta: ",pitchGround);
+            ROS_INFO("[RosWrapper] detected slope. theta: %f ",pitchGround);
         }
 
     processedPclPtr->header.frame_id = pcl_msg->header.frame_id; // keep the header as the velodyne
