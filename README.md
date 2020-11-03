@@ -9,6 +9,7 @@
 #### Dependencies until now 
 * Octomap 
 * rqt_multiplot, sudo apt-get install sudo apt-get install ros-melodic-rqt-multiplot
+* git clone https://gitlab.com/JungwonPark/graph_rviz_plugin.git
 #### Test run 
 ```
 $ cd ~/catkin_ws/
