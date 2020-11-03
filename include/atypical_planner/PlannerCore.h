@@ -82,6 +82,17 @@ namespace Planner {
      * @brief Parameters for global planner
      */
     struct ParamGlobal {
+        // JBS for map representation
+
+        double pcl_lx;
+        double pcl_ly;
+        double pcl_z_min;
+        double pcl_z_max;
+        int pcl_dbscan_minpnts;
+        double pcl_dbscan_eps;
+
+
+
 //        double horizon;
         double car_width;
 //        double car_z_min;
@@ -137,6 +148,9 @@ namespace Planner {
         ParamGlobal g_param;
         ParamLocal l_param;
         ParamPredictor p_param;
+
+
+
     };
 
 

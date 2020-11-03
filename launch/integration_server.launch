@@ -35,6 +35,13 @@
     <param name = "local_planner/obstacle_radius_nominal" value="1"/>
 
 
+    <param name="map/pcl_lx" value="80"/>
+    <param name="map/pcl_ly" value="50"/>
+    <param name="map/pcl_z_min" value="-1.5"/>
+    <param name="map/pcl_z_max" value="5"/>
+    <param name="map/pcl_dbscan_minpnts" value="10"/>
+    <param name="map/pcl_dbscan_eps" value="0.5"/>
+
     <remap from = "/occupancy_grid" to = "/costmap_node/costmap/costmap"/>
 
     <param name = "world_frame_id" value="$(arg world_frame_id)" />

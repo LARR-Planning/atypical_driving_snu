@@ -9,7 +9,8 @@
 
   <param name="use_sim_time" value="$(arg use_sim_time)"/>
 
-  <arg name = "pcl_topic" default = "/velodyne_points_snu"/>
+  <arg name = "pcl_topic" default = "/atypical_planning_test/pcl_filtered"/>
+<!--    <arg name = "pcl_topic" default = "/velodyne_points_snu"/>-->
 
     <!-- Arguments Start -->
   <arg name ="snu_frame_id" default="SNU"/>
@@ -36,15 +37,13 @@
 
   <!-- Node start-->
 
-
-
     <!-- run pointcloud_to_laserscan node -->
     <node pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node" name="pointcloud_to_laserscan">
 
         <remap from="cloud_in" to="$(arg pcl_topic)"/>
-<!--        <remap from="cloud_in" to="/octomap_point_cloud_centers"/>--> -->
+        <!--        <remap from="cloud_in" to="/octomap_point_cloud_centers"/>--> -->
 
-        <remap from="scan" to="/scan_orig"/>
+        <remap from="scan" to="/scan"/>
         <rosparam>
             target_frame: velodyne # Leave disabled to output scan in pointcloud frame
             transform_tolerance: 0.01
@@ -70,6 +69,9 @@
     </node>
 
 
+
+
+
     <!--   OccupancyGrid  -->
      <include file = "$(find atypical_driving)/launch/occupancy2d/costmap_2d.launch">
          <arg name = "play_bag" value = "false"/>
@@ -78,17 +80,10 @@
          <arg name = "rviz" value = "false"/>
          <arg name = "occupancy_frame_id" value = "$(arg occu_frame_id)"/>
          <arg name = "lidar_frame_id" value = "$(arg lidar_frame_id)"/>
-         <arg name = "cost_map_min_z" value = "-0.5"/>
-         <arg name = "cost_map_max_z" value = "0.6"/>
+         <arg name = "cost_map_min_z" value = "-1"/>
+         <arg name = "cost_map_max_z" value = "10"/>
      </include>
 
-    <node pkg="laser_filters" type="scan_to_scan_filter_chain"
-          name="laser_filter" output="screen">
-        <rosparam command="load" file="$(find atypical_driving)/launch/occupancy2d/filter.yaml" />
-        <remap from="/scan" to="/scan_orig"/>
-        <remap from="scan_filtered" to="/scan"/>
-
-    </node>
 
 
     <!--1. Data feeder-->
