@@ -101,6 +101,7 @@ namespace Planner{
         visualization_msgs::MarkerArray obstacleVelocityText;
         nav_msgs::Path MPCTraj; // msg from mpcResultTraj
         pcl::PointCloud<pcl::PointXYZ>::Ptr processedPclPtr;
+        pcl::PointCloud<pcl::PointXYZ>::Ptr groundPclPtr;
 
 
 
@@ -129,6 +130,7 @@ namespace Planner{
         ros::Publisher pubOurOccu;
         ros::Publisher pubPitching; // publishing pitch angle
         ros::Publisher pubFilteredPcl;
+        ros::Publisher pubGroundPcl;
 
         /**
          * Subscriber

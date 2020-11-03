@@ -41,7 +41,7 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
 
 
     processedPclPtr  = pcl::PointCloud<pcl::PointXYZ>::Ptr (new pcl::PointCloud<pcl::PointXYZ>() );
-
+    groundPclPtr = pcl::PointCloud<pcl::PointXYZ>::Ptr (new pcl::PointCloud<pcl::PointXYZ>() );
 
 
     // Logger reset
@@ -95,6 +95,7 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
 
     pubOurOccu = nh.advertise<nav_msgs::OccupancyGrid>("map_for_planning",1);
     pubFilteredPcl = nh.advertise<sensor_msgs::PointCloud2>("pcl_filtered",1);
+    pubGroundPcl = nh.advertise<sensor_msgs::PointCloud2>("pcl_ground",1);
 
 
     pubSmoothLane = nh.advertise<visualization_msgs::MarkerArray>("/smooth_lane",1);
@@ -478,11 +479,17 @@ void RosWrapper::publish() {
     // 0. map publish
     if (isPCLReceived){
         sensor_msgs::PointCloud2 filtered_pcl;
+        sensor_msgs::PointCloud2 ground_pcl;
         pcl::toROSMsg(*processedPclPtr,filtered_pcl);
+        pcl::toROSMsg(*groundPclPtr,ground_pcl);
 
         filtered_pcl.header.stamp = ros::Time::now();
         filtered_pcl.header.frame_id = processedPclPtr->header.frame_id;
+
+        ground_pcl.header.stamp = ros::Time::now();
+        ground_pcl.header.frame_id = processedPclPtr->header.frame_id;
         pubFilteredPcl.publish(filtered_pcl);
+        pubGroundPcl.publish(ground_pcl);
     }
 
 
@@ -684,7 +691,7 @@ void RosWrapper::pclCallback(const sensor_msgs::PointCloud2::ConstPtr pcl_msg){
             pixelTo3DPoint(*pcl_msg,c,r,p);
 
             // like filter
-            if (p.z < param.g_param.pcl_z_max and p.z >param.g_param.pcl_z_min and
+            if (p.y < param.g_param.pcl_ly/2.0 and p.y > -param.g_param.pcl_ly/2.0 and
                 p.x < param.g_param.pcl_lx/2.0 and p.x > -param.g_param.pcl_lx/2
                 ){
                     pcl::PointXYZ pclPnt;
@@ -695,52 +702,77 @@ void RosWrapper::pclCallback(const sensor_msgs::PointCloud2::ConstPtr pcl_msg){
             }
         }
 
-        pcl::RadiusOutlierRemoval<pcl::PointXYZ> outrem;
-        outrem.setInputCloud(cloud);
-        outrem.setRadiusSearch(param.g_param.pcl_dbscan_eps);
-        outrem.setMinNeighborsInRadius (param.g_param.pcl_dbscan_minpnts);
-        outrem.filter(*processedPclPtr);
-        processedPclPtr->header.frame_id = pcl_msg->header.frame_id; // keep the header as the velodyne
+    // 1. speckle removal
 
-        // extract the ground
-
-        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_pitched (new pcl::PointCloud<pcl::PointXYZ>);
-        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_groud (new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::RadiusOutlierRemoval<pcl::PointXYZ> outrem;
+    outrem.setInputCloud(cloud);
+    outrem.setRadiusSearch(param.g_param.pcl_dbscan_eps);
+    outrem.setMinNeighborsInRadius (param.g_param.pcl_dbscan_minpnts);
+    outrem.filter(*cloud);
 
 
+    // extract the ground
 
-        double pitchMin = -M_PI/6;
-        double pitchMax = M_PI/6;
-        int Npitch = 6;
-        VectorXd pitchSet(Npitch); pitchSet.setLinSpaced(Npitch,pitchMin,pitchMax);
-        for (int i = 0 ; i < Npitch ; i++){
-            cloud_groud->points.clear();
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_pitched (new pcl::PointCloud<pcl::PointXYZ>);
+    groundPclPtr->points.clear();
 
-            double theta = pitchSet(i);
-            Eigen::Matrix4f transform_1 = Eigen::Matrix4f::Identity();
-            transform_1 (0,0) = std::cos (theta);
-            transform_1 (0,1) = -sin(theta);
-            transform_1 (1,0) = sin (theta);
-            transform_1 (1,1) = std::cos (theta);
-            pcl::transformPointCloud (*cloud, *cloud_pitched, transform_1);
+    double pitchMin = -M_PI/6;
+    double pitchMax = M_PI/6;
+    int Npitch = 6;
+    VectorXd pitchSet(Npitch); pitchSet.setLinSpaced(Npitch,pitchMin,pitchMax);
+    double z_distance_sum_min = 1e+9;
+    double pitchGround;
+    for (int i = 0 ; i < Npitch ; i++){
+        double theta = pitchSet(i);
+        Eigen::Matrix4f transform_1 = Eigen::Matrix4f::Identity();
+        transform_1 (0,0) = std::cos (theta);
+        transform_1 (0,2) = -sin(theta);
+        transform_1 (2,0) = sin (theta);
+        transform_1 (2,2) = std::cos (theta);
+        pcl::transformPointCloud (*cloud, *cloud_pitched, transform_1);
 
-            for (auto pnt: cloud_pitched->points){
-                if (pnt.z < param.g_param.pcl_z_min){
-
-
-
-                }
-
+        double z_distance_sum = 0;
+        for (auto pnt: cloud_pitched->points){
+            if (pnt.z < param.g_param.pcl_z_min){
+                z_distance_sum+= pow(pnt.z-param.g_param.pcl_z_min,2);
             }
-
-
-
-
         }
 
+        if (z_distance_sum < z_distance_sum_min){
+            z_distance_sum_min = z_distance_sum;
+            pitchGround = theta;
+        }
+    }
 
 
+    // now, determine the processedPtr
 
+    double theta = pitchGround;
+    Eigen::Matrix4f transform_1 = Eigen::Matrix4f::Identity();
+    transform_1 (0,0) = std::cos (theta);
+    transform_1 (0,2) = -sin(theta);
+    transform_1 (2,0) = sin (theta);
+    transform_1 (2,2) = std::cos (theta);
+    pcl::transformPointCloud (*cloud, *cloud_pitched, transform_1);
+
+    // slope extraction
+    for (auto pnt:cloud_pitched->points){
+        if( pnt.z < param.g_param.pcl_z_min ){
+            groundPclPtr->points.push_back(pnt);
+        } else if (pnt.z > param.g_param.pcl_z_min  and pnt.z < param.g_param.pcl_z_max){
+            processedPclPtr->points.push_back(pnt);
+        }else{
+            continue;
+        }
+    }
+
+
+    if (pitchGround != 0){
+            ROS_INFO("[RosWrapper] detected slope. theta: ",pitchGround);
+        }
+
+    processedPclPtr->header.frame_id = pcl_msg->header.frame_id; // keep the header as the velodyne
+    groundPclPtr->header.frame_id = pcl_msg->header.frame_id; // keep the header as the velodyne
 }
 
 void RosWrapper::cbDetectedObjects(const driving_msgs::DetectedObjectArray &objectsArray) {
