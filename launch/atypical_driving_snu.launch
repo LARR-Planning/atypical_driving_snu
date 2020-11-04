@@ -131,11 +131,16 @@
         <param name="local_planner/N_corr" value="5" />
         <param name="local_planner/isRearWheel" value="false"/>
         <param name="local_planner/dyn_obst_range" value="30.0"/>
+    	<param name="local_planner/sfc_margin" value="0.5"/>
 
-        <param name = "smooth_weight" value="0.7"/>
-        <param name = "moving_horizon" value="5"/>
-        <param name = "isUseMovingAverage" value="false"/>
+	    <!--smoothing_type: 0:Exponential Average(0924test), 1:Moving Average, 2:Acc(exp),Steer(mov), 3:ignore small handling -->
+	    <!--ignore_angle, 1deg: 0.017, 2deg: 0.035, 3deg: 0.052, 4deg: 0.070 -->
+	    <param name = "smooth_weight" value="0.7"/>
+        <param name = "moving_horizon" value="20"/>
+        <param name = "smoothing_type" value="0"/>
+	    <param name = "ignore_angle" value="0.017"/>
         <param name = "stopSpeed" value="0.5"/>
+
 
         <param name="predictor/observation_queue" value="10" />
         <param name="predictor/ref_height" value="0.4" />
