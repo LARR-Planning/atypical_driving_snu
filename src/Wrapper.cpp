@@ -181,6 +181,9 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<double>("map/pcl_z_max",param_.g_param.pcl_z_max,3);
     nh.param<int>("map/pcl_dbscan_minpnts",param_.g_param.pcl_dbscan_minpnts,3);
     nh.param<double >("map/pcl_dbscan_eps",param_.g_param.pcl_dbscan_eps,0.1);
+    nh.param<double >("map/ransac_post_inclusion_offset",param_.g_param.ransac_ground_offest,0.3);
+    nh.param<double >("map/ransac_distance_threshold",param_.g_param.ransac_distance_threshold,0.2);
+    nh.param<bool>("map/use_ransac",param_.g_param.use_ransac,true);
 
     nh.param<double>("global_planner/period",param_.g_param.period,2);
     nh.param<double>("global_planner/grid_resolution",param_.g_param.grid_resolution,0.3);
@@ -678,11 +681,11 @@ void RosWrapper::pclCallback(const sensor_msgs::PointCloud2::ConstPtr pcl_msg){
 
     isPCLReceived = true;
     processedPclPtr->header.frame_id = pcl_msg->header.frame_id; // keep the header as the velodyne
-
     processedPclPtr->points.clear();
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloudCandidateGround (new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloudtotal (new pcl::PointCloud<pcl::PointXYZ>);
     vector<dbscan::Point> dbscanPoints;
-
+    // We first crop xy
     for(int c = 0 ; c<pcl_msg->width ; c++)
         for(int r = 0 ; r<pcl_msg->height ; r++){
             // express the points in map frame
@@ -691,90 +694,79 @@ void RosWrapper::pclCallback(const sensor_msgs::PointCloud2::ConstPtr pcl_msg){
 
             // like filter
             if (p.y < param.g_param.pcl_ly/2.0 and p.y > -param.g_param.pcl_ly/2.0 and
-                p.x < param.g_param.pcl_lx/2.0 and p.x > -param.g_param.pcl_lx/2
+                p.x < param.g_param.pcl_lx/2.0 and p.x > -param.g_param.pcl_lx/2 ) {
 
+                pcl::PointXYZ pclPnt;
+                pclPnt.x = p.x;
+                pclPnt.y = p.y;
+                pclPnt.z = p.z;
 
-
-                ){
-                    pcl::PointXYZ pclPnt;
-                    pclPnt.x = p.x;
-                    pclPnt.y = p.y;
-                    pclPnt.z = p.z;
-                    cloud->points.push_back(pclPnt);
+                cloudtotal->points.push_back(pclPnt);
             }
         }
+
 
     // 1. speckle removal
 
     pcl::RadiusOutlierRemoval<pcl::PointXYZ> outrem;
-    outrem.setInputCloud(cloud);
+    outrem.setInputCloud(cloudtotal);
     outrem.setRadiusSearch(param.g_param.pcl_dbscan_eps);
     outrem.setMinNeighborsInRadius (param.g_param.pcl_dbscan_minpnts);
-    outrem.filter(*cloud);
+    outrem.filter(*cloudtotal);
 
 
-    // extract the ground
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_pitched (new pcl::PointCloud<pcl::PointXYZ>);
-    groundPclPtr->points.clear();
-
-    double pitchMin = -M_PI/6;
-    double pitchMax = M_PI/6;
-    int Npitch = 7;
-    VectorXd pitchSet(Npitch); pitchSet.setLinSpaced(Npitch,pitchMin,pitchMax);
-    double z_distance_sum_min = 1e+9;
-    double pitchGround;
-    for (int i = 0 ; i < Npitch ; i++){
-        double theta = pitchSet(i);
-        Eigen::Matrix4f transform_1 = Eigen::Matrix4f::Identity();
-        transform_1 (0,0) = std::cos (theta);
-        transform_1 (0,2) = -sin(theta);
-        transform_1 (2,0) = sin (theta);
-        transform_1 (2,2) = std::cos (theta);
-        pcl::transformPointCloud (*cloud, *cloud_pitched, transform_1);
-
-        double z_distance_sum = 0;
-        int nPnt = 0;
-        for (auto pnt: cloud_pitched->points){
-            if (pnt.z < param.g_param.pcl_z_min ){
-                z_distance_sum+= pow(pnt.z-param.g_param.pcl_z_min,2);
-                nPnt++;
-            }
-        }
-
-        if (z_distance_sum/nPnt < z_distance_sum_min){
-            z_distance_sum_min = z_distance_sum/nPnt;
-            pitchGround = theta;
+    for (auto & pnt : cloudtotal->points){
+        if (pnt.z < param.g_param.pcl_z_min)
+            cloudCandidateGround->points.push_back(pnt);
+        if (not param.g_param.use_ransac){
+            if (pnt.z > param.g_param.pcl_z_min)
+                processedPclPtr->points.push_back(pnt);
         }
     }
 
+    if (not param.g_param.use_ransac){
+        groundPclPtr->points = cloudCandidateGround->points;
+    }else {
 
-    // now, determine the processedPtr
+        // 2. extract the ground model by RANSAC
+        pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
+        pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
 
-    double theta = pitchGround;
-    Eigen::Matrix4f transform_1 = Eigen::Matrix4f::Identity();
-    transform_1 (0,0) = std::cos (theta);
-    transform_1 (0,2) = -sin(theta);
-    transform_1 (2,0) = sin (theta);
-    transform_1 (2,2) = std::cos (theta);
-    pcl::transformPointCloud (*cloud, *cloud_pitched, transform_1);
+        pcl::SACSegmentation<pcl::PointXYZ> seg;
+        seg.setOptimizeCoefficients(true);
+        seg.setModelType(pcl::SACMODEL_PLANE);
+        seg.setMethodType(pcl::SAC_RANSAC);
+        seg.setDistanceThreshold(param.g_param.ransac_distance_threshold);
+        seg.setMaxIterations(200);
+        seg.setInputCloud(cloudCandidateGround);
+        seg.segment(*inliers, *coefficients);
 
-    // slope extraction
-    for (auto pnt:cloud_pitched->points){
-        if( pnt.z < param.g_param.pcl_z_min ){
-            groundPclPtr->points.push_back(pnt);
-        } else if (pnt.z > param.g_param.pcl_z_min  and pnt.z < param.g_param.pcl_z_max){
-            processedPclPtr->points.push_back(pnt);
-        }else{
-            continue;
+        groundPclPtr->points.clear();
+
+        ROS_INFO("[RosWrapper] inliners : [%d,%d]", inliers->indices.size(), cloudCandidateGround->points.size());
+
+        double a = coefficients->values[0];
+        double b = coefficients->values[1];
+        double c = coefficients->values[2];
+        double d = coefficients->values[3];
+        Vector4f normVec(a, b, c, d);
+        for (const auto &pnt : cloudtotal->points) {
+
+            double dist = abs(coefficients->values[0] * pnt.x + coefficients->values[1] * pnt.y +
+                              coefficients->values[2] * pnt.z + coefficients->values[3]) / normVec.norm();
+
+            if (dist < param.g_param.ransac_ground_offest)
+                groundPclPtr->points.push_back(pnt);
+            else
+                processedPclPtr->points.push_back(pnt);
         }
+        // 3. another spekcle removal
+        outrem.setInputCloud(processedPclPtr);
+        outrem.setRadiusSearch(param.g_param.pcl_dbscan_eps);
+        outrem.setMinNeighborsInRadius(param.g_param.pcl_dbscan_minpnts);
+        outrem.filter(*processedPclPtr);
     }
-
-
-    if (pitchGround != 0){
-            ROS_INFO("[RosWrapper] detected slope. theta: %f ",pitchGround);
-        }
-
     processedPclPtr->header.frame_id = pcl_msg->header.frame_id; // keep the header as the velodyne
     groundPclPtr->header.frame_id = pcl_msg->header.frame_id; // keep the header as the velodyne
 }

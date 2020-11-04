@@ -47,8 +47,13 @@ All the example implementation can be found in the source files. Please understa
 The velocity of the obstacle path is the average of the keti velocities. Using this, the target position is predicted. In case of the pose,
  use just fit using a linear regression of the raw data of keti observation. Setting this parameter to false will use linear regression for 
  all translation and orientation altogther while using coefficients of the fitting model for the representative speed (for dynamic object thresholding or visualization)
-    
-  
+* `map/pcl_lx[ly]` : pointcloud process bound (+lx/2 -lx/2). This region is cropped for `velodyne_points_snu` . The reference frame is `velodyne`
+* `map/pcl_z_min` : we first set the `pnt.z` < `pcl_z_min` as the candidates for the ground pointcloud. We run ransac to this points only 
+* `map/pcl_dbscan_minpnts` : the minimum neighbors in the search radius for not to be removed as speckle
+* `map/pcl_dbscan_eps`: the radius search bound for speckle removal
+* `use_ransac` : whether to use ransac over original simple cropping  
+* `map/ransac_post_inclusion_offset` : distance offset for including additional ground points (distance from a points to the plane found from ransac) - large: more ground / small: less ground 
+* `map/ransac_distance_threshold` : the parameter used for ransac algorithm. large = loose plane / small = more strict for judging inliners 
 ### Jungown 
 
 

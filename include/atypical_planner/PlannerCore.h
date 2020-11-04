@@ -90,8 +90,9 @@ namespace Planner {
         double pcl_z_max;
         int pcl_dbscan_minpnts;
         double pcl_dbscan_eps;
-
-
+        double ransac_ground_offest;
+        double ransac_distance_threshold;
+        bool use_ransac;
 
 //        double horizon;
         double car_width;

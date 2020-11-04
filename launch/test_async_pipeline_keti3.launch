@@ -48,7 +48,7 @@
             target_frame: velodyne # Leave disabled to output scan in pointcloud frame
             transform_tolerance: 0.01
             min_height: -1.2 # default = -0.8 / KIAPI = -1.5
-            max_height: -0.9 # default = 0.3 / KIAPI= -0.9
+            max_height: 0.9 # default = 0.3 / KIAPI= -0.9
 
             angle_min: -3.1408 # -M_PI/2
             angle_max: 3.1408 # M_PI/2
@@ -87,7 +87,7 @@
 
 
     <!--1. Data feeder-->
-    <node pkg="rosbag" type="play" name="rosbag_record_diag" args="--clock --loop /media/jbs/Samsung_T3/2020BAG/atypical/daegu_yugokri_result.bag" >
+    <node pkg="rosbag" type="play" name="rosbag_record_diag" args="--clock --loop -s 200 /media/jbs/Samsung_T3/2020BAG/atypical/daegu_yugokri_result.bag" >
            <remap from = "/current_pose_cov" to = "/current_pose"/>
     </node>
 
