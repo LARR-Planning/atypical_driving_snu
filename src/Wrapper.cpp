@@ -78,7 +78,7 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
     pubObservationPoseArray = nh.advertise<geometry_msgs::PoseArray>("observation_pose_queue",1);
     pubPredictionArray = nh.advertise<visualization_msgs::MarkerArray>("prediction",1);
     pubCurCmd = nh.advertise<driving_msgs::VehicleCmd>("/vehicle_cmd",1);
-    pubCurCmdDabin = nh.advertise<geometry_msgs::Twist>("/acc_cmd",1);
+//    pubCurCmdDabin = nh.advertise<geometry_msgs::Twist>("/acc_cmd",1);
     pubMPCTraj = nh.advertise<nav_msgs::Path>("mpc_traj",1);
     pubMPCTrajMarker = nh.advertise<visualization_msgs::MarkerArray>("mpc_traj_marker",1);
     pubCurPose = nh.advertise<geometry_msgs::PoseStamped>("cur_pose",1);
@@ -95,6 +95,11 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
     pubTextTrackingVelocity = nh.advertise<visualization_msgs::MarkerArray>("/detected_objects_info",1);
     pubTextSlider = nh.advertise<visualization_msgs::Marker>("current_lane",1);
     pubDetectedObjectsPoseArray = nh.advertise<geometry_msgs::PoseArray>("detected_objects_prediction",1);
+
+    pubNominalVelocity = nh.advertise<std_msgs::Float64>("/nominal_speed",1);
+    pubCurCmdSteer = nh.advertise<std_msgs::Float64>("/vehicle_cmd_steer",1);
+    pubCurCmdAcc = nh.advertise<std_msgs::Float64>("/vehicle_cmd_acc",1);
+
 
     // Subscriber
     subCarPoseCov = nh.subscribe("/current_pose",1,&RosWrapper::cbCarPoseCov,this);
@@ -305,6 +310,11 @@ void RosWrapper::prepareROSmsgs() {
     laneInfoText.scale.z = 0.7;
     pubTextSlider.publish(laneInfoText);
 
+    // Nominal speed
+    std_msgs::Float64 nominal_speed;
+    nominal_speed.data = p_base->laneSpeed;
+    pubNominalVelocity.publish(nominal_speed);
+
     // 2. topics which is not obtained from planning thread
     visualization_msgs::MarkerArray observations;
     geometry_msgs::PoseArray observationPose;
@@ -463,35 +473,42 @@ void RosWrapper::publish() {
 
     // 1. Actuation command
     if (p_base->isLPsolved) {
-
         if (p_base->isLPPassed){
-        auto cmd = p_base->getCurInput(curTime());
-        cmd.header.stamp = ros::Time::now();
-        cmd.steer_angle_cmd *= (180.0/3.14); // cmd output deg
+            auto cmd = p_base->getCurInput(curTime());
+            cmd.header.stamp = ros::Time::now();
+            cmd.steer_angle_cmd *= (180.0/3.14); // cmd output deg
 
-        p_base->lastPublishedInput.twist.linear.x  = cmd.accel_decel_cmd;
-        p_base->lastPublishedInput.twist.angular.z = cmd.steer_angle_cmd*3.14/180.0;
-        p_base->lastPublishedInput.header.stamp = ros::Time::now();
-        p_base->lastPublishedInput.header.frame_id = baseLinkId;
+            p_base->lastPublishedInput.twist.linear.x  = cmd.accel_decel_cmd;
+            p_base->lastPublishedInput.twist.angular.z = cmd.steer_angle_cmd*3.14/180.0;
+            p_base->lastPublishedInput.header.stamp = ros::Time::now();
+            p_base->lastPublishedInput.header.frame_id = baseLinkId;
 
+            pubCurCmd.publish(cmd);
+            pubLastPublishedInput.publish(p_base->lastPublishedInput);
 
-        pubCurCmd.publish(cmd);
-        pubLastPublishedInput.publish(p_base->lastPublishedInput);
+            geometry_msgs::Twist cmdDabin;
+            pubMPCTraj.publish(MPCTraj);
+            p_base->log_state_input(curTime());
 
-        geometry_msgs::Twist cmdDabin;
-        pubMPCTraj.publish(MPCTraj);
-        p_base->log_state_input(curTime());
+            std_msgs::Float64 cmdSteer;
+            cmdSteer.data = cmd.steer_angle_cmd;
+            pubCurCmdSteer.publish(cmdSteer);
+
+            std_msgs::Float64 cmdAcc;
+            cmdAcc.data = cmd.accel_decel_cmd;
+            pubCurCmdAcc.publish(cmdAcc);
         }
         else{
-        ROS_WARN_THROTTLE(0.2,"MPC failed at current step. cmd will be zero.");
+            ROS_WARN_THROTTLE(0.2,"MPC failed at current step. cmd will be zero.");
 
-        driving_msgs::VehicleCmd cmd;
-        cmd.accel_decel_cmd = 0 ;
-        cmd.steer_angle_cmd = 0;
-        cmd.header.stamp = ros::Time::now();
-        pubCurCmd.publish(cmd);
-        pubMPCTraj.publish(MPCTraj);
-        p_base->log_state_input(curTime());}
+            driving_msgs::VehicleCmd cmd;
+            cmd.accel_decel_cmd = 0 ;
+            cmd.steer_angle_cmd = 0;
+            cmd.header.stamp = ros::Time::now();
+            pubCurCmd.publish(cmd);
+            pubMPCTraj.publish(MPCTraj);
+            p_base->log_state_input(curTime());
+        }
         // added
         pubMPCTrajMarker.publish(p_base->mpc_result.getMPC(SNUFrameId));
     }
