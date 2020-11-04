@@ -99,7 +99,7 @@
         <!--Shaping params for nominal_speed selection-->
         <param name = "vmax" value = "5"/> <!--m/s-->
         <param name = "vmin" value = "0.2"/> <!--m/s-->
-        <param name = "curve_thres" value = "0.2"/> <!--m/s-->
+        <param name = "curve_thres" value = "0.15"/> <!--m/s-->
 
         <param name = "goal/x" value = "$(arg goal/x)"/>
         <param name = "goal/y" value = "$(arg goal/y)"/>
