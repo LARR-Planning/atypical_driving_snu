@@ -24,10 +24,24 @@
 #include <tf/transform_listener.h>
 #include <driving_msgs/DetectedObjectArray.h>
 #include <sensor_msgs/Imu.h>
+#include <sensor_msgs/PointCloud2.h>
 #include <geometry_msgs/PoseArray.h>
 #include <functional>
 #include <nav_msgs/Path.h>
 #include <map_msgs/OccupancyGridUpdate.h>
+
+
+// pcl
+#include <pcl_ros/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl_conversions/pcl_conversions.h>
+#include <third_party/dbscan.h>
+#include <pcl/filters/statistical_outlier_removal.h>
+#include <pcl/sample_consensus/method_types.h>
+#include <pcl/sample_consensus/model_types.h>
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/ModelCoefficients.h>
+#include <pcl/filters/extract_indices.h>
 
 namespace Planner{
 
@@ -49,6 +63,9 @@ namespace Planner{
         tf::TransformBroadcaster tf_br;
         tf::TransformListener tf_ls;
         tf::StampedTransform Tci; // transform from car_base_link to imu
+        tf::Quaternion qImu0; // initial imu quaternion
+        tf::Quaternion qImu; // current imu quaternion
+
         double pitchAngleFromImu; // pitch angle
 
         /**
@@ -59,6 +76,8 @@ namespace Planner{
         bool use_keti_velocity = false;
         bool isImuReceived = false;
         double sibalBeforeOccu  = 0;
+        bool isPCLReceived = false;
+
 
         /**
          * Parameters
@@ -86,6 +105,10 @@ namespace Planner{
         visualization_msgs::MarkerArray obstaclePrediction;
         visualization_msgs::MarkerArray obstacleVelocityText;
         nav_msgs::Path MPCTraj; // msg from mpcResultTraj
+        pcl::PointCloud<pcl::PointXYZ>::Ptr processedPclPtr;
+        pcl::PointCloud<pcl::PointXYZ>::Ptr groundPclPtr;
+
+
 
         /**
          *  Publisher
@@ -111,6 +134,9 @@ namespace Planner{
         ros::Publisher pubCurCmdDabin;
         ros::Publisher pubOurOccu;
         ros::Publisher pubPitching; // publishing pitch angle
+
+        ros::Publisher pubFilteredPcl;
+        ros::Publisher pubGroundPcl;
         ros::Publisher pubNominalVelocity;
         ros::Publisher pubCurCmdSteer;
         ros::Publisher pubCurCmdAcc;
@@ -127,6 +153,9 @@ namespace Planner{
         ros::Subscriber subOccuUpdate; // sibal
         ros::Subscriber subKetiImu;
 
+        ros::Subscriber subPcl;
+
+
 
         /**
          * Callback functions
@@ -141,7 +170,7 @@ namespace Planner{
         void cbDetectedObjects(const driving_msgs::DetectedObjectArray& objectsArray);
 
         void cbImu(const sensor_msgs::Imu& imu);
-
+        void pclCallback(const sensor_msgs::PointCloud2::ConstPtr pcl_msg);
         /**
          * Core routines in while loop of ROS thread
          */

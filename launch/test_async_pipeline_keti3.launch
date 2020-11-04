@@ -9,7 +9,8 @@
 
   <param name="use_sim_time" value="$(arg use_sim_time)"/>
 
-  <arg name = "pcl_topic" default = "/velodyne_points_snu"/>
+  <arg name = "pcl_topic" default = "/atypical_planning_test/pcl_filtered"/>
+<!--    <arg name = "pcl_topic" default = "/velodyne_points_snu"/>-->
 
     <!-- Arguments Start -->
   <arg name ="snu_frame_id" default="SNU"/>
@@ -36,20 +37,18 @@
 
   <!-- Node start-->
 
-
-
     <!-- run pointcloud_to_laserscan node -->
     <node pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node" name="pointcloud_to_laserscan">
 
         <remap from="cloud_in" to="$(arg pcl_topic)"/>
-<!--        <remap from="cloud_in" to="/octomap_point_cloud_centers"/>--> -->
+        <!--        <remap from="cloud_in" to="/octomap_point_cloud_centers"/>--> -->
 
-        <remap from="scan" to="/scan_orig"/>
+        <remap from="scan" to="/scan"/>
         <rosparam>
-            target_frame: base_link # Leave disabled to output scan in pointcloud frame
+            target_frame: velodyne # Leave disabled to output scan in pointcloud frame
             transform_tolerance: 0.01
             min_height: -1.2 # default = -0.8 / KIAPI = -1.5
-            max_height: -0.9 # default = 0.3 / KIAPI= -0.9
+            max_height: 0.9 # default = 0.3 / KIAPI= -0.9
 
             angle_min: -3.1408 # -M_PI/2
             angle_max: 3.1408 # M_PI/2
@@ -70,6 +69,9 @@
     </node>
 
 
+
+
+
     <!--   OccupancyGrid  -->
      <include file = "$(find atypical_driving)/launch/occupancy2d/costmap_2d.launch">
          <arg name = "play_bag" value = "false"/>
@@ -78,27 +80,19 @@
          <arg name = "rviz" value = "false"/>
          <arg name = "occupancy_frame_id" value = "$(arg occu_frame_id)"/>
          <arg name = "lidar_frame_id" value = "$(arg lidar_frame_id)"/>
-         <arg name = "cost_map_min_z" value = "-0.5"/>
-         <arg name = "cost_map_max_z" value = "0.6"/>
+         <arg name = "cost_map_min_z" value = "-1"/>
+         <arg name = "cost_map_max_z" value = "10"/>
      </include>
 
-    <node pkg="laser_filters" type="scan_to_scan_filter_chain"
-          name="laser_filter" output="screen">
-        <rosparam command="load" file="$(find atypical_driving)/launch/occupancy2d/filter.yaml" />
-        <remap from="/scan" to="/scan_orig"/>
-        <remap from="scan_filtered" to="/scan"/>
-
-    </node>
 
 
     <!--1. Data feeder-->
-    <node pkg="rosbag" type="play" name="rosbag_record_diag" args="--clock --loop /media/jbs/Samsung_T3/2020BAG/atypical/daegu_yugokri_result.bag" >
+    <node pkg="rosbag" type="play" name="rosbag_record_diag" args="--clock --loop -s 200 /media/jbs/Samsung_T3/2020BAG/atypical/daegu_yugokri_result.bag" >
            <remap from = "/current_pose_cov" to = "/current_pose"/>
-
     </node>
 
     <!--2. snu_car_tf to velodyne_tf -->
-    <node pkg="tf" type="static_transform_publisher" name="link2lidar" args="0 0 0.2 0 0 0  $(arg car_base_frame_id) $(arg lidar_frame_id) 100"/>
+    <node pkg="tf" type="static_transform_publisher" name="link2lidar" args="-2.5 0 0.2 0 0 0  $(arg car_base_frame_id) $(arg lidar_frame_id) 100"/>
 
     <!--3. client-->
     <node pkg="atypical_driving" type="keti_client" name="atypical_driving_client" output="screen">
@@ -127,11 +121,8 @@
 
     </include>
 
-  <!--5. plot-->
   <node pkg="rviz" type="rviz" name="rviz" args="-d $(find atypical_driving)/launch/rviz_config/config.rviz" output="log" />
 
-<!--  <node name="rqt_multiplot" pkg="rqt_multiplot" type="rqt_multiplot" output="screen"-->
-<!--        args="&#45;&#45;multiplot-config $(find atypical_driving)/launch/rqt_multiplot_config/rqt_multiplot_config.xml &#45;&#45;multiplot-run-all" />-->
 
 <!-- Nodes End -->
 </launch>

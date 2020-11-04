@@ -40,6 +40,11 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
 
     ROS_INFO("[RosWrapper] final goal in world frame = [%f, %f]",p_base->goal_x,p_base->goal_y );
 
+
+    processedPclPtr  = pcl::PointCloud<pcl::PointXYZ>::Ptr (new pcl::PointCloud<pcl::PointXYZ>() );
+    groundPclPtr = pcl::PointCloud<pcl::PointXYZ>::Ptr (new pcl::PointCloud<pcl::PointXYZ>() );
+
+
     // Logger reset
     string corridor_logger = p_base_->log_file_name_base;
     string mpc_logger = p_base->log_file_name_base;
@@ -90,6 +95,9 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
     pubCurGoal = nh.advertise<geometry_msgs::PointStamped>("global_goal",1);
 
     pubOurOccu = nh.advertise<nav_msgs::OccupancyGrid>("map_for_planning",1);
+    pubFilteredPcl = nh.advertise<sensor_msgs::PointCloud2>("pcl_filtered",1);
+    pubGroundPcl = nh.advertise<sensor_msgs::PointCloud2>("pcl_ground",1);
+
 
     pubSmoothLane = nh.advertise<visualization_msgs::MarkerArray>("/smooth_lane",1);
     pubTextTrackingVelocity = nh.advertise<visualization_msgs::MarkerArray>("/detected_objects_info",1);
@@ -104,6 +112,7 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
     // Subscriber
     subCarPoseCov = nh.subscribe("/current_pose",1,&RosWrapper::cbCarPoseCov,this);
     subCarSpeed = nh.subscribe("/current_speed",1,&RosWrapper::cbCarSpeed,this);
+    subPcl = nh.subscribe("/velodyne_points",1,&RosWrapper::pclCallback,this);
     subKetiImu = nh.subscribe("/imu",1,&RosWrapper::cbImu,this);
     //subExampleObstaclePose = nh.subscribe("obstacle_pose",1,&RosWrapper::cbObstacles,this);
     subDetectedObjects= nh.subscribe("/detected_objects",1,&RosWrapper::cbDetectedObjects,this);
@@ -171,6 +180,15 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<double>("v_ref_past_weight",param_.g_param.v_ref_past_weight,0.3);
     nh.param<double>("vmin",param_.g_param.car_speed_min,1);
     nh.param<double>("curve_thres",param_.g_param.curvature_thres,(3.141592/3.0));
+    nh.param<double>("map/pcl_lx",param_.g_param.pcl_lx,40);
+    nh.param<double>("map/pcl_ly",param_.g_param.pcl_ly,40);
+    nh.param<double>("map/pcl_z_min",param_.g_param.pcl_z_min,-4);
+    nh.param<double>("map/pcl_z_max",param_.g_param.pcl_z_max,3);
+    nh.param<int>("map/pcl_dbscan_minpnts",param_.g_param.pcl_dbscan_minpnts,3);
+    nh.param<double >("map/pcl_dbscan_eps",param_.g_param.pcl_dbscan_eps,0.1);
+    nh.param<double >("map/ransac_post_inclusion_offset",param_.g_param.ransac_ground_offest,0.3);
+    nh.param<double >("map/ransac_distance_threshold",param_.g_param.ransac_distance_threshold,0.2);
+    nh.param<bool>("map/use_ransac",param_.g_param.use_ransac,true);
 
     nh.param<double>("global_planner/car_width",param_.g_param.car_width,2);
     nh.param<double>("global_planner/period",param_.g_param.period,2);
@@ -251,6 +269,8 @@ void RosWrapper::updateParam(Param &param_) {
  * @details Extract information from p_base
  */
 void RosWrapper::prepareROSmsgs() {
+
+
 
     // 1. Topics directly obtained from p_base
 
@@ -472,6 +492,23 @@ void RosWrapper::prepareROSmsgs() {
  * @details Do not use p_base here !!
  */
 void RosWrapper::publish() {
+    // 0. map publish
+    if (isPCLReceived){
+        sensor_msgs::PointCloud2 filtered_pcl;
+        sensor_msgs::PointCloud2 ground_pcl;
+        pcl::toROSMsg(*processedPclPtr,filtered_pcl);
+        pcl::toROSMsg(*groundPclPtr,ground_pcl);
+
+        filtered_pcl.header.stamp = ros::Time::now();
+        filtered_pcl.header.frame_id = processedPclPtr->header.frame_id;
+
+        ground_pcl.header.stamp = ros::Time::now();
+        ground_pcl.header.frame_id = processedPclPtr->header.frame_id;
+        pubFilteredPcl.publish(filtered_pcl);
+        pubGroundPcl.publish(ground_pcl);
+    }
+
+
 
     // 1. Actuation command
     if (p_base->isLPsolved) {
@@ -574,6 +611,11 @@ void RosWrapper::processTf() {
         tf::Transform transform;
         transform.setOrigin( tf::Vector3(pose.pose.position.x, pose.pose.position.y, pose.pose.position.z) );
         tf::Quaternion q;
+//        q.setX(0);
+//        q.setY(0);
+//        q.setZ(0);
+//        q.setW(1);
+
         q.setX(pose.pose.orientation.x);
         q.setY(pose.pose.orientation.y);
         q.setZ(pose.pose.orientation.z);
@@ -585,15 +627,38 @@ void RosWrapper::processTf() {
         // car_base_link to imu frame (applying only pitch)
 
         if (isImuReceived) {
+
+            // Consider pitch only
+
+//            tf::Quaternion qPitch;
+//            qPitch.setRPY(0,pitchAngleFromImu,0);
+//            std_msgs::Float64 pitchVal;
+//            pitchVal.data = pitchAngleFromImu;
+//            pubPitching.publish(pitchVal);
+//            tf::Quaternion qImuPitch = qPitch*q;
+//            transform.setRotation(qImuPitch);
+
+            // total transform
+            tf::Quaternion qImuInv = qImu0;
+            qImuInv.setW(-qImuInv.getW());
+
+            tf::Quaternion qImuRelative = qImu*qImuInv;
+
+
+            double roll,pitch,yaw;
+            tf::Matrix3x3(qImuRelative).getRPY(roll, pitch, yaw);
+
             tf::Quaternion qPitch;
-            qPitch.setRPY(0,pitchAngleFromImu,0);
-            std_msgs::Float64 pitchVal;
-            pitchVal.data = pitchAngleFromImu;
-            pubPitching.publish(pitchVal);
-            tf::Quaternion qImu = qPitch*q;
-            transform.setRotation(qImu);
-            tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(),SNUFrameId, carImuFrameId));
+            qPitch.setRPY(0,pitch,0);
+            tf::StampedTransform Tbi; // base link to imu
+            Tbi.setOrigin(tf::Vector3(0,0,0));
+            Tbi.setRotation(qPitch);
+            Tbi.child_frame_id_ = carImuFrameId;
+            Tbi.frame_id_ = baseLinkId;
+            tf_br.sendTransform(tf::StampedTransform(Tbi, ros::Time::now(),baseLinkId, carImuFrameId));
         }
+
+
 
 
         // (b) send Tws (static)
@@ -629,6 +694,101 @@ void RosWrapper::processTf() {
         }
     }
 
+}
+
+
+void RosWrapper::pclCallback(const sensor_msgs::PointCloud2::ConstPtr pcl_msg){
+
+    isPCLReceived = true;
+    processedPclPtr->header.frame_id = pcl_msg->header.frame_id; // keep the header as the velodyne
+    processedPclPtr->points.clear();
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloudCandidateGround (new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloudtotal (new pcl::PointCloud<pcl::PointXYZ>);
+    vector<dbscan::Point> dbscanPoints;
+    // We first crop xy
+    for(int c = 0 ; c<pcl_msg->width ; c++)
+        for(int r = 0 ; r<pcl_msg->height ; r++){
+            // express the points in map frame
+            geometry_msgs::Point p;
+            pixelTo3DPoint(*pcl_msg,c,r,p);
+
+            // like filter
+            if (p.y < param.g_param.pcl_ly/2.0 and p.y > -param.g_param.pcl_ly/2.0 and
+                p.x < param.g_param.pcl_lx/2.0 and p.x > -param.g_param.pcl_lx/2 ) {
+
+                pcl::PointXYZ pclPnt;
+                pclPnt.x = p.x;
+                pclPnt.y = p.y;
+                pclPnt.z = p.z;
+
+                cloudtotal->points.push_back(pclPnt);
+            }
+        }
+
+
+    // 1. speckle removal
+
+    pcl::RadiusOutlierRemoval<pcl::PointXYZ> outrem;
+    outrem.setInputCloud(cloudtotal);
+    outrem.setRadiusSearch(param.g_param.pcl_dbscan_eps);
+    outrem.setMinNeighborsInRadius (param.g_param.pcl_dbscan_minpnts);
+    outrem.filter(*cloudtotal);
+
+
+
+    for (auto & pnt : cloudtotal->points){
+        if (pnt.z < param.g_param.pcl_z_min)
+            cloudCandidateGround->points.push_back(pnt);
+        if (not param.g_param.use_ransac){
+            if (pnt.z > param.g_param.pcl_z_min)
+                processedPclPtr->points.push_back(pnt);
+        }
+    }
+
+    if (not param.g_param.use_ransac){
+        groundPclPtr->points = cloudCandidateGround->points;
+    }else {
+
+        // 2. extract the ground model by RANSAC
+        pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
+        pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
+
+        pcl::SACSegmentation<pcl::PointXYZ> seg;
+        seg.setOptimizeCoefficients(true);
+        seg.setModelType(pcl::SACMODEL_PLANE);
+        seg.setMethodType(pcl::SAC_RANSAC);
+        seg.setDistanceThreshold(param.g_param.ransac_distance_threshold);
+        seg.setMaxIterations(200);
+        seg.setInputCloud(cloudCandidateGround);
+        seg.segment(*inliers, *coefficients);
+
+        groundPclPtr->points.clear();
+
+        ROS_INFO("[RosWrapper] inliners : [%d,%d]", inliers->indices.size(), cloudCandidateGround->points.size());
+
+        double a = coefficients->values[0];
+        double b = coefficients->values[1];
+        double c = coefficients->values[2];
+        double d = coefficients->values[3];
+        Vector4f normVec(a, b, c, d);
+        for (const auto &pnt : cloudtotal->points) {
+
+            double dist = abs(coefficients->values[0] * pnt.x + coefficients->values[1] * pnt.y +
+                              coefficients->values[2] * pnt.z + coefficients->values[3]) / normVec.norm();
+
+            if (dist < param.g_param.ransac_ground_offest)
+                groundPclPtr->points.push_back(pnt);
+            else
+                processedPclPtr->points.push_back(pnt);
+        }
+        // 3. another spekcle removal
+        outrem.setInputCloud(processedPclPtr);
+        outrem.setRadiusSearch(param.g_param.pcl_dbscan_eps);
+        outrem.setMinNeighborsInRadius(param.g_param.pcl_dbscan_minpnts);
+        outrem.filter(*processedPclPtr);
+    }
+    processedPclPtr->header.frame_id = pcl_msg->header.frame_id; // keep the header as the velodyne
+    groundPclPtr->header.frame_id = pcl_msg->header.frame_id; // keep the header as the velodyne
 }
 
 void RosWrapper::cbDetectedObjects(const driving_msgs::DetectedObjectArray &objectsArray) {
@@ -847,6 +1007,7 @@ void RosWrapper::cbOccuUpdate(const map_msgs::OccupancyGridUpdateConstPtr &msg) 
 
 
 
+
 void RosWrapper::cbCarSpeed(const std_msgs::Float64& speed_) {
     // Incoming data is km/h
     speed = speed_.data*1000.0/3600;
@@ -881,7 +1042,12 @@ void RosWrapper::cbImu(const sensor_msgs::Imu &imu) {
 
 //    Tci.setOrigin(tf::Vector3(0,0,0));
 //    Tci.setRotation(q);
-    isImuReceived = true;
+    if (not isImuReceived) { // first received
+        qImu0 = q;
+        ROS_INFO("[RosWrapper] rotation is initialized from imu: RPY [%f, %f, %f]",roll,pitch,yaw);
+        isImuReceived = true;
+    }
+    qImu = q;
 }
 
 /**
