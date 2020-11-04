@@ -8,7 +8,7 @@
 ### 1. Getting started 
 #### Dependencies until now 
 * Octomap 
-
+* graph_rviz_plugin https://gitlab.com/InstitutMaupertuis/graph_rviz_plugin
 #### Test run 
 ```
 $ cd ~/catkin_ws/
@@ -55,7 +55,32 @@ The velocity of the obstacle path is the average of the keti velocities. Using t
 * `map/ransac_post_inclusion_offset` : distance offset for including additional ground points (distance from a points to the plane found from ransac) - large: more ground / small: less ground 
 * `map/ransac_distance_threshold` : the parameter used for ransac algorithm. large = loose plane / small = more strict for judging inliners 
 ### Jungown 
-
+* 'global_planner/car_width': When construcing laneTree, car width is used to determine whether two node are connected. (m)
+* 'global_planner/period': ????
+* 'global_planner/grid_resolution' : Lane grid resolution (m)
+* 'global_planner/max_steering_angle': Maximum angle between two adjacent points in smoothLane (rad)
+* 'global_planner/smoothing_cliff_min_bias': If distance between the waypoint and a point on unsmoothed lane is larger than this parameter, set that point as the start point of line smoothing. (m)
+* 'global_planner/smoothing_cliff_ratio': If distance between the waypoint and a point on unsmoothed lane is larger than this parameter, set that point as the end point of line smoothing.
+* 'global_planner/smoothing_distance': Range of line smoothring (m)
+* 'global_planner/start_smoothing_distance': Not used in this version
+* 'global_planner/corridor_width_min': If lane is blocked by obstacle, minimum width of corridor should be larger than this parameter. (m) 
+* 'global_planner/corridor_width_dynamic_min': If lane is blocked by object, minimum width of corridor should be larger than this parameter. (m) 
+* 'global_planner/safe_distance': Distance between smoothLane and blocked point if lane is blocked by obstacle or object. (m) 
+* 'global_planner/nominal_acceleration': Nominal acceleration for determining time segment of smoothLane. (m/s^2)
+* 'global_planner/object_velocity_threshold': If object is faster than this parameter, object is determined to dynamic object (m/s)
+* 'global_planner/max_obstacle_prediction_query_size': obstacle prediction query size
 
 ### Yunwoo 
+* `local_planner/horizon`: MPC horizon (seconds)
+* `local_planner/ts`: MPC time step (seconds)
+* `local_planner/max_steer`: Max Steering Angle
+* `local_planner/max_accel`: Max Acceleration
+* `local_planner/min_accel`: Min Acceleration (minus)
+* `local_planner/N_corr`: Number of Corridor
+* `local_planner/isRearWheel`: RealCar:0, Airsim:1
+* `local_planner/dyn_obst_range`: Dynamic Obstacle Consideration Range
 
+* `smoothing_type`: it has value: 0(exponential average), 1(moving average), 2(expoential+moving average), 3(ignore small handle angle)
+* `smooth_weight`: when you use exponential average, this values should satisfy 0<value<1, and higher value is regarded as giving more weight to current value
+* `moving_horizon`: when you use moving average, this means size of horizon.
+* `ignore_angle`: Amount of Ignoring small angle (handle)

@@ -219,7 +219,7 @@ void LocalPlanner::SetSfcIdx(int N_corr)
             return false;
         }
         pos_ref.push_back(p_base->laneSmooth.evalX(p_base->laneSmooth.points, time_knots[i]));
-        if(abs(pos_ref[i][1]-pos_ref[i-1][1])<0.001&&abs(pos_ref[i][0]-pos_ref[i-1][0])<0.001)
+        if(abs(pos_ref[i][1]-pos_ref[i-1][1])<param.sameWptsDistance&&abs(pos_ref[i][0]-pos_ref[i-1][0])<param.sameWptsDistance)
        {
 			if (i ==1)
 			{
@@ -467,7 +467,7 @@ bool LocalPlannerPlain::plan(double t) {
              {
                  if(sfc_idx[jj])
                  {
-                     if(xN_new[jj][0]<box_constraint[jj].xl||xN_new[jj][0]>box_constraint[jj].xu||xN_new[jj][1]<box_constraint[jj].yl||xN_new[jj][1]>box_constraint[jj].yu)
+                     if((xN_new[jj][0]<box_constraint[jj].xl-param.sfcMargin)||(xN_new[jj][0]>box_constraint[jj].xu+param.sfcMargin)||(xN_new[jj][1]<box_constraint[jj].yl-param.sfcMargin)||(xN_new[jj][1]>box_constraint[jj].yu+param.sfcMargin))
                         isSFCSatisfied = false;
                  }
              }
@@ -475,7 +475,7 @@ bool LocalPlannerPlain::plan(double t) {
                  cout<< "Cannot Satisfy SFC"<<endl;
 
 
-             flag_unstable = !isAccelSatisfied || !isSteerSatisfied|| !isSteerSatisfied;
+             flag_unstable = !isAccelSatisfied || !isSFCSatisfied|| !isSteerSatisfied;
 
 
              if (!flag_unstable)

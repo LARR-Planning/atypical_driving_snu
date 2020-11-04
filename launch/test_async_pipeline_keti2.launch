@@ -46,7 +46,7 @@
 
         <remap from="scan" to="/scan_orig"/>
         <rosparam>
-            target_frame: velodyne # Leave disabled to output scan in pointcloud frame
+            target_frame: base_link # Leave disabled to output scan in pointcloud frame
             transform_tolerance: 0.01
             min_height: -1.2 # default = -0.8 / KIAPI = -1.5
             max_height: -0.9 # default = 0.3 / KIAPI= -0.9
@@ -94,10 +94,11 @@
     <!--1. Data feeder-->
     <node pkg="rosbag" type="play" name="rosbag_record_diag" args="--clock --loop /media/jbs/Samsung_T3/2020BAG/atypical/daegu_yugokri_result.bag" >
            <remap from = "/current_pose_cov" to = "/current_pose"/>
+
     </node>
 
     <!--2. snu_car_tf to velodyne_tf -->
-    <node pkg="tf" type="static_transform_publisher" name="link2lidar" args="-2.5 0 0.2 0 0 0  $(arg car_base_frame_id) $(arg lidar_frame_id) 100"/>
+    <node pkg="tf" type="static_transform_publisher" name="link2lidar" args="0 0 0.2 0 0 0  $(arg car_base_frame_id) $(arg lidar_frame_id) 100"/>
 
     <!--3. client-->
     <node pkg="atypical_driving" type="keti_client" name="atypical_driving_client" output="screen">
@@ -126,8 +127,11 @@
 
     </include>
 
+  <!--5. plot-->
   <node pkg="rviz" type="rviz" name="rviz" args="-d $(find atypical_driving)/launch/rviz_config/config.rviz" output="log" />
 
+<!--  <node name="rqt_multiplot" pkg="rqt_multiplot" type="rqt_multiplot" output="screen"-->
+<!--        args="&#45;&#45;multiplot-config $(find atypical_driving)/launch/rqt_multiplot_config/rqt_multiplot_config.xml &#45;&#45;multiplot-run-all" />-->
 
 <!-- Nodes End -->
 </launch>

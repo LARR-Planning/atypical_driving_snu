@@ -608,12 +608,9 @@ vector<Corridor> PlannerBase::getCorridorSeq(double t0, double tf) {
 }
 driving_msgs::VehicleCmd PlannerBase::getCurInput(double t){
     double curr_weight = weight_smooth;
-//    static int flag = 0;
-//    double curr_weight = weight_smooth;
-//    static int count_iter =0;
-//    cout << "weight: " << curr_weight << endl;
+
     driving_msgs::VehicleCmd cmd;
-    if(!isUseMovingAverage)
+    if(smoothing_type==0) // Exponential Average
     {
         if (flag == 0)
         {
@@ -630,18 +627,12 @@ driving_msgs::VehicleCmd PlannerBase::getCurInput(double t){
             cmd.accel_decel_cmd = curr_weight*mpc_result.evalU(t).alpha +(1-curr_weight)*ctrl_previous.accel_decel_cmd;
             ctrl_previous.steer_angle_cmd = cmd.steer_angle_cmd;
             ctrl_previous.accel_decel_cmd = cmd.accel_decel_cmd;
-//            if(getCarState().v<stopSpeed && cmd.accel_decel_cmd<0)
-//                {
-//                    cmd.steer_angle_cmd = 0.0;
-//                    cmd.accel_decel_cmd = 0.0;
-//                }
-
 
             return cmd;
         }
 
     }
-    else
+    else if(smoothing_type==1) //moving average
     {
         if(flag<smooth_horizon)
         {
@@ -649,6 +640,8 @@ driving_msgs::VehicleCmd PlannerBase::getCurInput(double t){
             {
                 cmd.steer_angle_cmd =  mpc_result.evalU(t).delta;
                 cmd.accel_decel_cmd = mpc_result.evalU(t).alpha;
+                ctrl_previous.steer_angle_cmd = cmd.steer_angle_cmd;
+                ctrl_previous.accel_decel_cmd = cmd.accel_decel_cmd;
                 ctrl_history.push_back(cmd);
                 flag++;
                 return cmd;
@@ -657,16 +650,13 @@ driving_msgs::VehicleCmd PlannerBase::getCurInput(double t){
             {
                 cmd.steer_angle_cmd = curr_weight*mpc_result.evalU(t).delta +(1-curr_weight)*ctrl_previous.steer_angle_cmd;
                 cmd.accel_decel_cmd = curr_weight*mpc_result.evalU(t).alpha +(1-curr_weight)*ctrl_previous.accel_decel_cmd;
+                ctrl_previous.steer_angle_cmd = cmd.steer_angle_cmd;
+                ctrl_previous.accel_decel_cmd = cmd.accel_decel_cmd;
                 ctrl_history.push_back(cmd);
                 flag++;
                 return cmd;
             }
-//
-//            cmd.steer_angle_cmd = mpc_result.evalU(t).delta;
-//            cmd.accel_decel_cmd = mpc_result.evalU(t).alpha;
-//            ctrl_history.push_back(cmd);
-//	    flag++;
-//            return cmd;
+
         }
         else
         {
@@ -687,18 +677,83 @@ driving_msgs::VehicleCmd PlannerBase::getCurInput(double t){
             {
                 count_iter = 0;
             }
-            //cout<<"count_iter is "<< count_iter << endl;
-            //cout<<"smooth_horizon plot::"<<smooth_horizon<<endl;
+
             return cmd;
-//            cmd.steer_angle_cmd = 1/double(smooth_horizon)*(mpc_result.evalU(t).delta-ctrl_history.front().steer_angle_cmd) + ctrl_previous.steer_angle_cmd;
-//            cmd.accel_decel_cmd = 1/double(smooth_horizon)*(mpc_result.evalU(t).alpha-ctrl_history.front().accel_decel_cmd) + ctrl_previous.accel_decel_cmd;
-//            ctrl_previous.steer_angle_cmd = cmd.steer_angle_cmd;
-//            ctrl_previous.accel_decel_cmd = cmd.accel_decel_cmd;
-//            ctrl_history.push_back(cmd);
-//            ctrl_history.pop();
-//            return cmd;
+
+        }
+    }
+    else if(smoothing_type==2) // Acc,Dec: Exponential Average, Steer: Moving Average
+    {
+        if(flag<smooth_horizon)
+        {
+            if(flag == 0)
+            {
+                cmd.steer_angle_cmd =  mpc_result.evalU(t).delta;
+                cmd.accel_decel_cmd = mpc_result.evalU(t).alpha;
+                ctrl_history.push_back(cmd);
+                ctrl_previous.steer_angle_cmd = cmd.steer_angle_cmd;
+                ctrl_previous.accel_decel_cmd = cmd.accel_decel_cmd;
+                flag++;
+                return cmd;
+            }
+            else
+            {
+                cmd.steer_angle_cmd = curr_weight*mpc_result.evalU(t).delta +(1-curr_weight)*ctrl_previous.steer_angle_cmd;
+                cmd.accel_decel_cmd = curr_weight*mpc_result.evalU(t).alpha +(1-curr_weight)*ctrl_previous.accel_decel_cmd;
+                ctrl_history.push_back(cmd);
+                ctrl_previous.steer_angle_cmd = cmd.steer_angle_cmd;
+                ctrl_previous.accel_decel_cmd = cmd.accel_decel_cmd;
+                flag++;
+                return cmd;
+            }
+
+        }
+        else
+        {
+            ctrl_history[count_iter].steer_angle_cmd = mpc_result.evalU(t).delta;
+            cmd.steer_angle_cmd = 0.0;
+            cmd.accel_decel_cmd = curr_weight*mpc_result.evalU(t).alpha +(1-curr_weight)*ctrl_previous.accel_decel_cmd;
+            ctrl_previous.accel_decel_cmd = cmd.accel_decel_cmd;
+            for(int i = 0; i<smooth_horizon;i++)
+            {
+                cmd.steer_angle_cmd += ctrl_history[i].steer_angle_cmd;
+            }
+            cmd.steer_angle_cmd = cmd.steer_angle_cmd/double(smooth_horizon);
+            count_iter++;
+            if(count_iter == smooth_horizon)
+            {
+                count_iter = 0;
+            }
+            return cmd;
         }
 
+
+    }
+
+    else if(smoothing_type==3) // Exponential Average but little handling--> zero handling (straight)
+    {
+        if (flag == 0)
+        {
+            cmd.steer_angle_cmd =  mpc_result.evalU(t).delta;
+            cmd.accel_decel_cmd = mpc_result.evalU(t).alpha;
+            ctrl_previous.steer_angle_cmd = mpc_result.evalU(t).delta;
+            ctrl_previous.accel_decel_cmd = mpc_result.evalU(t).alpha;
+            flag++;
+            return cmd;
+        }
+        else
+        {
+            cmd.steer_angle_cmd = curr_weight*mpc_result.evalU(t).delta +(1-curr_weight)*ctrl_previous.steer_angle_cmd;
+            cmd.accel_decel_cmd = curr_weight*mpc_result.evalU(t).alpha +(1-curr_weight)*ctrl_previous.accel_decel_cmd;
+            if (abs(cmd.steer_angle_cmd) < ignore_angle)
+            {
+                cmd.steer_angle_cmd = 0;
+            }
+            ctrl_previous.steer_angle_cmd = cmd.steer_angle_cmd;
+            ctrl_previous.accel_decel_cmd = cmd.accel_decel_cmd;
+
+            return cmd;
+        }
 
     }
 
@@ -851,7 +906,7 @@ bool PlannerBase::isOccupied(Vector2d queryPoint) {
  * @return true if queryPoint is within the obstacle path array
  */
 bool PlannerBase::isObject(const Vector2d& queryPoint, int maxObstQuerySize, double& velocity,bool use_keti_vel){
-    unsigned long nInspection = 5;
+    unsigned long nInspection = 1000;
 
 //    printf("[DEBUG_JBS] planner base querying start (number of obst = %d ) \n",obstaclePathArray.obstPathArray.size());
 

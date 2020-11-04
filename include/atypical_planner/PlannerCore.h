@@ -68,10 +68,12 @@ namespace Planner {
         double maxAccel;
         double minAccel; // [minAccel,maxAccel] can be negative
         double nominal_speed;
+        double sameWptsDistance; //Criteria for regard as same position
         bool isRearWheeled;
+        double sfcMargin;
         double period;
         int N_corr;
-	double dynObstRange;
+	    double dynObstRange;
         //ilQR parameters
         Matrix<double,6,1> state_weight;
         Matrix<double,6,1> final_weight;
@@ -310,9 +312,10 @@ namespace Planner {
         double laneSpeed = 0 ; // current speed to be applied to the lane in slice
         double laneCurvature;  // current mean curvature of the slide
 
-        bool isUseMovingAverage; // true: Moving average, false: exponential sum
+        int smoothing_type; // 0:exponential average, 1: moving average(handle), 2: ignore little handling
         double stopSpeed;
         double weight_smooth; // exponential weight smoothing
+        double ignore_angle; // Ignore small angle range
         int smooth_horizon; // moving average smoothing
 
         vector<Corridor> corridor_seq;
