@@ -219,7 +219,7 @@ void LocalPlanner::SetSfcIdx(int N_corr)
             return false;
         }
         pos_ref.push_back(p_base->laneSmooth.evalX(p_base->laneSmooth.points, time_knots[i]));
-        if(abs(pos_ref[i][1]-pos_ref[i-1][1])<0.001&&abs(pos_ref[i][0]-pos_ref[i-1][0])<0.001)
+        if(abs(pos_ref[i][1]-pos_ref[i-1][1])<param.sameWptsDistance&&abs(pos_ref[i][0]-pos_ref[i-1][0])<param.sameWptsDistance)
        {
 			if (i ==1)
 			{

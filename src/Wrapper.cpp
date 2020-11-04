@@ -195,6 +195,7 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<double>("local_planner/car_speed",param_.l_param.nominal_speed,2.0);
     nh.param<int>("local_planner/N_corr",param_.l_param.N_corr,51);
     nh.param<bool>("local_planner/isRearWheel",param_.l_param.isRearWheeled,true);
+    nh.param<double>("local_planner/same_wpts_distance",param_.l_param.sameWptsDistance,0.01);
     nh.param<double>("local_planner/sfc_margin",param_.l_param.sfcMargin,0.0);
     nh.param<double>("local_planner/dyn_obst_range",param_.l_param.dynObstRange,30.0);
 
