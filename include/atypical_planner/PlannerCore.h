@@ -68,10 +68,12 @@ namespace Planner {
         double maxAccel;
         double minAccel; // [minAccel,maxAccel] can be negative
         double nominal_speed;
+        double sameWptsDistance; //Criteria for regard as same position
         bool isRearWheeled;
+        double sfcMargin;
         double period;
         int N_corr;
-	double dynObstRange;
+	    double dynObstRange;
         //ilQR parameters
         Matrix<double,6,1> state_weight;
         Matrix<double,6,1> final_weight;

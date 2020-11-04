@@ -81,7 +81,9 @@
     <param name="local_planner/min_accel" value="-3" />
     <param name="local_planner/N_corr" value="5" />
     <param name="local_planner/isRearWheel" value="$(arg isRearWheelDriven)"/>
-    <param name="local_planner/dyn_obst_range" value="30.0"/>    
+    <param name="local_planner/dyn_obst_range" value="30.0"/>
+    <param name="local_planner/sfc_margin" value="0.5"/>
+    <param name="local_planner/same_wpts_distance" value="0.01"/>
 
     <!--smoothing_type: 0:Exponential Average, 1:Moving Average, 2:Acc(exp),Steer(mov), 3:ignore small angle -->
     <param name = "smooth_weight" value="0.7"/>
