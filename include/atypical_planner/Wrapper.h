@@ -111,6 +111,10 @@ namespace Planner{
         ros::Publisher pubCurCmdDabin;
         ros::Publisher pubOurOccu;
         ros::Publisher pubPitching; // publishing pitch angle
+        ros::Publisher pubNominalVelocity;
+        ros::Publisher pubCurCmdSteer;
+        ros::Publisher pubCurCmdAcc;
+
 
         /**
          * Subscriber
