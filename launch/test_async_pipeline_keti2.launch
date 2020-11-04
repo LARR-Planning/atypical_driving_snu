@@ -5,7 +5,7 @@
   <arg name = "use_sim_time" value = "true"/>
 
 <!--  <arg name= "bagfile"        default="kiapi_static1.bag"/> -->
-  <arg name= "bagfile"        default="daegu_yugokri_result.bag"/>
+  <arg name= "bagfile"        default="niceButNominalTooFast.bag"/>
 
   <param name="use_sim_time" value="$(arg use_sim_time)"/>
 
@@ -123,8 +123,8 @@
   <!--5. plot-->
   <node pkg="rviz" type="rviz" name="rviz" args="-d $(find atypical_driving)/launch/rviz_config/config.rviz" output="log" />
 
-  <node name="rqt_multiplot" pkg="rqt_multiplot" type="rqt_multiplot" output="screen"
-        args="--multiplot-config $(find atypical_driving)/launch/rqt_multiplot_config/rqt_multiplot_config.xml --multiplot-run-all" />
+<!--  <node name="rqt_multiplot" pkg="rqt_multiplot" type="rqt_multiplot" output="screen"-->
+<!--        args="&#45;&#45;multiplot-config $(find atypical_driving)/launch/rqt_multiplot_config/rqt_multiplot_config.xml &#45;&#45;multiplot-run-all" />-->
 
 <!-- Nodes End -->
 </launch>
