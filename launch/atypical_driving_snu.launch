@@ -5,7 +5,7 @@
   <arg name = "bagfile" default= ""/>
   <arg name = "use_sim_time" default= "false"/>
 
-  <arg name = "pcl_topic" default = "/velodyne_points_snu"/>
+  <arg name = "pcl_topic" default = "/atypical_planning_test/pcl_filtered"/>
     <!-- Arguments Start -->
   <arg name ="snu_frame_id" default="SNU"/>
   <arg name ="occu_frame_id" default="SNU"/>
@@ -38,19 +38,18 @@
         <remap from="cloud_in" to="$(arg pcl_topic)"/>
 <!--        <remap from="cloud_in" to="/octomap_point_cloud_centers"/>--> -->
 
-        <remap from="scan" to="/scan"/>
+        <remap from="scan" to="/scan_snu"/>
         <rosparam>
             target_frame:  velodyne # Leave disabled to output scan in pointcloud frame
             transform_tolerance: 0.01
-            min_height: -1.5
-            max_height: 0.1
-
+            min_height: -1.2
+            max_height: 0.9
             angle_min: -3.1408 # -M_PI/2
             angle_max: 3.1408 # M_PI/2
-            angle_increment: 0.0027 # M_PI/360.0
+            angle_increment: 0.0007 # M_PI/360.0
             scan_time: 0.0333
             range_min: 0.0
-            range_max: 100.0
+            range_max: 50.0
             use_inf: true
             inf_epsilon: 100.0
 
@@ -58,15 +57,14 @@
             # 0 : Detect number of cores
             # 1 : Single threaded
             # 2->inf : Parallelism level
-            concurrency_level: 1
+            concurrency_level: 3
         </rosparam>
-
     </node>
-
 
     <!--  1. OccupancyGrid  -->
      <include file = "$(find atypical_driving)/launch/occupancy2d/costmap_2d.launch">
          <arg name = "play_bag" value = "false"/>
+         <arg name = "scan_topic" value = "scan_snu"/>
          <arg name = "bagfile" value="$(arg bagfile)"/>
          <arg name = "use_sim_time" value="$(arg use_sim_time)"/>
          <arg name = "rviz" value = "false"/>
@@ -76,7 +74,7 @@
 
 
     <!--2. snu_car_tf to velodyne_tf -->
-    <node pkg="tf" type="static_transform_publisher" name="link2lidar" args="-0.5 0 0.2 0 0 0  $(arg car_base_frame_id) $(arg lidar_frame_id) 100"/>
+    <node pkg="tf" type="static_transform_publisher" name="link2lidar" args="-1.0.0 0 0.2 0 0 0  $(arg car_base_frame_id) $(arg lidar_frame_id) 100"/>
 
     <!--3. client-->
     <node pkg="atypical_driving" type="keti_client" name="atypical_driving_client" output="screen">
@@ -96,9 +94,24 @@
         <param name = "base_link_id" value="$(arg car_base_frame_id)" />
         <param name = "detected_objects_id" value="$(arg detected_object_frame_id)" />
 
+        <param name = "use_nominal_obstacle_rad" value="true"/>
+        <param name = "use_keti_velocity" value="true"/>
+        <param name = "local_planner/obstacle_radius_nominal" value="1"/>
+
+        <param name="map/pcl_lx" value="60"/>
+        <param name="map/pcl_ly" value="30"/>
+        <param name="map/pcl_z_min" value="-1.6"/>
+        <param name="map/pcl_dbscan_minpnts" value="3"/>
+        <param name="map/pcl_dbscan_eps" value="0.5"/>
+        <param name="map/ransac_post_inclusion_offset" value="0.2"/>
+        <param name="map/ransac_distance_threshold" value="0.2"/>
+        <param name="map/use_ransac" value="true"/>
+
+
         <!--Shaping params for nominal_speed selection-->
-        <param name = "vmax" value = "5"/> <!--m/s-->
-        <param name = "vmin" value = "0.2"/> <!--m/s-->
+        <param name = "vmax" value = "3"/> <!--m/s-->
+        <param name = "vmin" value = "1.2"/> <!--m/s-->
+        <param name = "v_ref_past_weight" value = "0.8"/>
         <param name = "curve_thres" value = "0.15"/> <!--m/s-->
 
         <param name = "goal/x" value = "$(arg goal/x)"/>
@@ -113,7 +126,7 @@
         <param name="global_planner/period" value="$(arg period)" />
         <param name="global_planner/grid_resolution" value="0.3" />
         <param name="global_planner/max_steering_angle" value = "$(eval 3.14/20)"/>
-        <param name="global_planner/smoothing_distance" value="6.0" />
+        <param name="global_planner/smoothing_distance" value="8.0" />
         <param name="global_planner/smoothing_cliff_min_bias" value="0.5" />
         <param name="global_planner/smoothing_cliff_ratio" value="0.5"/>
         <param name="global_planner/start_smoothing_distance" value="6.0" />
@@ -139,7 +152,7 @@
 	    <!--ignore_angle, 1deg: 0.017, 2deg: 0.035, 3deg: 0.052, 4deg: 0.070 -->
 	    <param name = "smooth_weight" value="0.7"/>
         <param name = "moving_horizon" value="20"/>
-        <param name = "smoothing_type" value="0"/>
+        <param name = "smoothing_type" value="3"/>
 	    <param name = "ignore_angle" value="0.017"/>
         <param name = "stopSpeed" value="0.5"/>
 
