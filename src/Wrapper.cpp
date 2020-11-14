@@ -204,6 +204,8 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<double>("global_planner/nominal_acceleration", param_.g_param.nominal_acceleration, 0.5);
     nh.param<double>("global_planner/object_velocity_threshold", param_.g_param.object_velocity_threshold, 0.1);
     nh.param<double>("global_planner/max_obstacle_prediction_query_size", param_.g_param.max_obstacle_prediction_query_size, 1000);
+    nh.param<double>("global_planner/acc_stop_distance", param_.g_param.acc_stop_distance, 1.0);
+    nh.param<double>("global_planner/acc_stop_angle", param_.g_param.acc_stop_angle, M_PI/10);
 
 
     // local planner
