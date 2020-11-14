@@ -760,7 +760,7 @@ void RosWrapper::pclCallback(const sensor_msgs::PointCloud2::ConstPtr pcl_msg){
         seg.setModelType(pcl::SACMODEL_PLANE);
         seg.setMethodType(pcl::SAC_RANSAC);
         seg.setDistanceThreshold(param.g_param.ransac_distance_threshold);
-        seg.setMaxIterations(200);
+        seg.setMaxIterations(80);
         seg.setInputCloud(cloudCandidateGround);
         seg.segment(*inliers, *coefficients);
 
@@ -783,11 +783,11 @@ void RosWrapper::pclCallback(const sensor_msgs::PointCloud2::ConstPtr pcl_msg){
             else
                 processedPclPtr->points.push_back(pnt);
         }
-        // 3. another spekcle removal
-        outrem.setInputCloud(processedPclPtr);
-        outrem.setRadiusSearch(param.g_param.pcl_dbscan_eps);
-        outrem.setMinNeighborsInRadius(param.g_param.pcl_dbscan_minpnts);
-        outrem.filter(*processedPclPtr);
+//        // 3. another spekcle removal
+//        outrem.setInputCloud(processedPclPtr);
+//        outrem.setRadiusSearch(param.g_param.pcl_dbscan_eps);
+//        outrem.setMinNeighborsInRadius(param.g_param.pcl_dbscan_minpnts);
+//        outrem.filter(*processedPclPtr);
     }
     processedPclPtr->header.frame_id = pcl_msg->header.frame_id; // keep the header as the velodyne
     groundPclPtr->header.frame_id = pcl_msg->header.frame_id; // keep the header as the velodyne
@@ -935,9 +935,37 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
 
         // 1. Converting car pose w.r.t Tw0
         auto poseOrig = dataPtr->pose;
-        SE3 Tw1 = DAP::pose_to_transform_matrix(poseOrig).cast<double>(); // Tw1
+
+        Eigen::Quaterniond quat;
+        quat.x() = poseOrig.orientation.x;
+        quat.y() = poseOrig.orientation.y;
+        quat.z() = poseOrig.orientation.z;
+        quat.w() = poseOrig.orientation.w;
+
+        Eigen::Matrix3d rot_mat = quat.toRotationMatrix();
+        Eigen::Vector3d transl_vec(poseOrig.position.x,poseOrig.position.y,poseOrig.position.z);
+        SE3 Tw1;
+        Tw1.setIdentity();
+        Tw1.translate(transl_vec);
+        Tw1.rotate(rot_mat);
+
         SE3 T01 = p_base->Tws.inverse() * Tw1;
-        auto poseTransformed = DAP::transform_matrix_to_pose(T01.cast<float>());
+
+//        auto poseTransformed = DAP::transform_matrix_to_pose(T01);
+
+        Eigen::Quaterniond quatnew(T01.rotation());
+        Eigen::Vector3d vec = T01.translation();
+
+        geometry_msgs::Pose poseTransformed;
+        poseTransformed.position.x = vec(0);
+        poseTransformed.position.y = vec(1);
+        poseTransformed.position.z = vec(2);
+        poseTransformed.orientation.x = quatnew.x();
+        poseTransformed.orientation.y = quatnew.y();
+        poseTransformed.orientation.z = quatnew.z();
+        poseTransformed.orientation.w = quatnew.w();
+
+
         // Update the pose information w.r.t Tw1
         geometry_msgs::PoseStamped poseStamped;
         poseStamped.header.frame_id = SNUFrameId;
@@ -974,11 +1002,11 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
         /**
          * MUTEX - upload
          */
-         p_base->mSet[0].lock();
+//         p_base->mSet[0].lock();
          p_base->Tsb = T01;
          p_base->setCurPose(poseStamped);
          p_base->setCarState(curState);
-         p_base->mSet[0].unlock();
+//         p_base->mSet[0].unlock();
 
          isCarPoseCovReceived = true;
         ROS_INFO_ONCE("[SNU_PLANNER/RosWrapper] First received car state! ");
