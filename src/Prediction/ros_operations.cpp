@@ -2,17 +2,6 @@
 using namespace DAP;
 using namespace Eigen;
 
-nav_msgs::Path DAP::pose_vector_to_nav_msgs(const vector<geometry_msgs::Pose> pose_vec,string frame_id){
-    nav_msgs::Path path;
-    path.header.frame_id = frame_id;
-    geometry_msgs::PoseStamped pose_stamped;
-
-    for(auto it = pose_vec.begin(); it<pose_vec.end();it++){
-        pose_stamped.pose = *it;
-        path.poses.push_back(pose_stamped);  
-    }    
-    return path;
-}
 
 nav_msgs::Path DAP::TXYZQuat_to_nav_msgs(const TXYZQuatTraj & traj,string frame_id){
 
@@ -56,44 +45,25 @@ vector<geometry_msgs::Pose> DAP::TXYZQuat_to_pose_vector(const TXYZQuatTraj &tra
 
 }
 
-vector<TransformMatrix> DAP::pose_vector_to_transform_matrix_vec(const vector<geometry_msgs::Pose> & pose_vec){
-    vector<TransformMatrix> transform_vec(pose_vec.size());
-
-    for(int i = 0 ; i <pose_vec.size() ; i++)
-        transform_vec[i] = pose_to_transform_matrix(pose_vec[i]);
-    
-    return transform_vec;
-}
-
-
-geometry_msgs::PoseArray DAP::pose_vector_to_pose_array(const vector<geometry_msgs::Pose> pose_vec,string frame_id){
-    geometry_msgs::PoseArray pose_array;
-    pose_array.header.frame_id = frame_id;
-    for (auto it = pose_vec.begin() ; it < pose_vec.end(); it ++){
-        pose_array.poses.push_back(*it);
-    }
-    return pose_array;    
-}
-
-TransformMatrix DAP::pose_to_transform_matrix(const geometry_msgs::Pose & pose){            
-    Eigen::Quaternionf quat;
+TransformMatrixd DAP::pose_to_transform_matrix(const geometry_msgs::Pose & pose){
+    Eigen::Quaterniond quat;
     quat.x() = pose.orientation.x;
     quat.y() = pose.orientation.y;
     quat.z() = pose.orientation.z;
     quat.w() = pose.orientation.w;
      
-    Eigen::Matrix3f rot_mat = quat.toRotationMatrix();
-    Eigen::Vector3f transl_vec(pose.position.x,pose.position.y,pose.position.z);
-    TransformMatrix trans_mat;
+    Eigen::Matrix3d rot_mat = quat.toRotationMatrix();
+    Eigen::Vector3d transl_vec(pose.position.x,pose.position.y,pose.position.z);
+    TransformMatrixd trans_mat;
     trans_mat.setIdentity();
     trans_mat.translate(transl_vec);
     trans_mat.rotate(rot_mat);
     return trans_mat;
 }
 
-geometry_msgs::Pose DAP::transform_matrix_to_pose(const TransformMatrix & trans_mat){
-    Eigen::Quaternionf quat(trans_mat.rotation());
-    Eigen::Vector3f vec = trans_mat.translation();
+geometry_msgs::Pose DAP::transform_matrix_to_pose(const TransformMatrixd & trans_mat){
+    Eigen::Quaterniond quat(trans_mat.rotation());
+    Eigen::Vector3d vec = trans_mat.translation();
 
     geometry_msgs::Pose pose;
     pose.position.x = vec(0);
@@ -126,10 +96,6 @@ TXYZQuatTraj DAP::pose_traj_to_TXYZQuat_traj(const Eigen::VectorXf &time_seq, co
 TXYZQuatTraj DAP::pose_traj_to_TXYZQuat_traj(const Eigen::VectorXf &time_seq, const geometry_msgs::PoseArray & pose_array){
     return pose_traj_to_TXYZQuat_traj(time_seq,pose_array.poses);
 }
-
-TXYZTraj DAP::pose_traj_to_TXYZ_traj(const Eigen::VectorXf &time_seq, const geometry_msgs::PoseArray & pose_array){
-    return TXYZQuat_traj_to_TXYZ_traj(pose_traj_to_TXYZQuat_traj(time_seq,pose_array));    
-}    
 
 TXYZQuatTraj DAP::TXYZ_traj_to_TXYZQuat_traj(const TXYZTraj & traj){
     int N_pnt  = traj.cols();
@@ -176,17 +142,4 @@ visualization_msgs::Marker DAP::TXYZ_traj_to_pnt_marker(const TXYZTraj & traj,st
     nav_msgs::Path path = TXYZQuat_to_nav_msgs(TXYZ_traj_to_TXYZQuat_traj(traj),frame_id);
     return nav_msgs_to_marker(path,scale);
 }
-Eigen::Vector3f DAP::point_to_vec3f(const geometry_msgs::Point & point){
-    return Eigen::Vector3f(point.x,point.y,point.z);
-}
-
-geometry_msgs::PoseArray DAP::transform_matrix_vec_to_pose_array(const vector<TransformMatrix> & transl_mat,string frame_id){
-    
-    geometry_msgs::PoseArray pose_array;
-    pose_array.header.frame_id = frame_id;
-    for (auto it = transl_mat.begin() ; it < transl_mat.end(); it ++){
-        pose_array.poses.push_back(transform_matrix_to_pose(*it));
-    }
-    return pose_array;    
-}    
 

@@ -92,7 +92,7 @@
     </node>
 
     <!--2. snu_car_tf to velodyne_tf -->
-    <node pkg="tf" type="static_transform_publisher" name="link2lidar" args="-2.5 0 0.2 0 0 0  $(arg car_base_frame_id) $(arg lidar_frame_id) 100"/>
+    <node pkg="tf" type="static_transform_publisher" name="link2lidar" args="-2.5 0 0.2 0 0 0  $(arg car_base_frame_id) $(arg lidar_frame_id) 50"/>
 
     <!--3. client-->
     <node pkg="atypical_driving" type="keti_client" name="atypical_driving_client" output="screen">

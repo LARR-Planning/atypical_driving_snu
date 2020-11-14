@@ -52,6 +52,7 @@ namespace Planner{
     class RosWrapper{
 
     private:
+
         double t0; // update at the constructor
         /**
          * Shared resource with other thread
@@ -65,6 +66,8 @@ namespace Planner{
         tf::StampedTransform Tci; // transform from car_base_link to imu
         tf::Quaternion qImu0; // initial imu quaternion
         tf::Quaternion qImu; // current imu quaternion
+
+
 
         double pitchAngleFromImu; // pitch angle
 

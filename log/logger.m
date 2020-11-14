@@ -289,8 +289,65 @@ end
 
 plot(pitchSet*180/pi)
 
+%% 
+bag = rosbag('/home/jbs/2020-11-14-21-17-09.bag');
+bSel = select(bag,'Topic','/atypical_planning_test/cur_pose');
+
+bSel2 = select(bag,'Topic','/current_pose');
 
 
+msgStructs = readMessages(bSel,'DataFormat','struct');
+msgStructs2 = readMessages(bSel2,'DataFormat','struct');
 
+% Ours
+xs = [];
+ys = [];
+zs = [];
+ts = [];
+% KETI 
+xs_keti = [];
+ys_keti = [];
+zs_keti = [];
+ts_keti = [];
+
+for n = 1:length(msgStructs)
+    position = msgStructs{n}.Pose.Position;
+    xs = [xs position.X];
+    ys = [ys position.Y];
+    zs = [zs position.Z];   
+    ts= [ts double(msgStructs{n}.Header.Stamp.Sec) + double(msgStructs{n}.Header.Stamp.Nsec)*1e-9 ];
+end
+
+
+for n = 1:length(msgStructs2)
+    position = msgStructs2{n}.Pose.Position;
+    xs_keti = [xs_keti position.X];
+    ys_keti = [ys_keti position.Y];
+    zs_keti = [zs_keti position.Z];   
+end
+
+
+figure(2)
+subplot(2,1,1)
+hold on
+% plot(ts,xs)
+% plot(ts,ys)
+% plot(ts,zs)
+ts  = ts - ts(1);
+markerSize = 2;
+    plot(ts,xs,'o','MarkerSize',markerSize);
+    plot(ts,ys,'o','MarkerSize',markerSize);
+    plot(ts,zs,'o','MarkerSize',markerSize);
+set(gca,'XLim',[0 10])
+
+subplot(2,1,2)
+hold on
+    plot(xs_keti(1:4:end)-xs_keti(1),'o','MarkerSize',markerSize);
+    plot(ys_keti(1:4:end)-ys_keti(1),'o','MarkerSize',markerSize);
+    plot(zs_keti(1:4:end)-zs_keti(1),'o','MarkerSize',markerSize);
+set(gca,'XLim',[0 500])
+set(gca,'XLim',[0 500])
+
+%% 
 
 
