@@ -43,7 +43,8 @@ namespace Planner {
 		Matrix<double,Nx,1> cur_state;
         // YW added
         Collection<Corridor,N+1> box_constraint;
-
+        int numSameWaypoints; // number of same reference points, to stop 'gently'
+        bool useStopMotion; // if waypoints are overlapped many times -->Acc,Steer: 0 to stop.
         bool isRefPlausible; // check whether reference has garbage value
         bool isSFCPlausible; // check whether SFC has garbage value
         bool isDynObstPlausible; //check whether Dynamics Obstacle has garbage value
