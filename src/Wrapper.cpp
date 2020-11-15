@@ -312,9 +312,9 @@ void RosWrapper::prepareROSmsgs() {
 
     // Current goal
     geometry_msgs::PointStamped curGoal;
-    curGoal.header.frame_id = worldFrameId;
-    curGoal.point.x = p_base->goal_x;
-    curGoal.point.y = p_base->goal_y;
+    curGoal.header.frame_id = SNUFrameId;
+    curGoal.point.x = p_base->goalXYSNU(0);
+    curGoal.point.y = p_base->goalXYSNU(1);
     pubCurGoal.publish(curGoal);
 
 
@@ -334,9 +334,6 @@ void RosWrapper::prepareROSmsgs() {
     laneInfoText.color.g = 1.0;
     laneInfoText.scale.z = 0.7;
     pubTextSlider.publish(laneInfoText);
-
-
-;
 
 
     // Nominal speed
@@ -638,13 +635,13 @@ void RosWrapper::processTf() {
 
 
         // (b) send Tws (static)
-        transform.setOrigin(tf::Vector3(p_base->Tws.translation()(0),p_base->Tws.translation()(1),p_base->Tws.translation()(2)));
-        auto qd = Eigen::Quaterniond(p_base->Tws.rotation());
-        q.setX(qd.x());
-        q.setY(qd.y());
-        q.setZ(qd.z());
-        q.setW(qd.w());
-        transform.setRotation(q);//
+//        transform.setOrigin(tf::Vector3(p_base->Tws.translation()(0),p_base->Tws.translation()(1),p_base->Tws.translation()(2)));
+//        auto qd = Eigen::Quaterniond(p_base->Tws.rotation());
+//        q.setX(qd.x());
+//        q.setY(qd.y());
+//        q.setZ(qd.z());
+//        q.setW(qd.w());
+//        transform.setRotation(q);//
 //        tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), worldFrameId, SNUFrameId));
 
         // (c) lookup frame occupancy referance frame
@@ -861,8 +858,6 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
             return;
         }
 
-
-
         p_base->Tws.setIdentity(); // just initialization
         Eigen::Quaterniond quat;
         Eigen::Vector3d transl;
@@ -871,26 +866,33 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
         transl(1) = dataPtr->pose.position.y;
         transl(2) = dataPtr->pose.position.z;
 
+        tw0 = transl;
+
         // due to jungwon
         quat.x() =  dataPtr->pose.orientation.x;
         quat.y() =  dataPtr->pose.orientation.y;
         quat.z() =  dataPtr->pose.orientation.z;
         quat.w() =  dataPtr->pose.orientation.w;
 
-        p_base->Tws.translate(transl);
+        p_base->Tws.translate(Vector3d::Zero());
         p_base->Tws.rotate(quat);
 
         ROS_INFO("[SNU_PLANNER/RosWrapper] Reference tf has been initialized with [%f,%f,%f,%f,%f,%f,%f]",
-                transl(0),transl(1),transl(2),quat.x(),quat.y(),quat.z(),quat.w());
+                tw0(0),tw0(1),tw0(2),quat.x(),quat.y(),quat.z(),quat.w());
         isFrameRefReceived = true;
 
         // If ref frame was set, then transform the laneNode
         if (isLaneRawReceived){
             Vector3d goalXYSNU(p_base->goal_x,p_base->goal_y,0); // goal w.r.t SNu frame
-            goalXYSNU = p_base->Tws.inverse()*goalXYSNU;
+            goalXYSNU = p_base->Tws.rotation().transpose()*(goalXYSNU-tw0);
+            p_base->goalXYSNU = goalXYSNU;
 
             auto lane_w = p_base->getLanePath(); // w.r.t world frame
-            lane_w.applyTransform(p_base->Tws.inverse());
+            SE3 TwsWithTranslation;
+            TwsWithTranslation.setIdentity();
+            TwsWithTranslation.translate(tw0);
+            TwsWithTranslation.rotate(p_base->Tws.rotation());
+            lane_w.applyTransform(TwsWithTranslation.inverse());
             p_base->setLanePath(lane_w); // w.r.t SNU frame
             ROS_INFO("[SNU_PLANNER/RosWrapper] Lane-path transform completed!");
             p_base->laneOrig = Lane(lane_w); // should be applied transform
@@ -913,53 +915,61 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
 
         // 1. Converting car pose w.r.t Tw0
         auto poseOrig = dataPtr->pose;
+        poseOrig.position.x -= tw0(0);
+        poseOrig.position.y -= tw0(1);
+        poseOrig.position.z -= tw0(2);
 
-        SE3 Tw1 = DAP::pose_to_transform_matrix(poseOrig); // Tw1
-        SE3 T01 = p_base->Tws.inverse() * Tw1;
-        auto poseTransformed = DAP::transform_matrix_to_pose(T01);
+
+        auto Tw1 = DAP::pose_to_transform_matrix(poseOrig).matrix(); // Tw1
+//        cout <<  p_base->Tws.inverse().matrix()<< endl;
+        auto T01 = p_base->Tws.matrix().transpose() * Tw1; // no translation component in Tws
+        auto poseTransformed = DAP::transform_matrix_to_pose(SE3(T01));
+
+
 //        // Update the pose information w.r.t Tw1
 //        geometry_msgs::PoseStamped poseStamped;
 //        poseStamped.header.frame_id = SNUFrameId;
 //        poseStamped.pose = poseTransformed;
 //        poseStamped.header.stamp = ros::Time::now();
 //
-//        // 2. CarState
-//        CarState curState;
-//
-//        // make xy
-//        curState.x = poseTransformed.position.x;
-//        curState.y = poseTransformed.position.y;
-//
-//        // make theta
-//        tf::Quaternion q;
-//        q.setX(poseTransformed.orientation.x);
-//        q.setY(poseTransformed.orientation.y);
-//        q.setZ(poseTransformed.orientation.z);
-//        q.setW(poseTransformed.orientation.w);
-//
-//        tf::Transform Twc;
-//        Twc.setIdentity();
-//        Twc.setRotation(q);
-//
-//        tf::Matrix3x3 Rwc = Twc.getBasis();
-//        tf::Vector3 e1 = Rwc.getColumn(0);
-//        double theta = atan2(e1.y(), e1.x());
-//        curState.theta = theta;
-//
-//        // make
-//        curState.v = speed; // reverse gear = negative
-//        ROS_DEBUG("Current car state (x,y,theta(degree),v(m/s)) : [%f,%f,%f,%f]", curState.x, curState.y,
-//                  curState.theta * 180 / M_PI, curState.v);
+        // 2. CarState
+        CarState curState;
+
+        // make xy
+        curState.x = poseTransformed.position.x;
+        curState.y = poseTransformed.position.y;
+
+        // make theta
+        tf::Quaternion q;
+        q.setX(poseTransformed.orientation.x);
+        q.setY(poseTransformed.orientation.y);
+        q.setZ(poseTransformed.orientation.z);
+        q.setW(poseTransformed.orientation.w);
+
+        tf::Transform Twc;
+        Twc.setIdentity();
+        Twc.setRotation(q);
+
+        tf::Matrix3x3 Rwc = Twc.getBasis();
+        tf::Vector3 e1 = Rwc.getColumn(0);
+        double theta = atan2(e1.y(), e1.x());
+        curState.theta = theta;
+
+        // make
+        curState.v = speed; // reverse gear = negative
+        ROS_DEBUG("Current car state (x,y,theta(degree),v(m/s)) : [%f,%f,%f,%f]", curState.x, curState.y,
+                  curState.theta * 180 / M_PI, curState.v);
+
 
         /**
          * MUTEX - upload
          */
 //         p_base->mSet[0].lock();
-//         p_base->Tsb = T01;
+         p_base->Tsb = T01;
          p_base->cur_pose.pose = poseTransformed;
          p_base->cur_pose.header.stamp = ros::Time::now();
          p_base->setCurPose(p_base->cur_pose);
-//         p_base->setCarState(curState);
+         p_base->setCarState(curState);
 //         p_base->mSet[0].unlock();
 
 
@@ -1293,11 +1303,9 @@ void Wrapper::runPlanning() {
 //                ROS_WARN_STREAM("[SNU_PLANNER/RosWrapper] updated occupancy map");
 
 
-                Vector3d goalXYSNU(p_base_shared->goal_x,p_base_shared->goal_y,0); // goal w.r.t SNu frame
-                goalXYSNU = p_base_shared->Tws.inverse()*goalXYSNU;
                 // Goal checking
                 auto distToGoal = (Vector2d(p_base_shared->cur_state.x,p_base_shared->cur_state.y) -
-                        Vector2d(goalXYSNU(0),goalXYSNU(1))).norm();
+                        Vector2d(p_base_shared->goalXYSNU(0),p_base_shared->goalXYSNU(1))).norm();
 //                cout << "distance to goal" << distToGoal << endl;
                 if (distToGoal < p_base_shared->goal_thres){
                     printf("=========================================================\n");

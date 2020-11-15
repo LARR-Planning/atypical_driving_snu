@@ -14,7 +14,7 @@ plot(data_state(:,2),data_state(:,3),'k-')
 theta = data_state(:,4);
 xaxis = [cos(theta) sin(theta)];
 dd = 50;
-quiver(data_state(1:dd:end,2),data_state(1:dd:end,3),xaxis(1:dd:end,1),xaxis(1:dd:end,2))
+% quiver(data_state(1:dd:end,2),data_state(1:dd:end,3),xaxis(1:dd:end,1),xaxis(1:dd:end,2))
 xlabel('x')
 ylabel('y')
 
@@ -289,8 +289,8 @@ end
 
 plot(pitchSet*180/pi)
 
-%% 
-bag = rosbag('/home/jbs/2020-11-14-21-17-09.bag');
+%% pose callback 
+bag = rosbag('/home/jbs/2020-11-15-16-58-03.bag');
 bSel = select(bag,'Topic','/atypical_planning_test/cur_pose');
 
 bSel2 = select(bag,'Topic','/current_pose');
@@ -348,6 +348,37 @@ hold on
 set(gca,'XLim',[0 500])
 set(gca,'XLim',[0 500])
 
-%% 
+%% tf callback 
+bag = rosbag('/home/jbs/2020-11-15-17-11-00.bag');
+bSel = select(bag,'Topic','/tf');
+msgStructs = readMessages(bSel,'DataFormat','struct');
+
+ts = [];
+xs = [];
+ys = [];
+zs = [];
+
+for n = 1:length(msgStructs)
+   tf = msgStructs{n}.Transforms;
+   header = msgStructs{n}.Transforms.Header;
+   if strcmp(tf.ChildFrameId,'/base_link')
+      xs = [xs tf.Transform.Translation.X];
+      ys = [ys tf.Transform.Translation.Y];
+      zs = [zs tf.Transform.Translation.Z];
+      
+      t = double(header.Stamp.Sec) + double(header.Stamp.Nsec)*1e-9 ;
+      ts = [ts t];
+   
+   end
+    
+end
+
+figure(6)
+hold on
+ts  = ts - ts(1);
+markerSize = 2;
+plot(ts,xs,'o','MarkerSize',markerSize);
+% plot(ts,ys,'o','MarkerSize',markerSize);
+% plot(ts,zs,'o','MarkerSize',markerSize);
 
 

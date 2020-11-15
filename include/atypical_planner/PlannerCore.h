@@ -343,6 +343,8 @@ namespace Planner {
         double goal_thres;
         double goal_x;
         double goal_y;
+        Vector3d goalXYSNU;
+
         int flag = 0;
 
         int count_iter =0;

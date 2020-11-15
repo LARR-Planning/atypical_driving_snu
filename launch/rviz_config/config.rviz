@@ -9,6 +9,7 @@ Panels:
         - /Grid1
         - /Corridor1/Namespaces1
         - /TF1/Frames1
+        - /Polygon1
         - /Map1
         - /PointCloud21
         - /LaserScan1
@@ -87,7 +88,7 @@ Visualization Manager:
       Cell Size: 0.20000000298023224
       Class: rviz/Grid
       Color: 239; 41; 41
-      Enabled: true
+      Enabled: false
       Line Style:
         Line Width: 0.029999999329447746
         Value: Lines
@@ -100,13 +101,17 @@ Visualization Manager:
       Plane: XY
       Plane Cell Count: 100
       Reference Frame: base_link
-      Value: true
+      Value: false
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /atypical_planning_test/corridor_seq
       Name: Corridor
       Namespaces:
-        {}
+        0: true
+        1: true
+        2: true
+        3: true
+        4: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -359,8 +364,8 @@ Visualization Manager:
     - Alpha: 0.6000000238418579
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 5.67868185043335
-        Min Value: -0.8067254424095154
+        Max Value: 7.981135845184326
+        Min Value: -0.818828284740448
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -368,7 +373,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: AxisColor
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 4096
@@ -385,7 +390,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Class: rviz/Image
       Enabled: true
       Image Topic: /eth_cam_2/camera/image_raw
@@ -405,7 +410,7 @@ Visualization Manager:
           Marker Topic: /smooth_lane
           Name: MarkerArray
           Namespaces:
-            {}
+            "": true
           Queue Size: 100
           Value: true
       Enabled: true
@@ -427,7 +432,56 @@ Visualization Manager:
           Marker Topic: /atypical_planning_test/mpc_traj_marker
           Name: mpcTraj
           Namespaces:
-            {}
+            "\x01": true
+            "\x02": true
+            "\x03": true
+            "\x04": true
+            "\x05": true
+            "\x06": true
+            "\x07": true
+            "\b": true
+            "\t": true
+            "\n": true
+            "\x0b": true
+            "\x0c": true
+            : true
+            "\x0e": true
+            "\x0f": true
+            "\x10": true
+            "\x11": true
+            "\x12": true
+            "\x13": true
+            "\x14": true
+            "\x15": true
+            "\x16": true
+            "\x17": true
+            "\x18": true
+            "\x19": true
+            "\x1a": true
+            "\x1b": true
+            "\x1c": true
+            "\x1d": true
+            "\x1e": true
+            "\x1f": true
+            " ": true
+            "!": true
+            "\"": true
+            "#": true
+            $: true
+            "%": true
+            "&": true
+            "'": true
+            (: true
+            ): true
+            "*": true
+            +: true
+            ",": true
+            "-": true
+            .: true
+            /: true
+            0: true
+            1: true
+            2: true
           Queue Size: 100
           Value: true
       Enabled: true
@@ -440,6 +494,10 @@ Visualization Manager:
           Name: MarkerArray
           Namespaces:
             0: true
+            1: true
+            2: true
+            3: true
+            4: true
           Queue Size: 100
           Value: true
       Enabled: true
@@ -493,7 +551,7 @@ Visualization Manager:
   Global Options:
     Background Color: 0; 0; 0
     Default Light: true
-    Fixed Frame: base_link
+    Fixed Frame: SNU
     Frame Rate: 30
   Name: root
   Tools:
@@ -516,7 +574,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: 0.03999999910593033
+      Angle: 2.2399978637695312
       Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
@@ -526,11 +584,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 31.922353744506836
-      Target Frame: velodyne
+      Scale: 12.123695373535156
+      Target Frame: SNU
       Value: TopDownOrtho (rviz)
-      X: 3.648300886154175
-      Y: -0.01927640289068222
+      X: 243.94525146484375
+      Y: -25.5003604888916
     Saved: ~
 Window Geometry:
   Displays:
@@ -542,7 +600,7 @@ Window Geometry:
     collapsed: false
   Line graph:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000400000000000001c200000378fc0200000009fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d000001f7000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000a0049006d006100670065010000023a0000017b0000001600ffffff00000001000001c600000378fc0200000005fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fc0000003d0000012c000000c10100001cfa000000000100000002fb00000014004c0069006e00650020006700720061007000680100000000ffffffff0000007c00fffffffb0000000a0056006900650077007301000006020000013b0000010000fffffffb00000014004c0069006e0065002000670072006100700068010000016f0000011e0000006e00fffffffb00000014004c0069006e00650020006700720061007000680100000293000001220000006e00fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000007800000003efc0100000002fb0000000800540069006d0065010000000000000780000002eb00fffffffb0000000800540069006d00650100000000000004500000000000000000000003ec0000037800000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000001c200000378fc0200000009fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d000001f7000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000a0049006d006100670065010000023a0000017b0000001600ffffff00000001000001c600000378fc0200000005fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fc0000003d0000012c000000a400fffffffa000000010100000002fb00000014004c0069006e00650020006700720061007000680000000000ffffffff000001c600fffffffb0000000a0056006900650077007301000006020000013b0000010000fffffffb00000014004c0069006e0065002000670072006100700068010000016f0000011e0000007900fffffffb00000014004c0069006e00650020006700720061007000680100000293000001220000007900fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000007800000003efc0100000002fb0000000800540069006d0065010000000000000780000002eb00fffffffb0000000800540069006d00650100000000000004500000000000000000000003ec0000037800000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
