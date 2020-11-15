@@ -12,6 +12,7 @@ Panels:
         - /Polygon1
         - /Map1
         - /PointCloud21
+        - /Image1
         - /LaserScan1
         - /Pose4
       Splitter Ratio: 0.38962963223457336
@@ -34,7 +35,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: PointCloud2
+    SyncSource: Image
   - Class: graph_rviz_plugin/Line graph
     Name: Line graph
     export_directory: ""
@@ -364,8 +365,8 @@ Visualization Manager:
     - Alpha: 0.6000000238418579
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 7.981135845184326
-        Min Value: -0.818828284740448
+        Max Value: 4.6835036277771
+        Min Value: -0.9185217022895813
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -373,7 +374,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: AxisColor
       Decay Time: 0
-      Enabled: false
+      Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 4096
@@ -390,10 +391,10 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Class: rviz/Image
       Enabled: true
-      Image Topic: /eth_cam_2/camera/image_raw
+      Image Topic: /camera2/camera/image_raw
       Max Value: 1
       Median window: 5
       Min Value: 0
@@ -493,11 +494,7 @@ Visualization Manager:
           Marker Topic: /atypical_planning_test/prediction
           Name: MarkerArray
           Namespaces:
-            0: true
-            1: true
-            2: true
-            3: true
-            4: true
+            {}
           Queue Size: 100
           Value: true
       Enabled: true
@@ -574,7 +571,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: 2.2399978637695312
+      Angle: -1.6000003814697266
       Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
@@ -584,11 +581,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 12.123695373535156
+      Scale: 13.403179168701172
       Target Frame: SNU
       Value: TopDownOrtho (rviz)
-      X: 243.94525146484375
-      Y: -25.5003604888916
+      X: 202.53421020507812
+      Y: -55.7881965637207
     Saved: ~
 Window Geometry:
   Displays:

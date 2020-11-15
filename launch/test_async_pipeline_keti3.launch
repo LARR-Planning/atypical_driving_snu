@@ -87,8 +87,12 @@
 
 
     <!--1. Data feeder-->
-    <node pkg="rosbag" type="play" name="rosbag_record_diag" args="--clock --loop -s 0 /media/jbs/Samsung_T3/2020BAG/atypical/daegu_yugokri_result.bag" >
-           <remap from = "/current_pose_cov" to = "/current_pose"/>
+<!--    <node pkg="rosbag" type="play" name="rosbag_record_diag" args="&#45;&#45;clock &#45;&#45;loop -s 0 /media/jbs/Samsung_T3/2020BAG/atypical/daegu_yugokri_result.bag" >-->
+<!--           <remap from = "/current_pose_cov" to = "/current_pose"/>-->
+<!--    </node>-->
+
+    <node pkg="rosbag" type="play" name="rosbag_record_diag" args="--clock --loop -s 0 -r 1.5 /media/jbs/junwon/KIAPI_1105/2020-11-05-17-25-01.bag" >
+        <remap from = "/current_pose_cov" to = "/current_pose"/>
     </node>
 
     <!--2. snu_car_tf to velodyne_tf -->
