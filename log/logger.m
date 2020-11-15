@@ -290,7 +290,7 @@ end
 plot(pitchSet*180/pi)
 
 %% pose callback 
-bag = rosbag('/home/jbs/2020-11-15-16-58-03.bag');
+bag = rosbag('/home/jbs/2020-11-16-00-52-12.bag');
 bSel = select(bag,'Topic','/atypical_planning_test/cur_pose');
 
 bSel2 = select(bag,'Topic','/current_pose');
@@ -338,15 +338,15 @@ markerSize = 2;
     plot(ts,xs,'o','MarkerSize',markerSize);
     plot(ts,ys,'o','MarkerSize',markerSize);
     plot(ts,zs,'o','MarkerSize',markerSize);
-set(gca,'XLim',[0 10])
+set(gca,'XLim',[0 20])
 
-subplot(2,1,2)
-hold on
-    plot(xs_keti(1:4:end)-xs_keti(1),'o','MarkerSize',markerSize);
-    plot(ys_keti(1:4:end)-ys_keti(1),'o','MarkerSize',markerSize);
-    plot(zs_keti(1:4:end)-zs_keti(1),'o','MarkerSize',markerSize);
-set(gca,'XLim',[0 500])
-set(gca,'XLim',[0 500])
+% subplot(2,1,2)
+% hold on
+%     plot(xs_keti(1:4:end)-xs_keti(1),'o','MarkerSize',markerSize);
+%     plot(ys_keti(1:4:end)-ys_keti(1),'o','MarkerSize',markerSize);
+%     plot(zs_keti(1:4:end)-zs_keti(1),'o','MarkerSize',markerSize);
+% set(gca,'XLim',[0 500])
+% set(gca,'XLim',[0 500])
 
 %% tf callback 
 bag = rosbag('/home/jbs/2020-11-15-17-11-00.bag');
