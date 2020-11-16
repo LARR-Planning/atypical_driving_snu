@@ -443,7 +443,8 @@ Visualization Manager:
             "\n": true
             "\x0b": true
             "\x0c": true
-            : true
+            
+: true
             "\x0e": true
             "\x0f": true
             "\x10": true

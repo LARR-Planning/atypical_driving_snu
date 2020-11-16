@@ -377,6 +377,14 @@ void RosWrapper::prepareROSmsgs() {
 
     pubObservationMarker.publish(observations);
 
+    // flushing
+
+    for ( auto & marker : obstaclePrediction.markers){
+        marker.action = visualization_msgs::Marker::DELETE;
+    }
+
+    pubPredictionArray.publish(obstaclePrediction);
+
     obstaclePrediction.markers.clear();
     nsId = 0;
 
