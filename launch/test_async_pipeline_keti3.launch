@@ -87,7 +87,7 @@
 
     <!--1. Data feeder-->
 
-    <node pkg="rosbag" type="play" name="rosbag_record_diag" args="--clock --loop -s 0 /home/jungwon/2020-11-05-14-54-38.bag" >
+    <node pkg="rosbag" type="play" name="rosbag_record_diag" args="--clock --loop -s 0 /home/jungwon/2020-11-05-17-35-20.bag" >
            <remap from = "/current_pose_cov" to = "/current_pose"/>
     </node>
 

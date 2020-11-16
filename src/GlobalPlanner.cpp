@@ -233,6 +233,7 @@ bool GlobalPlanner::plan(double t) {
     i_smooth = 1;
     while(i_smooth < laneTreePath.size()) {
         double bias = (laneTreePath[i_smooth].midPoint - laneTreePath[i_smooth].lanePoint).norm();
+//        ROS_INFO_STREAM("bias of "<< i_smooth << ":" <<  bias);
         if (bias > param.smoothing_cliff_min_bias) {
             //Forward search
             int i_forward = i_smooth + 1;
@@ -261,6 +262,8 @@ bool GlobalPlanner::plan(double t) {
                     smoothingPoint = (1 - alpha) * laneTreePath[idx_start].midPoint + alpha * laneTreePath[idx_end].midPoint;
                     laneTreePath[idx_start + j_smooth].midPoint = smoothingPoint;
                 }
+                //debug
+//                ROS_WARN_STREAM("forward smoothing:" << i_smooth << " to " << i_forward);
             }
 
             //backward search
@@ -290,6 +293,8 @@ bool GlobalPlanner::plan(double t) {
                     smoothingPoint = (1 - alpha) * laneTreePath[idx_start].midPoint + alpha * laneTreePath[idx_end].midPoint;
                     laneTreePath[idx_start + j_smooth].midPoint = smoothingPoint;
                 }
+                //debug
+//                ROS_WARN_STREAM("backward smoothing:" << i_backward << " to " << i_smooth);
             }
         }
         i_smooth++;
