@@ -17,10 +17,6 @@ link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
 
-find_package(octomap REQUIRED)
-include_directories(${OCTOMAP_INCLUDE_DIRS})
-link_libraries(${OCTOMAP_LIBRARIES})
-
 find_package(catkin REQUIRED COMPONENTS roscpp sensor_msgs tf tf2
             geometry_msgs octomap_msgs message_generation nav_msgs message_generation driving_msgs pcl_ros occupancy_grid_utils
             )

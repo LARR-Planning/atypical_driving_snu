@@ -17,7 +17,7 @@
 #include <pcl/filters/crop_box.h>
 
 
-typedef  Eigen::Transform<double,3,Eigen::Affine> SE3;
+typedef  Eigen::Transform<double,3,Eigen::Isometry> SE3;
 using namespace std;
 using namespace Eigen;
 

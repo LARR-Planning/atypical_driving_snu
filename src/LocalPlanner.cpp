@@ -319,7 +319,7 @@ void LocalPlanner::SetSfcIdx(int N_corr)
  */
 bool LocalPlannerPlain::plan(double t) {
 //    Checked that this function is always executed
-    cout << "[LocalPlanner] Initialized.. " << endl;
+//    cout << "[LocalPlanner] Initialized.. " << endl;
 ////    cout << "[LocalPlanner] Done. " << endl;
 ////    cout<< "I am in the Local Planner plan function"<<endl;
 //     cout<<"---------------------------------"<<endl;

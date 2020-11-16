@@ -314,12 +314,15 @@ void RosWrapper::prepareROSmsgs() {
 
     // Current goal
     geometry_msgs::PointStamped curGoal;
-    curGoal.header.frame_id = worldFrameId;
-    curGoal.point.x = p_base->goal_x;
-    curGoal.point.y = p_base->goal_y;
+    curGoal.header.frame_id = SNUFrameId;
+    curGoal.point.x = p_base->goalXYSNU(0);
+    curGoal.point.y = p_base->goalXYSNU(1);
     pubCurGoal.publish(curGoal);
-    p_base->cur_pose.header.frame_id = SNUFrameId;
-    pubCurPose.publish(p_base->getCurPose());
+
+
+//    auto pose = p_base->getCurPose();
+//    pose.header.frame_id = SNUFrameId;
+
 
     // Current lane information
     visualization_msgs::Marker laneInfoText;
@@ -333,6 +336,7 @@ void RosWrapper::prepareROSmsgs() {
     laneInfoText.color.g = 1.0;
     laneInfoText.scale.z = 0.7;
     pubTextSlider.publish(laneInfoText);
+
 
     // Nominal speed
     std_msgs::Float64 nominal_speed;
@@ -495,6 +499,8 @@ void RosWrapper::prepareROSmsgs() {
  */
 void RosWrapper::publish() {
     // 0. map publish
+
+    /**
     if (isPCLReceived){
         sensor_msgs::PointCloud2 filtered_pcl;
         sensor_msgs::PointCloud2 ground_pcl;
@@ -510,7 +516,7 @@ void RosWrapper::publish() {
         pubGroundPcl.publish(ground_pcl);
     }
 
-
+**/
 
     // 1. Actuation command
     if (p_base->isLPsolved) {
@@ -555,12 +561,8 @@ void RosWrapper::publish() {
     }
 
     pubOurOccu.publish(p_base->localMap);
-//    int sum = 0 ;
-//    for (int i = 0 ; i < p_base->localMap.
-//    info.width*p_base->localMap.info.height; i ++){
-//        sum += p_base->localMap.data[i];
-//    }
-//    ROS_WARN_STREAM("[SNU_PLANNER/RosWrapper] publishing occupancy map: size =  " <<  sum << " " <<isLocalMapReceived);
+
+
     pubPath.publish(planningPath);
     pubCorridorSeq.publish(corridorSeq);
     pubTextTrackingVelocity.publish(obstacleVelocityText);
@@ -574,6 +576,9 @@ void RosWrapper::publish() {
     }
     pubSmoothLane.publish(p_base->laneSmooth.getPoints(SNUFrameId));
     p_base->mSet[1].unlock();
+
+
+
 }
 
 /**
@@ -581,6 +586,9 @@ void RosWrapper::publish() {
  */
 void RosWrapper::runROS() {
         ros::Rate lr(50);
+
+        ros::AsyncSpinner spinner(4);
+        spinner.start();
 
         while(ros::ok()){
 
@@ -592,7 +600,7 @@ void RosWrapper::runROS() {
             prepareROSmsgs(); // you may trigger this only under some conditions
             publish();
             processTf();
-            ros::spinOnce(); // callback functions are executed
+//            ros::spinOnce();
             lr.sleep();
         }
 }
@@ -607,71 +615,7 @@ void RosWrapper::processTf() {
     // 2. Transform broadcasting the tf of the current car w.r.t the first received tf
 
     if (isFrameRefReceived and isCarPoseCovReceived) {
-        // (a) send Tsb
-        auto pose = p_base->getCurPose();
 
-        tf::Transform transform;
-        transform.setOrigin( tf::Vector3(pose.pose.position.x, pose.pose.position.y, pose.pose.position.z) );
-        tf::Quaternion q;
-//        q.setX(0);
-//        q.setY(0);
-//        q.setZ(0);
-//        q.setW(1);
-
-        q.setX(pose.pose.orientation.x);
-        q.setY(pose.pose.orientation.y);
-        q.setZ(pose.pose.orientation.z);
-        q.setW(pose.pose.orientation.w);
-        transform.setRotation(q);
-
-        tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(),SNUFrameId, baseLinkId));
-
-        // car_base_link to imu frame (applying only pitch)
-
-        if (isImuReceived) {
-
-            // Consider pitch only
-
-//            tf::Quaternion qPitch;
-//            qPitch.setRPY(0,pitchAngleFromImu,0);
-//            std_msgs::Float64 pitchVal;
-//            pitchVal.data = pitchAngleFromImu;
-//            pubPitching.publish(pitchVal);
-//            tf::Quaternion qImuPitch = qPitch*q;
-//            transform.setRotation(qImuPitch);
-
-            // total transform
-            tf::Quaternion qImuInv = qImu0;
-            qImuInv.setW(-qImuInv.getW());
-
-            tf::Quaternion qImuRelative = qImu*qImuInv;
-
-
-            double roll,pitch,yaw;
-            tf::Matrix3x3(qImuRelative).getRPY(roll, pitch, yaw);
-
-            tf::Quaternion qPitch;
-            qPitch.setRPY(0,pitch,0);
-            tf::StampedTransform Tbi; // base link to imu
-            Tbi.setOrigin(tf::Vector3(0,0,0));
-            Tbi.setRotation(qPitch);
-            Tbi.child_frame_id_ = carImuFrameId;
-            Tbi.frame_id_ = baseLinkId;
-            tf_br.sendTransform(tf::StampedTransform(Tbi, ros::Time::now(),baseLinkId, carImuFrameId));
-        }
-
-
-
-
-        // (b) send Tws (static)
-        transform.setOrigin(tf::Vector3(p_base->Tws.translation()(0),p_base->Tws.translation()(1),p_base->Tws.translation()(2)));
-        auto qd = Eigen::Quaterniond(p_base->Tws.rotation());
-        q.setX(qd.x());
-        q.setY(qd.y());
-        q.setZ(qd.z());
-        q.setW(qd.w());
-        transform.setRotation(q);//
-        tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), worldFrameId, SNUFrameId));
 
         // (c) lookup frame occupancy referance frame
         try {
@@ -701,6 +645,9 @@ void RosWrapper::processTf() {
 
 void RosWrapper::pclCallback(const sensor_msgs::PointCloud2::ConstPtr pcl_msg){
 
+//    cout <<"In pcl callback : " << endl;
+
+    auto t0 = ros::Time::now();
     isPCLReceived = true;
     processedPclPtr->header.frame_id = pcl_msg->header.frame_id; // keep the header as the velodyne
     processedPclPtr->points.clear();
@@ -728,13 +675,16 @@ void RosWrapper::pclCallback(const sensor_msgs::PointCloud2::ConstPtr pcl_msg){
         }
 
 
+    auto t1 = ros::Time::now();
+
+//    cout << "[PCL] cropping: " <<(t1 - t0).toSec() << endl;
     // 1. speckle removal
 
     pcl::RadiusOutlierRemoval<pcl::PointXYZ> outrem;
-    outrem.setInputCloud(cloudtotal);
-    outrem.setRadiusSearch(param.g_param.pcl_dbscan_eps);
-    outrem.setMinNeighborsInRadius (param.g_param.pcl_dbscan_minpnts);
-    outrem.filter(*cloudtotal);
+//    outrem.setInputCloud(cloudtotal);
+//    outrem.setRadiusSearch(param.g_param.pcl_dbscan_eps);
+//    outrem.setMinNeighborsInRadius (param.g_param.pcl_dbscan_minpnts);
+//    outrem.filter(*cloudtotal);
 
 
 
@@ -746,6 +696,9 @@ void RosWrapper::pclCallback(const sensor_msgs::PointCloud2::ConstPtr pcl_msg){
                 processedPclPtr->points.push_back(pnt);
         }
     }
+
+
+
 
     if (not param.g_param.use_ransac){
         groundPclPtr->points = cloudCandidateGround->points;
@@ -766,7 +719,7 @@ void RosWrapper::pclCallback(const sensor_msgs::PointCloud2::ConstPtr pcl_msg){
 
         groundPclPtr->points.clear();
 
-        ROS_INFO("[RosWrapper] inliners : [%d,%d]", inliers->indices.size(), cloudCandidateGround->points.size());
+//        ROS_INFO("[RosWrapper] inliners : [%d,%d]", inliers->indices.size(), cloudCandidateGround->points.size());
 
         double a = coefficients->values[0];
         double b = coefficients->values[1];
@@ -783,14 +736,46 @@ void RosWrapper::pclCallback(const sensor_msgs::PointCloud2::ConstPtr pcl_msg){
             else
                 processedPclPtr->points.push_back(pnt);
         }
-//        // 3. another spekcle removal
-//        outrem.setInputCloud(processedPclPtr);
-//        outrem.setRadiusSearch(param.g_param.pcl_dbscan_eps);
-//        outrem.setMinNeighborsInRadius(param.g_param.pcl_dbscan_minpnts);
-//        outrem.filter(*processedPclPtr);
+
+
+        auto t2 = ros::Time::now();
+
+//        cout << "[PCL] ransac " <<(t2 - t1).toSec() << endl;
+
+
+        // 3. another spekcle removal
+        vector<int> indices;
+        pcl::removeNaNFromPointCloud(*processedPclPtr,*processedPclPtr,indices);
+        outrem.setInputCloud(processedPclPtr);
+        outrem.setRadiusSearch(param.g_param.pcl_dbscan_eps);
+        outrem.setMinNeighborsInRadius(param.g_param.pcl_dbscan_minpnts);
+        outrem.filter(*processedPclPtr);
+        auto t3 = ros::Time::now();
+
+//        cout << "[PCL] speckle " << (t3 - t2).toSec() << endl;
+
+
     }
+
+
     processedPclPtr->header.frame_id = pcl_msg->header.frame_id; // keep the header as the velodyne
     groundPclPtr->header.frame_id = pcl_msg->header.frame_id; // keep the header as the velodyne
+
+
+    sensor_msgs::PointCloud2 filtered_pcl;
+    sensor_msgs::PointCloud2 ground_pcl;
+    pcl::toROSMsg(*processedPclPtr,filtered_pcl);
+    pcl::toROSMsg(*groundPclPtr,ground_pcl);
+
+    filtered_pcl.header.stamp = ros::Time::now();
+    filtered_pcl.header.frame_id = processedPclPtr->header.frame_id;
+
+    ground_pcl.header.stamp = ros::Time::now();
+    ground_pcl.header.frame_id = processedPclPtr->header.frame_id;
+    pubFilteredPcl.publish(filtered_pcl);
+    pubGroundPcl.publish(ground_pcl);
+//    cout << "pcl processing time = " << (ros::Time::now() - t0).toSec() << endl;
+
 }
 
 void RosWrapper::cbDetectedObjects(const driving_msgs::DetectedObjectArray &objectsArray) {
@@ -879,40 +864,49 @@ void RosWrapper::cbDetectedObjects(const driving_msgs::DetectedObjectArray &obje
  * @param dataPtr
  */
 void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr) {
-
+//    cout << "in pose callback" << endl;
     // First, generate the ref frame based on the first-received pose
     if (not isFrameRefReceived){
         if (dataPtr->pose.position.x == 0 and dataPtr->pose.position.y == 0 ){
             ROS_ERROR("[SNU_PLANNER/RosWrapper] The first received pose is just zero. It is ignored as the ref tf");
             return;
         }
+
         p_base->Tws.setIdentity(); // just initialization
         Eigen::Quaterniond quat;
         Eigen::Vector3d transl;
 
-        transl(0) = dataPtr->pose.position.x;
+        transl(0) = dataPtr->pose.position.x ;
         transl(1) = dataPtr->pose.position.y;
         transl(2) = dataPtr->pose.position.z;
+
+        tw0 = transl;
+
         // due to jungwon
         quat.x() =  dataPtr->pose.orientation.x;
         quat.y() =  dataPtr->pose.orientation.y;
         quat.z() =  dataPtr->pose.orientation.z;
         quat.w() =  dataPtr->pose.orientation.w;
 
-        p_base->Tws.translate(transl);
+        p_base->Tws.translate(Vector3d::Zero());
         p_base->Tws.rotate(quat);
 
         ROS_INFO("[SNU_PLANNER/RosWrapper] Reference tf has been initialized with [%f,%f,%f,%f,%f,%f,%f]",
-                transl(0),transl(1),transl(2),quat.x(),quat.y(),quat.z(),quat.w());
+                tw0(0),tw0(1),tw0(2),quat.x(),quat.y(),quat.z(),quat.w());
         isFrameRefReceived = true;
 
         // If ref frame was set, then transform the laneNode
         if (isLaneRawReceived){
             Vector3d goalXYSNU(p_base->goal_x,p_base->goal_y,0); // goal w.r.t SNu frame
-            goalXYSNU = p_base->Tws.inverse()*goalXYSNU;
+            goalXYSNU = p_base->Tws.rotation().transpose()*(goalXYSNU-tw0);
+            p_base->goalXYSNU = goalXYSNU;
 
             auto lane_w = p_base->getLanePath(); // w.r.t world frame
-            lane_w.applyTransform(p_base->Tws.inverse());
+            SE3 TwsWithTranslation;
+            TwsWithTranslation.setIdentity();
+            TwsWithTranslation.translate(tw0);
+            TwsWithTranslation.rotate(p_base->Tws.rotation());
+            lane_w.applyTransform(TwsWithTranslation.inverse());
             p_base->setLanePath(lane_w); // w.r.t SNU frame
             ROS_INFO("[SNU_PLANNER/RosWrapper] Lane-path transform completed!");
             p_base->laneOrig = Lane(lane_w); // should be applied transform
@@ -935,42 +929,24 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
 
         // 1. Converting car pose w.r.t Tw0
         auto poseOrig = dataPtr->pose;
-
-        Eigen::Quaterniond quat;
-        quat.x() = poseOrig.orientation.x;
-        quat.y() = poseOrig.orientation.y;
-        quat.z() = poseOrig.orientation.z;
-        quat.w() = poseOrig.orientation.w;
-
-        Eigen::Matrix3d rot_mat = quat.toRotationMatrix();
-        Eigen::Vector3d transl_vec(poseOrig.position.x,poseOrig.position.y,poseOrig.position.z);
-        SE3 Tw1;
-        Tw1.setIdentity();
-        Tw1.translate(transl_vec);
-        Tw1.rotate(rot_mat);
-
-        SE3 T01 = p_base->Tws.inverse() * Tw1;
-
-//        auto poseTransformed = DAP::transform_matrix_to_pose(T01);
-
-        Eigen::Quaterniond quatnew(T01.rotation());
-        Eigen::Vector3d vec = T01.translation();
-
-        geometry_msgs::Pose poseTransformed;
-        poseTransformed.position.x = vec(0);
-        poseTransformed.position.y = vec(1);
-        poseTransformed.position.z = vec(2);
-        poseTransformed.orientation.x = quatnew.x();
-        poseTransformed.orientation.y = quatnew.y();
-        poseTransformed.orientation.z = quatnew.z();
-        poseTransformed.orientation.w = quatnew.w();
+        poseOrig.position.x -= tw0(0);
+        poseOrig.position.y -= tw0(1);
+        poseOrig.position.z -= tw0(2);
 
 
-        // Update the pose information w.r.t Tw1
-        geometry_msgs::PoseStamped poseStamped;
-        poseStamped.header.frame_id = SNUFrameId;
-        poseStamped.pose = poseTransformed;
+        auto Tw1 = DAP::pose_to_transform_matrix(poseOrig).matrix(); // Tw1
+//        cout <<  p_base->Tws.inverse().matrix()<< endl;
+        auto T01 = p_base->Tws.matrix().transpose() * Tw1; // no translation component in Tws
+        auto poseTransformed = DAP::transform_matrix_to_pose(SE3(T01));
 
+
+
+//        // Update the pose information w.r.t Tw1
+//        geometry_msgs::PoseStamped poseStamped;
+//        poseStamped.header.frame_id = SNUFrameId;
+//        poseStamped.pose = poseTransformed;
+//        poseStamped.header.stamp = ros::Time::now();
+//
         // 2. CarState
         CarState curState;
 
@@ -996,17 +972,41 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
 
         // make
         curState.v = speed; // reverse gear = negative
-        ROS_DEBUG("Current car state (x,y,theta(degree),v(m/s)) : [%f,%f,%f,%f]", curState.x, curState.y,
-                  curState.theta * 180 / M_PI, curState.v);
+
+
+        // tf broadcasting
+
+        auto pose = p_base->getCurPose();
+
+        tf::Transform transform;
+        transform.setOrigin( tf::Vector3(pose.pose.position.x, pose.pose.position.y, pose.pose.position.z) );
+
+        q.setX(pose.pose.orientation.x);
+        q.setY(pose.pose.orientation.y);
+        q.setZ(pose.pose.orientation.z);
+        q.setW(pose.pose.orientation.w);
+        transform.setRotation(q);
+
+        tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(),SNUFrameId, baseLinkId));
+
+
+        // publishing pose
+        pose.header.frame_id = SNUFrameId;
+        pose.header.stamp = ros::Time::now();
+        pubCurPose.publish(pose);
+
 
         /**
          * MUTEX - upload
          */
 //         p_base->mSet[0].lock();
          p_base->Tsb = T01;
-         p_base->setCurPose(poseStamped);
+         p_base->cur_pose.pose = poseTransformed;
+         p_base->cur_pose.header.stamp = ros::Time::now();
+         p_base->setCurPose(p_base->cur_pose);
          p_base->setCarState(curState);
 //         p_base->mSet[0].unlock();
+
 
          isCarPoseCovReceived = true;
         ROS_INFO_ONCE("[SNU_PLANNER/RosWrapper] First received car state! ");
@@ -1040,6 +1040,7 @@ void RosWrapper::cbOccuUpdate(const map_msgs::OccupancyGridUpdateConstPtr &msg) 
 
 void RosWrapper::cbCarSpeed(const std_msgs::Float64& speed_) {
     // Incoming data is km/h
+//    cout << "in pose callback" << endl;
     speed = speed_.data*1000.0/3600;
     isCarSpeedReceived = true;
     p_base->cur_state.v = speed; // reverse gear = negative
@@ -1193,18 +1194,6 @@ bool Wrapper::processLane(double tTrigger) {
         }
 
 
-//
-//        double meanCurv = meanCurvature(pathSliced);
-//        double vLaneRef; // referance velocity for the current lane
-//        double vmin = param.g_param.car_speed_min;
-//        double vmax = param.g_param.car_speed_max;
-//        double rho_thres = param.g_param.curvature_thres;
-//        // ref speed determined
-//        if (meanCurv > rho_thres)
-//            vLaneRef = vmin;
-//        else{
-//            vLaneRef = vmax - (vmax-vmin)/rho_thres*meanCurv;
-//        }
 
 
         p_base_shared->mSet[1].lock();
@@ -1327,7 +1316,7 @@ void Wrapper::runPlanning() {
 
             ROS_INFO_ONCE("[Wrapper] All car states have been received!");
             if (chrono::steady_clock::now() - tCkpStatePrinter > std::chrono::duration<double>(param.g_param.period)) {
-                p_base_shared->getCarState().print();
+//                p_base_shared->getCarState().print();
                 tCkpStatePrinter = chrono::steady_clock::now();
 
             }
@@ -1338,11 +1327,9 @@ void Wrapper::runPlanning() {
 //                ROS_WARN_STREAM("[SNU_PLANNER/RosWrapper] updated occupancy map");
 
 
-                Vector3d goalXYSNU(p_base_shared->goal_x,p_base_shared->goal_y,0); // goal w.r.t SNu frame
-                goalXYSNU = p_base_shared->Tws.inverse()*goalXYSNU;
                 // Goal checking
                 auto distToGoal = (Vector2d(p_base_shared->cur_state.x,p_base_shared->cur_state.y) -
-                        Vector2d(goalXYSNU(0),goalXYSNU(1))).norm();
+                        Vector2d(p_base_shared->goalXYSNU(0),p_base_shared->goalXYSNU(1))).norm();
 //                cout << "distance to goal" << distToGoal << endl;
                 if (distToGoal < p_base_shared->goal_thres){
                     printf("=========================================================\n");
@@ -1361,7 +1348,7 @@ void Wrapper::runPlanning() {
                     // Lane processing
                     isLaneSuccess = processLane(ros_wrapper_ptr->curTime());
                     if (isLaneSuccess){
-                        ROS_INFO("[Wrapper] lane extracted!");
+//                        ROS_INFO("[Wrapper] lane extracted!");
                         ROS_INFO("[Wrapper] begin GP..");
                         isGPSuccess = planGlobal(ros_wrapper_ptr->curTime());
 
@@ -1371,31 +1358,30 @@ void Wrapper::runPlanning() {
                                                                                                    chrono::steady_clock::now() -
                                                                                                    tCkpG).count() * 0.001
                                                     << "ms");
-                            ROS_INFO("[Wrapper] begin LP..");
+//                            ROS_INFO("[Wrapper] begin LP..");
 
                             auto tCkp_mpc = chrono::steady_clock::now();
                             isLPSuccess = planLocal(ros_wrapper_ptr->curTime()); // TODO time ?
-                            if (isLPSuccess)
-                                ROS_INFO_STREAM("[Wrapper] LP success! planning time for lp: " <<
-                                                                                               std::chrono::duration_cast<std::chrono::microseconds>(
-                                                                                                       chrono::steady_clock::now() -
-                                                                                                       tCkp_mpc).count() *
-                                                                                               0.001
-                                                                                               << "ms");
-                            else { // LP failed
+                            if (not isLPSuccess)
+
+//                                ROS_INFO_STREAM("[Wrapper] LP success! planning time for lp: " <<
+//                                                                                               std::chrono::duration_cast<std::chrono::microseconds>(
+//                                                                                                       chrono::steady_clock::now() -
+//                                                                                                       tCkp_mpc).count() *
+//                                                                                               0.001
+//                                                                                               << "ms");
                                 ROS_INFO_STREAM("[Wrapper] LP failed.");
-                                ROS_INFO_STREAM("[Wrapper] LP failed! planning time for lp: " <<
-                                                                                               std::chrono::duration_cast<std::chrono::microseconds>(
-                                                                                                       chrono::steady_clock::now() -
-                                                                                                       tCkp_mpc).count() *
-                                                                                               0.001
-                                                                                               << "ms");
+//                                ROS_INFO_STREAM("[Wrapper] LP failed! planning time for lp: " <<
+//                                                                                               std::chrono::duration_cast<std::chrono::microseconds>(
+//                                                                                                       chrono::steady_clock::now() -
+//                                                                                                       tCkp_mpc).count() *
+//                                                                                               0.001
+//                                                                                               << "ms");
 
 
 
 
 
-                            }
                         } else // GP failed
                             ROS_INFO_STREAM("[Wrapper] GP failed.");
 
