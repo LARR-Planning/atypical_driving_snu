@@ -39,7 +39,7 @@
     <param name="map/pcl_ly" value="20"/>
     <param name="map/pcl_z_min" value="-1.6"/>
     <param name="map/pcl_dbscan_minpnts" value="6"/>
-    <param name="map/pcl_dbscan_eps" value="0.5"/>
+    <param name="map/pcl_dbscan_eps" value="0.2"/>
     <param name="map/ransac_post_inclusion_offset" value="0.4"/>
     <param name="map/ransac_distance_threshold" value="0.2"/>
     <param name="map/use_ransac" value="true"/>

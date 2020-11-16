@@ -643,7 +643,7 @@ void RosWrapper::processTf() {
 
 void RosWrapper::pclCallback(const sensor_msgs::PointCloud2::ConstPtr pcl_msg){
 
-    cout <<"In pcl callback : " << endl;
+//    cout <<"In pcl callback : " << endl;
 
     auto t0 = ros::Time::now();
     isPCLReceived = true;
@@ -675,16 +675,14 @@ void RosWrapper::pclCallback(const sensor_msgs::PointCloud2::ConstPtr pcl_msg){
 
     auto t1 = ros::Time::now();
 
-    cout << "[PCL] cropping: " <<(t1 - t0).toSec() << endl;
+//    cout << "[PCL] cropping: " <<(t1 - t0).toSec() << endl;
     // 1. speckle removal
 
     pcl::RadiusOutlierRemoval<pcl::PointXYZ> outrem;
-    outrem.setInputCloud(cloudtotal);
-    outrem.setRadiusSearch(param.g_param.pcl_dbscan_eps);
-    outrem.setMinNeighborsInRadius (param.g_param.pcl_dbscan_minpnts);
-    outrem.filter(*cloudtotal);
-
-    auto t2 = ros::Time::now();
+//    outrem.setInputCloud(cloudtotal);
+//    outrem.setRadiusSearch(param.g_param.pcl_dbscan_eps);
+//    outrem.setMinNeighborsInRadius (param.g_param.pcl_dbscan_minpnts);
+//    outrem.filter(*cloudtotal);
 
 
 
@@ -698,7 +696,7 @@ void RosWrapper::pclCallback(const sensor_msgs::PointCloud2::ConstPtr pcl_msg){
     }
 
 
-    cout << "[PCL] speckle: " <<(t2 - t1).toSec() << endl;
+
 
     if (not param.g_param.use_ransac){
         groundPclPtr->points = cloudCandidateGround->points;
@@ -719,7 +717,7 @@ void RosWrapper::pclCallback(const sensor_msgs::PointCloud2::ConstPtr pcl_msg){
 
         groundPclPtr->points.clear();
 
-        ROS_INFO("[RosWrapper] inliners : [%d,%d]", inliers->indices.size(), cloudCandidateGround->points.size());
+//        ROS_INFO("[RosWrapper] inliners : [%d,%d]", inliers->indices.size(), cloudCandidateGround->points.size());
 
         double a = coefficients->values[0];
         double b = coefficients->values[1];
@@ -736,14 +734,23 @@ void RosWrapper::pclCallback(const sensor_msgs::PointCloud2::ConstPtr pcl_msg){
             else
                 processedPclPtr->points.push_back(pnt);
         }
+
+
+        auto t2 = ros::Time::now();
+
+//        cout << "[PCL] ransac " <<(t2 - t1).toSec() << endl;
+
+
         // 3. another spekcle removal
+        vector<int> indices;
+        pcl::removeNaNFromPointCloud(*processedPclPtr,*processedPclPtr,indices);
         outrem.setInputCloud(processedPclPtr);
         outrem.setRadiusSearch(param.g_param.pcl_dbscan_eps);
         outrem.setMinNeighborsInRadius(param.g_param.pcl_dbscan_minpnts);
         outrem.filter(*processedPclPtr);
         auto t3 = ros::Time::now();
 
-        cout << "[PCL] ransac " << (t3 - t2).toSec() << endl;
+//        cout << "[PCL] speckle " << (t3 - t2).toSec() << endl;
 
     }
 
@@ -764,7 +771,7 @@ void RosWrapper::pclCallback(const sensor_msgs::PointCloud2::ConstPtr pcl_msg){
     ground_pcl.header.frame_id = processedPclPtr->header.frame_id;
     pubFilteredPcl.publish(filtered_pcl);
     pubGroundPcl.publish(ground_pcl);
-    cout << "pcl processing time = " << (ros::Time::now() - t0).toSec() << endl;
+//    cout << "pcl processing time = " << (ros::Time::now() - t0).toSec() << endl;
 
 }
 
@@ -854,7 +861,7 @@ void RosWrapper::cbDetectedObjects(const driving_msgs::DetectedObjectArray &obje
  * @param dataPtr
  */
 void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr) {
-    cout << "in pose callback" << endl;
+//    cout << "in pose callback" << endl;
     // First, generate the ref frame based on the first-received pose
     if (not isFrameRefReceived){
         if (dataPtr->pose.position.x == 0 and dataPtr->pose.position.y == 0 ){
@@ -1029,7 +1036,7 @@ void RosWrapper::cbOccuUpdate(const map_msgs::OccupancyGridUpdateConstPtr &msg) 
 
 void RosWrapper::cbCarSpeed(const std_msgs::Float64& speed_) {
     // Incoming data is km/h
-    cout << "in pose callback" << endl;
+//    cout << "in pose callback" << endl;
     speed = speed_.data*1000.0/3600;
     isCarSpeedReceived = true;
     p_base->cur_state.v = speed; // reverse gear = negative
