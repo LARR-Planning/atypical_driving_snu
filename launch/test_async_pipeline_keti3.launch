@@ -21,8 +21,8 @@
   <arg name ="detected_object_frame_id" default = "velodyne"/>
   <arg name ="car_imu_frame_id" default = "/car_imu"/>
 
-  <arg name = "lane_width" default="5"/>
-  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/interpolated_yugokri_path1.csv"/>
+  <arg name = "lane_width" default="2"/>
+  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/interpolated_waypoint_parking_lot8.csv"/>
   <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
 
 
@@ -87,7 +87,7 @@
 
     <!--1. Data feeder-->
 
-    <node pkg="rosbag" type="play" name="rosbag_record_diag" args="--clock --loop -s 70 /media/jbs/Samsung_T3/2020BAG/atypical/kiapi1105/KIAPI_1105/2020-11-05-17-38-35.bag" >
+    <node pkg="rosbag" type="play" name="rosbag_record_diag" args="--clock --loop -s 50 $(find atypical_driving)/worlds/galgori.bag" >
            <remap from = "/current_pose_cov" to = "/current_pose"/>
     </node>
 

@@ -16,12 +16,11 @@
 
 
   <arg name = "lane_width" default="5"/>
-  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/interpolated_yugokri_path1.csv"/>
+  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/interpolated_waypoint_parking_lot8.csv"/>
   <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
 
-  <arg name = "goal/x"  default = "451489.3968"/> <!--in world frame -->
-  <arg name = "goal/y" default = "3947475.6160"/> <!--in world frame -->
-
+  <arg name = "goal/x"  default = "323891.02"/> <!--in world frame -->
+  <arg name = "goal/y" default = "4145172.15"/> <!--in world frame -->
 
     <arg name = "period" default= "0.1"/>
     <arg name = "horizon"  default= "5"/> <!--Also change dimension.h-->
@@ -99,20 +98,20 @@
         <param name = "local_planner/obstacle_radius_nominal" value="1"/>
 
         <param name="map/pcl_lx" value="60"/>
-        <param name="map/pcl_ly" value="30"/>
+        <param name="map/pcl_ly" value="20"/>
         <param name="map/pcl_z_min" value="-1.6"/>
-        <param name="map/pcl_dbscan_minpnts" value="3"/>
-        <param name="map/pcl_dbscan_eps" value="0.5"/>
-        <param name="map/ransac_post_inclusion_offset" value="0.2"/>
+        <param name="map/pcl_dbscan_minpnts" value="6"/>
+        <param name="map/pcl_dbscan_eps" value="0.2"/>
+        <param name="map/ransac_post_inclusion_offset" value="0.4"/>
         <param name="map/ransac_distance_threshold" value="0.2"/>
         <param name="map/use_ransac" value="true"/>
 
 
         <!--Shaping params for nominal_speed selection-->
-        <param name = "vmax" value = "3"/> <!--m/s-->
-        <param name = "vmin" value = "1.2"/> <!--m/s-->
-        <param name = "v_ref_past_weight" value = "0.8"/>
-        <param name = "curve_thres" value = "0.15"/> <!--m/s-->
+        <param name = "vmax" value = "5.0"/> <!--m/s-->
+        <param name = "vmin" value = "1.0"/> <!--m/s-->
+        <param name = "v_ref_past_weight" value = "0.8"/> <!--m/s-->
+        <param name = "curve_thres" value = "0.05"/> <!--m/s-->
 
         <param name = "goal/x" value = "$(arg goal/x)"/>
         <param name = "goal/y" value = "$(arg goal/y)"/>
@@ -122,12 +121,12 @@
         <param name = "lane_width" value="$(arg lane_width)"/>
         <param name = "log_file_prefix" value = "$(arg log_file_prefix)" />
 
-        <param name="global_planner/car_width" value="1.0" />
+        <param name="global_planner/car_width" value="1.5" />
         <param name="global_planner/period" value="$(arg period)" />
         <param name="global_planner/grid_resolution" value="0.3" />
         <param name="global_planner/max_steering_angle" value = "$(eval 3.14/20)"/>
-        <param name="global_planner/smoothing_distance" value="8.0" />
-        <param name="global_planner/smoothing_cliff_min_bias" value="0.5" />
+        <param name="global_planner/smoothing_distance" value="5.0" />
+        <param name="global_planner/smoothing_cliff_min_bias" value="0.2" />
         <param name="global_planner/smoothing_cliff_ratio" value="0.5"/>
         <param name="global_planner/start_smoothing_distance" value="6.0" />
         <param name="global_planner/corridor_width_min" value = "0.5"/>
@@ -136,8 +135,8 @@
         <param name="global_planner/nominal_acceleration" value = "0.5"/>
         <param name="global_planner/object_velocity_threshold" value="0.3"/>
         <param name="global_planner/max_obstacle_prediction_query_size" value="20"/>
-        <param name="global_planner/acc_stop_distance" value="1.0"/>
-        <param name="global_planner/acc_stop_angle" value="$(eval 3.14/180*10)"/>
+        <param name="global_planner/acc_stop_distance" value="5.0"/>
+        <param name="global_planner/acc_stop_angle" value="$(eval 3.14/180*5)"/>
 
         <param name="local_planner/horizon" value="$(arg horizon)" />
         <param name="local_planner/ts" value="$(arg planning_dt)" />
@@ -154,7 +153,7 @@
 	    <!--ignore_angle, 1deg: 0.017, 2deg: 0.035, 3deg: 0.052, 4deg: 0.070 -->
 	    <param name = "smooth_weight" value="0.7"/>
         <param name = "moving_horizon" value="20"/>
-        <param name = "smoothing_type" value="3"/>
+        <param name = "smoothing_type" value="2"/>
 	    <param name = "ignore_angle" value="0.017"/>
         <param name = "stopSpeed" value="0.5"/>
 

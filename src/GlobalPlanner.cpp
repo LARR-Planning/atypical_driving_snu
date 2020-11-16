@@ -290,6 +290,7 @@ bool GlobalPlanner::plan(double t) {
                     smoothingPoint = (1 - alpha) * laneTreePath[idx_start].midPoint + alpha * laneTreePath[idx_end].midPoint;
                     laneTreePath[idx_start + j_smooth].midPoint = smoothingPoint;
                 }
+                ROS_WARN_STREAM("backward smoothing: " << i_backward << " to " << i_smooth);
             }
         }
         i_smooth++;
