@@ -204,6 +204,8 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<double>("global_planner/nominal_acceleration", param_.g_param.nominal_acceleration, 0.5);
     nh.param<double>("global_planner/object_velocity_threshold", param_.g_param.object_velocity_threshold, 0.1);
     nh.param<double>("global_planner/max_obstacle_prediction_query_size", param_.g_param.max_obstacle_prediction_query_size, 1000);
+    nh.param<double>("global_planner/acc_stop_distance", param_.g_param.acc_stop_distance, 1.0);
+    nh.param<double>("global_planner/acc_stop_angle", param_.g_param.acc_stop_angle, M_PI/10);
 
 
     // local planner
@@ -711,7 +713,7 @@ void RosWrapper::pclCallback(const sensor_msgs::PointCloud2::ConstPtr pcl_msg){
         seg.setModelType(pcl::SACMODEL_PLANE);
         seg.setMethodType(pcl::SAC_RANSAC);
         seg.setDistanceThreshold(param.g_param.ransac_distance_threshold);
-        seg.setMaxIterations(200);
+        seg.setMaxIterations(80);
         seg.setInputCloud(cloudCandidateGround);
         seg.segment(*inliers, *coefficients);
 
@@ -751,6 +753,7 @@ void RosWrapper::pclCallback(const sensor_msgs::PointCloud2::ConstPtr pcl_msg){
         auto t3 = ros::Time::now();
 
 //        cout << "[PCL] speckle " << (t3 - t2).toSec() << endl;
+
 
     }
 
@@ -935,6 +938,7 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
 //        cout <<  p_base->Tws.inverse().matrix()<< endl;
         auto T01 = p_base->Tws.matrix().transpose() * Tw1; // no translation component in Tws
         auto poseTransformed = DAP::transform_matrix_to_pose(SE3(T01));
+
 
 
 //        // Update the pose information w.r.t Tw1

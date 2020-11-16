@@ -199,6 +199,7 @@ void LocalPlanner::SetSfcIdx(int N_corr)
  bool LocalPlanner::SetLocalWpts(double t)
  {
     static int flag_first = 0;
+    numSameWaypoints = 0;
     VectorXd time_knots;
     time_knots.setLinSpaced(N+1,t,t+N*param.tStep);
     vector<Vector2d> pos_ref;
@@ -229,7 +230,7 @@ void LocalPlanner::SetSfcIdx(int N_corr)
 			{
             	th_ref[i-1] = th_ref[i-2];
 			}
-
+            numSameWaypoints++;
 //            if(abs(p_base->getCarState().theta-th_ref[i-1])>3.1415826535)
             if(p_base->getCarState().theta>0.5 && abs(p_base->getCarState().theta-th_ref[i-1])>4.5)
             {
@@ -293,6 +294,16 @@ void LocalPlanner::SetSfcIdx(int N_corr)
         local_wpts[N][3] = local_wpts[N-1][3];
         local_wpts[N][4] = local_wpts[N-1][4];
     }
+
+    if(numSameWaypoints<45)
+    {
+        useStopMotion = false;
+    }
+    else
+    {
+        useStopMotion = true;
+    }
+
     return true;
     //cout<<"my_heading angle is:"<<p_base->getCarState().theta<<endl;
 //    p_base->getLanePath().lanes[0].laneCenters[0].x;
@@ -515,8 +526,16 @@ bool LocalPlannerPlain::plan(double t) {
                      carState_temp.v = xN_new[i].coeffRef(2, 0);
                      carState_temp.theta = xN_new[i].coeffRef(5, 0);
                      //cout<<"MPC Future Heading Angle"<<i<<"th: "<< carState_temp.theta<<endl;
-                     carInput_temp.alpha = xN_new[i].coeffRef(3, 0);
-                     carInput_temp.delta = xN_new[i].coeffRef(4, 0);
+                     if(!useStopMotion)
+                     {
+                         carInput_temp.alpha = xN_new[i].coeffRef(3, 0);
+                         carInput_temp.delta = xN_new[i].coeffRef(4, 0);
+                     }
+                     else
+                     {
+                         carInput_temp.alpha = 0;
+                         carInput_temp.delta = 0;
+                     }
 
                      curPlanning.ts.push_back(ts_temp.coeffRef(i-1, 0));
                      curPlanning.xs.push_back(carState_temp);
@@ -543,7 +562,6 @@ bool LocalPlannerPlain::plan(double t) {
                          xN_new[j][4]=-param.maxSteer;
 
                  }
-
 
                  Matrix<double,N,1> ts_temp = VectorXd::LinSpaced(N,param.tStep,param.horizon);
                  ts_temp = ts_temp.array()+ t;
