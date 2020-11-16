@@ -585,8 +585,8 @@ void RosWrapper::publish() {
 void RosWrapper::runROS() {
         ros::Rate lr(50);
 
-//        ros::AsyncSpinner spinner(4);
-//        spinner.start();
+        ros::AsyncSpinner spinner(4);
+        spinner.start();
 
         while(ros::ok()){
 
@@ -598,7 +598,7 @@ void RosWrapper::runROS() {
             prepareROSmsgs(); // you may trigger this only under some conditions
             publish();
             processTf();
-            ros::spinOnce();
+//            ros::spinOnce();
             lr.sleep();
         }
 }
