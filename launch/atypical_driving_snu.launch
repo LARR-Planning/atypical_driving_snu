@@ -15,12 +15,14 @@
   <arg name ="detected_object_frame_id" default = "velodyne"/>
 
 
-  <arg name = "lane_width" default="5"/>
+  <arg name = "lane_width" default="3"/>
   <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/interpolated_waypoint_parking_lot8.csv"/>
   <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
 
   <arg name = "goal/x"  default = "323891.02"/> <!--in world frame -->
   <arg name = "goal/y" default = "4145172.15"/> <!--in world frame -->
+
+
 
     <arg name = "period" default= "0.1"/>
     <arg name = "horizon"  default= "5"/> <!--Also change dimension.h-->
@@ -93,7 +95,7 @@
         <param name = "base_link_id" value="$(arg car_base_frame_id)" />
         <param name = "detected_objects_id" value="$(arg detected_object_frame_id)" />
 
-        <param name = "use_nominal_obstacle_rad" value="true"/>
+        <param name = "use_nominal_obstacle_rad" value="false"/>
         <param name = "use_keti_velocity" value="true"/>
         <param name = "local_planner/obstacle_radius_nominal" value="1"/>
 
@@ -129,12 +131,12 @@
         <param name="global_planner/smoothing_cliff_min_bias" value="0.2" />
         <param name="global_planner/smoothing_cliff_ratio" value="0.5"/>
         <param name="global_planner/start_smoothing_distance" value="6.0" />
-        <param name="global_planner/corridor_width_min" value = "0.5"/>
+        <param name="global_planner/corridor_width_min" value = "2"/>
         <param name="global_planner/corridor_width_dynamic_min" value = "8.0"/>
-        <param name="global_planner/safe_distance" value = "6.0"/>
+        <param name="global_planner/safe_distance" value = "10.0"/>
         <param name="global_planner/nominal_acceleration" value = "0.5"/>
         <param name="global_planner/object_velocity_threshold" value="0.3"/>
-        <param name="global_planner/max_obstacle_prediction_query_size" value="20"/>
+        <param name="global_planner/max_obstacle_prediction_query_size" value="1000"/>
         <param name="global_planner/acc_stop_distance" value="5.0"/>
         <param name="global_planner/acc_stop_angle" value="$(eval 3.14/180*5)"/>
 

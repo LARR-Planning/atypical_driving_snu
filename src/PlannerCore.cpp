@@ -619,6 +619,7 @@ driving_msgs::VehicleCmd PlannerBase::getCurInput(double t){
             ctrl_previous.steer_angle_cmd = mpc_result.evalU(t).delta;
             ctrl_previous.accel_decel_cmd = mpc_result.evalU(t).alpha;
             flag++;
+
             return cmd;
         }
         else

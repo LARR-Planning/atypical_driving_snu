@@ -295,7 +295,7 @@ void LocalPlanner::SetSfcIdx(int N_corr)
         local_wpts[N][4] = local_wpts[N-1][4];
     }
 
-    if(numSameWaypoints<45)
+    if(numSameWaypoints<100)
     {
         useStopMotion = false;
     }
@@ -533,7 +533,7 @@ bool LocalPlannerPlain::plan(double t) {
                      }
                      else
                      {
-                         carInput_temp.alpha = 0;
+                         carInput_temp.alpha = -0.2;
                          carInput_temp.delta = 0;
                      }
 
