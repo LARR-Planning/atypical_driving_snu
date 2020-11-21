@@ -33,6 +33,8 @@ bool GlobalPlanner::plan(double t) {
         return false;
     }
 
+    bool printSequence = false;
+
     // Generate LaneTree
     laneTree.clear();
     laneTreePath.clear();
@@ -179,9 +181,17 @@ bool GlobalPlanner::plan(double t) {
     }
     int last_tail_idx = laneTree.back().id;
 
+    if(printSequence){
+        ROS_WARN("[GlobalPlanner] 1");
+    }
+
     // Allocate children of each node in laneTree
     for(int i_tree = 0; i_tree < laneTree.size(); i_tree++){
         laneTree[i_tree].children = findChildren(i_tree);
+    }
+
+    if(printSequence){
+        ROS_WARN("[GlobalPlanner] 2");
     }
 
     // Find start node of laneTree
@@ -213,15 +223,42 @@ bool GlobalPlanner::plan(double t) {
         }
         i_tree_start = i_shortest;
     }
-    laneTree[i_tree_start].midPoint = currentPoint; // Fix start node to reflect currentState
+    if(i_tree_start != -1){
+        laneTree[i_tree_start].midPoint = currentPoint; // Fix start node to reflect currentState
+    }
 
+    if(printSequence){
+        ROS_WARN_STREAM("[GlobalPlanner] 3, i_tree_start:" << i_tree_start << ", laneTree size:" << laneTree.size());
+    }
 
     // Update laneTree to find midPoints
-    laneTreeSearch(i_tree_start);
-    std::vector<int> tail = getMidPointsFromLaneTree(i_tree_start);
-    laneTreePath.resize(tail.size());
-    for(int i_tail = 0; i_tail < tail.size(); i_tail++){
-        laneTreePath[i_tail] = laneTree[tail[i_tail]];
+    if(i_tree_start == -1){
+        ROS_WARN("[GlobalPlanner] use first element of laneTree");
+        LaneTreeElement laneTreeElement;
+        laneTreeElement.id = 0;
+        laneTreeElement.leftBoundaryPoint = currentPoint;
+        laneTreeElement.leftPoint = currentPoint;
+        laneTreeElement.midPoint = currentPoint;
+        laneTreeElement.lanePoint = currentPoint;
+        laneTreeElement.rightPoint = currentPoint;
+        laneTreeElement.rightBoundaryPoint = currentPoint;
+        laneTreeElement.width = 0;
+        laneTreeElement.isNearObject = false;
+
+        laneTreePath.resize(1);
+        laneTreePath[0] = laneTreeElement;
+    }
+    else {
+        laneTreeSearch(i_tree_start);
+        std::vector<int> tail = getMidPointsFromLaneTree(i_tree_start);
+        laneTreePath.resize(tail.size());
+        for (int i_tail = 0; i_tail < tail.size(); i_tail++) {
+            laneTreePath[i_tail] = laneTree[tail[i_tail]];
+        }
+    }
+
+    if(printSequence){
+        ROS_WARN("[GlobalPlanner] 4");
     }
 
     // Smoothing
@@ -294,6 +331,10 @@ bool GlobalPlanner::plan(double t) {
             }
         }
         i_smooth++;
+    }
+
+    if(printSequence){
+        ROS_WARN("[GlobalPlanner] 5");
     }
 
 
@@ -396,7 +437,6 @@ bool GlobalPlanner::plan(double t) {
         }
     }
 
-
 //    // Computing curvature (JBS)
 //    double meanCurv = meanCurvature(midPoints);
 //    double rho_thres = param.curvature_thres;
@@ -422,6 +462,11 @@ bool GlobalPlanner::plan(double t) {
     bool start_acc_mode = false;
     int tail_end = findLaneTreePathTail(isBlocked, isBlockedByObject, start_acc_mode);
 
+    if(printSequence){
+        ROS_WARN("[GlobalPlanner] 6");
+    }
+
+
     // ACC
     if(start_acc_mode){
         double angle_diff = abs(currentLaneAngle - currentAngle);
@@ -442,6 +487,11 @@ bool GlobalPlanner::plan(double t) {
 //            line smoothing to mid point
 //        }
     }
+
+    if(printSequence){
+        ROS_WARN("[GlobalPlanner] 7");
+    }
+
 
     // width allocation
     std::vector<double> box_size;
@@ -477,8 +527,11 @@ bool GlobalPlanner::plan(double t) {
         meanCurv = meanCurvature(pathSliced);
     }
 
-    // Nominal speed (JBS);
+    if(printSequence){
+        ROS_WARN("[GlobalPlanner] 8");
+    }
 
+    // Nominal speed (JBS);
     double vmin = param.car_speed_min;
     double vmax = param.car_speed_max;
     double rho_thres = param.curvature_thres;
@@ -545,7 +598,7 @@ bool GlobalPlanner::plan(double t) {
 //            int debug = 0;
 //        }
     }
-    
+
     // reformat
     std::vector<Vector2d, aligned_allocator<Vector2d>> midPoints, leftBoundaryPoints, rightBoundaryPoints;
     midPoints.resize(tail_end);
