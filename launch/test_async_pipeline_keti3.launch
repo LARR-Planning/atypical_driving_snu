@@ -5,7 +5,7 @@
   <arg name = "use_sim_time" value = "true"/>
 
 <!--  <arg name= "bagfile"        default="kiapi_static1.bag"/> -->
-  <arg name= "bagfile"        default="niceButNominalTooFast.bag"/>
+  <arg name= "bagfile"        default="1117AccSuccessHighSpeed.bag"/>
 
   <param name="use_sim_time" value="$(arg use_sim_time)"/>
 
@@ -22,12 +22,12 @@
   <arg name ="car_imu_frame_id" default = "/car_imu"/>
 
   <arg name = "lane_width" default="2"/>
-  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/kiapi_path2.csv"/>
+  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/interpolated_waypoint_parking_lot8.csv"/>
   <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
 
 
-  <arg name = "goal/x"  default = "451489.3968"/> <!--in world frame -->
-  <arg name = "goal/y" default = "3947475.6160"/> <!--in world frame -->
+  <arg name = "goal/x"  default = "323891.02"/> <!--in world frame -->
+  <arg name = "goal/y" default = "4145172.15"/> <!--in world frame -->
 
 
 
@@ -87,7 +87,7 @@
 
     <!--1. Data feeder-->
 
-    <node pkg="rosbag" type="play" name="rosbag_record_diag" args="--clock --loop -s 0 /home/jungwon/kiapi_dynamic2.bag" >
+    <node pkg="rosbag" type="play" name="rosbag_record_diag" args="--clock --loop -s 0 $(find atypical_driving)/worlds/$(arg bagfile)" >
            <remap from = "/current_pose_cov" to = "/current_pose"/>
     </node>
 

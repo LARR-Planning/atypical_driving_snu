@@ -294,8 +294,8 @@ void LocalPlanner::SetSfcIdx(int N_corr)
         local_wpts[N][3] = local_wpts[N-1][3];
         local_wpts[N][4] = local_wpts[N-1][4];
     }
-
-    if(numSameWaypoints<100)
+//    cout<<"sameNumPointStopping: " <<param.sameNumPointStopping<<endl;
+    if(numSameWaypoints<param.sameNumPointStopping)
     {
         useStopMotion = false;
     }

@@ -151,7 +151,7 @@
         <param name="local_planner/dyn_obst_range" value="30.0"/>
     	<param name="local_planner/sfc_margin" value="0.5"/>
     	<param name="local_planner/same_wpts_distance" value="0.01"/>
-
+        <param name="local_planner/sameNumPointStopping" value="70"/>
 	    <!--smoothing_type: 0:Exponential Average(0924test), 1:Moving Average, 2:Acc(exp),Steer(mov), 3:ignore small handling -->
 	    <!--ignore_angle, 1deg: 0.017, 2deg: 0.035, 3deg: 0.052, 4deg: 0.070 -->
 	    <param name = "smooth_weight" value="0.7"/>

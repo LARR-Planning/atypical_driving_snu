@@ -224,7 +224,7 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<double>("local_planner/same_wpts_distance",param_.l_param.sameWptsDistance,0.01);
     nh.param<double>("local_planner/sfc_margin",param_.l_param.sfcMargin,0.0);
     nh.param<double>("local_planner/dyn_obst_range",param_.l_param.dynObstRange,30.0);
-
+    nh.param<int>("local_planner/sameNumPointStopping", param_.l_param.sameNumPointStopping,100);
     Parameter ilqr_weight;
     param_.l_param.final_weight = ilqr_weight.setting.final_weight;
     param_.l_param.input_weight = ilqr_weight.setting.input_weight;

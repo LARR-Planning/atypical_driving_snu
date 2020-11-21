@@ -69,6 +69,7 @@ namespace Planner {
         double minAccel; // [minAccel,maxAccel] can be negative
         double nominal_speed;
         double sameWptsDistance; //Criteria for regard as same position
+        int sameNumPointStopping;
         bool isRearWheeled;
         double sfcMargin;
         double period;
