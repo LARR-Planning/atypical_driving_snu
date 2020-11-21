@@ -787,6 +787,11 @@ int GlobalPlanner::findLaneTreePathTail(bool& isBlocked, bool& isBlockedByObject
             }
             break;
         }
+        else if((laneTreePath[i_tree].midPoint - laneTreePath[i_tree].lanePoint).norm() > param.corridor_max_bias){
+            ROS_WARN("[GlobalPlanner] lanePath blocked by corridor_max_bias");
+            isBlocked = true;
+            break;
+        }
     }
 
     // cut tail by safe distance

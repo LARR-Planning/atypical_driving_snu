@@ -80,6 +80,7 @@
     <param name="global_planner/start_smoothing_distance" value="6.0" />
     <param name="global_planner/corridor_width_min" value = "0.5"/>
     <param name="global_planner/corridor_width_dynamic_min" value = "8.0"/>
+    <param name="global_planner/corridor_max_bias" value = "100.0"/>
     <param name="global_planner/safe_distance" value = "6.0"/>
     <param name="global_planner/nominal_acceleration" value = "0.5"/>
     <param name="global_planner/object_velocity_threshold" value="0.3"/>

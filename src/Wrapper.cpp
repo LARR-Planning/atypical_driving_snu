@@ -200,6 +200,7 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<double>("global_planner/start_smoothing_distance", param_.g_param.start_smoothing_distance, 8);
     nh.param<double>("global_planner/corridor_width_min", param_.g_param.corridor_width_min, 1);
     nh.param<double>("global_planner/corridor_width_dynamic_min", param_.g_param.corridor_width_dynamic_min, 8);
+    nh.param<double>("global_planner/corridor_max_bias", param_.g_param.corridor_max_bias, 1000);
     nh.param<double>("global_planner/safe_distance", param_.g_param.safe_distance, 10);
     nh.param<double>("global_planner/nominal_acceleration", param_.g_param.nominal_acceleration, 0.5);
     nh.param<double>("global_planner/object_velocity_threshold", param_.g_param.object_velocity_threshold, 0.1);

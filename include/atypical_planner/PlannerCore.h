@@ -126,6 +126,7 @@ namespace Planner {
         double max_steering_angle;
         double corridor_width_min;
         double corridor_width_dynamic_min;
+        double corridor_max_bias;
         double safe_distance;
         double v_ref_past_weight;
         double nominal_acceleration;
