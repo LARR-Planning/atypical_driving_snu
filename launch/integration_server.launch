@@ -20,31 +20,20 @@
 <arg name = "goal/x" default = "0"/>
 <arg name = "goal/y" default = "0"/>
 
-<arg name = "use_keti_vel" default="true"/>
 
 <group ns="atypical_planning_test">
 <rosparam file="$(find atypical_driving)/param/MPC_weight.yaml"/>
 </group>
 
+<arg name = "param_file"  default= "yugokri.yaml"/>
+
 
 <!--3. server-->
 <node pkg="atypical_driving" type="integration_server" name="atypical_planning_test" output="screen">
 
-    <param name = "use_nominal_obstacle_rad" value="false"/>
-    <param name = "use_keti_velocity" value="$(arg use_keti_vel)"/>
     <param name = "local_planner/obstacle_radius_nominal" value="1"/>
 
-
-    <param name="map/pcl_lx" value="60"/>
-    <param name="map/pcl_ly" value="20"/>
-    <param name="map/pcl_z_min" value="-1.6"/>
-    <param name="map/pcl_dbscan_minpnts" value="6"/>
-    <param name="map/pcl_dbscan_eps" value="0.2"/>
-    <param name="map/ransac_post_inclusion_offset" value="0.4"/>
-    <param name="map/ransac_distance_threshold" value="0.2"/>
-    <param name="map/use_ransac" value="true"/>
-
-
+    <rosparam command="load" file="$(find atypical_driving)/param/$(arg param_file)"/>
 
     <remap from = "/occupancy_grid" to = "/costmap_node/costmap/costmap"/>
 
