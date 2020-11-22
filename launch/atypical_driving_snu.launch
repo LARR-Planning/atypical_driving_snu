@@ -2,11 +2,15 @@
 
 <launch>
 
-  <arg name = "bagfile" default= ""/>
-  <arg name = "use_sim_time" default= "false"/>
+  <arg name = "param_file" default = "yugokri.yaml"/>
 
-  <arg name = "pcl_topic" default = "/atypical_planning_test/pcl_filtered"/>
+  <arg name = "goal/x"  default = "323891.02"/> <!--in world frame -->
+  <arg name = "goal/y" default = "4145172.15"/> <!--in world frame -->
+
+
+
     <!-- Arguments Start -->
+  <arg name = "pcl_topic" default = "/atypical_planning_test/pcl_filtered"/>
   <arg name ="snu_frame_id" default="SNU"/>
   <arg name ="occu_frame_id" default="SNU"/>
   <arg name ="world_frame_id" default="map"/>
@@ -14,19 +18,14 @@
   <arg name ="lidar_frame_id" default = "velodyne"/>
   <arg name ="detected_object_frame_id" default = "velodyne"/>
 
-
   <arg name = "lane_width" default="3"/>
   <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/interpolated_waypoint_parking_lot8.csv"/>
   <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
 
-  <arg name = "goal/x"  default = "323891.02"/> <!--in world frame -->
-  <arg name = "goal/y" default = "4145172.15"/> <!--in world frame -->
 
-
-
-    <arg name = "period" default= "0.1"/>
-    <arg name = "horizon"  default= "5"/> <!--Also change dimension.h-->
-    <arg name="planning_dt" default="0.1"/>
+  <arg name = "period" default= "0.1"/>
+  <arg name = "horizon"  default= "5"/> <!--Also change dimension.h-->
+  <arg name="planning_dt" default="0.1"/>
 
   <group ns="atypical_planning_test">
     <rosparam file="$(find atypical_driving)/param/MPC_weight.yaml"/>
@@ -35,39 +34,16 @@
 
     <!-- run pointcloud_to_laserscan node -->
     <node pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node" name="pointcloud_to_laserscan">
-
         <remap from="cloud_in" to="$(arg pcl_topic)"/>
-<!--        <remap from="cloud_in" to="/octomap_point_cloud_centers"/>--> -->
-
         <remap from="scan" to="/scan_snu"/>
-        <rosparam>
-            target_frame:  velodyne # Leave disabled to output scan in pointcloud frame
-            transform_tolerance: 0.01
-            min_height: -1.2
-            max_height: 0.9
-            angle_min: -3.1408 # -M_PI/2
-            angle_max: 3.1408 # M_PI/2
-            angle_increment: 0.0007 # M_PI/360.0
-            scan_time: 0.0333
-            range_min: 0.0
-            range_max: 50.0
-            use_inf: true
-            inf_epsilon: 100.0
-
-            # Concurrency level, affects number of pointclouds queued for processing and number of threads used
-            # 0 : Detect number of cores
-            # 1 : Single threaded
-            # 2->inf : Parallelism level
-            concurrency_level: 3
-        </rosparam>
+         <rosparam command="load" file="$(find atypical_driving)/param/$(arg param_file)"/>
     </node>
 
     <!--  1. OccupancyGrid  -->
      <include file = "$(find atypical_driving)/launch/occupancy2d/costmap_2d.launch">
          <arg name = "play_bag" value = "false"/>
          <arg name = "scan_topic" value = "scan_snu"/>
-         <arg name = "bagfile" value="$(arg bagfile)"/>
-         <arg name = "use_sim_time" value="$(arg use_sim_time)"/>
+         <arg name = "use_sim_time" value="false"/>
          <arg name = "rviz" value = "false"/>
          <arg name = "occupancy_frame_id" value = "$(arg occu_frame_id)"/>
          <arg name = "lidar_frame_id" value = "$(arg lidar_frame_id)"/>
@@ -95,19 +71,7 @@
         <param name = "base_link_id" value="$(arg car_base_frame_id)" />
         <param name = "detected_objects_id" value="$(arg detected_object_frame_id)" />
 
-        <param name = "use_nominal_obstacle_rad" value="false"/>
-        <param name = "use_keti_velocity" value="true"/>
         <param name = "local_planner/obstacle_radius_nominal" value="1"/>
-
-        <param name="map/pcl_lx" value="60"/>
-        <param name="map/pcl_ly" value="20"/>
-        <param name="map/pcl_z_min" value="-1.6"/>
-        <param name="map/pcl_dbscan_minpnts" value="6"/>
-        <param name="map/pcl_dbscan_eps" value="0.2"/>
-        <param name="map/ransac_post_inclusion_offset" value="0.4"/>
-        <param name="map/ransac_distance_threshold" value="0.2"/>
-        <param name="map/use_ransac" value="true"/>
-
 
         <!--Shaping params for nominal_speed selection-->
         <param name = "vmax" value = "5.0"/> <!--m/s-->
@@ -164,6 +128,9 @@
         <param name="predictor/observation_queue" value="10" />
         <param name="predictor/ref_height" value="0.4" />
         <param name="predictor/log_dir" value="$(find atypical_driving)/log/predictor" />
+
+        <rosparam command="load" file="$(find atypical_driving)/param/$(arg param_file)"/>
+
     </node>
 
   <node pkg="rviz" type="rviz" name="rviz" args="-d $(find atypical_driving)/launch/rviz_config/config.rviz" output="log" />
