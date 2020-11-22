@@ -442,28 +442,36 @@ void RosWrapper::prepareROSmsgs() {
         m_obstacle_rad.ns = to_string(nsId);
         int id = 0 ;
         for (auto pnt : obstPath.obstPath){
-            m_obstacle_rad.id = id++;
-            // position
-            m_obstacle_rad.pose.position.x = pnt.q(0);
-            m_obstacle_rad.pose.position.y = pnt.q(1);
+            id ++;
+            if (id % 10 == 0) {
+
+                m_obstacle_rad.id = id;
+                // position
+                m_obstacle_rad.pose.position.x = pnt.q(0);
+                m_obstacle_rad.pose.position.y = pnt.q(1);
 //            m_obstacle_rad.pose.position.z = p_base->predictorSet[0].getHeight();
-            m_obstacle_rad.pose.position.z = 0.1;
+                m_obstacle_rad.pose.position.z = 0.1;
 
-            // rotation
-            SE3 rot; rot.setIdentity();
-            rot.rotate(AngleAxisd(pnt.theta,Vector3d::UnitZ()));
-            Quaterniond q(rot.rotation());
+                // rotation
+                SE3 rot;
+                rot.setIdentity();
+                rot.rotate(AngleAxisd(pnt.theta, Vector3d::UnitZ()));
+                Quaterniond q(rot.rotation());
 
-            m_obstacle_rad.pose.orientation.x  = q.x();
-            m_obstacle_rad.pose.orientation.y  = q.y();
-            m_obstacle_rad.pose.orientation.z  = q.z();
-            m_obstacle_rad.pose.orientation.w  = q.w();
+                m_obstacle_rad.pose.orientation.x = q.x();
+                m_obstacle_rad.pose.orientation.y = q.y();
+                m_obstacle_rad.pose.orientation.z = q.z();
+                m_obstacle_rad.pose.orientation.w = q.w();
 
-            m_obstacle_rad.scale.x = 2*pnt.r1;
-            m_obstacle_rad.scale.y = 2*pnt.r2;
-            m_obstacle_rad.scale.z = 0.6;
-            obstaclePrediction.markers.push_back(m_obstacle_rad);
+                m_obstacle_rad.scale.x = 2 * pnt.r1;
+                m_obstacle_rad.scale.y = 2 * pnt.r2;
+                m_obstacle_rad.scale.z = 0.6;
+                obstaclePrediction.markers.push_back(m_obstacle_rad);
+            }
+
         }
+
+
         nsId++;
     }
 
