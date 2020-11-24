@@ -2,10 +2,10 @@
 
 <launch>
 
-  <arg name = "param_file" default = "kiapi_PG.yaml"/>
+  <arg name = "param_file" default = "yugokri.yaml"/>
 
-  <arg name = "goal/x"  default = "446049.6513"/> <!--in world frame -->
-  <arg name = "goal/y" default = "3944900.7604"/> <!--in world frame -->
+  <arg name = "goal/x"  default = "323891.02"/> <!--in world frame -->
+  <arg name = "goal/y" default = "4145172.15"/> <!--in world frame -->
 
 
 
@@ -14,12 +14,12 @@
   <arg name ="snu_frame_id" default="SNU"/>
   <arg name ="occu_frame_id" default="SNU"/>
   <arg name ="world_frame_id" default="map"/>
-  <arg name ="car_base_frame_id" default="base_link"/>
+  <arg name ="car_base_frame_id" default="/base_link"/>
   <arg name ="lidar_frame_id" default = "velodyne"/>
   <arg name ="detected_object_frame_id" default = "velodyne"/>
 
-  <arg name = "lane_width" default="3"/>
-  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/interpolated_kiapi_pg2.csv"/>
+  <arg name = "lane_width" default="4.5"/>
+  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/interpolated_yugokri_path1.csv"/>
   <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
 
 
@@ -75,7 +75,7 @@
 
         <!--Shaping params for nominal_speed selection-->
         <param name = "vmax" value = "3.0"/> <!--m/s-->
-        <param name = "vmin" value = "1.0"/> <!--m/s-->
+        <param name = "vmin" value = "2.0"/> <!--m/s-->
         <param name = "v_ref_past_weight" value = "0.8"/> <!--m/s-->
         <param name = "curve_thres" value = "0.05"/> <!--m/s-->
 
@@ -119,7 +119,7 @@
 	    <!--smoothing_type: 0:Exponential Average(0924test), 1:Moving Average, 2:Acc(exp),Steer(mov), 3:ignore small handling -->
 	    <!--ignore_angle, 1deg: 0.017, 2deg: 0.035, 3deg: 0.052, 4deg: 0.070 -->
 	    <param name = "smooth_weight" value="0.7"/>
-        <param name = "moving_horizon" value="10"/>
+        <param name = "moving_horizon" value="20"/>
         <param name = "smoothing_type" value="2"/>
 	    <param name = "ignore_angle" value="0.017"/>
         <param name = "stopSpeed" value="0.5"/>

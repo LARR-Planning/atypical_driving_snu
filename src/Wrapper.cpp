@@ -791,7 +791,7 @@ void RosWrapper::pclCallback(const sensor_msgs::PointCloud2::ConstPtr pcl_msg){
     ground_pcl.header.frame_id = processedPclPtr->header.frame_id;
     pubFilteredPcl.publish(filtered_pcl);
     pubGroundPcl.publish(ground_pcl);
-//    cout << "pcl processing time = " << (ros::Time::now() - t0).toSec() << endl;
+    cout << "pcl processing time = " << (ros::Time::now() - t0).toSec() << endl;
 
 }
 
@@ -1005,6 +1005,8 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
         transform.setRotation(q);
 
         tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(),SNUFrameId, baseLinkId));
+
+//        cout << "sending transform" << endl;
 
 
         // publishing pose

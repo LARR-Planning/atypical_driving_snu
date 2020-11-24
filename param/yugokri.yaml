@@ -19,11 +19,12 @@ concurrency_level: 3
 
 map: {
   use_ransac: true,
-  pcl_lx: 60,
-  pcl_ly: 60,
+  pcl_lx: 80,
+  pcl_ly: 20,
   pcl_z_min: -1.6,
-  pcl_dbscan_minpnts: 6,
-  ransac_post_inclusion_offset: 0.06,
+  pcl_dbscan_minpnts: 3,
+  pcl_dbscan_eps: 0.5,
+  ransac_post_inclusion_offset: 0.3,
   ransac_distance_threshold: 0.2
 }
 

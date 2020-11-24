@@ -33,7 +33,6 @@
 
     <param name = "local_planner/obstacle_radius_nominal" value="1"/>
 
-    <rosparam command="load" file="$(find atypical_driving)/param/$(arg param_file)"/>
 
     <remap from = "/occupancy_grid" to = "/costmap_node/costmap/costmap"/>
 
@@ -100,5 +99,9 @@
     <param name="predictor/observation_queue" value="10" />
     <param name="predictor/ref_height" value="0.4" />
     <param name="predictor/log_dir" value="$(find atypical_driving)/log/predictor" />
+
+
+    <rosparam command="load" file="$(find atypical_driving)/param/$(arg param_file)"/>
+
 </node>
 </launch>
