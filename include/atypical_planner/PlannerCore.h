@@ -133,9 +133,13 @@ namespace Planner {
         double nominal_acceleration;
         double object_velocity_threshold;
         double max_obstacle_prediction_query_size;
-
         double acc_stop_distance;
         double acc_stop_angle;
+
+        bool use_static_object;
+        bool use_lane_point_first;
+        int smoothing_cliff_n_check_idx;
+
     };
 
     struct ParamPredictor{
