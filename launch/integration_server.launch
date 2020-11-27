@@ -7,7 +7,7 @@
 <arg name="lidar_frame_id" default = "LidarSensor1"/>
 <arg name="detected_object_frame_id" default = "map"/>
 
-<arg name= "lane_width_nominal" default="5"/>
+<arg name= "lane_width_nominal" default="7"/>
 <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/waypoint_kiapi3.csv"/>
 <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
 <arg name = "waypoints" default="$(find atypical_driving)/param/goal_airsim.yaml"/>
@@ -33,6 +33,7 @@
 
     <param name = "local_planner/obstacle_radius_nominal" value="1"/>
 
+    <param name="use_keti_vel" value="true"/>
 
     <remap from = "/occupancy_grid" to = "/costmap_node/costmap/costmap"/>
 
@@ -41,6 +42,9 @@
     <param name = "occu_map_frame_id" value="$(arg occu_frame_id)" />
     <param name = "base_link_id" value="$(arg car_base_frame_id)" />
     <param name = "detected_objects_id" value="$(arg detected_object_frame_id)" />
+
+    <param name = "vmax" value = "5.0"/> <!--m/s-->
+
 
     <!--Shaping params for nominal_speed selection-->
     <param name = "vmax" value = "5.0"/> <!--m/s-->
@@ -58,15 +62,15 @@
 
     <rosparam command="load" file="$(arg waypoints)" />
 
-    <param name="global_planner/car_width" value="1.5" />
+    <param name="global_planner/car_width" value="0.1" />
     <param name="global_planner/period" value="$(arg period)" />
     <param name="global_planner/grid_resolution" value="0.3" />
-    <param name="global_planner/max_steering_angle" value = "$(eval 3.14/20)"/>
-    <param name="global_planner/smoothing_distance" value="5.0" />
+    <param name="global_planner/max_steering_angle" value = "$(eval 3.14/180*2)"/>
+    <param name="global_planner/smoothing_distance" value="10.0" />
     <param name="global_planner/smoothing_cliff_min_bias" value="0.2" />
     <param name="global_planner/smoothing_cliff_ratio" value="0.5"/>
     <param name="global_planner/start_smoothing_distance" value="6.0" />
-    <param name="global_planner/corridor_width_min" value = "0.5"/>
+    <param name="global_planner/corridor_width_min" value = "0.1"/>
     <param name="global_planner/corridor_width_dynamic_min" value = "8.0"/>
     <param name="global_planner/corridor_max_bias" value = "100.0"/>
     <param name="global_planner/safe_distance" value = "6.0"/>
@@ -75,8 +79,10 @@
     <param name="global_planner/max_obstacle_prediction_query_size" value="20"/>
     <param name="global_planner/acc_stop_distance" value="5.0"/>
     <param name="global_planner/acc_stop_angle" value="$(eval 3.14/180*5)"/>
-<!--    <param name="global_planner/acc_stop_angle" value="10000"/>-->
-
+    <param name="global_planner/use_static_object" value="true"/>
+    <param name="global_planner/use_lane_point_first" value="true"/>
+    <param name="global_planner/smoothing_cliff_n_check_idx" value="10"/>
+    <param name="global_planner/blocked_by_object_distance" value="0.2"/>
 
     <param name="local_planner/horizon" value="$(arg horizon)" />
     <param name="local_planner/ts" value="$(arg planning_dt)" />
@@ -101,7 +107,7 @@
     <param name="predictor/log_dir" value="$(find atypical_driving)/log/predictor" />
 
 
-    <rosparam command="load" file="$(find atypical_driving)/param/$(arg param_file)"/>
+<!--    <rosparam command="load" file="$(find atypical_driving)/param/$(arg param_file)"/>-->
 
 </node>
 </launch>

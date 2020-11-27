@@ -33,7 +33,7 @@ bool GlobalPlanner::plan(double t) {
         return false;
     }
 
-    bool printSequence = false;
+    bool printSequence = true;
 
     // Generate LaneTree
     laneTree.clear();
@@ -70,10 +70,16 @@ bool GlobalPlanner::plan(double t) {
             // check occupancy of side points and construct laneTree
             std::vector<int> gridPointStates;
             gridPointStates.resize(laneGridPoints.size());
+            bool is_occupied_by_object = false;
             for(int k_side = 0; k_side < laneGridPoints.size(); k_side++) {
                 double object_velocity = 0;
-                bool isObject = p_base->isObject(laneGridPoints[k_side], param.max_obstacle_prediction_query_size, object_velocity,param.use_keti_velocity);
-                if(isObject && object_velocity > param.object_velocity_threshold){
+                double min_distance_to_object = 1000;
+                bool isObject = p_base->isObject(laneGridPoints[k_side], param.max_obstacle_prediction_query_size, min_distance_to_object, object_velocity, param.use_keti_velocity);
+                if(min_distance_to_object < param.blocked_by_object_distance){
+                    is_occupied_by_object = true;
+                    break;
+                }
+                else if(isObject && object_velocity > param.object_velocity_threshold){
                     gridPointStates[k_side] = 2;
                 }
                 else if(p_base->isOccupied(laneGridPoints[k_side]) || (isObject && object_velocity <= param.object_velocity_threshold && param.use_static_object)){
@@ -83,27 +89,33 @@ bool GlobalPlanner::plan(double t) {
                     gridPointStates[k_side] = 0;
                 }
             }
-
-            for(int k_side = 0; k_side < laneGridPoints.size(); k_side++) {
-                if(gridPointStates[k_side] == 2) {
-                    for(int k_expand = k_side - 1; k_expand > -1; k_expand--){
-                        if(gridPointStates[k_expand] > 0) {
-                            gridPointStates[k_expand] = 2;
+            if(is_occupied_by_object){
+                for (int k_side = 0; k_side < laneGridPoints.size(); k_side++) {
+                    gridPointStates[k_side] = 1; // if lane is occupied by object then block the path
+                }
+            }
+            else {
+                // dynamic object inflation
+                for (int k_side = 0; k_side < laneGridPoints.size(); k_side++) {
+                    if (gridPointStates[k_side] == 2) {
+                        for (int k_expand = k_side - 1; k_expand > -1; k_expand--) {
+                            if (gridPointStates[k_expand] > 0) {
+                                gridPointStates[k_expand] = 2;
+                            } else {
+                                break;
+                            }
                         }
-                        else {
-                            break;
-                        }
-                    }
-                    for(int k_expand = k_side + 1; k_expand < laneGridPoints.size(); k_expand++){
-                        if(gridPointStates[k_expand] > 0) {
-                            gridPointStates[k_expand] = 2;
-                        }
-                        else {
-                            break;
+                        for (int k_expand = k_side + 1; k_expand < laneGridPoints.size(); k_expand++) {
+                            if (gridPointStates[k_expand] > 0) {
+                                gridPointStates[k_expand] = 2;
+                            } else {
+                                break;
+                            }
                         }
                     }
                 }
             }
+
             int start_idx = -1;
             int lane_idx = (grid_size - 1) / 2;
             Vector2d mid_point;

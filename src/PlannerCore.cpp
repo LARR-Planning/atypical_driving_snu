@@ -906,20 +906,18 @@ bool PlannerBase::isOccupied(Vector2d queryPoint) {
  * @param queryPoint frame = SNU
  * @return true if queryPoint is within the obstacle path array
  */
-bool PlannerBase::isObject(const Vector2d& queryPoint, int maxObstQuerySize, double& velocity,bool use_keti_vel){
+bool PlannerBase::isObject(const Vector2d& queryPoint, int maxObstQuerySize, double& min_distance_to_object, double& velocity, bool use_keti_vel){
     unsigned long nInspection = 1000;
+    min_distance_to_object = 1000; //initialize with big number
 
 //    printf("[DEBUG_JBS] planner base querying start (number of obst = %d ) \n",obstaclePathArray.obstPathArray.size());
 
 //    mSet[0].lock();
         for (auto obstPath : obstaclePathArray.obstPathArray) {
-
-
             if(not use_keti_vel)
                 velocity = obstPath.constantVelocityXY.norm();
             else
                 velocity = obstPath.meanVelocity.norm();
-
 
             int obstQuerySize = std::min((int)obstPath.obstPath.size(), maxObstQuerySize);
             int nInspection_ = std::min(obstQuerySize, (int)nInspection);
@@ -927,9 +925,15 @@ bool PlannerBase::isObject(const Vector2d& queryPoint, int maxObstQuerySize, dou
             for (int i = 0; i < nInspection_; i++) {
                 int index = static_cast<int>((double)(obstQuerySize-1)/nInspection_ * i);
                 ObstacleEllipse obst = obstPath.obstPath[index];
+
+                if(i == 0){
+                    double distance_to_object = (obst.q - queryPoint).norm();
+                    if(distance_to_object < min_distance_to_object){
+                        min_distance_to_object = distance_to_object;
+                    }
+                }
                 if (((obst.q - queryPoint).transpose() * obst.Q * (obst.q - queryPoint))(0) < 1) {
 //                    ROS_WARN("Query point collided with object");
-
 
 //                printf("[DEBUG_JBS] planner base querying end \n");
 

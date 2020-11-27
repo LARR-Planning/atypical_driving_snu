@@ -210,6 +210,7 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<bool>("global_planner/use_static_object", param_.g_param.use_static_object, false);
     nh.param<bool>("global_planner/use_lane_point_first", param_.g_param.use_lane_point_first, false);
     nh.param<int>("global_planner/smoothing_cliff_n_check_idx", param_.g_param.smoothing_cliff_n_check_idx, 0);
+    nh.param<double>("global_planner/blocked_by_object_distance", param_.g_param.blocked_by_object_distance, -1);
 
 
     // local planner
@@ -1008,6 +1009,15 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
         transform.setRotation(q);
 
         tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(),SNUFrameId, baseLinkId));
+
+        transform.setOrigin(tf::Vector3(tw0(0),tw0(1),tw0(2)));
+        auto qd = Eigen::Quaterniond(p_base->Tws.rotation());
+        q.setX(qd.x());
+        q.setY(qd.y());
+        q.setZ(qd.z());
+        q.setW(qd.w());
+        transform.setRotation(q);//
+        tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), worldFrameId, SNUFrameId));
 
 //        cout << "sending transform" << endl;
 
