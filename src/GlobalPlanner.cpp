@@ -33,7 +33,7 @@ bool GlobalPlanner::plan(double t) {
         return false;
     }
 
-    bool printSequence = false;
+    bool printSequence = true;
 
     // Generate LaneTree
     laneTree.clear();
@@ -41,7 +41,7 @@ bool GlobalPlanner::plan(double t) {
     Vector2d currentPoint(p_base->cur_state.x, p_base->cur_state.y);
     double currentAngle = p_base->cur_state.theta;
     double lane_length, lane_angle, current_length, alpha, currentLaneAngle;
-    Vector2d delta, left_point, mid_point, right_point, left_boundary_point, right_boundary_point;
+    Vector2d delta, left_point, lane_point, right_point, left_boundary_point, right_boundary_point;
     int i_grid = 0;
     for(int i_lane = 0; i_lane < (int)p_base->laneSliced.points.size() - 1; i_lane++){
         int grid_size = 2 * floor(p_base->laneSliced.widths[i_lane]/2/param.grid_resolution) + 1;
@@ -57,67 +57,86 @@ bool GlobalPlanner::plan(double t) {
             vector<Vector2d> laneGridPoints;
             laneGridPoints.resize(grid_size);
             alpha = current_length / lane_length;
-            mid_point = alpha * p_base->laneSliced.points[i_lane+1] + (1-alpha) * p_base->laneSliced.points[i_lane];
-            laneGridPoints[(grid_size-1)/2] = mid_point;
+            lane_point = alpha * p_base->laneSliced.points[i_lane+1] + (1-alpha) * p_base->laneSliced.points[i_lane];
+            laneGridPoints[(grid_size-1)/2] = lane_point;
             for(int j_side = 1; j_side <= (grid_size-1)/2; j_side++){
-                left_point = mid_point + j_side * param.grid_resolution * Vector2d(cos(lane_angle + M_PI/2),sin(lane_angle + M_PI/2));
-                right_point = mid_point + j_side * param.grid_resolution * Vector2d(cos(lane_angle - M_PI/2),sin(lane_angle - M_PI/2));
-                left_boundary_point = mid_point + p_base->laneSliced.widths[i_lane]/2 * Vector2d(cos(lane_angle + M_PI/2),sin(lane_angle + M_PI/2));
-                right_boundary_point = mid_point + p_base->laneSliced.widths[i_lane]/2 * Vector2d(cos(lane_angle - M_PI/2),sin(lane_angle - M_PI/2));
+                left_point = lane_point + j_side * param.grid_resolution * Vector2d(cos(lane_angle + M_PI/2),sin(lane_angle + M_PI/2));
+                right_point = lane_point + j_side * param.grid_resolution * Vector2d(cos(lane_angle - M_PI/2),sin(lane_angle - M_PI/2));
+                left_boundary_point = lane_point + p_base->laneSliced.widths[i_lane]/2 * Vector2d(cos(lane_angle + M_PI/2),sin(lane_angle + M_PI/2));
+                right_boundary_point = lane_point + p_base->laneSliced.widths[i_lane]/2 * Vector2d(cos(lane_angle - M_PI/2),sin(lane_angle - M_PI/2));
                 laneGridPoints[(grid_size-1)/2 + j_side] = left_point;
                 laneGridPoints[(grid_size-1)/2 - j_side] = right_point;
             }
             // check occupancy of side points and construct laneTree
             std::vector<int> gridPointStates;
             gridPointStates.resize(laneGridPoints.size());
+            bool is_occupied_by_object = false;
             for(int k_side = 0; k_side < laneGridPoints.size(); k_side++) {
                 double object_velocity = 0;
-                if(p_base->isObject(laneGridPoints[k_side], param.max_obstacle_prediction_query_size, object_velocity,param.use_keti_velocity)
-                   and object_velocity > param.object_velocity_threshold){
+                double min_distance_to_object = 1000;
+                bool isObject = p_base->isObject(laneGridPoints[k_side], param.max_obstacle_prediction_query_size, min_distance_to_object, object_velocity, param.use_keti_velocity);
+                if(min_distance_to_object < param.blocked_by_object_distance){
+                    is_occupied_by_object = true;
+                    break;
+                }
+                else if(isObject && object_velocity > param.object_velocity_threshold){
                     gridPointStates[k_side] = 2;
                 }
-                else if(p_base->isOccupied(laneGridPoints[k_side])){
+                else if(p_base->isOccupied(laneGridPoints[k_side]) || (isObject && object_velocity <= param.object_velocity_threshold && param.use_static_object)){
                     gridPointStates[k_side] = 1;
                 }
                 else{
                     gridPointStates[k_side] = 0;
                 }
             }
-
-            for(int k_side = 0; k_side < laneGridPoints.size(); k_side++) {
-                if(gridPointStates[k_side] == 2) {
-                    for(int k_expand = k_side - 1; k_expand > -1; k_expand--){
-                        if(gridPointStates[k_expand] > 0) {
-                            gridPointStates[k_expand] = 2;
+            if(is_occupied_by_object){
+                for (int k_side = 0; k_side < laneGridPoints.size(); k_side++) {
+                    gridPointStates[k_side] = 1; // if lane is occupied by object then block the path
+                }
+            }
+            else {
+                // dynamic object inflation
+                for (int k_side = 0; k_side < laneGridPoints.size(); k_side++) {
+                    if (gridPointStates[k_side] == 2) {
+                        for (int k_expand = k_side - 1; k_expand > -1; k_expand--) {
+                            if (gridPointStates[k_expand] > 0) {
+                                gridPointStates[k_expand] = 2;
+                            } else {
+                                break;
+                            }
                         }
-                        else {
-                            break;
-                        }
-                    }
-                    for(int k_expand = k_side + 1; k_expand < laneGridPoints.size(); k_expand++){
-                        if(gridPointStates[k_expand] > 0) {
-                            gridPointStates[k_expand] = 2;
-                        }
-                        else {
-                            break;
+                        for (int k_expand = k_side + 1; k_expand < laneGridPoints.size(); k_expand++) {
+                            if (gridPointStates[k_expand] > 0) {
+                                gridPointStates[k_expand] = 2;
+                            } else {
+                                break;
+                            }
                         }
                     }
                 }
             }
+
             int start_idx = -1;
+            int lane_idx = (grid_size - 1) / 2;
+            Vector2d mid_point;
             for(int k_side = 0; k_side < laneGridPoints.size(); k_side++){
                 if(gridPointStates[k_side] == 0){
                     if(start_idx == -1){
                         start_idx = k_side; //not occupied, start idx not initialized -> initialize start index
                     }
                     if(k_side == (int)laneGridPoints.size() - 1) { // not occupied, laneGrid ended -> add element to tree
-                        mid_point = (laneGridPoints[k_side] + laneGridPoints[start_idx]) / 2;
+                        if( lane_idx >= start_idx && lane_idx <= k_side && param.use_lane_point_first){
+                            mid_point = lane_point;
+                        }
+                        else{
+                            mid_point = (laneGridPoints[k_side] + laneGridPoints[start_idx]) / 2;
+                        }
                         LaneTreeElement laneTreeElement;
                         laneTreeElement.id = i_grid;
                         laneTreeElement.leftBoundaryPoint = left_boundary_point;
                         laneTreeElement.leftPoint = laneGridPoints[k_side];
                         laneTreeElement.midPoint = mid_point;
-                        laneTreeElement.lanePoint = laneGridPoints[(grid_size - 1) / 2];
+                        laneTreeElement.lanePoint = lane_point;
                         laneTreeElement.rightPoint = laneGridPoints[start_idx];
                         laneTreeElement.rightBoundaryPoint = right_boundary_point;
                         laneTreeElement.width = (laneGridPoints[k_side] - laneGridPoints[start_idx]).norm();
@@ -134,13 +153,19 @@ bool GlobalPlanner::plan(double t) {
                     }
                 }
                 else if(start_idx > -1){ //occupied, start idx initialized -> add element to tree
-                    mid_point = (laneGridPoints[k_side-1] + laneGridPoints[start_idx])/2;
+                    if(lane_idx >= start_idx && lane_idx <= k_side - 1 && param.use_lane_point_first){
+                        mid_point = lane_point;
+                    }
+                    else{
+                        mid_point = (laneGridPoints[k_side-1] + laneGridPoints[start_idx])/2;
+                    }
+
                     LaneTreeElement laneTreeElement;
                     laneTreeElement.id = i_grid;
                     laneTreeElement.leftBoundaryPoint = left_boundary_point;
                     laneTreeElement.leftPoint = laneGridPoints[k_side-1];
                     laneTreeElement.midPoint = mid_point;
-                    laneTreeElement.lanePoint = laneGridPoints[(grid_size-1)/2];
+                    laneTreeElement.lanePoint = lane_point;
                     laneTreeElement.rightPoint = laneGridPoints[start_idx];
                     laneTreeElement.rightBoundaryPoint = right_boundary_point;
                     laneTreeElement.width = (laneGridPoints[k_side-1] - laneGridPoints[start_idx]).norm();
@@ -161,6 +186,7 @@ bool GlobalPlanner::plan(double t) {
                     start_idx = -1;
                 }
             }
+
             i_grid++;
             current_length += param.grid_resolution;
         }
@@ -309,10 +335,14 @@ bool GlobalPlanner::plan(double t) {
                 window++;
             }
 
+            int count = 0;
             while (i_backward > std::max(i_smooth - window, 0)) {
                 if ((laneTreePath[i_backward].midPoint - laneTreePath[i_backward].lanePoint).norm() < bias * param.smoothing_cliff_ratio) {
                     i_backward--;
-                } else {
+                } else if(count < param.smoothing_cliff_n_check_idx){ // to check round cliff
+                    i_backward--;
+                    count++;
+                } else{
                     i_backward++;
                     break;
                 }

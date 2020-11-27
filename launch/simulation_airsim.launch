@@ -7,8 +7,11 @@
 <!--   <arg name="bagfile"        default="autoDriveIntegration.bag"/> -->
 <!--   <arg name="bagfile"        default="autoDriveTwoBoxes.bag"/> -->
   <arg name = "pcl_topic" default = "/airsim_car_node/PhysXCar/lidar/LidarSensor1"/>
+    <arg name = "param_file" default = "airsim.yaml"/>
 
-  <param name="use_sim_time" value="$(arg use_sim_time)"/>
+
+
+    <param name="use_sim_time" value="$(arg use_sim_time)"/>
 
 <!-- Arguments Start -->
   <arg name="snu_frame_id" default="SNU"/>
@@ -86,6 +89,9 @@
 
     <!--3. server-->
     <include file = "$(find atypical_driving)/launch/integration_server.launch" >
+
+        <arg name = "param_file" value="$(arg param_file)"/>
+
         <arg name = "world_frame_id" value = "$(arg world_frame_id)"/>
         <arg name = "snu_frame_id" value = "$(arg snu_frame_id)"/>
         <arg name = "occu_frame_id" value = "$(arg occu_frame_id)"/>
