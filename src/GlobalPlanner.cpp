@@ -70,12 +70,14 @@ bool GlobalPlanner::plan(double t) {
             // check occupancy of side points and construct laneTree
             std::vector<int> gridPointStates;
             gridPointStates.resize(laneGridPoints.size());
+            int lane_idx = (grid_size - 1) / 2;
             bool is_occupied_by_object = false;
             for(int k_side = 0; k_side < laneGridPoints.size(); k_side++) {
                 double object_velocity = 0;
                 double min_distance_to_object = 1000;
                 bool isObject = p_base->isObject(laneGridPoints[k_side], param.max_obstacle_prediction_query_size, min_distance_to_object, object_velocity, param.use_keti_velocity);
-                if(min_distance_to_object < param.blocked_by_object_distance){
+                if(k_side == lane_idx && min_distance_to_object < param.blocked_by_object_distance){
+                    ROS_WARN_STREAM("[GlobalPlanner] lane is occupied by object, i_grid:" << i_grid << "min_dist_to_object:" << min_distance_to_object);
                     is_occupied_by_object = true;
                     break;
                 }
@@ -117,7 +119,6 @@ bool GlobalPlanner::plan(double t) {
             }
 
             int start_idx = -1;
-            int lane_idx = (grid_size - 1) / 2;
             Vector2d mid_point;
             for(int k_side = 0; k_side < laneGridPoints.size(); k_side++){
                 if(gridPointStates[k_side] == 0){
