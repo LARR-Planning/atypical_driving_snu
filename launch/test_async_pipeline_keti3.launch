@@ -8,12 +8,22 @@
 <!--   <arg name = "param_file" default = "kiapi_PG.yaml"/> -->
 <!--   <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/kiapi_path1.csv"/> -->
 
-  <arg name= "bagfile"        default="2020-11-24-10-43-30.bag"/>
-  <arg name = "param_file" default = "kiapi_PG.yaml"/>
-  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/interpolated_kiapi_pg11.csv"/>
+  <arg name= "bagfile"        default="2020-11-24-15-44-44.bag"/>
+<!--   <arg name = "param_file" default = "yugokri.yaml"/> -->
+    <arg name = "param_file" default = "kiapi_PG.yaml"/>
 
-  <arg name = "goal/x"  default = "446049.6513"/> <!--in world frame -->
-  <arg name = "goal/y" default = "3944900.7604"/> <!--in world frame -->
+  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/interpolated_kiapi_pg2.csv"/>
+<!--   <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/interpolated_yugokri_path1.csv"/> -->
+
+<!-- goal of kiapi_PG -->
+  <arg name = "goal/x"  default = "446049.6513"/>
+  <arg name = "goal/y" default = "3944900.7604"/>
+
+<!-- goal of yugokri -->
+<!--   <arg name = "goal/x"  default = "451473.5883"/> -->
+<!--   <arg name = "goal/y" default = "3947450.6469"/> -->
+
+
 
 
 
