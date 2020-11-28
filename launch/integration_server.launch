@@ -25,7 +25,7 @@
 <rosparam file="$(find atypical_driving)/param/MPC_weight.yaml"/>
 </group>
 
-<arg name = "param_file"  default= "yugokri.yaml"/>
+<arg name = "param_file"  default= "airsim.yaml"/>
 
 
 <!--3. server-->
@@ -33,7 +33,7 @@
 
     <param name = "local_planner/obstacle_radius_nominal" value="1"/>
 
-    <param name="use_keti_vel" value="true"/>
+    <param name="use_keti_vel" value="false"/>
 
     <remap from = "/occupancy_grid" to = "/costmap_node/costmap/costmap"/>
 
@@ -62,27 +62,7 @@
 
     <rosparam command="load" file="$(arg waypoints)" />
 
-    <param name="global_planner/car_width" value="0.1" />
     <param name="global_planner/period" value="$(arg period)" />
-    <param name="global_planner/grid_resolution" value="0.3" />
-    <param name="global_planner/max_steering_angle" value = "$(eval 3.14/180*2)"/>
-    <param name="global_planner/smoothing_distance" value="10.0" />
-    <param name="global_planner/smoothing_cliff_min_bias" value="0.2" />
-    <param name="global_planner/smoothing_cliff_ratio" value="0.5"/>
-    <param name="global_planner/start_smoothing_distance" value="6.0" />
-    <param name="global_planner/corridor_width_min" value = "0.1"/>
-    <param name="global_planner/corridor_width_dynamic_min" value = "8.0"/>
-    <param name="global_planner/corridor_max_bias" value = "100.0"/>
-    <param name="global_planner/safe_distance" value = "6.0"/>
-    <param name="global_planner/nominal_acceleration" value = "0.5"/>
-    <param name="global_planner/object_velocity_threshold" value="0.3"/>
-    <param name="global_planner/max_obstacle_prediction_query_size" value="20"/>
-    <param name="global_planner/acc_stop_distance" value="5.0"/>
-    <param name="global_planner/acc_stop_angle" value="$(eval 3.14/180*5)"/>
-    <param name="global_planner/use_static_object" value="true"/>
-    <param name="global_planner/use_lane_point_first" value="true"/>
-    <param name="global_planner/smoothing_cliff_n_check_idx" value="10"/>
-    <param name="global_planner/blocked_by_object_distance" value="0.2"/>
 
     <param name="local_planner/horizon" value="$(arg horizon)" />
     <param name="local_planner/ts" value="$(arg planning_dt)" />
@@ -107,7 +87,7 @@
     <param name="predictor/log_dir" value="$(find atypical_driving)/log/predictor" />
 
 
-<!--    <rosparam command="load" file="$(find atypical_driving)/param/$(arg param_file)"/>-->
+    <rosparam command="load" file="$(find atypical_driving)/param/$(arg param_file)"/>
 
 </node>
 </launch>
