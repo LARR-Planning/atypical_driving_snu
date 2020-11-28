@@ -53,3 +53,4 @@ global_planner: {
 
 use_keti_velocity: true
 use_nominal_obstacle_rad: false
+lane_width: 3

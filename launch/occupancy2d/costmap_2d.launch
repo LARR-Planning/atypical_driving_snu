@@ -74,7 +74,7 @@
             inf_is_valid: true
           }
         inflation:
-          inflation_radius: 1.4
+          inflation_radius: 0.7
         voxel:
           publish_voxel_map: true
     </rosparam>

@@ -18,7 +18,6 @@
   <arg name ="lidar_frame_id" default = "velodyne"/>
   <arg name ="detected_object_frame_id" default = "velodyne"/>
 
-  <arg name = "lane_width" default="3"/>
   <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/interpolated_kiapi_pg2.csv"/>
   <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
 
@@ -84,7 +83,6 @@
         <param name = "goal_thres" value = "1.5"/>
 
         <param name = "lane_csv_file" value = "$(arg lane_csv_file)"/>
-        <param name = "lane_width" value="$(arg lane_width)"/>
         <param name = "log_file_prefix" value = "$(arg log_file_prefix)" />
 
         <param name="global_planner/car_width" value="1.0" />
