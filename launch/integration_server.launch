@@ -25,7 +25,7 @@
 <rosparam file="$(find atypical_driving)/param/MPC_weight.yaml"/>
 </group>
 
-<arg name = "param_file"  default= "airsim.yaml"/>
+<arg name = "param_file"  default= "kiapi_PG.yaml"/>
 
 
 <!--3. server-->

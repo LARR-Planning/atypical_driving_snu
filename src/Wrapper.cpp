@@ -211,6 +211,7 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<bool>("global_planner/use_lane_point_first", param_.g_param.use_lane_point_first, false);
     nh.param<int>("global_planner/smoothing_cliff_n_check_idx", param_.g_param.smoothing_cliff_n_check_idx, 0);
     nh.param<double>("global_planner/blocked_by_object_distance", param_.g_param.blocked_by_object_distance, -1);
+    nh.param<bool>("global_planner/use_line_smoothing_from_current_position", param_.g_param.use_line_smoothing_from_current_position, false);
 
 
     // local planner

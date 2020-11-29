@@ -140,6 +140,7 @@ namespace Planner {
         bool use_lane_point_first;
         int smoothing_cliff_n_check_idx;
         double blocked_by_object_distance;
+        bool use_line_smoothing_from_current_position;
     };
 
     struct ParamPredictor{

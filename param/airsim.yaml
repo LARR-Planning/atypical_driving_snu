@@ -32,6 +32,7 @@ global_planner: {
   car_width: 1.5,
   grid_resolution: 0.3,
   max_steering_angle: 0.03488,
+  use_line_smoothing_from_current_position: true,
   smoothing_distance: 10.0,
   smoothing_cliff_min_bias: 0.5,
   smoothing_cliff_ratio: 0.5,

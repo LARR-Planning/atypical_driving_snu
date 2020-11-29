@@ -29,25 +29,26 @@ map: {
 }
 
 global_planner: {
-  car_width: 1.5,
+  car_width: 0.5,
   grid_resolution: 0.3,
-  max_steering_angle: 0.03488,
+  max_steering_angle: 0.08722,
+  use_line_smoothing_from_current_position: true,
   smoothing_distance: 10.0,
-  smoothing_cliff_min_bias: 0.5,
+  smoothing_cliff_min_bias: -0.5,
   smoothing_cliff_ratio: 0.5,
   start_smoothing_distance: 6.0,
   corridor_width_min: 0.5,
   corridor_width_dynamic_min: 8.0,
   corridor_max_bias: 100.0,
-  safe_distance: 6.0,
+  safe_distance: 6,
   nominal_acceleration: 0.5,
   object_velocity_threshold: 0.1,
   max_obstacle_prediction_query_size: 1000,
-  acc_stop_distance: 5.0,
+  acc_stop_distance: 5,
   acc_stop_angle: 0.08722,
   use_static_object: false,
   use_lane_point_first: true,
-  smoothing_cliff_n_check_idx: 10,
+  smoothing_cliff_n_check_idx: 0,
   blocked_by_object_distance: 1.0
 }
 
