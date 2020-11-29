@@ -45,7 +45,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: PointCloud2
+    SyncSource: ""
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -76,7 +76,11 @@ Visualization Manager:
       Marker Topic: /atypical_planning_test/corridor_seq
       Name: MarkerArray
       Namespaces:
-        "": true
+        0: true
+        1: true
+        2: true
+        3: true
+        4: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -84,7 +88,7 @@ Visualization Manager:
       Marker Topic: /occupied_cells_vis_array
       Name: MarkerArray
       Namespaces:
-        map: true
+        {}
       Queue Size: 100
       Value: true
     - Angle Tolerance: 0.10000000149011612
@@ -175,9 +179,7 @@ Visualization Manager:
         All Enabled: false
         SNU:
           Value: true
-        car_base_link:
-          Value: true
-        map:
+        base_link:
           Value: true
         velodyne:
           Value: true
@@ -187,11 +189,10 @@ Visualization Manager:
       Show Axes: true
       Show Names: true
       Tree:
-        map:
-          SNU:
-            car_base_link:
-              velodyne:
-                {}
+        SNU:
+          base_link:
+            velodyne:
+              {}
       Update Interval: 0
       Value: true
     - Class: rviz/MarkerArray
@@ -199,7 +200,7 @@ Visualization Manager:
       Marker Topic: /occupied_cells_vis_array
       Name: MarkerArray
       Namespaces:
-        map: true
+        {}
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -373,25 +374,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 66.30232238769531
+      Distance: 78.48155212402344
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.24974925816059113
-        Y: 0.2472650110721588
-        Z: 0.27378514409065247
+        X: 23.82244300842285
+        Y: -2.1352379322052
+        Z: 1.6294755935668945
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.2247960567474365
+      Pitch: 1.5697963237762451
       Target Frame: car_base_link
       Value: Orbit (rviz)
-      Yaw: 1.5186742544174194
+      Yaw: 3.158674955368042
     Saved: ~
 Window Geometry:
   Displays:
@@ -410,4 +411,4 @@ Window Geometry:
     collapsed: true
   Width: 1853
   X: 67
-  Y: 27
+  Y: 363

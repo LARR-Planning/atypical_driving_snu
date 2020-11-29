@@ -17,7 +17,7 @@ dd = 50;
 % quiver(data_state(1:dd:end,2),data_state(1:dd:end,3),xaxis(1:dd:end,1),xaxis(1:dd:end,2))
 xlabel('x')
 ylabel('y')
-
+axis equal
 figure(2)
 subplot(2,1,1)
 gg = plot(data_input(:,1),data_input(:,2),'b-','LineWidth',4);
@@ -29,6 +29,7 @@ gg = plot(data_input(:,1),data_input(:,3),'c-','LineWidth',4);
 gg.Color(4) = 0.2;
 hold on
 title('steering history')
+axis equal
 %% mpc RHP 
 figure(3)
 Ndata = size(data_mpc,1)/5;
