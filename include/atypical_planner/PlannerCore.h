@@ -63,7 +63,7 @@ namespace Planner {
         double obstRadiusNominal;
         double goalReachingThres;
         double carLongtitude; // ly
-
+        double lxFrontWheel;
         double maxSteer; // [-maxSteer,maxSteer]
         double maxAccel;
         double minAccel; // [minAccel,maxAccel] can be negative

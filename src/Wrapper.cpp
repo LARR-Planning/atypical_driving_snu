@@ -219,6 +219,7 @@ void RosWrapper::updateParam(Param &param_) {
 
     // local planner
     nh.param<double>("local_planner/horizon",param_.l_param.horizon,5);
+    nh.param<double>("local_planner/lx_frontwheel",param_.l_param.lxFrontWheel,2.5);
     nh.param<double>("local_planner/period",param_.l_param.period,0.1);
     nh.param<double>("local_planner/ts",param_.l_param.tStep,0.1);
     nh.param<double>("local_planner/obstacle_radius_nominal",param_.l_param.obstRadiusNominal,0.3);
@@ -964,6 +965,18 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
         auto T01 = p_base->Tws.matrix().transpose() * Tw1; // no translation component in Tws
         auto poseTransformed = DAP::transform_matrix_to_pose(SE3(T01));
 
+        // To front wheel (for Yunwoo)
+        SE3 toFrontWheel;
+        toFrontWheel.setIdentity();
+        Vector3d lx(param.l_param.lxFrontWheel,0,0);
+        toFrontWheel.translate(lx);
+
+
+        auto poseTransformedFrontWheel = DAP::transform_matrix_to_pose(SE3(T01)*toFrontWheel);
+
+
+
+
 
 
 //        // Update the pose information w.r.t Tw1
@@ -976,8 +989,8 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
         CarState curState;
 
         // make xy
-        curState.x = poseTransformed.position.x;
-        curState.y = poseTransformed.position.y;
+        curState.x = poseTransformedFrontWheel.position.x;
+        curState.y = poseTransformedFrontWheel.position.y;
 
         // make theta
         tf::Quaternion q;
@@ -1004,6 +1017,19 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
         auto pose = p_base->getCurPose();
 
         tf::Transform transform;
+        transform.setOrigin( tf::Vector3(poseTransformedFrontWheel.position.x,
+                poseTransformedFrontWheel.position.y,
+                poseTransformedFrontWheel.position.z));
+
+        q.setX(poseTransformedFrontWheel.orientation.x);
+        q.setY(poseTransformedFrontWheel.orientation.y);
+        q.setZ(poseTransformedFrontWheel.orientation.z);
+        q.setW(poseTransformedFrontWheel.orientation.w);
+        transform.setRotation(q);
+
+        tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(),SNUFrameId,"car_front_wheel"));
+
+
         transform.setOrigin( tf::Vector3(pose.pose.position.x, pose.pose.position.y, pose.pose.position.z) );
 
         q.setX(pose.pose.orientation.x);
@@ -1014,6 +1040,7 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
 
         tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(),SNUFrameId, baseLinkId));
 
+
         transform.setOrigin(tf::Vector3(tw0(0),tw0(1),tw0(2)));
         auto qd = Eigen::Quaterniond(p_base->Tws.rotation());
         q.setX(qd.x());
@@ -1022,6 +1049,9 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
         q.setW(qd.w());
         transform.setRotation(q);//
         tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), worldFrameId, SNUFrameId));
+
+
+
 
 //        cout << "sending transform" << endl;
 
