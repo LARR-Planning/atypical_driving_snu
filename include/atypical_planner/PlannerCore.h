@@ -143,6 +143,7 @@ namespace Planner {
         double blocked_by_object_distance;
         double blocked_by_object_inflation_distance;
         bool use_line_smoothing_from_current_position;
+        bool cut_tail_by_angle;
     };
 
     struct ParamPredictor{

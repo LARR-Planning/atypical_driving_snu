@@ -33,7 +33,7 @@ bool GlobalPlanner::plan(double t) {
         return false;
     }
 
-    bool printSequence = true;
+    bool printSequence = false;
     ros::Time start_time = ros::Time::now();
 
     // Generate LaneTree
@@ -44,7 +44,7 @@ bool GlobalPlanner::plan(double t) {
     double lane_length, lane_angle, current_length, alpha, currentLaneAngle;
     Vector2d delta, left_point, lane_point, right_point, left_boundary_point, right_boundary_point;
     int i_grid = 0;
-    int id_lane_occupied_by_object = -1;
+    bool is_lane_occupied_by_object = false;
     for(int i_lane = 0; i_lane < (int)p_base->laneSliced.points.size() - 1; i_lane++){
         int grid_size = 2 * floor(p_base->laneSliced.widths[i_lane]/2/param.grid_resolution) + 1;
         delta = p_base->laneSliced.points[i_lane+1] - p_base->laneSliced.points[i_lane];
@@ -80,7 +80,7 @@ bool GlobalPlanner::plan(double t) {
                 bool isObject = p_base->isObject(laneGridPoints[k_side], param.max_obstacle_prediction_query_size, min_distance_to_object, object_velocity, param.use_keti_velocity);
                 if(k_side == lane_idx && min_distance_to_object < param.blocked_by_object_distance){
 //                    ROS_WARN_STREAM("[GlobalPlanner] lane is occupied by object, i_grid:" << i_grid << ", min_dist_to_object:" << min_distance_to_object);
-                    id_lane_occupied_by_object = i_grid;
+                    is_lane_occupied_by_object = true;
                     break;
                 }
                 else if(isObject && object_velocity > param.object_velocity_threshold){
@@ -93,7 +93,7 @@ bool GlobalPlanner::plan(double t) {
                     gridPointStates[k_side] = 0;
                 }
             }
-            if(id_lane_occupied_by_object > -1){
+            if(is_lane_occupied_by_object){
                 break;
             }
             else {
@@ -185,7 +185,7 @@ bool GlobalPlanner::plan(double t) {
             i_grid++;
             current_length += param.grid_resolution;
         }
-        if(id_lane_occupied_by_object > -1){
+        if(is_lane_occupied_by_object){
             break;
         }
     }
@@ -285,7 +285,8 @@ bool GlobalPlanner::plan(double t) {
         }
     }
 
-    if(id_lane_occupied_by_object > -1){
+    // if lane is occupied by object, cut tail
+    if(is_lane_occupied_by_object){
         int idx_delete_start = laneTreePath.size() - 1;
         int window_length = 0;
         while (idx_delete_start > 0 && window_length < param.blocked_by_object_inflation_distance
@@ -298,12 +299,6 @@ bool GlobalPlanner::plan(double t) {
         }
     }
 
-
-    bool isBlocked = (last_tail_idx != laneTreePath.back().id || id_lane_occupied_by_object > -1);
-    bool isBlockedByObject = false;
-    bool start_acc_mode = false;
-    int tail_end = (int)laneTreePath.size() - 1;
-
     if(printSequence){
         ROS_WARN("[GlobalPlanner] 4");
     }
@@ -313,36 +308,7 @@ bool GlobalPlanner::plan(double t) {
     double window_length;
     Vector2d smoothingPoint;
 
-    if(!param.use_line_smoothing_from_current_position){
-        tail_end = findLaneTreePathTail(isBlocked, isBlockedByObject, start_acc_mode);
-
-        if(printSequence){
-            ROS_WARN("[GlobalPlanner] 6");
-        }
-
-        // ACC
-        if(start_acc_mode) {
-            double angle_diff = abs(currentLaneAngle - currentAngle);
-            if (angle_diff > M_PI) {
-                angle_diff = 2 * M_PI - angle_diff;
-            }
-
-            ROS_WARN_STREAM(
-                    "[GlobalPlanner] currentLaneAngle:" << currentLaneAngle << ", currentAngle: " << currentAngle
-                                                        << ", angle_diff: " << angle_diff << ", stop_angle:"
-                                                        << param.acc_stop_angle);
-            if (abs(angle_diff) > param.acc_stop_angle) {
-                ROS_WARN("[GlobalPlanner] ACC mode enabled");
-                tail_end = 1;
-            }
-//            else if(current position to lanePoint tail_end is not occupied){
-//                //line smoothing to lane point
-//            }
-//            else if(current position to midPoint tail_end is not occupied){
-//                //line smoothing to mid point
-//            }
-        }
-
+//    if(!param.use_line_smoothing_from_current_position){
         // line smoothing except first point
         i_smooth = 1;
         while (i_smooth < laneTreePath.size()) {
@@ -413,7 +379,9 @@ bool GlobalPlanner::plan(double t) {
                                       + alpha * (laneTreePath[idx_end].midPoint - laneTreePath[idx_end].lanePoint);
                             laneTreePath[idx_start + j_smooth].midPoint = smoothingPoint;
                         }
-                        ROS_WARN_STREAM("forward smoothing: " << i_smooth << " to " << i_forward);
+                        if(printSequence){
+                            ROS_WARN_STREAM("forward smoothing: " << i_smooth << " to " << i_forward);
+                        }
                     }
                 }
 
@@ -471,93 +439,95 @@ bool GlobalPlanner::plan(double t) {
                                              + alpha * (laneTreePath[idx_end].midPoint - laneTreePath[idx_end].lanePoint);
                             laneTreePath[idx_start + j_smooth].midPoint = smoothingPoint;
                         }
-                        ROS_WARN_STREAM("backward smoothing: " << i_backward << " to " << i_smooth);
+                        if(printSequence){
+                            ROS_WARN_STREAM("backward smoothing: " << i_backward << " to " << i_smooth);
+                        }
                     }
                 }
             }
             i_smooth++;
         }
-    }
-    else{
-        tail_end = findLaneTreePathTail(isBlocked, isBlockedByObject, start_acc_mode);
-
-        if(printSequence){
-            ROS_WARN("[GlobalPlanner] 6");
-        }
-
-        // ACC
-        if(start_acc_mode) {
-            double angle_diff = abs(currentLaneAngle - currentAngle);
-            if (angle_diff > M_PI) {
-                angle_diff = 2 * M_PI - angle_diff;
-            }
-
-            ROS_WARN_STREAM(
-                    "[GlobalPlanner] currentLaneAngle:" << currentLaneAngle << ", currentAngle: " << currentAngle
-                                                        << ", angle_diff: " << angle_diff << ", stop_angle:"
-                                                        << param.acc_stop_angle);
-            if (abs(angle_diff) > param.acc_stop_angle) {
-                ROS_WARN("[GlobalPlanner] ACC mode enabled");
-                tail_end = 1;
-            }
-//            else if(current position to lanePoint tail_end is not occupied){
-//                //line smoothing to lane point
+//    }
+//    else{
+//        tail_end = findLaneTreePathTail(isBlocked, isBlockedByObject, start_acc_mode);
+//
+//        if(printSequence){
+//            ROS_WARN("[GlobalPlanner] 6");
+//        }
+//
+//        // ACC
+//        if(start_acc_mode) {
+//            double angle_diff = abs(currentLaneAngle - currentAngle);
+//            if (angle_diff > M_PI) {
+//                angle_diff = 2 * M_PI - angle_diff;
 //            }
-//            else if(current position to midPoint tail_end is not occupied){
-//                //line smoothing to mid point
+//
+//            ROS_WARN_STREAM(
+//                    "[GlobalPlanner] currentLaneAngle:" << currentLaneAngle << ", currentAngle: " << currentAngle
+//                                                        << ", angle_diff: " << angle_diff << ", stop_angle:"
+//                                                        << param.acc_stop_angle);
+//            if (abs(angle_diff) > param.acc_stop_angle) {
+//                ROS_WARN("[GlobalPlanner] ACC mode enabled");
+//                tail_end = 1;
 //            }
-        }
-
-
-
-        // line smoothing from the current position
-        i_smooth = 0;
-        idx_start = i_smooth;
-        idx_end = -1;
-
-        //Forward search
-        int i_forward = i_smooth + 1;
-        window = 0;
-        window_length = 0;
-        while (window < (int) tail_end - i_smooth and window_length < param.smoothing_distance) {
-            window_length += (laneTreePath[i_smooth + window + 1].lanePoint -
-                              laneTreePath[i_smooth + window].lanePoint).norm();
-            window++;
-        }
-
-        double max_bias_to_current_point = -1;
-        while (i_forward < std::min(i_smooth + window, tail_end)) {
-            double bias_to_current_point =
-                    abs((laneTreePath[i_forward].midPoint - laneTreePath[i_forward].rightBoundaryPoint).norm() - (currentPoint - laneTreePath[i_smooth].rightBoundaryPoint).norm());
-            Vector2d child_point = laneTreePath[i_forward].midPoint;
-            Vector2d current_to_child_delta = child_point - currentPoint;
-            double current_to_child_angle = atan2(current_to_child_delta.y(), current_to_child_delta.x());
-            Vector2d current_left_point = currentPoint + param.car_width/2 * Vector2d(cos(current_to_child_angle + M_PI/2), sin(current_to_child_angle + M_PI/2));
-            Vector2d child_left_point = child_point + param.car_width/2 * Vector2d(cos(current_to_child_angle + M_PI/2), sin(current_to_child_angle + M_PI/2));
-            Vector2d current_right_point = currentPoint + param.car_width/2 * Vector2d(cos(current_to_child_angle - M_PI/2), sin(current_to_child_angle - M_PI/2));
-            Vector2d child_right_point = child_point + param.car_width/2 * Vector2d(cos(current_to_child_angle - M_PI/2), sin(current_to_child_angle - M_PI/2));
-
-            if (bias_to_current_point > max_bias_to_current_point - 0.01
-                && !p_base->isOccupied(current_left_point, child_left_point)
-                && !p_base->isOccupied(current_right_point, child_right_point))
-            {
-                idx_end = i_forward;
-                max_bias_to_current_point = bias_to_current_point;
-            }
-            i_forward++;
-        }
-        if (idx_end - i_smooth > 1) {
-            ROS_WARN("[GlobalPlanner] line smoothing from current point");
-            idx_delta = idx_end - idx_start;
-            for (int j_smooth = 1; j_smooth < idx_delta; j_smooth++) {
-                alpha = static_cast<double>(j_smooth) / static_cast<double>(idx_delta);
-                smoothingPoint = laneTreePath[idx_start + j_smooth].lanePoint
-                        + (1 - alpha) * (laneTreePath[idx_start].midPoint - laneTreePath[idx_start].lanePoint)
-                        + alpha * (laneTreePath[idx_end].midPoint - laneTreePath[idx_end].lanePoint);
-                laneTreePath[idx_start + j_smooth].midPoint = smoothingPoint;
-            }
-        }
-    }
+////            else if(current position to lanePoint tail_end is not occupied){
+////                //line smoothing to lane point
+////            }
+////            else if(current position to midPoint tail_end is not occupied){
+////                //line smoothing to mid point
+////            }
+//        }
+//
+//
+//
+//        // line smoothing from the current position
+//        i_smooth = 0;
+//        idx_start = i_smooth;
+//        idx_end = -1;
+//
+//        //Forward search
+//        int i_forward = i_smooth + 1;
+//        window = 0;
+//        window_length = 0;
+//        while (window < (int) tail_end - i_smooth and window_length < param.smoothing_distance) {
+//            window_length += (laneTreePath[i_smooth + window + 1].lanePoint -
+//                              laneTreePath[i_smooth + window].lanePoint).norm();
+//            window++;
+//        }
+//
+//        double max_bias_to_current_point = -1;
+//        while (i_forward < std::min(i_smooth + window, tail_end)) {
+//            double bias_to_current_point =
+//                    abs((laneTreePath[i_forward].midPoint - laneTreePath[i_forward].rightBoundaryPoint).norm() - (currentPoint - laneTreePath[i_smooth].rightBoundaryPoint).norm());
+//            Vector2d child_point = laneTreePath[i_forward].midPoint;
+//            Vector2d current_to_child_delta = child_point - currentPoint;
+//            double current_to_child_angle = atan2(current_to_child_delta.y(), current_to_child_delta.x());
+//            Vector2d current_left_point = currentPoint + param.car_width/2 * Vector2d(cos(current_to_child_angle + M_PI/2), sin(current_to_child_angle + M_PI/2));
+//            Vector2d child_left_point = child_point + param.car_width/2 * Vector2d(cos(current_to_child_angle + M_PI/2), sin(current_to_child_angle + M_PI/2));
+//            Vector2d current_right_point = currentPoint + param.car_width/2 * Vector2d(cos(current_to_child_angle - M_PI/2), sin(current_to_child_angle - M_PI/2));
+//            Vector2d child_right_point = child_point + param.car_width/2 * Vector2d(cos(current_to_child_angle - M_PI/2), sin(current_to_child_angle - M_PI/2));
+//
+//            if (bias_to_current_point > max_bias_to_current_point - 0.01
+//                && !p_base->isOccupied(current_left_point, child_left_point)
+//                && !p_base->isOccupied(current_right_point, child_right_point))
+//            {
+//                idx_end = i_forward;
+//                max_bias_to_current_point = bias_to_current_point;
+//            }
+//            i_forward++;
+//        }
+//        if (idx_end - i_smooth > 1) {
+//            ROS_WARN("[GlobalPlanner] line smoothing from current point");
+//            idx_delta = idx_end - idx_start;
+//            for (int j_smooth = 1; j_smooth < idx_delta; j_smooth++) {
+//                alpha = static_cast<double>(j_smooth) / static_cast<double>(idx_delta);
+//                smoothingPoint = laneTreePath[idx_start + j_smooth].lanePoint
+//                        + (1 - alpha) * (laneTreePath[idx_start].midPoint - laneTreePath[idx_start].lanePoint)
+//                        + alpha * (laneTreePath[idx_end].midPoint - laneTreePath[idx_end].lanePoint);
+//                laneTreePath[idx_start + j_smooth].midPoint = smoothingPoint;
+//            }
+//        }
+//    }
 
 
     if(printSequence){
@@ -652,14 +622,24 @@ bool GlobalPlanner::plan(double t) {
             i_smooth++;
         }
     }
-    // If midPoints are out of bounds, then push them into bounds
+    // If midPoints are out of bounds, then push them into bounds or cut tail
+    bool is_blocked_by_angle = false;
+    int idx_block_by_angle = 100000;
     for(int i_mid = 0; i_mid < laneTreePath.size(); i_mid++) {
         if (p_base->isOccupied(laneTreePath[i_mid].midPoint)) {
-            if((laneTreePath[i_mid].midPoint - laneTreePath[i_mid].leftPoint).norm() < (laneTreePath[i_mid].midPoint - laneTreePath[i_mid].rightPoint).norm()){
-                laneTreePath[i_mid].midPoint = laneTreePath[i_mid].leftPoint;
+            if(!param.cut_tail_by_angle){
+                if((laneTreePath[i_mid].midPoint - laneTreePath[i_mid].leftPoint).norm() < (laneTreePath[i_mid].midPoint - laneTreePath[i_mid].rightPoint).norm()){
+                    laneTreePath[i_mid].midPoint = laneTreePath[i_mid].leftPoint;
+                }
+                else{
+                    laneTreePath[i_mid].midPoint = laneTreePath[i_mid].rightPoint;
+                }
             }
             else{
-                laneTreePath[i_mid].midPoint = laneTreePath[i_mid].rightPoint;
+                ROS_WARN_STREAM("[GlobalPlanner] midPoint is out of bound, cut tail at: " << i_mid);
+                is_blocked_by_angle = true;
+                idx_block_by_angle = i_mid;
+                break;
             }
         }
     }
@@ -684,31 +664,35 @@ bool GlobalPlanner::plan(double t) {
 
     // check width and cut tail
     //TODO: End point of lane should be goal point!
-//    tail_end = findLaneTreePathTail(isBlocked, isBlockedByObject, start_acc_mode);
-//
-//    if(printSequence){
-//        ROS_WARN("[GlobalPlanner] 6");
-//    }
-//
-//    // ACC
-//    if(start_acc_mode){
-//        double angle_diff = abs(currentLaneAngle - currentAngle);
-//        if(angle_diff > M_PI) {
-//            angle_diff = 2 * M_PI - angle_diff;
+    bool isBlocked = (last_tail_idx != laneTreePath.back().id || is_lane_occupied_by_object || is_blocked_by_angle);
+    bool isBlockedByObject = false;
+    bool start_acc_mode = false;
+    int tail_end = findLaneTreePathTail(isBlocked, isBlockedByObject, idx_block_by_angle, start_acc_mode);
+
+    if(printSequence){
+        ROS_WARN("[GlobalPlanner] 6");
+    }
+
+    // ACC
+    if(start_acc_mode){
+        double angle_diff = abs(currentLaneAngle - currentAngle);
+        if(angle_diff > M_PI) {
+            angle_diff = 2 * M_PI - angle_diff;
+        }
+        if(printSequence){
+            ROS_WARN_STREAM("[GlobalPlanner] currentLaneAngle:" << currentLaneAngle << ", currentAngle: " << currentAngle << ", angle_diff: " << angle_diff << ", stop_angle:" << param.acc_stop_angle);
+        }
+        if(abs(angle_diff) > param.acc_stop_angle){
+            ROS_WARN("[GlobalPlanner] ACC mode enabled");
+            tail_end = 1;
+        }
+//        else if(current position to lanePoint tail_end is not occupied){
+//            line smoothing to lane point
 //        }
-//
-//        ROS_WARN_STREAM("[GlobalPlanner] currentLaneAngle:" << currentLaneAngle << ", currentAngle: " << currentAngle << ", angle_diff: " << angle_diff << ", stop_angle:" << param.acc_stop_angle);
-//        if(abs(angle_diff) > param.acc_stop_angle){
-//            ROS_WARN("[GlobalPlanner] ACC mode enabled");
-//            tail_end = 1;
+//        else if(current position to midPoint tail_end is not occupied){
+//            line smoothing to mid point
 //        }
-////        else if(current position to lanePoint tail_end is not occupied){
-////            line smoothing to lane point
-////        }
-////        else if(current position to midPoint tail_end is not occupied){
-////            line smoothing to mid point
-////        }
-//    }
+    }
 
     if(printSequence){
         ROS_WARN("[GlobalPlanner] 7");
@@ -986,9 +970,9 @@ std::vector<int> GlobalPlanner::getMidPointsFromLaneTree(int i_tree_start){
     return tail;
 }
 
-int GlobalPlanner::findLaneTreePathTail(bool& isBlocked, bool& isBlockedByObject, bool& start_acc_mode){
+int GlobalPlanner::findLaneTreePathTail(bool& isBlocked, bool& isBlockedByObject, int idx_block_by_angle, bool& start_acc_mode){
     isBlockedByObject = false;
-    int tail_end = (int)laneTreePath.size() - 1;
+    int tail_end = min((int)laneTreePath.size() - 1, idx_block_by_angle);
     start_acc_mode = false;
     double corridor_width_min;
     for(int i_tree = 0; i_tree < laneTreePath.size(); i_tree++){

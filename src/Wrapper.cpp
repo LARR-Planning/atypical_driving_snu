@@ -214,6 +214,7 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<double>("global_planner/blocked_by_object_distance", param_.g_param.blocked_by_object_distance, -1);
     nh.param<double>("global_planner/blocked_by_object_inflation_distance", param_.g_param.blocked_by_object_inflation_distance, -1);
     nh.param<bool>("global_planner/use_line_smoothing_from_current_position", param_.g_param.use_line_smoothing_from_current_position, false);
+    nh.param<bool>("global_planner/cut_tail_by_angle", param_.g_param.cut_tail_by_angle, false);
 
 
     // local planner
