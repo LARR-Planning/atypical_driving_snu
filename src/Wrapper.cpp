@@ -196,6 +196,7 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<double>("global_planner/smoothing_distance",param_.g_param.smoothing_distance, 8);
     nh.param<double>("global_planner/smoothing_cliff_min_bias",param_.g_param.smoothing_cliff_min_bias, 1.0);
     nh.param<double>("global_planner/smoothing_cliff_ratio", param_.g_param.smoothing_cliff_ratio, 0.5);
+    nh.param<double>("global_planner/smoothing_summit_ratio", param_.g_param.smoothing_summit_ratio, 0.2);
     nh.param<double>("global_planner/max_steering_angle", param_.g_param.max_steering_angle, M_PI/20);
     nh.param<double>("global_planner/start_smoothing_distance", param_.g_param.start_smoothing_distance, 8);
     nh.param<double>("global_planner/corridor_width_min", param_.g_param.corridor_width_min, 1);
@@ -211,6 +212,7 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<bool>("global_planner/use_lane_point_first", param_.g_param.use_lane_point_first, false);
     nh.param<int>("global_planner/smoothing_cliff_n_check_idx", param_.g_param.smoothing_cliff_n_check_idx, 0);
     nh.param<double>("global_planner/blocked_by_object_distance", param_.g_param.blocked_by_object_distance, -1);
+    nh.param<double>("global_planner/blocked_by_object_inflation_distance", param_.g_param.blocked_by_object_inflation_distance, -1);
     nh.param<bool>("global_planner/use_line_smoothing_from_current_position", param_.g_param.use_line_smoothing_from_current_position, false);
 
 

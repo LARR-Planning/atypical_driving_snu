@@ -123,6 +123,7 @@ namespace Planner {
         double smoothing_distance;
         double smoothing_cliff_min_bias;
         double smoothing_cliff_ratio;
+        double smoothing_summit_ratio;
         double start_smoothing_distance;
         double max_steering_angle;
         double corridor_width_min;
@@ -140,6 +141,7 @@ namespace Planner {
         bool use_lane_point_first;
         int smoothing_cliff_n_check_idx;
         double blocked_by_object_distance;
+        double blocked_by_object_inflation_distance;
         bool use_line_smoothing_from_current_position;
     };
 

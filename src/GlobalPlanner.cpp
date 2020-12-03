@@ -33,7 +33,8 @@ bool GlobalPlanner::plan(double t) {
         return false;
     }
 
-    bool printSequence = false;
+    bool printSequence = true;
+    ros::Time start_time = ros::Time::now();
 
     // Generate LaneTree
     laneTree.clear();
@@ -43,6 +44,7 @@ bool GlobalPlanner::plan(double t) {
     double lane_length, lane_angle, current_length, alpha, currentLaneAngle;
     Vector2d delta, left_point, lane_point, right_point, left_boundary_point, right_boundary_point;
     int i_grid = 0;
+    int id_lane_occupied_by_object = -1;
     for(int i_lane = 0; i_lane < (int)p_base->laneSliced.points.size() - 1; i_lane++){
         int grid_size = 2 * floor(p_base->laneSliced.widths[i_lane]/2/param.grid_resolution) + 1;
         delta = p_base->laneSliced.points[i_lane+1] - p_base->laneSliced.points[i_lane];
@@ -71,14 +73,14 @@ bool GlobalPlanner::plan(double t) {
             std::vector<int> gridPointStates;
             gridPointStates.resize(laneGridPoints.size());
             int lane_idx = (grid_size - 1) / 2;
-            bool is_occupied_by_object = false;
+
             for(int k_side = 0; k_side < laneGridPoints.size(); k_side++) {
                 double object_velocity = 0;
                 double min_distance_to_object = 1000;
                 bool isObject = p_base->isObject(laneGridPoints[k_side], param.max_obstacle_prediction_query_size, min_distance_to_object, object_velocity, param.use_keti_velocity);
                 if(k_side == lane_idx && min_distance_to_object < param.blocked_by_object_distance){
-                    ROS_WARN_STREAM("[GlobalPlanner] lane is occupied by object, i_grid:" << i_grid << ", min_dist_to_object:" << min_distance_to_object);
-                    is_occupied_by_object = true;
+//                    ROS_WARN_STREAM("[GlobalPlanner] lane is occupied by object, i_grid:" << i_grid << ", min_dist_to_object:" << min_distance_to_object);
+                    id_lane_occupied_by_object = i_grid;
                     break;
                 }
                 else if(isObject && object_velocity > param.object_velocity_threshold){
@@ -91,10 +93,8 @@ bool GlobalPlanner::plan(double t) {
                     gridPointStates[k_side] = 0;
                 }
             }
-            if(is_occupied_by_object){
-                for (int k_side = 0; k_side < laneGridPoints.size(); k_side++) {
-                    gridPointStates[k_side] = 1; // if lane is occupied by object then block the path
-                }
+            if(id_lane_occupied_by_object > -1){
+                break;
             }
             else {
                 // dynamic object inflation
@@ -141,9 +141,6 @@ bool GlobalPlanner::plan(double t) {
                         laneTreeElement.rightPoint = laneGridPoints[start_idx];
                         laneTreeElement.rightBoundaryPoint = right_boundary_point;
                         laneTreeElement.width = (laneGridPoints[k_side] - laneGridPoints[start_idx]).norm();
-                        if (laneTreeElement.width == 0) {
-                            int debug = 0;
-                        }
 
                         if (start_idx > 0) {
                             laneTreeElement.isNearObject = (gridPointStates[start_idx - 1] == 2);
@@ -170,9 +167,6 @@ bool GlobalPlanner::plan(double t) {
                     laneTreeElement.rightPoint = laneGridPoints[start_idx];
                     laneTreeElement.rightBoundaryPoint = right_boundary_point;
                     laneTreeElement.width = (laneGridPoints[k_side-1] - laneGridPoints[start_idx]).norm();
-                    if(laneTreeElement.width == 0){
-                        int debug = 0;
-                    }
 
                     if(gridPointStates[k_side] == 2 or (start_idx > 0 and gridPointStates[start_idx - 1] == 2)){
                         laneTreeElement.isNearObject = true;
@@ -191,6 +185,9 @@ bool GlobalPlanner::plan(double t) {
             i_grid++;
             current_length += param.grid_resolution;
         }
+        if(id_lane_occupied_by_object > -1){
+            break;
+        }
     }
     if(laneTree.empty()){
         ROS_WARN("[GlobalPlanner] laneTree is empty! use current point to construct laneTree");
@@ -208,8 +205,11 @@ bool GlobalPlanner::plan(double t) {
     }
     int last_tail_idx = laneTree.back().id;
 
+
     if(printSequence){
-        ROS_WARN("[GlobalPlanner] 1");
+        ros::Time current_time = ros::Time::now();
+        ROS_WARN_STREAM("[GlobalPlanner] 1.tree generation time: " << (current_time - start_time).toSec());
+        start_time = current_time;
     }
 
     // Allocate children of each node in laneTree
@@ -218,7 +218,8 @@ bool GlobalPlanner::plan(double t) {
     }
 
     if(printSequence){
-        ROS_WARN("[GlobalPlanner] 2");
+        ros::Time current_time = ros::Time::now();
+        ROS_WARN_STREAM("[GlobalPlanner] 2.find children time: " << (current_time - start_time).toSec());
     }
 
     // Find start node of laneTree
@@ -284,6 +285,25 @@ bool GlobalPlanner::plan(double t) {
         }
     }
 
+    if(id_lane_occupied_by_object > -1){
+        int idx_delete_start = laneTreePath.size() - 1;
+        int window_length = 0;
+        while (idx_delete_start > 0 && window_length < param.blocked_by_object_inflation_distance
+               && p_base->isOccupied(laneTreePath[idx_delete_start].lanePoint)) {
+            window_length += (laneTreePath[idx_delete_start - 1].lanePoint - laneTreePath[idx_delete_start].lanePoint).norm();
+            idx_delete_start--;
+        }
+        if(idx_delete_start < laneTree.size() - 1) {
+            laneTreePath.erase(laneTreePath.begin() + idx_delete_start, laneTreePath.end());
+        }
+    }
+
+
+    bool isBlocked = (last_tail_idx != laneTreePath.back().id || id_lane_occupied_by_object > -1);
+    bool isBlockedByObject = false;
+    bool start_acc_mode = false;
+    int tail_end = (int)laneTreePath.size() - 1;
+
     if(printSequence){
         ROS_WARN("[GlobalPlanner] 4");
     }
@@ -294,84 +314,202 @@ bool GlobalPlanner::plan(double t) {
     Vector2d smoothingPoint;
 
     if(!param.use_line_smoothing_from_current_position){
+        tail_end = findLaneTreePathTail(isBlocked, isBlockedByObject, start_acc_mode);
+
+        if(printSequence){
+            ROS_WARN("[GlobalPlanner] 6");
+        }
+
+        // ACC
+        if(start_acc_mode) {
+            double angle_diff = abs(currentLaneAngle - currentAngle);
+            if (angle_diff > M_PI) {
+                angle_diff = 2 * M_PI - angle_diff;
+            }
+
+            ROS_WARN_STREAM(
+                    "[GlobalPlanner] currentLaneAngle:" << currentLaneAngle << ", currentAngle: " << currentAngle
+                                                        << ", angle_diff: " << angle_diff << ", stop_angle:"
+                                                        << param.acc_stop_angle);
+            if (abs(angle_diff) > param.acc_stop_angle) {
+                ROS_WARN("[GlobalPlanner] ACC mode enabled");
+                tail_end = 1;
+            }
+//            else if(current position to lanePoint tail_end is not occupied){
+//                //line smoothing to lane point
+//            }
+//            else if(current position to midPoint tail_end is not occupied){
+//                //line smoothing to mid point
+//            }
+        }
+
         // line smoothing except first point
         i_smooth = 1;
         while (i_smooth < laneTreePath.size()) {
-            double bias = (laneTreePath[i_smooth].midPoint - laneTreePath[i_smooth].lanePoint).norm();
-            if (bias > param.smoothing_cliff_min_bias) {
-                //Forward search
-                int i_forward = i_smooth + 1;
-                window = 0;
-                window_length = 0;
-                while (window < (int) laneTreePath.size() - i_smooth - 1 and window_length < param.smoothing_distance) {
-                    window_length += (laneTreePath[i_smooth + window + 1].lanePoint -
-                                      laneTreePath[i_smooth + window].lanePoint).norm();
-                    window++;
-                }
+            double bias_smooth, bias_smooth_sign;
+            bias_smooth = (laneTreePath[i_smooth].midPoint - laneTreePath[i_smooth].lanePoint).norm();
+            bias_smooth_sign = (laneTreePath[i_smooth].midPoint - laneTreePath[i_smooth].rightBoundaryPoint).norm() - (laneTreePath[i_smooth].lanePoint - laneTreePath[i_smooth].rightBoundaryPoint).norm();
+            double bias_next = -1;
+            if(i_smooth < laneTreePath.size() - 1){
+                bias_next = (laneTreePath[i_smooth+1].midPoint - laneTreePath[i_smooth+1].lanePoint).norm();
+            }
+            double bias_prev = 1000;
+            if(i_smooth > 1){
+                bias_prev = (laneTreePath[i_smooth-1].midPoint - laneTreePath[i_smooth-1].lanePoint).norm();
+            }
 
-                while (i_forward < std::min(i_smooth + window, (int) laneTreePath.size() - 1)) {
-                    if ((laneTreePath[i_forward].midPoint - laneTreePath[i_forward].lanePoint).norm() <
-                        bias * param.smoothing_cliff_ratio) {
-                        i_forward++;
-                    } else {
-                        i_forward--;
-                        break;
+            if (bias_smooth > param.smoothing_cliff_min_bias) {
+                if (bias_smooth < bias_prev * (1 + param.smoothing_summit_ratio)) {
+                    //Forward search
+                    int i_forward = i_smooth + 1;
+                    window = 0;
+                    window_length = 0;
+                    while (window < (int) laneTreePath.size() - i_smooth - 1 and
+                           window_length < param.smoothing_distance) {
+                        window_length += (laneTreePath[i_smooth + window + 1].lanePoint -
+                                          laneTreePath[i_smooth + window].lanePoint).norm();
+                        window++;
+                    }
+
+                    int last_valid_idx = -1;
+                    while (i_forward < std::min(i_smooth + window, (int) laneTreePath.size() - 1)) {
+                        double bias_forward = (laneTreePath[i_forward].midPoint -
+                                               laneTreePath[i_forward].lanePoint).norm();
+                        double bias_forward_sign =
+                                (laneTreePath[i_forward].midPoint - laneTreePath[i_forward].rightBoundaryPoint).norm() -
+                                (laneTreePath[i_forward].lanePoint - laneTreePath[i_forward].rightBoundaryPoint).norm();
+                        bool is_bias_flipped = (bias_smooth_sign * bias_forward_sign < -0.01);
+                        if(is_bias_flipped){
+                            if(last_valid_idx == -1){
+                                i_forward = i_smooth;
+                            }
+                            else{
+                                i_forward = last_valid_idx;
+                            }
+                            break;
+                        }
+                        else if (bias_forward < bias_smooth * param.smoothing_cliff_ratio) {
+                            last_valid_idx = i_forward;
+                            i_forward++;
+                        }
+                        else if (abs(i_forward - i_smooth) < param.smoothing_cliff_n_check_idx) { // to check round cliff
+                            i_forward++;
+                        }
+                        else {
+                            i_forward = i_smooth;
+                            break;
+                        }
+                    }
+                    if (i_forward - i_smooth > 1) {
+                        idx_start = i_smooth;
+                        idx_end = i_forward;
+                        idx_delta = idx_end - idx_start;
+
+                        for (int j_smooth = 1; j_smooth < idx_delta; j_smooth++) {
+                            alpha = static_cast<double>(j_smooth) / static_cast<double>(idx_delta);
+//                            smoothingPoint = (1 - alpha) * laneTreePath[idx_start].midPoint + alpha * laneTreePath[idx_end].midPoint;
+                            smoothingPoint = laneTreePath[idx_start + j_smooth].lanePoint
+                                      + (1 - alpha) * (laneTreePath[idx_start].midPoint - laneTreePath[idx_start].lanePoint)
+                                      + alpha * (laneTreePath[idx_end].midPoint - laneTreePath[idx_end].lanePoint);
+                            laneTreePath[idx_start + j_smooth].midPoint = smoothingPoint;
+                        }
+                        ROS_WARN_STREAM("forward smoothing: " << i_smooth << " to " << i_forward);
                     }
                 }
-                if (i_forward - i_smooth > 1) {
-                    idx_start = i_smooth;
-                    idx_end = i_forward;
-                    idx_delta = idx_end - idx_start;
 
-                    for (int j_smooth = 1; j_smooth < idx_delta; j_smooth++) {
-                        alpha = static_cast<double>(j_smooth) / static_cast<double>(idx_delta);
-                        smoothingPoint =
-                                (1 - alpha) * laneTreePath[idx_start].midPoint + alpha * laneTreePath[idx_end].midPoint;
-                        laneTreePath[idx_start + j_smooth].midPoint = smoothingPoint;
+                if (bias_next < bias_smooth * (1 + param.smoothing_summit_ratio)) {
+                    //backward search
+                    int i_backward = i_smooth - 1;
+                    window = 0;
+                    window_length = 0;
+                    while (window < (int) i_smooth - 1 and window_length < param.smoothing_distance) {
+                        window_length += (laneTreePath[i_smooth - window - 1].lanePoint -
+                                          laneTreePath[i_smooth - window].lanePoint).norm();
+                        window++;
                     }
-                }
 
-                //backward search
-                int i_backward = i_smooth - 1;
-                window = 0;
-                window_length = 0;
-                while (window < (int) i_smooth - 1 and window_length < param.smoothing_distance) {
-                    window_length += (laneTreePath[i_smooth - window - 1].lanePoint -
-                                      laneTreePath[i_smooth - window].lanePoint).norm();
-                    window++;
-                }
-
-                int count = 0;
-                while (i_backward > std::max(i_smooth - window, 0)) {
-                    if ((laneTreePath[i_backward].midPoint - laneTreePath[i_backward].lanePoint).norm() <
-                        bias * param.smoothing_cliff_ratio) {
-                        i_backward--;
-                    } else if (count < param.smoothing_cliff_n_check_idx) { // to check round cliff
-                        i_backward--;
-                        count++;
-                    } else {
-                        i_backward++;
-                        break;
+                    int last_valid_idx = -1;
+                    while (i_backward > std::max(i_smooth - window, 0)) {
+                        double bias_backward = (laneTreePath[i_backward].midPoint -
+                                                laneTreePath[i_backward].lanePoint).norm();
+                        double bias_backward_sign = (laneTreePath[i_backward].midPoint -
+                                                     laneTreePath[i_backward].rightBoundaryPoint).norm() -
+                                                    (laneTreePath[i_backward].lanePoint -
+                                                     laneTreePath[i_backward].rightBoundaryPoint).norm();
+                        bool is_bias_flipped = (bias_smooth_sign * bias_backward_sign < -0.01);
+                        if(is_bias_flipped){
+                            if(last_valid_idx == -1){
+                                i_backward = i_smooth;
+                            }
+                            else{
+                                i_backward = last_valid_idx;
+                            }
+                            break;
+                        }
+                        else if (bias_backward < bias_smooth * param.smoothing_cliff_ratio) {
+                            last_valid_idx = i_backward;
+                            i_backward--;
+                        }
+                        else if (abs(i_smooth - i_backward) < param.smoothing_cliff_n_check_idx) { // to check round cliff
+                            i_backward--;
+                        }
+                        else {
+                            i_backward = i_smooth;
+                            break;
+                        }
                     }
-                }
-                if (i_smooth - i_backward > 1) {
-                    idx_start = i_backward;
-                    idx_end = i_smooth;
-                    idx_delta = idx_end - idx_start;
+                    if (i_smooth - i_backward > 1) {
+                        idx_start = i_backward;
+                        idx_end = i_smooth;
+                        idx_delta = idx_end - idx_start;
 
-                    for (int j_smooth = 1; j_smooth < idx_delta; j_smooth++) {
-                        alpha = static_cast<double>(j_smooth) / static_cast<double>(idx_delta);
-                        smoothingPoint =
-                                (1 - alpha) * laneTreePath[idx_start].midPoint + alpha * laneTreePath[idx_end].midPoint;
-                        laneTreePath[idx_start + j_smooth].midPoint = smoothingPoint;
+                        for (int j_smooth = 1; j_smooth < idx_delta; j_smooth++) {
+                            alpha = static_cast<double>(j_smooth) / static_cast<double>(idx_delta);
+//                            smoothingPoint = (1 - alpha) * laneTreePath[idx_start].midPoint + alpha * laneTreePath[idx_end].midPoint;
+                            smoothingPoint = laneTreePath[idx_start + j_smooth].lanePoint
+                                             + (1 - alpha) * (laneTreePath[idx_start].midPoint - laneTreePath[idx_start].lanePoint)
+                                             + alpha * (laneTreePath[idx_end].midPoint - laneTreePath[idx_end].lanePoint);
+                            laneTreePath[idx_start + j_smooth].midPoint = smoothingPoint;
+                        }
+                        ROS_WARN_STREAM("backward smoothing: " << i_backward << " to " << i_smooth);
                     }
-                    ROS_WARN_STREAM("backward smoothing: " << i_backward << " to " << i_smooth);
                 }
             }
             i_smooth++;
         }
     }
-    else {
+    else{
+        tail_end = findLaneTreePathTail(isBlocked, isBlockedByObject, start_acc_mode);
+
+        if(printSequence){
+            ROS_WARN("[GlobalPlanner] 6");
+        }
+
+        // ACC
+        if(start_acc_mode) {
+            double angle_diff = abs(currentLaneAngle - currentAngle);
+            if (angle_diff > M_PI) {
+                angle_diff = 2 * M_PI - angle_diff;
+            }
+
+            ROS_WARN_STREAM(
+                    "[GlobalPlanner] currentLaneAngle:" << currentLaneAngle << ", currentAngle: " << currentAngle
+                                                        << ", angle_diff: " << angle_diff << ", stop_angle:"
+                                                        << param.acc_stop_angle);
+            if (abs(angle_diff) > param.acc_stop_angle) {
+                ROS_WARN("[GlobalPlanner] ACC mode enabled");
+                tail_end = 1;
+            }
+//            else if(current position to lanePoint tail_end is not occupied){
+//                //line smoothing to lane point
+//            }
+//            else if(current position to midPoint tail_end is not occupied){
+//                //line smoothing to mid point
+//            }
+        }
+
+
+
         // line smoothing from the current position
         i_smooth = 0;
         idx_start = i_smooth;
@@ -381,14 +519,16 @@ bool GlobalPlanner::plan(double t) {
         int i_forward = i_smooth + 1;
         window = 0;
         window_length = 0;
-        while (window < (int) laneTreePath.size() - i_smooth - 1 and window_length < param.smoothing_distance) {
+        while (window < (int) tail_end - i_smooth and window_length < param.smoothing_distance) {
             window_length += (laneTreePath[i_smooth + window + 1].lanePoint -
                               laneTreePath[i_smooth + window].lanePoint).norm();
             window++;
         }
 
-        while (i_forward < std::min(i_smooth + window, (int) laneTreePath.size() - 1)) {
-            double bias = (laneTreePath[i_forward].midPoint - laneTreePath[i_forward].lanePoint).norm();
+        double max_bias_to_current_point = -1;
+        while (i_forward < std::min(i_smooth + window, tail_end)) {
+            double bias_to_current_point =
+                    abs((laneTreePath[i_forward].midPoint - laneTreePath[i_forward].rightBoundaryPoint).norm() - (currentPoint - laneTreePath[i_smooth].rightBoundaryPoint).norm());
             Vector2d child_point = laneTreePath[i_forward].midPoint;
             Vector2d current_to_child_delta = child_point - currentPoint;
             double current_to_child_angle = atan2(current_to_child_delta.y(), current_to_child_delta.x());
@@ -397,12 +537,12 @@ bool GlobalPlanner::plan(double t) {
             Vector2d current_right_point = currentPoint + param.car_width/2 * Vector2d(cos(current_to_child_angle - M_PI/2), sin(current_to_child_angle - M_PI/2));
             Vector2d child_right_point = child_point + param.car_width/2 * Vector2d(cos(current_to_child_angle - M_PI/2), sin(current_to_child_angle - M_PI/2));
 
-//            if (bias > param.smoothing_cliff_min_bias && !p_base->isOccupied(currentPoint, laneTreePath[i_forward].midPoint)) {
-            if (bias > param.smoothing_cliff_min_bias
+            if (bias_to_current_point > max_bias_to_current_point - 0.01
                 && !p_base->isOccupied(current_left_point, child_left_point)
                 && !p_base->isOccupied(current_right_point, child_right_point))
             {
                 idx_end = i_forward;
+                max_bias_to_current_point = bias_to_current_point;
             }
             i_forward++;
         }
@@ -544,34 +684,31 @@ bool GlobalPlanner::plan(double t) {
 
     // check width and cut tail
     //TODO: End point of lane should be goal point!
-    bool isBlocked = (last_tail_idx != laneTreePath.back().id);
-    bool isBlockedByObject = false;
-    bool start_acc_mode = false;
-    int tail_end = findLaneTreePathTail(isBlocked, isBlockedByObject, start_acc_mode);
-
-    if(printSequence){
-        ROS_WARN("[GlobalPlanner] 6");
-    }
-
-    // ACC
-    if(start_acc_mode){
-        double angle_diff = abs(currentLaneAngle - currentAngle);
-        if(angle_diff > M_PI) {
-            angle_diff = 2 * M_PI - angle_diff;
-        }
-
-        ROS_WARN_STREAM("[GlobalPlanner] currentLaneAngle:" << currentLaneAngle << ", currentAngle: " << currentAngle << ", angle_diff: " << angle_diff << ", stop_angle:" << param.acc_stop_angle);
-        if(abs(angle_diff) > param.acc_stop_angle){
-            ROS_WARN("[GlobalPlanner] ACC mode enabled");
-            tail_end = 1;
-        }
-//        else if(current position to lanePoint tail_end is not occupied){
-//            line smoothing to lane point
+//    tail_end = findLaneTreePathTail(isBlocked, isBlockedByObject, start_acc_mode);
+//
+//    if(printSequence){
+//        ROS_WARN("[GlobalPlanner] 6");
+//    }
+//
+//    // ACC
+//    if(start_acc_mode){
+//        double angle_diff = abs(currentLaneAngle - currentAngle);
+//        if(angle_diff > M_PI) {
+//            angle_diff = 2 * M_PI - angle_diff;
 //        }
-//        else if(current position to midPoint tail_end is not occupied){
-//            line smoothing to mid point
+//
+//        ROS_WARN_STREAM("[GlobalPlanner] currentLaneAngle:" << currentLaneAngle << ", currentAngle: " << currentAngle << ", angle_diff: " << angle_diff << ", stop_angle:" << param.acc_stop_angle);
+//        if(abs(angle_diff) > param.acc_stop_angle){
+//            ROS_WARN("[GlobalPlanner] ACC mode enabled");
+//            tail_end = 1;
 //        }
-    }
+////        else if(current position to lanePoint tail_end is not occupied){
+////            line smoothing to lane point
+////        }
+////        else if(current position to midPoint tail_end is not occupied){
+////            line smoothing to mid point
+////        }
+//    }
 
     if(printSequence){
         ROS_WARN("[GlobalPlanner] 7");
