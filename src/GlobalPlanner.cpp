@@ -322,7 +322,10 @@ bool GlobalPlanner::plan(double t) {
 
                 for (int j_smooth = 1; j_smooth < idx_delta; j_smooth++) {
                     alpha = static_cast<double>(j_smooth) / static_cast<double>(idx_delta);
-                    smoothingPoint = (1 - alpha) * laneTreePath[idx_start].midPoint + alpha * laneTreePath[idx_end].midPoint;
+//                    smoothingPoint = (1 - alpha) * laneTreePath[idx_start].midPoint + alpha * laneTreePath[idx_end].midPoint;
+                    smoothingPoint = laneTreePath[idx_start + j_smooth].lanePoint
+                                     + (1 - alpha) * (laneTreePath[idx_start].midPoint - laneTreePath[idx_start].lanePoint)
+                                     + alpha * (laneTreePath[idx_end].midPoint - laneTreePath[idx_end].lanePoint);
                     laneTreePath[idx_start + j_smooth].midPoint = smoothingPoint;
                 }
             }
@@ -355,7 +358,10 @@ bool GlobalPlanner::plan(double t) {
 
                 for (int j_smooth = 1; j_smooth < idx_delta; j_smooth++) {
                     alpha = static_cast<double>(j_smooth) / static_cast<double>(idx_delta);
-                    smoothingPoint = (1 - alpha) * laneTreePath[idx_start].midPoint + alpha * laneTreePath[idx_end].midPoint;
+//                    smoothingPoint = (1 - alpha) * laneTreePath[idx_start].midPoint + alpha * laneTreePath[idx_end].midPoint;
+                    smoothingPoint = laneTreePath[idx_start + j_smooth].lanePoint
+                                     + (1 - alpha) * (laneTreePath[idx_start].midPoint - laneTreePath[idx_start].lanePoint)
+                                     + alpha * (laneTreePath[idx_end].midPoint - laneTreePath[idx_end].lanePoint);
                     laneTreePath[idx_start + j_smooth].midPoint = smoothingPoint;
                 }
                 ROS_WARN_STREAM("backward smoothing: " << i_backward << " to " << i_smooth);

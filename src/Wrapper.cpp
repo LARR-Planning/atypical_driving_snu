@@ -1023,7 +1023,7 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
         q.setW(poseTransformedFrontWheel.orientation.w);
         transform.setRotation(q);
 
-        tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(),SNUFrameId,"car_front_wheel"));
+//        tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(),SNUFrameId,"car_front_wheel"));
 
 
         transform.setOrigin( tf::Vector3(pose.pose.position.x, pose.pose.position.y, pose.pose.position.z) );
@@ -1044,7 +1044,7 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
         q.setZ(qd.z());
         q.setW(qd.w());
         transform.setRotation(q);//
-        tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), worldFrameId, SNUFrameId));
+//        tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), worldFrameId, SNUFrameId));
 
 
 
@@ -1061,13 +1061,13 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
         /**
          * MUTEX - upload
          */
-//         p_base->mSet[0].lock();
+         p_base->mSet[0].lock();
          p_base->Tsb = T01;
          p_base->cur_pose.pose = poseTransformed;
          p_base->cur_pose.header.stamp = ros::Time::now();
          p_base->setCurPose(p_base->cur_pose);
          p_base->setCarState(curState);
-//         p_base->mSet[0].unlock();
+         p_base->mSet[0].unlock();
 
 
          isCarPoseCovReceived = true;
