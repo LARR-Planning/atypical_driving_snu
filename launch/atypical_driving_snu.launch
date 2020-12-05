@@ -4,9 +4,8 @@
 
   <arg name = "param_file" default = "kiapi_PG.yaml"/>
 
-  <arg name = "goal/x"  default = "446049.6513"/> <!--in world frame -->
-  <arg name = "goal/y" default = "3944900.7604"/> <!--in world frame -->
-
+  <arg name = "goal/x"  default = "446042.5279"/> <!--in world frame -->
+  <arg name = "goal/y" default = "3944912.0817"/> <!--in world frame -->
 
 
     <!-- Arguments Start -->
@@ -18,7 +17,7 @@
   <arg name ="lidar_frame_id" default = "velodyne"/>
   <arg name ="detected_object_frame_id" default = "velodyne"/>
 
-  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/interpolated_kiapi_pg2.csv"/>
+  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/interpolated_kiapi_pg_saturday.csv"/>
   <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
 
 
@@ -50,7 +49,7 @@
 
 
     <!--2. snu_car_tf to velodyne_tf -->
-    <node pkg="tf" type="static_transform_publisher" name="link2lidar" args="-1.0.0 0 0.2 0 0 0  $(arg car_base_frame_id) $(arg lidar_frame_id) 100"/>
+    <node pkg="tf" type="static_transform_publisher" name="link2lidar" args="0.0.0 0 0.2 0 0 0  $(arg car_base_frame_id) $(arg lidar_frame_id) 100"/>
 
     <!--3. client-->
     <node pkg="atypical_driving" type="keti_client" name="atypical_driving_client" output="screen">
@@ -73,7 +72,7 @@
         <param name = "local_planner/obstacle_radius_nominal" value="1"/>
 
         <!--Shaping params for nominal_speed selection-->
-        <param name = "vmax" value = "3.0"/> <!--m/s-->
+        <param name = "vmax" value = "2.0"/> <!--m/s-->
         <param name = "vmin" value = "1.0"/> <!--m/s-->
         <param name = "v_ref_past_weight" value = "0.8"/> <!--m/s-->
         <param name = "curve_thres" value = "0.05"/> <!--m/s-->

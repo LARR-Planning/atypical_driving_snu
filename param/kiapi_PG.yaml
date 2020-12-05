@@ -29,7 +29,7 @@ map: {
 }
 
 global_planner: {
-  car_width: 1.5,
+  car_width: 0.5,
   grid_resolution: 0.3,
   max_steering_angle: 0.03488,
   smoothing_distance: 10.0,
@@ -46,9 +46,13 @@ global_planner: {
   acc_stop_distance: 5.0,
   acc_stop_angle: 0.08722,
   use_static_object: false,
-  use_lane_point_first: true,
-  smoothing_cliff_n_check_idx: 10,
+  use_lane_point_first: false,
+  smoothing_cliff_n_check_idx: 0,
   blocked_by_object_distance: 1.0
+}
+
+local_planner: {
+                 lx_frontwheel: 0.0
 }
 
 use_keti_velocity: true
