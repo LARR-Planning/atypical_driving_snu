@@ -68,7 +68,7 @@ int main(int argc,char** argv) {
     ros::NodeHandle nh("~");
     nh.param("rejection_radius",rejectionRadius,0.1);
 
-    ros::Subscriber subCarPoseCov = nh.subscribe("/current_pose_keti",1,cbCarPoseCov);
+//    ros::Subscriber subCarPoseCov = nh.subscribe("/current_pose_keti",1,cbCarPoseCov);
     ros::Subscriber subPCL = nh.subscribe("/velodyne_points",1,cbPcl);
 //    ros::Publisher pubCarPoseCov = nh.advertise<geometry_msgs::PoseWithCovariance>("/current_pose",1);
     ros::Publisher pubKetiClock = nh.advertise<rosgraph_msgs::Clock>("/clock",1);

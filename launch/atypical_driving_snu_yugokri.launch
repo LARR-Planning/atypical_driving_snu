@@ -3,7 +3,7 @@
 <launch>
 
     <arg name="bag" default="true"/>
-    <arg name = "bagfile" default="2020-11-05-17-41-09-ACC-detour-s70.bag"/>
+    <arg name = "bagfile" default="almostButVilsonTooFast.bag"/>
 
     <param name="/use_sim_time" value="$(arg bag)"/>
     <node pkg="rosbag" type="play" name="rosbag_record_diag" args="--clock --loop -s 0 -r 1.0 $(find atypical_driving)/worlds/$(arg bagfile)" if = "$(arg bag)">
@@ -20,7 +20,7 @@
   <arg name ="snu_frame_id" default="SNU"/>
   <arg name ="occu_frame_id" default="SNU"/>
   <arg name ="world_frame_id" default="map"/>
-  <arg name ="car_base_frame_id" default="/base_link"/>
+  <arg name ="car_base_frame_id" default="base_link"/>
   <arg name ="lidar_frame_id" default = "velodyne"/>
   <arg name ="detected_object_frame_id" default = "velodyne"/>
 

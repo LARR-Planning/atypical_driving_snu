@@ -3,8 +3,8 @@ project(atypical_driving)
 
 set(CMAKE_CXX_STANDARD 14)
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -O3")
-set(CMAKE_BUILD_TYPE "Release")
-#set(CMAKE_BUILD_TYPE "Debug")
+#set(CMAKE_BUILD_TYPE "Release")
+set(CMAKE_BUILD_TYPE "Debug")
 
 
 find_package(Eigen3  REQUIRED NO_MODULE)
@@ -51,5 +51,5 @@ target_link_libraries(integration_client ${catkin_LIBRARIES} -lstdc++fs)
 add_executable(keti_client test/KetiTest/client_main.cpp ${SNU_PLANNER_SRC})
 target_link_libraries(keti_client ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 
-#add_executable(tf_gimbal src/tfGimbal.cpp)
-#target_link_libraries(tf_gimbal ${catkin_LIBRARIES})
+add_executable(mapper test/main_mapper.cpp ${SNU_PLANNER_SRC})
+target_link_libraries(mapper ${catkin_LIBRARIES})

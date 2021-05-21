@@ -622,7 +622,6 @@ void RosWrapper::runROS() {
             prepareROSmsgs(); // you may trigger this only under some conditions
             publish();
             processTf();
-//            ros::spinOnce();
             lr.sleep();
         }
 }
@@ -972,9 +971,6 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
 
 
 
-
-
-
 //        // Update the pose information w.r.t Tw1
 //        geometry_msgs::PoseStamped poseStamped;
 //        poseStamped.header.frame_id = SNUFrameId;
@@ -1069,7 +1065,6 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
          p_base->setCarState(curState);
          p_base->mSet[0].unlock();
 
-
          isCarPoseCovReceived = true;
         ROS_INFO_ONCE("[SNU_PLANNER/RosWrapper] First received car state! ");
     }else {
@@ -1078,8 +1073,9 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
 }
 
 void RosWrapper::cbOccuMap(const nav_msgs::OccupancyGrid & occuMap) {
-
+    mutexOccumap.lock();
     p_base->localMapBuffer = occuMap;
+    mutexOccumap.unlock();
 //    ROS_INFO_STREAM_ONCE("[SNU_PLANNER/RosWrapper] Received first occupancy map");
 //    ROS_WARN_STREAM("[SNU_PLANNER/RosWrapper] Received occupancy map [t diff since last update = " << (ros::Time::now().toSec()-sibalBeforeOccu)  );
     isLocalMapReceived = true;
@@ -1087,17 +1083,16 @@ void RosWrapper::cbOccuMap(const nav_msgs::OccupancyGrid & occuMap) {
 }
 
 void RosWrapper::cbOccuUpdate(const map_msgs::OccupancyGridUpdateConstPtr &msg) {
-//    cout << "update callback!!" <<endl;
+
+    mutexOccumap.lock();
     int index = 0;
     for(int y=msg->y; y< msg->y+msg->height; y++){
         for(int x=msg->x; x< msg->x+msg->width; x++){
             p_base->localMapBuffer.data[ y*p_base->localMapBuffer.info.width + x ] = msg->data[ index++ ];
         }
     }
+    mutexOccumap.unlock();
 }
-
-
-
 
 
 void RosWrapper::cbCarSpeed(const std_msgs::Float64& speed_) {
@@ -1255,9 +1250,6 @@ bool Wrapper::processLane(double tTrigger) {
 
         }
 
-
-
-
         p_base_shared->mSet[1].lock();
         p_base_shared->laneSliced.points = pathSliced;
         p_base_shared->laneSliced.widths = vector<double>(p_base_shared->laneOrig.widths.begin()+idxSliceStart,p_base_shared->laneOrig.widths.begin()+idxSliceEnd+1);
@@ -1404,7 +1396,13 @@ void Wrapper::runPlanning() {
 
                 ROS_INFO_ONCE("[Wrapper] start planning!");
                 // 3. Do planning (GP->LP) or LP only
+
+
                 if (doGPlan) { // G plan
+
+                    /**
+                     * ZONE PARAM ???
+                     */
 
                     tCkpG = chrono::steady_clock::now(); // check point time
                     // Lane processing

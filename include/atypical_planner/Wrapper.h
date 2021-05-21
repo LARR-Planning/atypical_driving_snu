@@ -52,7 +52,7 @@ namespace Planner{
     class RosWrapper{
 
     private:
-
+        mutex mutexOccumap;
         double t0; // update at the constructor
         /**
          * Shared resource with other thread
@@ -160,7 +160,6 @@ namespace Planner{
         ros::Subscriber subPcl;
 
 
-
         /**
          * Callback functions
          */
@@ -182,9 +181,8 @@ namespace Planner{
         void prepareROSmsgs();
         void predictionUpdate();
         void processTf();
+
     public:
-
-
         bool isLocalMapReceived = false;
         bool isCarPoseCovReceived = false;
         bool isCarSpeedReceived = false;

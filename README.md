@@ -55,7 +55,7 @@ All the example implementation can be found in the source files. Please understa
 
 ### Parameter description 
 
-### Boseong 
+### B
 
 #### 1) lane-dependent 
 * `use_keti_velocity` : Setting this to true will use the velocity of `detected_object` message as the constant velocity of a obstacle path. 
@@ -75,7 +75,7 @@ The velocity of the obstacle path is the average of the keti velocities. Using t
 * `example...` : example... 
 
 
-### Jungown 
+### J
 * `global_planner/car_width` : When construcing laneTree, car width is used to determine whether two node are connected. (m)
 * `global_planner/period`: ????
 * `global_planner/grid_resolution` : Lane grid resolution (m)
@@ -91,7 +91,7 @@ The velocity of the obstacle path is the average of the keti velocities. Using t
 * `global_planner/object_velocity_threshold`: If object is faster than this parameter, object is determined to dynamic object (m/s)
 * `global_planner/max_obstacle_prediction_query_size`: obstacle prediction query size
 
-### Yunwoo 
+### Y
 * `local_planner/horizon`: MPC horizon (seconds)
 * `local_planner/ts`: MPC time step (seconds)
 * `local_planner/max_steer`: Max Steering Angle
@@ -105,3 +105,24 @@ The velocity of the obstacle path is the average of the keti velocities. Using t
 * `smooth_weight`: when you use exponential average, this values should satisfy 0<value<1, and higher value is regarded as giving more weight to current value
 * `moving_horizon`: when you use moving average, this means size of horizon.
 * `ignore_angle`: Amount of Ignoring small angle (handle)
+
+
+### Known issues 
+
+#### Boseong
+1. Slope ground segmentation speed check and threading 
+2. Costmap 2d reference frame 
+3. Lane data datatype + lane customization  
+4. Random start random goal 2d nav goal 
+
+#### ChanageLog  
+*  Async spinner used but cbOccuMap and cbOccuUpdate are treated in the same nodehandle. Modified 
+
+
+#### Yunwoo 
+
+
+
+#### Jungwon 
+
+
