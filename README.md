@@ -37,12 +37,37 @@
     ```
 
 #### Test launch
-```
-roslaunch atypical_driving atypical_driving_snu_yugokri.launch 
-```
+1) Yugokri 
+    ```
+    roslaunch atypical_driving atypical_driving_snu_yugokri.launch 
+    ```
 
+2) Mapping HD map 
 
-### 2. Now, do your jobs! 
+    ```
+    roslaunch atypical_driving run_rtabmap_yugokri.launch 
+    ```
+
+    At the end of rosbag play, do rosbag a little bit.  
+    ```
+    cd /your/fucking/bag/dir
+    rosrun pcl_ros pointcloud_to_pcd input:=/rtabmap/cloud_map
+    ```
+    Then press `ctrl + c`.
+
+    If you cannot stand fucking visualization vibration due to the big transform from `map` to `SNU`, change them in rtabmap_ros node
+    ```
+        <arg name="odom_frame_id" value="SNU"/>
+        <arg name="map_frame_id" value="SNU"/>
+    ```
+
+    Then run `world/yugokri/mapper.m`.
+
+    * If you want to visualize hd map in rviz w.r.t SNU frame, set SNU frame for rtabmap, 
+    ```
+        roslaunch atypical_driving see_yugokri.launch
+    ```
+### 2. Roles
 
 | Workforce      | Header           | Source  |
 | ------------- |:-------------:| -----:|
@@ -50,8 +75,6 @@ roslaunch atypical_driving atypical_driving_snu_yugokri.launch
 | Jungwon      | Wrapper.h / GlobalPlanner.h      |  Wrapper.cpp / GlobalPlanner.cpp |
 | Yunwoo | LocalPlanner.h      |    LocalPlanner.cpp |
 
-Simple thing. your works are completing all the functions in your header and source files referring the summary [diagram](https://www.lucidchart.com/documents/edit/2f00f5b3-6e62-4ff4-8b19-dc401daf80f8/GdaP.vOKzV1F). 
-All the example implementation can be found in the source files. Please understand the overall flow of the codes. 
 
 ### Parameter description 
 

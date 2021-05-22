@@ -912,7 +912,7 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
         p_base->Tws.translate(Vector3d::Zero());
         p_base->Tws.rotate(quat);
 
-        ROS_INFO("[SNU_PLANNER/RosWrapper] Reference tf has been initialized with [%f,%f,%f,%f,%f,%f,%f]",
+        ROS_INFO("[SNU_PLANNER/RosWrapper] Reference tf has been initialized with [%f,%f,%f,%10f,%10f,%10f,%10f]",
                 tw0(0),tw0(1),tw0(2),quat.x(),quat.y(),quat.z(),quat.w());
         isFrameRefReceived = true;
 
@@ -1039,10 +1039,9 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
         q.setY(qd.y());
         q.setZ(qd.z());
         q.setW(qd.w());
-        transform.setRotation(q);//
-//        tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), worldFrameId, SNUFrameId));
+        transform.setRotation(q);
 
-
+        tf_br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), worldFrameId, SNUFrameId));
 
 
 //        cout << "sending transform" << endl;

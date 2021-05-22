@@ -20,7 +20,7 @@ Panels:
         - /PointCloud21
         - /PointCloud21/Autocompute Value Bounds1
         - /PointCloud22
-      Splitter Ratio: 0.4418394863605499
+      Splitter Ratio: 0.4427412152290344
     Tree Height: 233
   - Class: rviz/Selection
     Name: Selection
@@ -536,8 +536,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 35.807044982910156
-        Min Value: -3.337266206741333
+        Max Value: 24.07114601135254
+        Min Value: -3.285015344619751
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -572,8 +572,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 5.375345706939697
-        Min Value: -4.492768287658691
+        Max Value: 5.376380920410156
+        Min Value: -4.3180832862854
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -625,7 +625,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 42.05475616455078
+      Distance: 193.0609130859375
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -633,17 +633,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -8.367095947265625
-        Y: 2.8025875091552734
-        Z: 1.9073486328125e-06
+        X: -8.843408584594727
+        Y: 0.2542705535888672
+        Z: -2.3585031158290803e-05
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.4197961091995239
+      Pitch: 0.6147959232330322
       Target Frame: base_link
-      Yaw: 2.9217753410339355
+      Yaw: 3.116776704788208
     Saved: ~
 Window Geometry:
   Displays:

@@ -55,7 +55,6 @@
          <arg name = "lidar_frame_id" value = "$(arg lidar_frame_id)"/>
      </include>
 
-
     <!--2. snu_car_tf to velodyne_tf -->
     <node pkg="tf" type="static_transform_publisher" name="link2lidar" args="-1.0.0 0 0.2 0 0 0  $(arg car_base_frame_id) $(arg lidar_frame_id) 100"/>
 

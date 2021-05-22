@@ -6,14 +6,13 @@
     <arg name = "bagfile" default="/media/jbs/ssd/atypical/KIAPI_0924/daegu_yugokri_result.bag"/>
     <param name="/use_sim_time" value="$(arg bag)"/>
     <node pkg="rosbag" type="play" name="rosbag_record_diag"
-          args="--clock --loop -s 0 -r 1.0 $(arg bagfile)" if = "$(arg bag)"/>
+          args="--clock --loop -s 0 -r 2.0 $(arg bagfile)" if = "$(arg bag)"/>
 <!--        <remap from = "/current_pose_cov" to = "/current_pose"/>-->
 
     <!--3. client-->
     <node pkg="atypical_driving" type="keti_client" name="atypical_driving_client" output="screen">
         <param name="rejection_radius" value="1.6"/>
     </node>
-
 
 
     <arg name = "param_file" default = "yugokri.yaml"/>
@@ -37,6 +36,12 @@
     <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
 
     <node pkg="atypical_driving" type="mapper" name="atypical_planning_test" output="screen">
+        <!--This shit could be here not outside with separate group ns-->
+        <rosparam file="$(find atypical_driving)/param/MPC_weight.yaml"/>
+        <param name = "lane_csv_file" value = "$(arg lane_csv_file)"/>
+        <param name = "lane_width" value="$(arg lane_width)"/>
+        <param name = "log_file_prefix" value = "$(arg log_file_prefix)" />
+
         <remap from = "/occupancy_grid" to = "/costmap_node/costmap/costmap"/>
         <remap from = "/current_pose" to = "/current_pose_cov"/>
         <remap from = "/vehicle_cmd" to = "/vehicle_cmd_snu"/>
@@ -46,6 +51,9 @@
         <param name = "occu_map_frame_id" value="$(arg occu_frame_id)" />
         <param name = "base_link_id" value="$(arg car_base_frame_id)" />
         <param name = "detected_objects_id" value="$(arg detected_object_frame_id)" />
+
+        <rosparam command="load" file="$(find atypical_driving)/param/$(arg param_file)"/>
+
     </node>
 
 
@@ -59,7 +67,7 @@
         <arg name = "depth" value = "false"/>
         <arg name="frame_id" value="base_link"/>
         <arg name="odom_frame_id" value="SNU"/>
-        <arg name="map_frame_id" value="map"/>
+        <arg name="map_frame_id" value="SNU"/>
         <arg name = "subscribe_scan_cloud" value= "true"/>
         <arg name = "scan_cloud_topic" value = "/velodyne_points_snu" />
         <arg name="visual_odometry" value="false"/>
