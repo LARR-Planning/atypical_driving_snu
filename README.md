@@ -10,7 +10,7 @@
 * driving_msgs: 
   ```
   git clone https://gitlab.com/InstitutMaupertuis/graph_rviz_plugin
-  ```  
+  ```
 
 * graph_rviz_plugin:
   ```
@@ -47,26 +47,29 @@
     ```
     roslaunch atypical_driving run_rtabmap_yugokri.launch 
     ```
-
+    
     At the end of rosbag play, do rosbag a little bit.  
     ```
     cd /your/fucking/bag/dir
     rosrun pcl_ros pointcloud_to_pcd input:=/rtabmap/cloud_map
     ```
     Then press `ctrl + c`.
-
+    
     If you cannot stand fucking visualization vibration due to the big transform from `map` to `SNU`, change them in rtabmap_ros node
     ```
         <arg name="odom_frame_id" value="SNU"/>
         <arg name="map_frame_id" value="SNU"/>
     ```
-
+    
     Then run `world/yugokri/mapper.m`.
-
-    * If you want to visualize hd map in rviz w.r.t SNU frame, set SNU frame for rtabmap, 
+    
+    * If you want to visualize hd map in rviz w.r.t SNU frame, set SNU frame for rtabmap, and launch the below after which push spacebar. 
     ```
         roslaunch atypical_driving see_yugokri.launch
     ```
+3) Zoning
+    We have to go to  `worlds/yugokri_hd` and run  `mapper.m`.   
+
 ### 2. Roles
 
 | Workforce      | Header           | Source  |
@@ -147,5 +150,4 @@ The velocity of the obstacle path is the average of the keti velocities. Using t
 
 
 #### Jungwon 
-
 
