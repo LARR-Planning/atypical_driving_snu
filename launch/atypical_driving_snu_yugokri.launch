@@ -24,10 +24,18 @@
   <arg name ="lidar_frame_id" default = "velodyne"/>
   <arg name ="detected_object_frame_id" default = "velodyne"/>
 
-  <arg name = "lane_width" default="4.5"/>
-  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/interpolated_yugokri_path1.csv"/>
-  <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
 
+    <!-- sectionNames = {'bridge','plane','hell','side_park','narrow','normal_two_lane','forest'} -->
+    <arg name = "lane_width_bridge" default="5"/>
+    <arg name = "lane_width_plane" default="5"/>
+    <arg name = "lane_width_hell" default="3.5"/>
+    <arg name = "lane_width_side_park" default="4"/>
+    <arg name = "lane_width_narrow" default="3.5"/>
+    <arg name = "lane_width_normal_two_lane" default="4"/>
+    <arg name = "lane_width_forest" default="3.5"/>
+
+    <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/interpolated_yugokri_path1_id.csv"/>
+    <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
 
   <arg name = "period" default= "0.1"/>
   <arg name = "horizon"  default= "5"/> <!--Also change dimension.h-->
@@ -89,8 +97,15 @@
         <param name = "goal_thres" value = "1.5"/>
 
         <param name = "lane_csv_file" value = "$(arg lane_csv_file)"/>
-        <param name = "lane_width" value="$(arg lane_width)"/>
         <param name = "log_file_prefix" value = "$(arg log_file_prefix)" />
+
+        <param name = "lane_width/bridge"           value ="$(arg lane_width_bridge)"/>
+        <param name = "lane_width/plane"            value="$(arg lane_width_plane)"/>
+        <param name = "lane_width/hell"             value="$(arg lane_width_hell)"  />
+        <param name = "lane_width/side_park"        value="$(arg lane_width_side_park)"/>
+        <param name = "lane_width/narrow"           value="$(arg lane_width_narrow)"/>
+        <param name = "lane_width/normal_two_lane"  value="$(arg lane_width_normal_two_lane)"/>
+        <param name = "lane_width/forest"           value="$(arg lane_width_forest)"/>
 
         <param name="global_planner/car_width" value="1.0" />
         <param name="global_planner/period" value="$(arg period)" />

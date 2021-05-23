@@ -4,6 +4,8 @@
 <img src = "https://github.com/LARR-Planning/atypical_driving_snu/blob/master/img/data_structure.png" width="480"> 
 </p>
 
+![section](img/sectionWithDs.png)
+
 ## Instruction
 ### 1. Getting started 
 #### Dependencies
@@ -37,6 +39,7 @@
     ```
 
 #### Test launch
+
 1) Yugokri 
     ```
     roslaunch atypical_driving atypical_driving_snu_yugokri.launch 
@@ -68,7 +71,9 @@
         roslaunch atypical_driving see_yugokri.launch
     ```
 3) Zoning
-    We have to go to  `worlds/yugokri_hd` and run  `mapper.m`.   
+    We have to go to  `worlds/yugokri_hd` and run  `mapper.m`.   Where we will generate an integrated csv file where each row is = [x,y,w,sectionId] 
+
+
 
 ### 2. Roles
 
@@ -141,8 +146,25 @@ The velocity of the obstacle path is the average of the keti velocities. Using t
 3. Lane data datatype + lane customization  
 4. Random start random goal 2d nav goal 
 
-#### ChanageLog  
-*  Async spinner used but cbOccuMap and cbOccuUpdate are treated in the same nodehandle. Modified 
+#### ChanageLog 23, May  
+*  Async spinner used but cbOccuMap and cbOccuUpdate are treated in the same nodehandle. Modified.
+* Every fucking things regarding lane csv reading (the code totally was shit) changed. 
+  Now the only `Lane` class remains.
+  
+```
+    <!-- sectionNames = {'bridge','plane','hell','side_park','narrow','normal_two_lane','forest'} -->
+    <arg name = "lane_width/bridge" default="5"/>
+    <arg name = "lane_width/plane" default="5"/>
+    <arg name = "lane_width/hell" default="3.5"/>
+    <arg name = "lane_width/side_park" default="4"/>
+    <arg name = "lane_width/narrow" default="3.5"/>
+    <arg name = "lane_width/normal_two_lane" default="4"/>
+    <arg name = "lane_width/forest" default="3.5"/>
+    
+    <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/interpolated_yugokri_path1_id.csv"/>
+    <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
+
+```
 
 
 #### Yunwoo 

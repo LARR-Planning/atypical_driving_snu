@@ -85,6 +85,7 @@ CarInput MPCResultTraj::evalU(double t) {
 /**
  * @brief convert lanePath to lane
  * @param lanePath
+ * @bug will be deprecated
  */
 Lane::Lane(const LanePath& lanePath){
 
@@ -97,8 +98,89 @@ Lane::Lane(const LanePath& lanePath){
             points.push_back(Vector2d(it->x,it->y));
         }
     }
+}
+
+
+/**
+ * Read csv whose row = [x,y,id]
+ * @param fileDir
+ * @return
+ * @details width will be tuned from paramter
+ */
+bool Lane::readFromCSV(string fileDir) {
+
+    ROS_INFO_STREAM("Lane: reading csv... " << fileDir);
+    ifstream infile (fileDir);
+    if (infile.fail()){
+        ROS_ERROR("Lane: reading failed. ");
+        return false;
+    }
+
+    points.clear();
+    widths.clear();
+    sections.clear();
+    string line;
+    while (getline(infile,line)){
+        istringstream ss(line);
+        double x,y; int sectionId;
+        string sx,sy,sid;
+        getline(ss,sx,',');
+        getline(ss,sy,',');
+        getline(ss,sid,',');
+        x = atof(sx.c_str()); y = atof(sy.c_str()); sectionId = atoi(sid.c_str());
+
+        points.emplace_back(Vector2d(x,y));
+
+        switch (sectionId) {
+            case 0:
+                sections.push_back(SECTION::BRIDGE);
+                break;
+            case 1:
+                sections.push_back(SECTION::PLANE);
+                break;
+            case 2:
+                sections.push_back(SECTION::HELL);
+                break;
+            case 3:
+                sections.push_back(SECTION::SIDE_PARK);
+                break;
+            case 4:
+                sections.push_back(SECTION::NARROW);
+                break;
+            case 5:
+                sections.push_back(SECTION::NORMAL_TWO_LANE);
+                break;
+            case 6:
+                sections.push_back(SECTION::FOREST);
+                break;
+        }
+    }
+    return true;
+}
+
+
+void Lane::applyWidthFromParam(double *widthSet) {
+
+    widths.clear();
+    for (int n = 0 ; n < points.size() ; n++){
+        int id = sections[n];
+        widths.push_back(widthSet[id]);
+    }
+}
+
+void Lane::applyTransform(SE3 T01) {
+
+    for(auto it = points.begin() ; it!= points.end(); it++){
+
+        Vector4d xb(it->x(),it->y(),0,1);
+        Vector4d xa = T01*xb;
+        it->x() = xa(0);
+        it->y() = xa(1);
+    }
 
 }
+
+
 /**
  * @brief cut lane points after goal point
  */
@@ -119,7 +201,6 @@ void Lane::untilGoal(double goal_x,double goal_y) {
 
     points = vector<Vector2d, aligned_allocator<Vector2d>>(points.begin(),points.begin()+newLastIndex);
     widths = vector<double>(widths.begin(),widths.begin()+newLastIndex);
-
 }
 
 

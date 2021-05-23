@@ -26,8 +26,6 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
 	cout << "-------------------------------------------------------" <<endl;
     // Load lanemap from parser
     string csv_file; double laneWidth;
-    nh.param<string>("lane_csv_file",csv_file,"catkin_ws/src/atypical_driving_snu/keti_pangyo_path3.csv");
-    nh.param<double>("lane_width",laneWidth,2.5);
     nh.param<string>("log_file_prefix",p_base_->log_file_name_base,"");
     nh.param("smoothing_type", p_base->smoothing_type,0);
     nh.param("stopSpeed",p_base->stopSpeed,0.0);
@@ -62,11 +60,18 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
     remove(input_logger.c_str());
 
     // Get lane information
-    p_base->parse_tool.get_Coorddata(csv_file); // This parse only the center information
+    nh.param<string>("lane_csv_file",csv_file,"catkin_ws/src/atypical_driving_snu/keti_pangyo_path3.csv");
+    nh.param( "lane_width/bridge"         ,p_base->laneWidthSet[0] , 4.0);
+    nh.param( "lane_width/plane"          ,p_base->laneWidthSet[1] , 4.0);
+    nh.param( "lane_width/hell"           ,p_base->laneWidthSet[2] , 4.0);
+    nh.param( "lane_width/side_park"      ,p_base->laneWidthSet[3] , 4.0);
+    nh.param( "lane_width/narrow"         ,p_base->laneWidthSet[4] , 4.0);
+    nh.param( "lane_width/normal_two_lane",p_base->laneWidthSet[5] , 4.0);
+    nh.param( "lane_width/forest"         ,p_base->laneWidthSet[6] , 4.0);
 
-     p_base->parse_tool.display_result();
-    p_base->lane_path = (p_base->parse_tool.get_lanepath());
-    p_base->lane_path.setWidth(laneWidth);
+    p_base->laneOrig.readFromCSV(csv_file);
+    p_base->laneOrig.applyWidthFromParam(p_base->laneWidthSet);
+
 
     isLaneReceived =false; // Still false. After applying Tw0, it is true
     isLaneRawReceived = true;
@@ -922,15 +927,15 @@ void RosWrapper::cbCarPoseCov(geometry_msgs::PoseWithCovarianceConstPtr dataPtr)
             goalXYSNU = p_base->Tws.rotation().transpose()*(goalXYSNU-tw0);
             p_base->goalXYSNU = goalXYSNU;
 
-            auto lane_w = p_base->getLanePath(); // w.r.t world frame
+            /**
+             * Transform lane with the Tws (world to SNU)
+             */
             SE3 TwsWithTranslation;
             TwsWithTranslation.setIdentity();
             TwsWithTranslation.translate(tw0);
             TwsWithTranslation.rotate(p_base->Tws.rotation());
-            lane_w.applyTransform(TwsWithTranslation.inverse());
-            p_base->setLanePath(lane_w); // w.r.t SNU frame
-            ROS_INFO("[SNU_PLANNER/RosWrapper] Lane-path transform completed!");
-            p_base->laneOrig = Lane(lane_w); // should be applied transform
+            p_base->laneOrig.applyTransform(TwsWithTranslation.inverse()); // should be applied transform
+
 //            p_base->laneOrig.untilGoal(goalXYSNU(0),goalXYSNU(1)); // we keep only until the goal point
 
             if (p_base->laneOrig.points.size())

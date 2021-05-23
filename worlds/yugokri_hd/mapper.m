@@ -2,6 +2,9 @@ pcdFileDir ='yugokri_hd.pcd'; % This was generated w.r.t SNU frame (start = orig
 laneFileDir = 'interpolated_yugokri_path1.csv'; % w.r.t global frame 
 originPoseDir = 'world_to_init'; % copy and paste 
 
+%for quick loadmode, go to section : Sectioning knots and bind index of lane 
+
+
 %% Load pcd, transform, and lane 
 
 % PCD downsampling
@@ -31,11 +34,14 @@ knots = [startBridge startPlane startHell startSidePark startNarrow startNormalT
 save('section_division_pnts.mat','knots')
 
 
+
 %% Sectioning knots and bind index of lane 
+lane = table2array(readtable('interpolated_yugokri_path1.csv'));
+zOffSet = 0.4;
 data = load('section_division_pnts.mat');
 knotPnts = (data.knots); nKnot = length(knotPnts);
 knotsAug = knotPnts; % to close loop
-knotsAug(nKnot+1) = knots(1);
+knotsAug(nKnot+1) = knotPnts(1);
 sectionNames = {'bridge','plane','hell','side_park','narrow','normal_two_lane','forest'};
 searchStart = 1;
 for n = 1:nKnot + 1
@@ -43,11 +49,13 @@ for n = 1:nKnot + 1
     ind = getClosestIndex(pnt,lane,searchStart);
     knotWithIndex(n).pnt = pnt;
     knotWithIndex(n).ind = ind; 
-    if n < nKnot
+    if n < nKnot +1 
         fprintf('Start point of %s = [%f,%f] at index %d\n',...
             sectionNames{n},knotWithIndex(n).pnt(1),knotWithIndex(n).pnt(2),knotWithIndex(n).ind);
     end
 end
+fprintf('\n')
+
 
 %% Visualize knots 
 for n = 1:nKnot
@@ -56,7 +64,7 @@ for n = 1:nKnot
     plot3(pnt(1),pnt(2),zOffSet,'ro','MarkerFaceColor','r')
 end
 
-%% Visualize sections 
+%% Visualize and encoding sections 
 narrow = 3.5; normal = 4; wide = 5;
 laneWidthSet = [wide, wide, narrow, normal,narrow,wide,narrow];
 colormapJet = jet;
@@ -80,6 +88,14 @@ for sectionIdx = 1:nKnot
    hh.Color(1:3) = colorSection(sectionIdx,:);
 end
 
+
+%% Save it to csv files
+% each row = [x,y,sectionIdx], order = lane csv file 
+laneWithSectionId = [lane zeros(size(lane,1),1)];
+for sectionIdx = 1:nKnot
+   laneWithSectionId(indAlongSection{sectionIdx},3) = sectionIdx-1;
+end
+writematrix(laneWithSectionId,'lane_path_with_id.csv');
 
 %% Subfunctions
 

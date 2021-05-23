@@ -69,7 +69,6 @@ namespace Planner{
 
         Vector3d tw0; // initial position of car position w.r.t the global
 
-
         double pitchAngleFromImu; // pitch angle
 
         /**

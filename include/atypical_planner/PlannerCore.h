@@ -4,7 +4,7 @@
 
 #ifndef ATYPICAL_DRIVING_PLANNERBASE_H
 #define ATYPICAL_DRIVING_PLANNERBASE_H
-
+#define N_SECTION 7
 #include <vector>
 #include <queue>
 #include <memory>
@@ -223,18 +223,36 @@ namespace Planner {
         bool isSuccess;
     };
 
+    enum SECTION {
+        BRIDGE,
+        PLANE,
+        HELL,
+        SIDE_PARK,
+        NARROW,
+        NORMAL_TWO_LANE,
+        FOREST
+    };
+
     /**
      * @brief Initial lane
      */
     struct Lane{
+        static const int nSection = 7;
+        // fucking dirty. Should have make vector<FuckingLaneNode> but its too late
         vector<Vector2d, aligned_allocator<Vector2d>> points;
         vector<double> widths;
+        vector<SECTION> sections;
+
         Lane(){};
         Lane(const LanePath& lanePath);
         void untilGoal(double goal_x,double goal_y);
         vector<Vector2d, aligned_allocator<Vector2d>> slicing(const CarState& curCarState,Vector2d windowOrig,double w, double h , int & startIdx , int & endIdx );
         nav_msgs::Path getPath(string frame_id);
         visualization_msgs::MarkerArray getSidePath(string frame_id);
+        bool readFromCSV(string fileDir);
+        void applyWidthFromParam(double widthSet[nSection]);
+        void applyTransform(SE3 T01);
+
     };
 
     /**
@@ -311,9 +329,9 @@ namespace Planner {
         bool isLPsolved = false;
         bool isReached = false;
         bool isLPPassed = false;
+
+
         // Lane
-        parser parse_tool;
-        LanePath lane_path; // deprecated (better not to be used in routine source block )
         Lane laneOrig;
         Lane laneSliced; // lane in current sliding window
         SkeletonLane laneSkeleton;
@@ -342,7 +360,7 @@ namespace Planner {
         SE3 Tso; // occupancy map frame to SNU
         SE3 Tsb; // SNU to body
 
-
+        double laneWidthSet[N_SECTION];
 
         TwistStamped lastPublishedInput;
         string log_file_name_base;
@@ -375,7 +393,6 @@ namespace Planner {
 
         // Get
         CarState getCarState() {return cur_state;};
-        LanePath getLanePath() {return lane_path;};
 
 
         CarState getDesiredState() {return desired_state_seq.front();}; //jungwon
@@ -400,7 +417,6 @@ namespace Planner {
         geometry_msgs::PoseStamped getCurPose() {return cur_pose;};
 
         // Set from subscriber
-        void setLanePath(const LanePath& lane_path_in_) {lane_path = lane_path_in_;}
         void setCarState(const CarState& carState_) { cur_state = carState_;};
         void setCurPose(const geometry_msgs::PoseStamped poseStamped) {cur_pose = poseStamped;};
         // Set from planner
