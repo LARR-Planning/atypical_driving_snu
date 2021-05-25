@@ -139,7 +139,10 @@ namespace Planner {
         bool use_static_object;
         bool use_lane_point_first;
         int smoothing_cliff_n_check_idx;
-        double blocked_by_object_distance;
+//        double block_lane_by_object_distance;
+        double wide_lane_threshold;
+        double object_belief_distance;
+        double object_belief_angle;
     };
 
     struct ParamPredictor{
@@ -378,7 +381,7 @@ namespace Planner {
         bool isOccupied(Vector2d queryPoint); // query point frame = SNU
         bool isOccupied(Vector2d queryPoint1, Vector2d queryPoint2); // rayIntersection query point frame = SNU
 
-        bool isObject(const Vector2d& queryPoint, int maxObstQuerySize, double& min_distance_to_object, double& velocity, bool use_keti_vel = false); // query point frame = SNU
+        bool isObject(const Vector2d& queryPoint, int maxObstQuerySize, const std::vector<int>& belief_obj_indices, double& velocity, bool use_keti_vel = false); // query point frame = SNU
 
 
         // Corridor generation

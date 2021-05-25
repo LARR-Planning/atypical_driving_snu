@@ -215,8 +215,10 @@ void RosWrapper::updateParam(Param &param_) {
     nh.param<bool>("global_planner/use_static_object", param_.g_param.use_static_object, false);
     nh.param<bool>("global_planner/use_lane_point_first", param_.g_param.use_lane_point_first, false);
     nh.param<int>("global_planner/smoothing_cliff_n_check_idx", param_.g_param.smoothing_cliff_n_check_idx, 0);
-    nh.param<double>("global_planner/blocked_by_object_distance", param_.g_param.blocked_by_object_distance, -1);
-
+//    nh.param<double>("global_planner/block_lane_by_object_distance", param_.g_param.block_lane_by_object_distance, -1);
+    nh.param<double>("global_planner/wide_lane_threshold", param_.g_param.wide_lane_threshold, 4.5);
+    nh.param<double>("global_planner/object_belief_distance", param_.g_param.object_belief_distance, 1.0);
+    nh.param<double>("global_planner/object_belief_angle", param_.g_param.object_belief_angle, M_PI/12);
 
     // local planner
     nh.param<double>("local_planner/horizon",param_.l_param.horizon,5);

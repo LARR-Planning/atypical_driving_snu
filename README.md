@@ -121,6 +121,9 @@ The velocity of the obstacle path is the average of the keti velocities. Using t
 * `global_planner/nominal_acceleration`: Nominal acceleration for determining time segment of smoothLane. (m/s^2)
 * `global_planner/object_velocity_threshold`: If object is faster than this parameter, object is determined to dynamic object (m/s)
 * `global_planner/max_obstacle_prediction_query_size`: obstacle prediction query size
+* `global_planner/wide_lane_threshold`: if lane width is larger than this, then GP considers lane as 2-lane road
+* `global_planner/object_belief_distance`: if dynamic object is apart from lane more than this, GP believe object will follow the lane, bigger -> do not believe
+* `global_planner/object_belief_angle`: if dynamic object's velocity angle is smaller than this, GP believe object will follow the lane, smaller -> do not believe
 
 ### Y
 * `local_planner/horizon`: MPC horizon (seconds)
@@ -166,10 +169,12 @@ The velocity of the obstacle path is the average of the keti velocities. Using t
 
 ```
 
+#### Jungwon
+#### ChanageLog 25, May
+asdf
 
 #### Yunwoo 
 
 
 
-#### Jungwon 
 

@@ -28,12 +28,73 @@ bool GlobalPlanner::isCurTrajFeasible() {
  * @return true if success
  */
 bool GlobalPlanner::plan(double t) {
-    if(p_base->localMap.data.empty()){
+    if (p_base->localMap.data.empty()) {
         ROS_WARN("[GlobalPlanner] localmap.data is empty");
         return false;
     }
 
     bool printSequence = true;
+
+    // Belief of Dynamic Obstacles
+    std::vector<int> belief_obj_indices;
+    for (int obj_idx = 0; obj_idx < p_base->obstaclePathArray.obstPathArray.size(); obj_idx++) {
+        ObstaclePath obstPath = p_base->obstaclePathArray.obstPathArray[obj_idx];
+
+        if (obstPath.obstPath.empty()) {
+            continue;
+        }
+
+        Vector2d obs_position = obstPath.obstPath[0].q;
+        Vector2d obs_velocity;
+        if (param.use_keti_velocity) {
+            obs_velocity = obstPath.meanVelocity;
+        } else {
+            obs_velocity = obstPath.constantVelocityXY;
+        }
+        double obs_vel_angle = atan2(obs_velocity.y(), obs_velocity.x());
+
+        // find closest lane point
+        int closest_lane_point_idx = -1;
+        double min_dist_to_lane_point = 1000;
+        for (int i_lane = 0; i_lane < (int) p_base->laneSliced.points.size() - 1; i_lane++) {
+            double dist_to_lane_point = (obs_position - p_base->laneSliced.points[i_lane]).norm();
+            if (dist_to_lane_point < min_dist_to_lane_point) {
+                closest_lane_point_idx = i_lane;
+                min_dist_to_lane_point = dist_to_lane_point;
+            }
+        }
+
+        if (closest_lane_point_idx == -1) {
+            continue;
+        }
+
+        //check dynamic obstacle's position and velocity angle
+        bool is_wide_lane = p_base->laneSliced.widths[closest_lane_point_idx] > param.wide_lane_threshold;
+        Vector2d lane_delta_opp = p_base->laneSliced.points[closest_lane_point_idx] -
+                                  p_base->laneSliced.points[closest_lane_point_idx + 1];
+        Vector2d lane_point = p_base->laneSliced.points[closest_lane_point_idx];
+        double lane_angle_opp = atan2(lane_delta_opp.y(), lane_delta_opp.x());
+        Vector2d lane_delta_opp_normalized = lane_delta_opp.normalized();
+        Vector2d lane_vectical_normalized(cos(lane_angle_opp - 0.5 * M_PI), sin(lane_angle_opp - 0.5 * M_PI));
+
+        if(is_wide_lane){
+            Vector2d position_delta = obs_position - lane_point;
+            double vertical_dist_delta = position_delta.dot(lane_vectical_normalized);
+
+            double angle_delta = obs_vel_angle - lane_angle_opp;
+            if(angle_delta > M_PI){
+                angle_delta -= 2 * M_PI;
+            }
+            else if(angle_delta < -M_PI){
+                angle_delta += 2 * M_PI;
+            }
+
+            if(vertical_dist_delta > param.object_belief_distance && angle_delta < param.object_belief_angle){
+                ROS_WARN_STREAM("[GlobalPlanner] find belief obstacle: " << obj_idx);
+                belief_obj_indices.emplace_back(obj_idx);
+            }
+        }
+    }
 
     // Generate LaneTree
     laneTree.clear();
@@ -42,12 +103,15 @@ bool GlobalPlanner::plan(double t) {
     double currentAngle = p_base->cur_state.theta;
     double lane_length, lane_angle, current_length, alpha, currentLaneAngle;
     Vector2d delta, left_point, lane_point, right_point, left_boundary_point, right_boundary_point;
+    bool is_wide_lane;
     int i_grid = 0;
     for(int i_lane = 0; i_lane < (int)p_base->laneSliced.points.size() - 1; i_lane++){
         int grid_size = 2 * floor(p_base->laneSliced.widths[i_lane]/2/param.grid_resolution) + 1;
         delta = p_base->laneSliced.points[i_lane+1] - p_base->laneSliced.points[i_lane];
         lane_length = delta.norm();
         lane_angle = atan2(delta.y(), delta.x());
+        is_wide_lane = p_base->laneSliced.widths[i_lane] > param.wide_lane_threshold;
+
         if(i_grid == 0){
             currentLaneAngle = lane_angle;
         }
@@ -67,22 +131,24 @@ bool GlobalPlanner::plan(double t) {
                 laneGridPoints[(grid_size-1)/2 + j_side] = left_point;
                 laneGridPoints[(grid_size-1)/2 - j_side] = right_point;
             }
+
             // check occupancy of side points and construct laneTree
             std::vector<int> gridPointStates;
             gridPointStates.resize(laneGridPoints.size());
             int lane_idx = (grid_size - 1) / 2;
-            bool is_occupied_by_object = false;
+//            bool is_occupied_by_object = false;
             for(int k_side = 0; k_side < laneGridPoints.size(); k_side++) {
                 double object_velocity = 0;
-                double min_distance_to_object = 1000;
-                bool isObject = p_base->isObject(laneGridPoints[k_side], param.max_obstacle_prediction_query_size, min_distance_to_object, object_velocity, param.use_keti_velocity);
-                if(k_side == lane_idx && min_distance_to_object < param.blocked_by_object_distance){
-                    ROS_WARN_STREAM("[GlobalPlanner] lane is occupied by object, i_grid:" << i_grid << "min_dist_to_object:" << min_distance_to_object);
-                    is_occupied_by_object = true;
-                    break;
-                }
-                else if(isObject && object_velocity > param.object_velocity_threshold){
-                    gridPointStates[k_side] = 2;
+//                double min_distance_to_object = 1000; //initialize with big number
+                bool isObject = p_base->isObject(laneGridPoints[k_side], param.max_obstacle_prediction_query_size, belief_obj_indices, object_velocity, param.use_keti_velocity);
+//                if(k_side == lane_idx && min_distance_to_object < param.block_lane_by_object_distance){
+//                    ROS_WARN_STREAM("[GlobalPlanner] lane is occupied by object, i_grid:" << i_grid << "min_dist_to_object:" << min_distance_to_object);
+//                    is_occupied_by_object = true;
+//                    break;
+//                }
+//                else if(isObject && object_velocity > param.object_velocity_threshold){
+                if(isObject && object_velocity > param.object_velocity_threshold){
+                    gridPointStates[k_side] = 2; //TODO: 2 -> GP_DYNAMIC_OBSTACLE
                 }
                 else if(p_base->isOccupied(laneGridPoints[k_side]) || (isObject && object_velocity <= param.object_velocity_threshold && param.use_static_object)){
                     gridPointStates[k_side] = 1;
@@ -91,12 +157,13 @@ bool GlobalPlanner::plan(double t) {
                     gridPointStates[k_side] = 0;
                 }
             }
-            if(is_occupied_by_object){
-                for (int k_side = 0; k_side < laneGridPoints.size(); k_side++) {
-                    gridPointStates[k_side] = 1; // if lane is occupied by object then block the path
-                }
-            }
-            else {
+//            if(is_occupied_by_object){
+//                for (int k_side = 0; k_side < laneGridPoints.size(); k_side++) {
+//                    gridPointStates[k_side] = 1; // if lane is occupied by object then block the path
+//                }
+//            }
+//            else {
+            {
                 // dynamic object inflation
                 for (int k_side = 0; k_side < laneGridPoints.size(); k_side++) {
                     if (gridPointStates[k_side] == 2) {
@@ -118,6 +185,7 @@ bool GlobalPlanner::plan(double t) {
                 }
             }
 
+            // Lane tree element generation
             int start_idx = -1;
             Vector2d mid_point;
             for(int k_side = 0; k_side < laneGridPoints.size(); k_side++){
@@ -132,17 +200,24 @@ bool GlobalPlanner::plan(double t) {
                         else{
                             mid_point = (laneGridPoints[k_side] + laneGridPoints[start_idx]) / 2;
                         }
-                        LaneTreeElement laneTreeElement;
+                        LaneTreeElement laneTreeElement; //TODO: duplicated part
                         laneTreeElement.id = i_grid;
-                        laneTreeElement.leftBoundaryPoint = left_boundary_point;
-                        laneTreeElement.leftPoint = laneGridPoints[k_side];
-                        laneTreeElement.midPoint = mid_point;
-                        laneTreeElement.lanePoint = lane_point;
-                        laneTreeElement.rightPoint = laneGridPoints[start_idx];
-                        laneTreeElement.rightBoundaryPoint = right_boundary_point;
                         laneTreeElement.width = (laneGridPoints[k_side] - laneGridPoints[start_idx]).norm();
+                        laneTreeElement.leftBoundaryPoint = left_boundary_point;
+                        laneTreeElement.rightBoundaryPoint = right_boundary_point;
+                        laneTreeElement.leftPoint = laneGridPoints[k_side];
+                        laneTreeElement.rightPoint = laneGridPoints[start_idx];
+                        laneTreeElement.lanePoint = lane_point;
+                        if(is_wide_lane){
+                            laneTreeElement.midPoint = 0.5 * (mid_point + laneTreeElement.rightPoint);
+                        }
+                        else{
+                            laneTreeElement.midPoint = mid_point;
+                        }
+
                         if (laneTreeElement.width == 0) {
-                            int debug = 0;
+                            ROS_ERROR("[GlobalPlanner] width = 0");
+                            int debug = 0; //TODO: delete this after debugging
                         }
 
                         if (start_idx > 0) {
@@ -161,17 +236,23 @@ bool GlobalPlanner::plan(double t) {
                         mid_point = (laneGridPoints[k_side-1] + laneGridPoints[start_idx])/2;
                     }
 
-                    LaneTreeElement laneTreeElement;
+                    LaneTreeElement laneTreeElement; //TODO: duplicated part
                     laneTreeElement.id = i_grid;
                     laneTreeElement.leftBoundaryPoint = left_boundary_point;
                     laneTreeElement.leftPoint = laneGridPoints[k_side-1];
-                    laneTreeElement.midPoint = mid_point;
-                    laneTreeElement.lanePoint = lane_point;
                     laneTreeElement.rightPoint = laneGridPoints[start_idx];
+                    laneTreeElement.lanePoint = lane_point;
+                    if(is_wide_lane) {
+                        laneTreeElement.midPoint = 0.5 * (mid_point + laneTreeElement.rightPoint);
+                    }
+                    else {
+                        laneTreeElement.midPoint = mid_point;
+                    }
                     laneTreeElement.rightBoundaryPoint = right_boundary_point;
                     laneTreeElement.width = (laneGridPoints[k_side-1] - laneGridPoints[start_idx]).norm();
                     if(laneTreeElement.width == 0){
-                        int debug = 0;
+                        ROS_ERROR("[GlobalPlanner] width = 0");
+                        int debug = 0; //TODO: delete this after debugging
                     }
 
                     if(gridPointStates[k_side] == 2 or (start_idx > 0 and gridPointStates[start_idx - 1] == 2)){
@@ -815,12 +896,14 @@ int GlobalPlanner::findLaneTreePathTail(bool& isBlocked, bool& isBlockedByObject
         }
 
         if(laneTreePath[i_tree].width < corridor_width_min){
-            ROS_WARN("[GlobalPlanner] lanePath blocked by corridor_width_min");
             tail_end = std::max(i_tree - 1, 1);
             isBlocked = true;
             if(laneTreePath[i_tree].isNearObject) {
                 ROS_WARN("[GlobalPlanner] lanePath blocked by dynamic obstacle");
                 isBlockedByObject = true;
+            }
+            else{
+                ROS_WARN("[GlobalPlanner] lanePath blocked by static obstacle");
             }
             break;
         }
