@@ -1,10 +1,11 @@
+<?xml version="1.0"?>
 <!-- 
     test_with_virtual_environment.launch
 -->
 
 <launch>
-  <arg name = "use_sim_time" value = "true"/>
-
+  <arg name = "use_sim_time" value = "false"/>
+  <arg name = "is_bag" value = "false"/>
 <!--   <arg name="bagfile"        default="autoDriveFinalFail.bag"/> -->
 <!--   <arg name="bagfile"        default="autoDriveIntegration.bag"/> -->
  <arg name="bagfile"        default="autoDriveFinalScenarioSuccess.bag"/>
@@ -23,7 +24,7 @@
   <arg name ="detected_object_frame_id" default = "map"/>
 
   <arg name= "lane_width" default="10"/>
-  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/waypoint_airsim.csv"/>
+  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/waypoint_kiapi3.csv"/>
   <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
 
   <arg name = "goal/x"  default = "30"/> <!--in world frame -->
@@ -87,10 +88,14 @@
 <!-- Node start-->
 
     <!--1. Data feeder-->
-    <node pkg="rosbag" type="play" name="rosbag_record_diag" args="--clock $(find atypical_driving)/worlds/$(arg bagfile)" >
+
+
+    <node pkg="rosbag" type="play" name="rosbag_record_diag"
+     args="--clock $(find atypical_driving)/worlds/$(arg bagfile)" if = "$(arg is_bag)">
         <remap from="octomap_binary" to="/atypical_planning_test/local_map"/>
         <remap from="/airsim_car_node/object_pose" to="/atypical_planning_test/obstacle_pose"/>
     </node>
+
 
     <!--2. client-->
     <node pkg="atypical_driving" type="integration_client" name="atypical_driving_client" output="screen">
@@ -120,7 +125,7 @@
     </include>
 
 
-  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find atypical_driving)/launch/rviz_config/config.rviz" output="log" />
+  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find atypical_driving)/launch/rviz_config/airsim.rviz" output="log" />
 
 <!-- Nodes End -->
 </launch>
