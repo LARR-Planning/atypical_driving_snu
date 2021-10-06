@@ -513,6 +513,32 @@ void RosWrapper::prepareROSmsgs() {
     }
 
     pubPredictionArray.publish(obstaclePrediction); // <- why this is in here? It should go to publish() (jungwon)
+
+
+   // For monitoring (ktl) by JBS
+   if (p_base->isLPsolved) {
+       p_base->mSet[0].lock();
+       monitoringMsg.car_pose = p_base->cur_pose;
+       auto localMapInfo = p_base->localMap.info;
+       float queryX = this->monitoringMsg.car_pose.pose.position.x;
+       float queryY = this->monitoringMsg.car_pose.pose.position.y;
+       float distToCar = numeric_limits<float>::max();
+       for (size_t idx = 0; idx < localMapInfo.width * localMapInfo.height ; idx++){
+           if (p_base->localMap.data[idx] > OCCUPANCY){ // this will be obstacle
+               geometry_msgs::Point cellPoint = occupancy_grid_utils::cellCenter(localMapInfo,
+                       occupancy_grid_utils::indexCell(localMapInfo, idx));
+               distToCar = std::min(float((cellPoint.x-queryX)*(cellPoint.x-queryX) +
+                                       (cellPoint.y-queryY)*(cellPoint.y-queryY)),
+                                    distToCar);
+           }
+       }
+       monitoringMsg.dist_static_obstacle = distToCar;
+       p_base->mSet[0].unlock();
+       monitoringMsg.header.stamp = ros::Time::now();
+   }
+
+
+
 }
 
 /**
