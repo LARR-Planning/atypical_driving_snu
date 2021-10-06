@@ -4,7 +4,16 @@
 
   <arg name = "param_file" default = "yugokri.yaml"/>
 
-  <arg name = "goal/x"  default = "323891.02"/> <!--in world frame -->
+    <arg name="bag" default="true"/>
+    <arg name = "bagfile" default="almostButVilsonTooFast.bag"/>
+
+    <param name="/use_sim_time" value="$(arg bag)"/>
+
+    <node pkg="rosbag" type="play" name="rosbag_record_diag" args="--clock --loop -s 0 -r 1.0 $(find atypical_driving)/worlds/$(arg bagfile)" if = "$(arg bag)">
+        <!--        <remap from = "/current_pose_cov" to = "/current_pose"/>-->
+    </node>
+
+    <arg name = "goal/x"  default = "323891.02"/> <!--in world frame -->
   <arg name = "goal/y" default = "4145172.15"/> <!--in world frame -->
 
 
