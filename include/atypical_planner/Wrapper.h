@@ -112,7 +112,9 @@ namespace Planner{
         nav_msgs::Path MPCTraj; // msg from mpcResultTraj
         pcl::PointCloud<pcl::PointXYZ>::Ptr processedPclPtr;
         pcl::PointCloud<pcl::PointXYZ>::Ptr groundPclPtr;
+
         driving_msgs::Monitoring monitoringMsg;
+        geometry_msgs::PointStamped nearestPointToObstacle; // both static an
 
 
         /**
@@ -139,6 +141,8 @@ namespace Planner{
         ros::Publisher pubCurCmdDabin;
         ros::Publisher pubOurOccu;
         ros::Publisher pubPitching; // publishing pitch angle
+        ros::Publisher pubMonitoring;
+        ros::Publisher pubNearestPointToObstacle;
 
         ros::Publisher pubFilteredPcl;
         ros::Publisher pubGroundPcl;

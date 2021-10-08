@@ -391,6 +391,7 @@ namespace Planner {
 //            cmd.accel_decel_cmd = mpc_result.evalU(t).alpha;
 //            return cmd;
 //        };
+
         ObstaclePathArray getCurObstaclePathArray() {return obstaclePathArray;};
         vector<Corridor> getCorridorSeq() {return corridor_seq;}; // Returns just all the latest
         vector<Corridor> getCorridorSeq(double t0,double tf ); // start time is set to zero

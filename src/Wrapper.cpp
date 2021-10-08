@@ -108,6 +108,8 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
     pubCurCmdSteer = nh.advertise<std_msgs::Float64>("/vehicle_cmd_steer",1);
     pubCurCmdAcc = nh.advertise<std_msgs::Float64>("/vehicle_cmd_acc",1);
 
+    pubMonitoring = nh.advertise<driving_msgs::Monitoring>("monitor/status",1);
+    pubNearestPointToObstacle = nh.advertise<geometry_msgs::PointStamped>("monitor/nearest_obstacle_point",1);
 
     // Subscriber
     subCarPoseCov = nh.subscribe("/current_pose",1,&RosWrapper::cbCarPoseCov,this);
@@ -522,23 +524,49 @@ void RosWrapper::prepareROSmsgs() {
        auto localMapInfo = p_base->localMap.info;
        float queryX = this->monitoringMsg.car_pose.pose.position.x;
        float queryY = this->monitoringMsg.car_pose.pose.position.y;
-       float distToCar = numeric_limits<float>::max();
+
+       float staticObstacleDistToCarSquard = numeric_limits<float>::max();
+
+       // Find the nearest static obstacle
        for (size_t idx = 0; idx < localMapInfo.width * localMapInfo.height ; idx++){
            if (p_base->localMap.data[idx] > OCCUPANCY){ // this will be obstacle
                geometry_msgs::Point cellPoint = occupancy_grid_utils::cellCenter(localMapInfo,
                        occupancy_grid_utils::indexCell(localMapInfo, idx));
-               distToCar = std::min(float((cellPoint.x-queryX)*(cellPoint.x-queryX) +
-                                       (cellPoint.y-queryY)*(cellPoint.y-queryY)),
-                                    distToCar);
+               float distSquard = (cellPoint.x - queryX) * (cellPoint.x - queryX) +
+                                  (cellPoint.y-queryY)*(cellPoint.y-queryY);
+               if (distSquard < staticObstacleDistToCarSquard){
+                   staticObstacleDistToCarSquard = distSquard;
+                   nearestPointToObstacle.point = cellPoint;
+               }
            }
        }
-       monitoringMsg.dist_static_obstacle = distToCar;
+       float dynamicObstacleDistToCar = numeric_limits<float>::max();
+       if (p_base->getCurObstaclePathArray().obstPathArray.empty())
+           dynamicObstacleDistToCar = -1; // no dynamic obstacle
+
+       // Find the nearest dynamic obstacle
+       for (auto obstPath : p_base->getCurObstaclePathArray().obstPathArray){ // traverse over obstacle stream array
+           // let us take the first element
+           auto initialObstacle = obstPath.obstPath[0];
+           float xo = initialObstacle.q(0);
+           float yo = initialObstacle.q(1);
+           float ro = initialObstacle.r1; // assuming circle
+           float distToCenter = sqrt(pow(xo - queryX,2) + pow(yo - queryY,2)) - ro;
+           dynamicObstacleDistToCar = max(min (distToCenter, dynamicObstacleDistToCar),0.0f);  // min thresholding
+       }
+
        p_base->mSet[0].unlock();
+
+
+       monitoringMsg.dist_static_obstacle = sqrt(staticObstacleDistToCarSquard);
+       monitoringMsg.dist_dynamic_obstacle = dynamicObstacleDistToCar;
        monitoringMsg.header.stamp = ros::Time::now();
+       pubMonitoring.publish(monitoringMsg);
+
+       nearestPointToObstacle.header.stamp = ros::Time::now(); // for debugging
+       nearestPointToObstacle.header.frame_id = SNUFrameId;
+       pubNearestPointToObstacle.publish(nearestPointToObstacle);
    }
-
-
-
 }
 
 /**
