@@ -413,6 +413,7 @@ namespace Planner {
         void uploadPrediction(VectorXd tSeq_, double rNominal = 0);
 
         // logger
+        float lastPlanningElapse = 0 ; // ms
         void log_state_input(double t_cur);
         void log_corridor(double t_cur,double tf);
         void log_mpc(double t_cur);

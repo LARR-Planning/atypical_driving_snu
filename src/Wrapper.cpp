@@ -561,11 +561,14 @@ void RosWrapper::prepareROSmsgs() {
        monitoringMsg.dist_static_obstacle = sqrt(staticObstacleDistToCarSquard);
        monitoringMsg.dist_dynamic_obstacle = dynamicObstacleDistToCar;
        monitoringMsg.header.stamp = ros::Time::now();
+       monitoringMsg.comp_time_ms = p_base->lastPlanningElapse;
        pubMonitoring.publish(monitoringMsg);
 
        nearestPointToObstacle.header.stamp = ros::Time::now(); // for debugging
        nearestPointToObstacle.header.frame_id = SNUFrameId;
        pubNearestPointToObstacle.publish(nearestPointToObstacle);
+
+
    }
 }
 
@@ -1460,24 +1463,28 @@ void Wrapper::runPlanning() {
                 // 3. Do planning (GP->LP) or LP only
                 if (doGPlan) { // G plan
 
-                    tCkpG = chrono::steady_clock::now(); // check point time
                     // Lane processing
                     isLaneSuccess = processLane(ros_wrapper_ptr->curTime());
                     if (isLaneSuccess){
-//                        ROS_INFO("[Wrapper] lane extracted!");
+
                         ROS_INFO("[Wrapper] begin GP..");
+
+                        tCkpG = chrono::steady_clock::now(); // check point time
                         isGPSuccess = planGlobal(ros_wrapper_ptr->curTime());
+                        double elapseG = std::chrono::duration_cast<std::chrono::microseconds>(
+                                chrono::steady_clock::now() - tCkpG).count() * 0.001;
 
                         if (isGPSuccess) { // let's call LP
-                            ROS_INFO_STREAM("[Wrapper] GP success! planning time for gp: " <<
-                                                                                           std::chrono::duration_cast<std::chrono::microseconds>(
-                                                                                                   chrono::steady_clock::now() -
-                                                                                                   tCkpG).count() * 0.001
-                                                    << "ms");
+                            ROS_INFO_STREAM("[Wrapper] GP success! planning time for gp: " << elapseG << "ms");
 //                            ROS_INFO("[Wrapper] begin LP..");
 
                             auto tCkp_mpc = chrono::steady_clock::now();
                             isLPSuccess = planLocal(ros_wrapper_ptr->curTime()); // TODO time ?
+                            double elapseL = std::chrono::duration_cast<std::chrono::microseconds>(
+                                    chrono::steady_clock::now() - tCkp_mpc).count() * 0.001;
+                            ROS_INFO_STREAM("[Wrapper] LP success! planning time for lp: " << elapseL << "ms");
+                            p_base_shared->lastPlanningElapse = elapseG + elapseL;
+
                             if (not isLPSuccess)
 
 //                                ROS_INFO_STREAM("[Wrapper] LP success! planning time for lp: " <<

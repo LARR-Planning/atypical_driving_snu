@@ -96,7 +96,7 @@ double meanCurvature(const vector<Vector2d, aligned_allocator<Vector2d>> & point
         }
     }
     //cout << curvatureSum<< endl;
-    cout << curvatureSum/(point2dSeq.size()-2)<< endl;
+    // cout << curvatureSum/(point2dSeq.size()-2)<< endl;
     return curvatureSum/(point2dSeq.size()-2);
 
 
