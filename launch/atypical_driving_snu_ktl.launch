@@ -6,7 +6,7 @@
   <arg name = "param_file" default = "yugokri.yaml"/>
 
     <arg name="bag" default="true"/>
-    <arg name = "bagfile" default="2020-11-05-17-41-09-ACC-detour-s70.bag"/>
+    <arg name = "bagfile" default="autoDriveFinalScenarioSuccess.bag"/>
 
     <param name="/use_sim_time" value="$(arg bag)"/>
 
@@ -79,7 +79,6 @@
         <param name = "base_link_id" value="$(arg car_base_frame_id)" />
         <param name = "detected_objects_id" value="$(arg detected_object_frame_id)" />
 
-        <param name = "local_planner/obstacle_radius_nominal" value="1"/>
 
         <!--Shaping params for nominal_speed selection-->
         <param name = "vmax" value = "3.0"/> <!--m/s-->
@@ -136,6 +135,9 @@
         <param name="predictor/observation_queue" value="10" />
         <param name="predictor/ref_height" value="0.4" />
         <param name="predictor/log_dir" value="$(find atypical_driving)/log/predictor" />
+
+        <param name= "use_nominal_obstacle_rad" value="true"/>
+        <param name= "local_planner/obstacle_radius_nominal" value="0.5"/>
 
         <rosparam command="load" file="$(find atypical_driving)/param/$(arg param_file)"/>
 

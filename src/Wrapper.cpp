@@ -545,23 +545,45 @@ void RosWrapper::prepareROSmsgs() {
            dynamicObstacleDistToCar = -1; // no dynamic obstacle
 
        // Find the nearest dynamic obstacle
+       vector<float> avgDistArray; // arry of the averaged distance btw obstacle and car over horizon
        for (auto obstPath : p_base->getCurObstaclePathArray().obstPathArray){ // traverse over obstacle stream array
-           // let us take the first element
+           // let us take the first element (current)
            auto initialObstacle = obstPath.obstPath[0];
-           float xo = initialObstacle.q(0);
-           float yo = initialObstacle.q(1);
+           float xo0 = initialObstacle.q(0);
+           float yo0 = initialObstacle.q(1);
            float ro = initialObstacle.r1; // assuming circle
-           float distToCenter = sqrt(pow(xo - queryX,2) + pow(yo - queryY,2)) - ro;
+           float distToCenter = sqrt(pow(xo0 - queryX, 2) + pow(yo0 - queryY, 2)) - ro;
            dynamicObstacleDistToCar = max(min (distToCenter, dynamicObstacleDistToCar),0.0f);  // min thresholding
-       }
 
+           // average along the horizon
+           int nStep  = param.l_param.horizon/param.l_param.tStep; // the division should be integer
+           VectorXd tSeq(nStep);
+           tSeq.setLinSpaced(nStep,curTime(),curTime()+param.l_param.horizon);
+
+           MPCResultTraj mpcResultTraj = p_base->getMPCResultTraj();
+           int stepCnt = 0;
+           float avgDist = 0;
+           for (const auto&  obst: obstPath.obstPath){ // traverse over obstacle stream
+               // obstacle over the horizon
+               float xo = obst.q(0);
+               float yo = obst.q(1);
+               CarState carState =
+                mpcResultTraj.evalX(tSeq[stepCnt++]);
+
+               // car over the horizon
+               float xc = carState.x;
+               float yc = carState.y;
+               avgDist += sqrt(pow(xc - xo,2) +  pow(yc - yo,2));
+           }
+           avgDistArray.push_back(avgDist / stepCnt);
+       }
        p_base->mSet[0].unlock();
 
-
        monitoringMsg.dist_static_obstacle = sqrt(staticObstacleDistToCarSquard);
-       monitoringMsg.dist_dynamic_obstacle = dynamicObstacleDistToCar;
+       monitoringMsg.dist_dynamic_obstacles = dynamicObstacleDistToCar;
        monitoringMsg.header.stamp = ros::Time::now();
        monitoringMsg.comp_time_ms = p_base->lastPlanningElapse;
+       monitoringMsg.avg_plan_dist_dynamic_obstacle = avgDistArray;
        pubMonitoring.publish(monitoringMsg);
 
        nearestPointToObstacle.header.stamp = ros::Time::now(); // for debugging
