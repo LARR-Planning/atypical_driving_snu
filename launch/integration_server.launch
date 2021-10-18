@@ -47,8 +47,8 @@
 
 
     <!--Shaping params for nominal_speed selection-->
-    <param name = "vmax" value = "5.0"/> <!--m/s-->
-    <param name = "vmin" value = "1.0"/> <!--m/s-->
+    <param name = "vmax" value = "4.0"/> <!--m/s-->
+    <param name = "vmin" value = "1.5"/> <!--m/s-->
     <param name = "v_ref_past_weight" value = "0.8"/> <!--m/s-->
     <param name = "curve_thres" value = "0.05"/> <!--m/s-->
 
@@ -62,7 +62,7 @@
 
     <rosparam command="load" file="$(arg waypoints)" />
 
-    <param name="global_planner/period" value="$(arg period)" />
+        <param name="global_planner/period" value="$(arg period)" />
 
     <param name="local_planner/horizon" value="$(arg horizon)" />
     <param name="local_planner/ts" value="$(arg planning_dt)" />
@@ -72,7 +72,7 @@
     <param name="local_planner/N_corr" value="5" />
     <param name="local_planner/isRearWheel" value="$(arg isRearWheelDriven)"/>
     <param name="local_planner/dyn_obst_range" value="30.0"/>
-    <param name="local_planner/sfc_margin" value="0.5"/>
+    <param name="local_planner/sfc_margin" value="0.4"/>
     <param name="local_planner/same_wpts_distance" value="0.01"/>
     <param name="local_planner/sameNumPointStopping" value="70"/>
     <!--smoothing_type: 0:Exponential Average, 1:Moving Average, 2:Acc(exp),Steer(mov), 3:ignore small angle -->

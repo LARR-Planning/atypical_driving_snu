@@ -33,7 +33,23 @@ bool GlobalPlanner::plan(double t) {
         return false;
     }
 
-    bool printSequence = false ;
+    bool printSequence = false;
+    bool printParam = false;
+
+    if(printParam){
+        ROS_WARN_STREAM("[GlobalPlanner] car_width: " << param.car_width);
+        ROS_WARN_STREAM("[GlobalPlanner] grid_resolution: " << param.grid_resolution);
+        ROS_WARN_STREAM("[GlobalPlanner] max_steering_angle: " << param.max_steering_angle);
+        ROS_WARN_STREAM("[GlobalPlanner] smoothing_distance: " << param.smoothing_distance);
+        ROS_WARN_STREAM("[GlobalPlanner] smoothing_cliff_min_bias: " << param.smoothing_cliff_min_bias);
+        ROS_WARN_STREAM("[GlobalPlanner] start_smoothing_distance: " << param.start_smoothing_distance);
+        ROS_WARN_STREAM("[GlobalPlanner] corridor_width_min: " << param.corridor_width_min);
+        ROS_WARN_STREAM("[GlobalPlanner] corridor_width_dynamic_min: " << param.corridor_width_dynamic_min);
+        ROS_WARN_STREAM("[GlobalPlanner] safe_distance: " << param.safe_distance);
+        ROS_WARN_STREAM("[GlobalPlanner] object_velocity_threshold: " << param.object_velocity_threshold);
+        ROS_WARN_STREAM("[GlobalPlanner] use_lane_point_first: " << param.use_lane_point_first);
+    }
+
 
     // Generate LaneTree
     laneTree.clear();

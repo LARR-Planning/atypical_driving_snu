@@ -7,17 +7,9 @@ Panels:
         - /Global Options1
         - /Status1
         - /Grid1
-        - /Corridor1
         - /Corridor1/Namespaces1
         - /TF1/Frames1
-        - /Path1
-        - /Polygon1
         - /Map1
-        - /FilteredPCL1
-        - /Image1
-        - /LaserScan1
-        - /Pose4
-        - /PointCloud21
         - /PointCloud21/Autocompute Value Bounds1
         - /PointStamped2
       Splitter Ratio: 0.5517241358757019
@@ -94,7 +86,7 @@ Visualization Manager:
       Cell Size: 3
       Class: rviz/Grid
       Color: 238; 238; 236
-      Enabled: false
+      Enabled: true
       Line Style:
         Line Width: 0.029999999329447746
         Value: Lines
@@ -106,8 +98,8 @@ Visualization Manager:
         Z: 1
       Plane: XY
       Plane Cell Count: 100
-      Reference Frame: SNU
-      Value: false
+      Reference Frame: map
+      Value: true
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /atypical_planning_test/corridor_seq
@@ -149,7 +141,6 @@ Visualization Manager:
       Keep: 1
       Name: Odometry
       Position Tolerance: 0.10000000149011612
-      Queue Size: 10
       Shape:
         Alpha: 1
         Axes Length: 1
@@ -172,7 +163,6 @@ Visualization Manager:
       Head Length: 0.30000001192092896
       Head Radius: 0.10000000149011612
       Name: Pose
-      Queue Size: 10
       Shaft Length: 1
       Shaft Radius: 0.05000000074505806
       Shape: Axes
@@ -196,7 +186,6 @@ Visualization Manager:
       Head Length: 0.30000001192092896
       Head Radius: 0.10000000149011612
       Name: Pose
-      Queue Size: 10
       Shaft Length: 1
       Shaft Radius: 0.05000000074505806
       Shape: Axes
@@ -216,7 +205,18 @@ Visualization Manager:
           Value: true
         velodyne:
           Value: true
-      Marker Alpha: 1
+        PhysXCar:
+          Value: false
+        PhysXCar/odom_local_ned:
+          Value: false
+        SNU:
+          Value: false
+        car_base_link:
+          Value: false
+        map:
+          Value: false
+        world_ned:
+          Value: false
       Marker Scale: 10
       Name: TF
       Show Arrows: false
@@ -247,7 +247,6 @@ Visualization Manager:
         Z: 0
       Pose Color: 255; 85; 255
       Pose Style: None
-      Queue Size: 10
       Radius: 0.029999999329447746
       Shaft Diameter: 0.10000000149011612
       Shaft Length: 0.10000000149011612
@@ -260,7 +259,6 @@ Visualization Manager:
       Enabled: true
       History Length: 1
       Name: PointStamped
-      Queue Size: 10
       Radius: 2
       Topic: /atypical_planning_test/global_goal
       Unreliable: false
@@ -270,13 +268,12 @@ Visualization Manager:
       Color: 239; 41; 41
       Enabled: true
       Name: Polygon
-      Queue Size: 10
       Topic: /costmap_node/costmap/footprint
       Unreliable: false
       Value: true
     - Alpha: 0.4000000059604645
       Class: rviz/Map
-      Color Scheme: map
+      Color Scheme: costmap
       Draw Behind: false
       Enabled: true
       Name: Map
@@ -299,7 +296,9 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
+      Max Intensity: 4096
       Min Color: 0; 0; 0
+      Min Intensity: 0
       Name: PointCloud
       Position Transformer: ""
       Queue Size: 10
@@ -329,7 +328,6 @@ Visualization Manager:
         Z: 0
       Pose Color: 255; 85; 255
       Pose Style: None
-      Queue Size: 10
       Radius: 0.029999999329447746
       Shaft Diameter: 0.10000000149011612
       Shaft Length: 0.10000000149011612
@@ -355,7 +353,6 @@ Visualization Manager:
       Head Length: 0.5
       Head Radius: 0.20000000298023224
       Name: PoseArray
-      Queue Size: 10
       Shaft Length: 0.23000000417232513
       Shaft Radius: 0.10000000149011612
       Shape: Arrow (3D)
@@ -371,7 +368,6 @@ Visualization Manager:
       Head Length: 0.30000001192092896
       Head Radius: 0.10000000149011612
       Name: Pose
-      Queue Size: 10
       Shaft Length: 1
       Shaft Radius: 0.05000000074505806
       Shape: Arrow
@@ -393,7 +389,9 @@ Visualization Manager:
       Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
+      Max Intensity: 4096
       Min Color: 0; 0; 0
+      Min Intensity: 0
       Name: FilteredPCL
       Position Transformer: XYZ
       Queue Size: 10
@@ -407,7 +405,7 @@ Visualization Manager:
       Use rainbow: true
       Value: false
     - Class: rviz/Image
-      Enabled: true
+      Enabled: false
       Image Topic: /camera1/camera/image_raw
       Max Value: 1
       Median window: 5
@@ -417,7 +415,7 @@ Visualization Manager:
       Queue Size: 2
       Transport Hint: raw
       Unreliable: false
-      Value: true
+      Value: false
     - Class: rviz/Group
       Displays:
         - Class: rviz/MarkerArray
@@ -435,7 +433,6 @@ Visualization Manager:
         - Class: jsk_rviz_plugin/TwistStamped
           Enabled: true
           Name: TwistStamped
-          Queue Size: 10
           Topic: /atypical_planning_test/publishedInput
           Unreliable: false
           Value: true
@@ -460,7 +457,8 @@ Visualization Manager:
             "\n": true
             "\x0b": true
             "\x0c": true
-            : true
+            
+: true
             "\x0e": true
             "\x0f": true
             "\x10": true
@@ -529,7 +527,9 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
+      Max Intensity: 4096
       Min Color: 0; 0; 0
+      Min Intensity: 0
       Name: LaserScan
       Position Transformer: XYZ
       Queue Size: 10
@@ -551,7 +551,6 @@ Visualization Manager:
       Head Length: 0.30000001192092896
       Head Radius: 0.10000000149011612
       Name: Pose
-      Queue Size: 10
       Shaft Length: 6
       Shaft Radius: 0.30000001192092896
       Shape: Axes
@@ -573,7 +572,9 @@ Visualization Manager:
       Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
+      Max Intensity: 4096
       Min Color: 0; 0; 0
+      Min Intensity: 0
       Name: GroundPCL
       Position Transformer: XYZ
       Queue Size: 10
@@ -601,7 +602,9 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
+      Max Intensity: 4096
       Min Color: 0; 0; 0
+      Min Intensity: 0
       Name: PointCloud2
       Position Transformer: XYZ
       Queue Size: 10
@@ -614,8 +617,7 @@ Visualization Manager:
       Use Fixed Frame: false
       Use rainbow: true
       Value: true
-    - Alpha: 1
-      Class: rviz/Axes
+    - Class: rviz/Axes
       Enabled: true
       Length: 1
       Name: Axes
@@ -635,7 +637,7 @@ Visualization Manager:
       Value: true
   Enabled: true
   Global Options:
-    Background Color: 0; 0; 0
+    Background Color: 180; 180; 180
     Default Light: true
     Fixed Frame: SNU
     Frame Rate: 30
@@ -667,7 +669,6 @@ Visualization Manager:
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
-      Field of View: 0.7853981852531433
       Focal Point:
         X: 2.0510802268981934
         Y: 2.4079506397247314
@@ -677,9 +678,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.5647963285446167
+      Pitch: 1.2947967052459717
       Target Frame: base_link
-      Yaw: 1.5599794387817383
+      Value: Orbit (rviz)
+      Yaw: 3.1299667358398438
     Saved: ~
 Window Geometry:
   Displays:
