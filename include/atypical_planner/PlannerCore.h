@@ -391,6 +391,7 @@ namespace Planner {
 //            cmd.accel_decel_cmd = mpc_result.evalU(t).alpha;
 //            return cmd;
 //        };
+
         ObstaclePathArray getCurObstaclePathArray() {return obstaclePathArray;};
         vector<Corridor> getCorridorSeq() {return corridor_seq;}; // Returns just all the latest
         vector<Corridor> getCorridorSeq(double t0,double tf ); // start time is set to zero
@@ -412,6 +413,7 @@ namespace Planner {
         void uploadPrediction(VectorXd tSeq_, double rNominal = 0);
 
         // logger
+        float lastPlanningElapse = 0 ; // ms
         void log_state_input(double t_cur);
         void log_corridor(double t_cur,double tf);
         void log_mpc(double t_cur);

@@ -108,6 +108,8 @@ RosWrapper::RosWrapper(shared_ptr<PlannerBase> p_base_):p_base(p_base_),nh("~"){
     pubCurCmdSteer = nh.advertise<std_msgs::Float64>("/vehicle_cmd_steer",1);
     pubCurCmdAcc = nh.advertise<std_msgs::Float64>("/vehicle_cmd_acc",1);
 
+    pubMonitoring = nh.advertise<driving_msgs::Monitoring>("monitor/status",1);
+    pubNearestPointToObstacle = nh.advertise<geometry_msgs::PointStamped>("monitor/nearest_obstacle_point",1);
 
     // Subscriber
     subCarPoseCov = nh.subscribe("/current_pose",1,&RosWrapper::cbCarPoseCov,this);
@@ -513,6 +515,83 @@ void RosWrapper::prepareROSmsgs() {
     }
 
     pubPredictionArray.publish(obstaclePrediction); // <- why this is in here? It should go to publish() (jungwon)
+
+
+   // For monitoring (ktl) by JBS
+   if (p_base->isLPsolved) {
+       p_base->mSet[0].lock();
+       monitoringMsg.car_pose = p_base->cur_pose;
+       auto localMapInfo = p_base->localMap.info;
+       float queryX = this->monitoringMsg.car_pose.pose.position.x;
+       float queryY = this->monitoringMsg.car_pose.pose.position.y;
+
+       float staticObstacleDistToCarSquard = numeric_limits<float>::max();
+
+       // Find the nearest static obstacle
+       for (size_t idx = 0; idx < localMapInfo.width * localMapInfo.height ; idx++){
+           if (p_base->localMap.data[idx] > 80){ // this will be obstacle
+               geometry_msgs::Point cellPoint = occupancy_grid_utils::cellCenter(localMapInfo,
+                       occupancy_grid_utils::indexCell(localMapInfo, idx));
+               float distSquard = (cellPoint.x - queryX) * (cellPoint.x - queryX) +
+                                  (cellPoint.y-queryY)*(cellPoint.y-queryY);
+               if (distSquard < staticObstacleDistToCarSquard){
+                   staticObstacleDistToCarSquard = distSquard;
+                   nearestPointToObstacle.point = cellPoint;
+               }
+           }
+       }
+       float dynamicObstacleDistToCar = numeric_limits<float>::max();
+       if (p_base->getCurObstaclePathArray().obstPathArray.empty())
+           dynamicObstacleDistToCar = -1; // no dynamic obstacle
+
+       // Find the nearest dynamic obstacle
+       vector<float> avgDistArray; // arry of the averaged distance btw obstacle and car over horizon
+       for (auto obstPath : p_base->getCurObstaclePathArray().obstPathArray){ // traverse over obstacle stream array
+           // let us take the first element (current)
+           auto initialObstacle = obstPath.obstPath[0];
+           float xo0 = initialObstacle.q(0);
+           float yo0 = initialObstacle.q(1);
+           float ro = initialObstacle.r1; // assuming circle
+           float distToCenter = sqrt(pow(xo0 - queryX, 2) + pow(yo0 - queryY, 2)) - ro;
+           dynamicObstacleDistToCar = max(min (distToCenter, dynamicObstacleDistToCar),0.0f);  // min thresholding
+
+           // average along the horizon
+           int nStep  = param.l_param.horizon/param.l_param.tStep; // the division should be integer
+           VectorXd tSeq(nStep);
+           tSeq.setLinSpaced(nStep,curTime(),curTime()+param.l_param.horizon);
+
+           MPCResultTraj mpcResultTraj = p_base->getMPCResultTraj();
+           int stepCnt = 0;
+           float avgDist = 0;
+           for (const auto&  obst: obstPath.obstPath){ // traverse over obstacle stream
+               // obstacle over the horizon
+               float xo = obst.q(0);
+               float yo = obst.q(1);
+               CarState carState =
+                mpcResultTraj.evalX(tSeq[stepCnt++]);
+
+               // car over the horizon
+               float xc = carState.x;
+               float yc = carState.y;
+               avgDist += sqrt(pow(xc - xo,2) +  pow(yc - yo,2));
+           }
+           avgDistArray.push_back(avgDist / stepCnt);
+       }
+       p_base->mSet[0].unlock();
+
+       monitoringMsg.dist_static_obstacle = sqrt(staticObstacleDistToCarSquard);
+       monitoringMsg.dist_dynamic_obstacles = dynamicObstacleDistToCar;
+       monitoringMsg.header.stamp = ros::Time::now();
+       monitoringMsg.comp_time_ms = p_base->lastPlanningElapse;
+       monitoringMsg.avg_plan_dist_dynamic_obstacle = avgDistArray;
+       pubMonitoring.publish(monitoringMsg);
+
+       nearestPointToObstacle.header.stamp = ros::Time::now(); // for debugging
+       nearestPointToObstacle.header.frame_id = SNUFrameId;
+       pubNearestPointToObstacle.publish(nearestPointToObstacle);
+
+
+   }
 }
 
 /**
@@ -1406,24 +1485,28 @@ void Wrapper::runPlanning() {
                 // 3. Do planning (GP->LP) or LP only
                 if (doGPlan) { // G plan
 
-                    tCkpG = chrono::steady_clock::now(); // check point time
                     // Lane processing
                     isLaneSuccess = processLane(ros_wrapper_ptr->curTime());
                     if (isLaneSuccess){
-//                        ROS_INFO("[Wrapper] lane extracted!");
+
                         ROS_INFO("[Wrapper] begin GP..");
+
+                        tCkpG = chrono::steady_clock::now(); // check point time
                         isGPSuccess = planGlobal(ros_wrapper_ptr->curTime());
+                        double elapseG = std::chrono::duration_cast<std::chrono::microseconds>(
+                                chrono::steady_clock::now() - tCkpG).count() * 0.001;
 
                         if (isGPSuccess) { // let's call LP
-                            ROS_INFO_STREAM("[Wrapper] GP success! planning time for gp: " <<
-                                                                                           std::chrono::duration_cast<std::chrono::microseconds>(
-                                                                                                   chrono::steady_clock::now() -
-                                                                                                   tCkpG).count() * 0.001
-                                                    << "ms");
+                            ROS_INFO_STREAM("[Wrapper] GP success! planning time for gp: " << elapseG << "ms");
 //                            ROS_INFO("[Wrapper] begin LP..");
 
                             auto tCkp_mpc = chrono::steady_clock::now();
                             isLPSuccess = planLocal(ros_wrapper_ptr->curTime()); // TODO time ?
+                            double elapseL = std::chrono::duration_cast<std::chrono::microseconds>(
+                                    chrono::steady_clock::now() - tCkp_mpc).count() * 0.001;
+                            ROS_INFO_STREAM("[Wrapper] LP success! planning time for lp: " << elapseL << "ms");
+                            p_base_shared->lastPlanningElapse = elapseG + elapseL;
+
                             if (not isLPSuccess)
 
 //                                ROS_INFO_STREAM("[Wrapper] LP success! planning time for lp: " <<
