@@ -529,7 +529,7 @@ void RosWrapper::prepareROSmsgs() {
 
        // Find the nearest static obstacle
        for (size_t idx = 0; idx < localMapInfo.width * localMapInfo.height ; idx++){
-           if (p_base->localMap.data[idx] > OCCUPANCY){ // this will be obstacle
+           if (p_base->localMap.data[idx] > 80){ // this will be obstacle
                geometry_msgs::Point cellPoint = occupancy_grid_utils::cellCenter(localMapInfo,
                        occupancy_grid_utils::indexCell(localMapInfo, idx));
                float distSquard = (cellPoint.x - queryX) * (cellPoint.x - queryX) +

@@ -1,5 +1,5 @@
 topic = '/atypical_planning_test/monitor/status';
-bag = rosbag('originalArisimScenario.bag');
+bag = rosbag('_2021-10-18-14-53-08.bag');
 bSel = select(bag,'Topic',topic);
 msgStruct = readMessages(bSel,'DataFormat','struct');
 
@@ -7,7 +7,7 @@ msgStruct = readMessages(bSel,'DataFormat','struct');
 distToStaticObstacle = [];
 distToDynamicObstacles = [];
 compTime = [];
-for n = 1:length(msgStruct)
+for n = 20:length(msgStruct)
    distToStaticObstacle = [distToStaticObstacle ...
        msgStruct{n}.DistStaticObstacle];
    distToDynamicObstacles = [distToDynamicObstacles ...
@@ -22,7 +22,7 @@ title('Distance to obstacles [m]')
 hStatic = plot (distToStaticObstacle ,'b-' );
 hStaticAvg = yline(mean(distToStaticObstacle),'b--');
 hDynamic = plot (distToDynamicObstacles ,'r-' );
-hAvoid = yline(1,'k:','LineWidth',2);
+hAvoid = yline(1,'r:','LineWidth',2);
 hProximityCrit = yline(8,'k:','LineWidth',2);
 
 legend([hStatic hStaticAvg hDynamic ],...

@@ -46,7 +46,7 @@ global_planner: {
   acc_stop_distance: 5.0,
   acc_stop_angle: 0.08722,
   use_static_object: false,
-  use_lane_point_first: true,
+  use_lane_point_first: false,
   smoothing_cliff_n_check_idx: 10,
   blocked_by_object_distance: 1.0
 }
