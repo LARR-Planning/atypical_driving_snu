@@ -39,7 +39,7 @@ using namespace Eigen;
 
 namespace Planner {
 
-    const int OCCUPANCY = 60;
+    const int OCCUPANCY = 20;
 
     /**
      * @brief
