@@ -23,6 +23,7 @@
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
 #include <driving_msgs/DetectedObjectArray.h>
+#include <driving_msgs/Monitoring.h>
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <geometry_msgs/PoseArray.h>
@@ -112,6 +113,8 @@ namespace Planner{
         pcl::PointCloud<pcl::PointXYZ>::Ptr processedPclPtr;
         pcl::PointCloud<pcl::PointXYZ>::Ptr groundPclPtr;
 
+        driving_msgs::Monitoring monitoringMsg;
+        geometry_msgs::PointStamped nearestPointToObstacle; // both static an
 
 
         /**
@@ -138,6 +141,8 @@ namespace Planner{
         ros::Publisher pubCurCmdDabin;
         ros::Publisher pubOurOccu;
         ros::Publisher pubPitching; // publishing pitch angle
+        ros::Publisher pubMonitoring;
+        ros::Publisher pubNearestPointToObstacle;
 
         ros::Publisher pubFilteredPcl;
         ros::Publisher pubGroundPcl;

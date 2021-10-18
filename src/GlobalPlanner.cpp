@@ -50,6 +50,7 @@ bool GlobalPlanner::plan(double t) {
         ROS_WARN_STREAM("[GlobalPlanner] use_lane_point_first: " << param.use_lane_point_first);
     }
 
+
     // Generate LaneTree
     laneTree.clear();
     laneTreePath.clear();
@@ -379,14 +380,14 @@ bool GlobalPlanner::plan(double t) {
                                      + alpha * (laneTreePath[idx_end].midPoint - laneTreePath[idx_end].lanePoint);
                     laneTreePath[idx_start + j_smooth].midPoint = smoothingPoint;
                 }
-                ROS_WARN_STREAM("backward smoothing: " << i_backward << " to " << i_smooth);
+//                ROS_WARN_STREAM("backward smoothing: " << i_backward << " to " << i_smooth);
             }
         }
         i_smooth++;
     }
 
     if(printSequence){
-        ROS_WARN("[GlobalPlanner] 5");
+//        ROS_WARN("[GlobalPlanner] 5");
     }
 
 

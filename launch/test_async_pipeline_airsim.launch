@@ -4,11 +4,15 @@
 -->
 
 <launch>
-  <arg name = "use_sim_time" value = "false"/>
-  <arg name = "is_bag" value = "false"/>
+  <arg name = "use_sim_time" value = "true"/>
+  <arg name = "is_bag" value = "true"/>
+    <arg name = "rosbag_status" value = "true"/>
+
 <!--   <arg name="bagfile"        default="autoDriveFinalFail.bag"/> -->
 <!--   <arg name="bagfile"        default="autoDriveIntegration.bag"/> -->
- <arg name="bagfile"        default="autoDriveFinalScenarioSuccess.bag"/>
+<!-- <arg name="bagfile"        default="2021-10-11-17-26-28.bag"/>-->
+    <arg name="bagfile"        default="track1.bag"/>
+<!--    <arg name="bagfile"        default="autoDriveFinalScenarioSuccess.bag"/>-->
 <!--   <arg name="bagfile"        default="autoDriveTwoBoxes.bag"/> -->
   <arg name = "pcl_topic" default = "/airsim_car_node/PhysXCar/lidar/LidarSensor1"/>
 
@@ -24,12 +28,11 @@
   <arg name ="detected_object_frame_id" default = "map"/>
 
   <arg name= "lane_width" default="10"/>
-  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/waypoint_kiapi3.csv"/>
+  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/lane_track1.csv"/>
   <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
 
-  <arg name = "goal/x"  default = "30"/> <!--in world frame -->
-  <arg name = "goal/y" default = "73"/> <!--in world frame -->
-
+  <arg name = "goal/x"  default = "84"/> <!--in world frame -->
+  <arg name = "goal/y" default = "-20"/> <!--in world frame -->
 
 
   <group ns="atypical_planning_test">
@@ -125,7 +128,16 @@
     </include>
 
 
-  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find atypical_driving)/launch/rviz_config/airsim.rviz" output="log" />
+<!--  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find atypical_driving)/launch/rviz_config/ktl.rviz" output="log" />-->
 
+    <!-- rosbag record -->
+    <node pkg="rosbag" type="record" name="rosbag_record_status"
+          args = "record -o $(find atypical_driving)/monitor/ /atypical_planning_test/monitor/status"
+          if ="$(arg rosbag_status)">
+    </node>
+    <!--Note: rviz_config_file is absolute value. modify it from perspective file  -->
+    <node name = "monitor_gui" pkg = "rqt_gui" type = "rqt_gui"
+          args="--perspective-file $(find atypical_driving)/monitor/monitor.perspective" output="screen" >
+    </node>
 <!-- Nodes End -->
 </launch>

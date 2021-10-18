@@ -6,7 +6,7 @@
   <arg name = "param_file" default = "yugokri.yaml"/>
 
     <arg name="bag" default="true"/>
-    <arg name = "bagfile" default="almostButVilsonTooFast.bag"/>
+    <arg name = "bagfile" default="autoDriveFinalScenarioSuccess.bag"/>
 
     <param name="/use_sim_time" value="$(arg bag)"/>
 
@@ -79,7 +79,6 @@
         <param name = "base_link_id" value="$(arg car_base_frame_id)" />
         <param name = "detected_objects_id" value="$(arg detected_object_frame_id)" />
 
-        <param name = "local_planner/obstacle_radius_nominal" value="1"/>
 
         <!--Shaping params for nominal_speed selection-->
         <param name = "vmax" value = "3.0"/> <!--m/s-->
@@ -137,11 +136,18 @@
         <param name="predictor/ref_height" value="0.4" />
         <param name="predictor/log_dir" value="$(find atypical_driving)/log/predictor" />
 
+        <param name= "use_nominal_obstacle_rad" value="true"/>
+        <param name= "local_planner/obstacle_radius_nominal" value="0.5"/>
+
         <rosparam command="load" file="$(find atypical_driving)/param/$(arg param_file)"/>
 
     </node>
 
-  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find atypical_driving)/launch/rviz_config/config.rviz" output="log" />
+
+    <!--Note: rviz_config_file is absolute value. modify it from perspective file  -->
+<node name = "monitor_gui" pkg = "rqt_gui" type = "rqt_gui"
+      args="--perspective-file $(find atypical_driving)/monitor/monitor.perspective" output="screen" >
+</node>
 
 
 </launch>
