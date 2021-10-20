@@ -16,25 +16,35 @@ for n = 10:length(msgStruct)
 end
 
 figure(1)
-subplot(3,1,1)
+clf
+set(gcf,'Position',[961 1 960 995])
+subplot(2,1,1)
 hold on 
 title('Distance to obstacles [m]')
 hStatic = plot (distToStaticObstacle ,'b-' );
 hStaticAvg = yline(mean(distToStaticObstacle),'b--');
 hDynamic = plot (rmoutliers(distToDynamicObstacles) ,'r-' ); % to remove jerky obstacle state 
-hAvoid = yline(1.2,'r:','LineWidth',2);
-hProximityCrit = yline(8,'k:','LineWidth',2);
+hAvoid = yline(1.4,'r:','LineWidth',2);
+hProximityCrit = yline(8,'b:','LineWidth',2);
+text(100,1.9,'1.4 m','FontSize',15)
+text(100,9,'8 m','FontSize',15)
 
 legend([hStatic hStaticAvg hDynamic ],...
-    {'StaticProximity','StaticProximityAvg','DistToDynamic'},...
-    'FontSize',14)
+    {'StaticProximity>0 m ','StaticProximityAvg < 8 m','DistToDynamic > 1.0+0.4 m'},...
+    'FontSize',14,'Location','northwest')
+xlabel('data points')
+set(gca,'FontSize',15)
 
-subplot(3,1,2)
+subplot(2,1,2)
 hold on
 title('Computation time [ms]')
-hCompTime = plot (compTime ,'b-' );
+hCompTime = plot (compTime ,'k-' );
 yline(50,'k:','LineWidth',2)
-yline(mean(compTime),'b--','LineWidth',1.5)
+yline(mean(compTime),'k--','LineWidth',1.5)
+xlabel('data points')
+set(gca,'YLim',[0 60])
+set(gca,'FontSize',15)
+
 
 %% Dynamic objects sub monitoring 
 topic = '/detected_objects';
