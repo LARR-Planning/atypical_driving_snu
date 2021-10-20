@@ -1,5 +1,5 @@
 topic = '/atypical_planning_test/monitor/status';
-bag = rosbag('_2021-10-20-09-41-14.bag');
+bag = rosbag('track1.bag');
 bSel = select(bag,'Topic',topic);
 msgStruct = readMessages(bSel,'DataFormat','struct');
 
@@ -7,7 +7,7 @@ msgStruct = readMessages(bSel,'DataFormat','struct');
 distToStaticObstacle = [];
 distToDynamicObstacles = [];
 compTime = [];
-for n = 10:length(msgStruct)
+for n = 40:length(msgStruct)
    distToStaticObstacle = [distToStaticObstacle ...
        msgStruct{n}.DistStaticObstacle];
    distToDynamicObstacles = [distToDynamicObstacles ...
@@ -23,7 +23,7 @@ hold on
 title('Distance to obstacles [m]')
 hStatic = plot (distToStaticObstacle ,'b-' );
 hStaticAvg = yline(mean(distToStaticObstacle),'b--');
-hDynamic = plot (rmoutliers(distToDynamicObstacles) ,'r-' ); % to remove jerky obstacle state 
+hDynamic = plot (rmoutliers(distToDynamicObstacles) ,'r-' ); 
 hAvoid = yline(1.4,'r:','LineWidth',2);
 hProximityCrit = yline(8,'b:','LineWidth',2);
 text(100,1.9,'1.4 m','FontSize',15)

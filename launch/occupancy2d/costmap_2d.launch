@@ -74,7 +74,7 @@
             inf_is_valid: true
           }
         inflation:
-          inflation_radius: 2.0
+          inflation_radius: 3.0
           cost_scaling_factor: 1.5
         voxel:
           publish_voxel_map: true

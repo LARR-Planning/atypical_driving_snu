@@ -100,6 +100,7 @@
     </node>
 
 
+
     <!--2. client-->
     <node pkg="atypical_driving" type="integration_client" name="atypical_driving_client" output="screen">
         <param name = "obstacle_radius_x" value="1.0"/>

@@ -39,7 +39,7 @@ global_planner: {
   corridor_width_min: 0.7,
   corridor_width_dynamic_min: 2.0,
   corridor_max_bias: 100.0,
-  safe_distance: 6.0,
+  safe_distance: 4.0,
   nominal_acceleration: 0.5,
   object_velocity_threshold: 0.1,
   max_obstacle_prediction_query_size: 1000,
@@ -51,6 +51,8 @@ global_planner: {
   blocked_by_object_distance: 1.0
 }
 
-
+local_planner: {
+  lx_frontwheel: 1.0
+}
 use_keti_velocity: false
 use_nominal_obstacle_rad: true
