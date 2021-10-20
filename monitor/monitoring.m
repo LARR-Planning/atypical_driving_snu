@@ -40,8 +40,9 @@ hold on
 title('Computation time [ms]')
 hCompTime = plot (compTime ,'k-' );
 yline(50,'k:','LineWidth',2)
-yline(mean(compTime),'k--','LineWidth',1.5)
+hMean = yline(mean(compTime),'k--','LineWidth',1.5);
 xlabel('data points')
+legend(hMean,'avg.','FontSize',14,'Location','northwest')
 set(gca,'YLim',[0 60])
 set(gca,'FontSize',15)
 
