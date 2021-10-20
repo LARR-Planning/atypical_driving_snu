@@ -372,6 +372,7 @@ namespace Planner {
         vector<Predictor::TargetManager> predictorSet; // TODO erase after indexed predictor
         Predictor::TargetManager predictorBase;
         list<Predictor::IndexedPredictor> indexedPredictorSet;
+        vector<geometry_msgs::Pose> curDetectedObjects; // w.r.t snu frame
 
         // Get
         CarState getCarState() {return cur_state;};

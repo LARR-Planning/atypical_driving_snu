@@ -540,20 +540,23 @@ void RosWrapper::prepareROSmsgs() {
                }
            }
        }
+
        float dynamicObstacleDistToCar = numeric_limits<float>::max();
        if (p_base->getCurObstaclePathArray().obstPathArray.empty())
            dynamicObstacleDistToCar = -1; // no dynamic obstacle
 
+       // find the closest distance toward every obstacles
+       for(const auto& object: p_base->curDetectedObjects){
+           float xo0 = object.position.x;
+           float yo0 = object.position.y;
+           float distToCenter = sqrt(pow(xo0 - queryX, 2) + pow(yo0 - queryY, 2)) ;
+           dynamicObstacleDistToCar = min (distToCenter, dynamicObstacleDistToCar);  // min thresholding
+       }
+
+
        // Find the nearest dynamic obstacle
        vector<float> avgDistArray; // arry of the averaged distance btw obstacle and car over horizon
        for (auto obstPath : p_base->getCurObstaclePathArray().obstPathArray){ // traverse over obstacle stream array
-           // let us take the first element (current)
-           auto initialObstacle = obstPath.obstPath[0];
-           float xo0 = initialObstacle.q(0);
-           float yo0 = initialObstacle.q(1);
-           float ro = initialObstacle.r1; // assuming circle
-           float distToCenter = sqrt(pow(xo0 - queryX, 2) + pow(yo0 - queryY, 2)) - ro;
-           dynamicObstacleDistToCar = max(min (distToCenter, dynamicObstacleDistToCar),0.0f);  // min thresholding
 
            // average along the horizon
            int nStep  = param.l_param.horizon/param.l_param.tStep; // the division should be integer
@@ -880,6 +883,8 @@ void RosWrapper::pclCallback(const sensor_msgs::PointCloud2::ConstPtr pcl_msg){
 }
 
 void RosWrapper::cbDetectedObjects(const driving_msgs::DetectedObjectArray &objectsArray) {
+    p_base->curDetectedObjects.clear();
+
     if (isCarPoseCovReceived)
         for(auto object : objectsArray.objects) {
 
@@ -905,6 +910,7 @@ void RosWrapper::cbDetectedObjects(const driving_msgs::DetectedObjectArray &obje
             try {
                 tf_ls.transformPose(SNUFrameId,ros::Time(0),objectOrig,obstacleRefFrame,objectSNU);
 
+                p_base->curDetectedObjects.push_back(objectSNU.pose);
 
                 // Rotating the KETI velocity
                 tf::StampedTransform T_sv; // T_{snuframe, velodyne frame}
