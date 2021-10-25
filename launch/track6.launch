@@ -1,0 +1,137 @@
+<?xml version="1.0"?>
+<!-- 
+    test_with_virtual_environment.launch
+-->
+
+<launch>
+  <arg name = "use_sim_time" value = "false"/>
+  <arg name = "is_bag" value = "false"/>
+<!--   <arg name="bagfile"        default="autoDriveFinalFail.bag"/> -->
+<!--   <arg name="bagfile"        default="autoDriveIntegration.bag"/> -->
+ <arg name="bagfile"        default="autoDriveFinalScenarioSuccess.bag"/>
+<!--   <arg name="bagfile"        default="autoDriveTwoBoxes.bag"/> -->
+  <arg name = "pcl_topic" default = "/airsim_car_node/PhysXCar/lidar/LidarSensor1"/>
+
+  <param name="use_sim_time" value="$(arg use_sim_time)"/>
+    <arg name = "rosbag_status" value = "true"/>
+
+
+<!-- Arguments Start -->
+  <arg name="snu_frame_id" default="SNU"/>
+  <arg name="occu_frame_id" default="SNU"/>
+  <arg name="world_frame_id" default="map"/>
+  <arg name="car_base_frame_id" default="/car_base_link"/>
+  <arg name="lidar_frame_id" default = "LidarSensor1"/>
+  <arg name ="detected_object_frame_id" default = "map"/>
+
+  <arg name= "lane_width" default="13"/>
+  <arg name = "lane_csv_file" default = "$(find atypical_driving)/lane/lane_track6.csv"/>
+  <arg name = "log_file_prefix" default= "$(find atypical_driving)/log/log" />
+
+  <arg name = "goal/x"  default = "52.9"/> <!--in world frame -->
+  <arg name = "goal/y" default = "16.9"/> <!--in world frame -->
+
+
+
+  <group ns="atypical_planning_test">
+    <rosparam file="$(find atypical_driving)/param/MPC_weight.yaml"/>
+  </group>
+
+
+    <!-- run pointcloud_to_laserscan node -->
+    <node pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node" name="pointcloud_to_laserscan">
+
+        <remap from="cloud_in" to="$(arg pcl_topic)"/>
+<!--        <remap from="cloud_in" to="/octomap_point_cloud_centers"/>--> -->
+
+        <remap from="scan" to="/scan"/>
+        <rosparam>
+            target_frame:  LidarSensor1 # Leave disabled to output scan in pointcloud frame
+            transform_tolerance: 0.01
+            min_height: -0.5
+            max_height: 0.5
+
+            angle_min: -2.1408 # -M_PI/2
+            angle_max: 2.1408 # M_PI/2
+            angle_increment: 0.027 # M_PI/360.0
+            scan_time: 0.33
+            range_min: 0.0
+            range_max: 100.0
+            use_inf: true
+            inf_epsilon: 100.0
+
+            # Concurrency level, affects number of pointclouds queued for processing and number of threads used
+            # 0 : Detect number of cores
+            # 1 : Single threaded
+            # 2->inf : Parallelism level
+            concurrency_level: 2
+        </rosparam>
+
+    </node>
+
+
+
+<!--   OccupancyGrid  -->
+ <include file = "$(find atypical_driving)/launch/occupancy2d/costmap_2d.launch">
+     <arg name = "play_bag" value = "false"/>
+     <arg name = "bagfile" value="$(arg bagfile)"/>
+     <arg name = "use_sim_time" value="$(arg use_sim_time)"/>
+     <arg name = "rviz" value = "false"/>
+     <arg name = "occupancy_frame_id" value = "$(arg occu_frame_id)"/>
+     <arg name = "lidar_frame_id" value = "$(arg lidar_frame_id)"/>
+<!--      <arg name = "pcl_topic" value = "$(arg pcl_topic)"/> -->
+     <arg name = "scan_topic" value = "/scan"/>
+     <arg name = "cost_map_min_z" value = "-10"/>
+     <arg name = "cost_map_max_z" value = "10"/>
+ </include>
+
+
+<!-- Node start-->
+
+    <!--1. Data feeder-->
+
+
+    <node pkg="rosbag" type="play" name="rosbag_record_diag"
+     args="--clock $(find atypical_driving)/worlds/$(arg bagfile)" if = "$(arg is_bag)">
+        <remap from="octomap_binary" to="/atypical_planning_test/local_map"/>
+        <remap from="/airsim_car_node/object_pose" to="/atypical_planning_test/obstacle_pose"/>
+    </node>
+
+
+    <!--2. client-->
+    <node pkg="atypical_driving" type="integration_client" name="atypical_driving_client" output="screen">
+        <param name = "obstacle_radius_x" value="1.0"/>
+        <param name = "obstacle_radius_y" value="0.5"/>
+        <remap from = "/detected_objects" to = "/detected_objects_none"/>
+    </node>
+
+    <!--3. server-->
+    <include file = "$(find atypical_driving)/launch/integration_server.launch" >
+        <arg name = "world_frame_id" value = "$(arg world_frame_id)"/>
+        <arg name = "snu_frame_id" value = "$(arg snu_frame_id)"/>
+        <arg name = "occu_frame_id" value = "$(arg occu_frame_id)"/>
+        <arg name = "car_base_frame_id" value = "$(arg car_base_frame_id)"/>
+        <arg name = "detected_object_frame_id" value = "$(arg detected_object_frame_id)"/>
+        <arg name = "lidar_frame_id" value = "$(arg lidar_frame_id)"/>
+        <arg name = "lane_csv_file" value = "$(arg lane_csv_file)"/>
+
+        <arg name = "lane_width_nominal" value = "$(arg lane_width)"/>
+        <arg name = "goal/x" value = "$(arg goal/x)"/>
+        <arg name = "goal/y" value = "$(arg goal/y)"/>
+
+        <arg name = "isRearWheelDriven" value="true"/>
+        <arg name = "period"  value= "0.1"/>
+        <arg name = "horizon"  value= "5"/> <!--Also change dimension.h-->
+        <arg name="planning_dt" value="0.1"/>
+    </include>
+
+    <!-- rosbag record -->
+    <node pkg="rosbag" type="record" name="rosbag_record_status"
+          args = "record -o $(find atypical_driving)/monitor/ /atypical_planning_test/monitor/status"
+          if ="$(arg rosbag_status)">
+    </node>
+
+  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find atypical_driving)/launch/rviz_config/ktl.rviz" output="log" />
+
+<!-- Nodes End -->
+</launch>
