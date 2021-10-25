@@ -1,5 +1,5 @@
 topic = '/atypical_planning_test/monitor/status';
-bag = rosbag('track1.bag');
+bag = rosbag('track5.bag');
 bSel = select(bag,'Topic',topic);
 msgStruct = readMessages(bSel,'DataFormat','struct');
 
@@ -21,10 +21,11 @@ set(gcf,'Position',[961 1 960 995])
 subplot(2,1,1)
 hold on 
 title('Distance to obstacles [m]')
-hStatic = plot (distToStaticObstacle ,'b-' );
+hStatic = plot (smoothdata(rmoutliers(distToStaticObstacle),2 ),'b-' );
 hStaticAvg = yline(mean(distToStaticObstacle),'b--');
-hDynamic = plot (rmoutliers(distToDynamicObstacles) ,'r-' ); 
+hDynamic = plot (smoothdata(rmoutliers(distToDynamicObstacles),2) ,'r-' ); 
 hAvoid = yline(1.4,'r:','LineWidth',2);
+yline(1,'b:','LineWidth',2);
 hProximityCrit = yline(8,'b:','LineWidth',2);
 text(100,1.9,'1.4 m','FontSize',15)
 text(100,9,'8 m','FontSize',15)
