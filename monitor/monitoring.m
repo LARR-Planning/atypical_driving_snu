@@ -1,12 +1,13 @@
+bagName = 'real_track2';
 topic = '/atypical_planning_test/monitor/status';
-bag = rosbag('track5.bag');
+bag = rosbag(strcat(bagName,'.bag'));
 bSel = select(bag,'Topic',topic);
 msgStruct = readMessages(bSel,'DataFormat','struct');
 
 %% data logging 
 distToStaticObstacle = [];
 distToDynamicObstacles = [];
-compTime = [];
+compTime = [];                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
 for n = 40:length(msgStruct)
    distToStaticObstacle = [distToStaticObstacle ...
        msgStruct{n}.DistStaticObstacle];
@@ -21,17 +22,19 @@ set(gcf,'Position',[961 1 960 995])
 subplot(2,1,1)
 hold on 
 title('Distance to obstacles [m]')
-hStatic = plot (smoothdata(rmoutliers(distToStaticObstacle),2 ),'b-' );
+ds = smoothdata(rmoutliers(distToStaticObstacle),2 );
+dd = smoothdata(rmoutliers(distToDynamicObstacles),2);
+hStatic = plot (ds,'b-' );
 hStaticAvg = yline(mean(distToStaticObstacle),'b--');
-hDynamic = plot (smoothdata(rmoutliers(distToDynamicObstacles),2) ,'r-' ); 
+hDynamic = plot (dd,'r-' ); 
 hAvoid = yline(1.4,'r:','LineWidth',2);
-yline(1,'b:','LineWidth',2);
+yline(0.9,'b:','LineWidth',2);
 hProximityCrit = yline(8,'b:','LineWidth',2);
 text(100,1.9,'1.4 m','FontSize',15)
 text(100,9,'8 m','FontSize',15)
 
 legend([hStatic hStaticAvg hDynamic ],...
-    {'StaticProximity>0 m ','StaticProximityAvg < 8 m','DistToDynamic > 1.0+0.4 m'},...
+    {'StaticProximity>1.0 m ','StaticProximityAvg < 8 m','DistToDynamic > 1.0+0.4 m'},...
     'FontSize',14,'Location','northwest')
 xlabel('data points')
 set(gca,'FontSize',15)
@@ -39,7 +42,8 @@ set(gca,'FontSize',15)
 subplot(2,1,2)
 hold on
 title('Computation time [ms]')
-hCompTime = plot (compTime ,'k-' );
+dc = rmoutliers(compTime);
+hCompTime = plot ( dc,'k-' );
 yline(50,'k:','LineWidth',2)
 hMean = yline(mean(compTime),'k--','LineWidth',1.5);
 xlabel('data points')
@@ -47,6 +51,9 @@ legend(hMean,'avg.','FontSize',14,'Location','northwest')
 set(gca,'YLim',[0 60])
 set(gca,'FontSize',15)
 
+% write in csv 
+totalDataLen = min ([length(ds) length(dc) length(dd)]);
+csvwrite(strcat('csv/',bagName,'.csv'),[ds(1:totalDataLen)' dd(1:totalDataLen)' dc(1:totalDataLen)'])
 
 %% Dynamic objects sub monitoring 
 topic = '/detected_objects';
