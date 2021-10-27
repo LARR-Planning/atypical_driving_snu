@@ -1,59 +1,70 @@
-bagName = 'real_track2';
-topic = '/atypical_planning_test/monitor/status';
-bag = rosbag(strcat(bagName,'.bag'));
-bSel = select(bag,'Topic',topic);
-msgStruct = readMessages(bSel,'DataFormat','struct');
+for nn = 1:10
 
-%% data logging 
-distToStaticObstacle = [];
-distToDynamicObstacles = [];
-compTime = [];                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
-for n = 40:length(msgStruct)
-   distToStaticObstacle = [distToStaticObstacle ...
-       msgStruct{n}.DistStaticObstacle];
-   distToDynamicObstacles = [distToDynamicObstacles ...
-       msgStruct{n}.DistDynamicObstacles];
-   compTime = [compTime msgStruct{n}.CompTimeMs ];
+    bagName = strcat('real_track',num2str(nn));
+    topic = '/atypical_planning_test/monitor/status';
+    bag = rosbag(strcat(bagName,'.bag'));
+    bSel = select(bag,'Topic',topic);
+    msgStruct = readMessages(bSel,'DataFormat','struct');
+
+    %% data logging 
+    distToStaticObstacle = [];
+    distToDynamicObstacles = [];
+    timeHistory = [];
+    compTime = [];               
+    startIdx = 40;
+    for n = startIdx:length(msgStruct)
+       distToStaticObstacle = [distToStaticObstacle ...
+           msgStruct{n}.DistStaticObstacle];
+       distToDynamicObstacles = [distToDynamicObstacles ...
+           msgStruct{n}.DistDynamicObstacles];
+       compTime = [compTime msgStruct{n}.CompTimeMs ];
+       timeHistory = [timeHistory double(msgStruct{n}.Header.Stamp.Sec)+double(msgStruct{n}.Header.Stamp.Nsec)*1e-9];
+    end
+    timeHistory = timeHistory - timeHistory(1);
+    figure(1)
+    clf
+    set(gcf,'Position',[961 1 960 995])
+    subplot(2,1,1)
+    hold on 
+    title('Distance to obstacles [m]')
+    ds = smoothdata(rmoutliers(distToStaticObstacle),2 );
+    dd = smoothdata(rmoutliers(distToDynamicObstacles),2);
+    hStatic = plot (timeHistory(1:length(ds)),   ds,'b-' );
+    hStaticAvg = yline(mean(distToStaticObstacle),'b--');
+    hDynamic = plot (timeHistory(1:length(dd)),dd,'r-' ); 
+    hAvoid = yline(1.4,'r:','LineWidth',2);
+    yline(0.9,'b:','LineWidth',2);
+    hProximityCrit = yline(8,'b:','LineWidth',2);
+    text(100,1.9,'1.4 m','FontSize',15)
+    text(100,9,'8 m','FontSize',15)
+
+    legend([hStatic hStaticAvg hDynamic ],...
+        {'StaticProximity>1.0 m ','StaticProximityAvg < 8 m','DistToDynamic > 1.0+0.4 m'},...
+        'FontSize',14,'Location','northwest')
+    xlabel('time [s]')
+    set(gca,'FontSize',15)
+
+    subplot(2,1,2)
+    hold on
+    title('Computation time [ms]')
+    dc = rmoutliers(compTime);
+    hCompTime = plot (timeHistory(1:length(dc)), dc,'k-' );
+    yline(50,'k:','LineWidth',2)
+    hMean = yline(mean(compTime),'k--','LineWidth',1.5);
+    xlabel('time [s]')
+    legend(hMean,'avg.','FontSize',14,'Location','northwest')
+    set(gca,'YLim',[0 60])
+    set(gca,'FontSize',15)
+
+    % save image
+    print(strcat('log_img/',bagName),'-dpng','-r100')
+
+
+    % write in csv 
+    totalDataLen = min ([length(ds) length(dc) length(dd)]);
+    csvwrite(strcat('csv/',bagName,'.csv'),[timeHistory(1:totalDataLen)' ds(1:totalDataLen)' dd(1:totalDataLen)' dc(1:totalDataLen)' ])
+
 end
-
-figure(1)
-clf
-set(gcf,'Position',[961 1 960 995])
-subplot(2,1,1)
-hold on 
-title('Distance to obstacles [m]')
-ds = smoothdata(rmoutliers(distToStaticObstacle),2 );
-dd = smoothdata(rmoutliers(distToDynamicObstacles),2);
-hStatic = plot (ds,'b-' );
-hStaticAvg = yline(mean(distToStaticObstacle),'b--');
-hDynamic = plot (dd,'r-' ); 
-hAvoid = yline(1.4,'r:','LineWidth',2);
-yline(0.9,'b:','LineWidth',2);
-hProximityCrit = yline(8,'b:','LineWidth',2);
-text(100,1.9,'1.4 m','FontSize',15)
-text(100,9,'8 m','FontSize',15)
-
-legend([hStatic hStaticAvg hDynamic ],...
-    {'StaticProximity>1.0 m ','StaticProximityAvg < 8 m','DistToDynamic > 1.0+0.4 m'},...
-    'FontSize',14,'Location','northwest')
-xlabel('data points')
-set(gca,'FontSize',15)
-
-subplot(2,1,2)
-hold on
-title('Computation time [ms]')
-dc = rmoutliers(compTime);
-hCompTime = plot ( dc,'k-' );
-yline(50,'k:','LineWidth',2)
-hMean = yline(mean(compTime),'k--','LineWidth',1.5);
-xlabel('data points')
-legend(hMean,'avg.','FontSize',14,'Location','northwest')
-set(gca,'YLim',[0 60])
-set(gca,'FontSize',15)
-
-% write in csv 
-totalDataLen = min ([length(ds) length(dc) length(dd)]);
-csvwrite(strcat('csv/',bagName,'.csv'),[ds(1:totalDataLen)' dd(1:totalDataLen)' dc(1:totalDataLen)'])
 
 %% Dynamic objects sub monitoring 
 topic = '/detected_objects';
